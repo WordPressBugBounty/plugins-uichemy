@@ -2,9 +2,9 @@
 Contributors: posimyththemes, dhaval4, sagarpatel124
 Tags: figma to elementor, figma to wordpress, figma to gutenberg, figma to bricks, figma to code
 Requires at least: 5.7.0
-Tested up to: 6.7.2
-Requires PHP: 5.6
-Stable tag: 3.0.2
+Tested up to: 6.8
+Requires PHP: 7.1
+Stable tag: 3.1.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -139,6 +139,13 @@ We've been active in the WordPress industry for over 8+ years, serving 120K+ use
 6. Publish Figma Design Directly to WordPress website
 
 == Changelog ==
+= 3.1.0 = 12 June 2025
+- Updated the plugin welcome UI.
+- Added support for bricks global style classes.
+- Fixed an issue with media import in copy paste mode with bricks.
+- Fixed an issue with bricks live import & page settings with bricks.
+- More bug fixes & improvements.
+
 = 3.0.2 = 28 May 2025
 - Fixed a bug with live import & nexter theme builder.
 
