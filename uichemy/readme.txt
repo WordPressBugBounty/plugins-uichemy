@@ -2,9 +2,9 @@
 Contributors: posimyththemes, dhaval4, sagarpatel124
 Tags: figma to elementor, figma to wordpress, figma to gutenberg, figma to bricks, figma to code
 Requires at least: 6.6
-Tested up to: 6.8
+Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 4.1.2
+Stable tag: 4.6.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -58,6 +58,9 @@ Seems like too good to be true?
 You can further edit them directly from your preferred page builder.
 
 This is not Figma to HTML Code Convertor, it converts Figma designs to Elementor Editable website using its widgets set. No HTML Code is added. You can edit these templates using supported Elementor Widgets, Brick Elements or Gutenberg Blocks.
+
+<strong>[WordPress Plugin Source Code](https://github.com/posimyth/UiChemy-Plugin-Developer)</strong> - To embrace the open-source community, we’ve also made the plugin’s design source code available here.
+
 
 
 ###🔍 OUR PRODUCTS
@@ -139,6 +142,39 @@ We've been active in the WordPress industry for over 8+ years, serving 120K+ use
 6. Publish Figma Design Directly to WordPress website
 
 == Changelog ==
+= 4.6.0 = 30 Jan 2026
+- Added support for Border, Border-Radius, Gap & Shadow for Bricks.
+- More bug fixes & improvements.
+
+= 4.5.0 = 5 Jan 2026
+- Fixed a bug with svg uploads.
+- More bug fixes & improvements.
+
+= 4.4.3 = 23 Dec 2025
+- Fixed a warning log.
+
+= 4.4.2 = 12 Dec 2025
+- Fixed a minor bug with "Import as user" dropdown.
+- Updated WP compatibility.
+
+= 4.4.1 = 27 Nov 2025
+- Updated the default Elementor & Bricks boxed Width.
+- More UI improvements.
+
+= 4.4.0 = 25 Nov 2025
+- Added support for importing WEBP & AVIF.
+- More bug fixes & improvements.
+
+= 4.3.0 = 17 Oct 2025
+- Added support for multiple breakpoints for Boxed Width (Bricks).
+- More bug fixes & improvements.
+
+= 4.2.0 = 16 Oct 2025
+- Added support for Spectra, Gutenberg Core, Kadence & Generate Blocks.
+- Added support for disabling custom CSS for Elementor & Gutenberg.
+- Updated UI with some improvements.
+- More bug fixes & improvements.
+
 = 4.1.2 = 20 Sep 2025
 - Fixed : Bug Fixed and Improvement
 

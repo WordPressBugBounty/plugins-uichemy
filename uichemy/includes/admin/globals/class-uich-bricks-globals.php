@@ -24,9 +24,15 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
 
 	    const TYPO_CLASS_CATEGORY_ID = 'UICH_TYPO';
 	    const PADDING_CLASS_CATEGORY_ID = 'UICH_PADDING';
+        const SHADOW_CLASS_CATEGORY_ID = 'UICH_SHADOW';
+        const BORDER_CLASS_CATEGORY_ID = 'UICH_BORDER';
+        const BORDER_RADIUS_CLASS_CATEGORY_ID = 'UICH_BORDER_RADIUS';
+        const GAP_CLASS_CATEGORY_ID = "UICH_GAP";
         const DEFAULT_CONTAINER_WIDTH = '1100px';
+        const DEFAULT_CONTAINER_TABLET_WIDTH = '85%';
+        const DEFAULT_CONTAINER_MOBILE_WIDTH = '90%';
         const UICH_THEME_ID = 'uichemy_theme';
-        const UICH_PALETTE_NAME = 'Uichemy Palette';
+        const UICH_PALETTE_NAME = 'UiChemy Palette';
 
         // Helper method to safely retrieve and ensure an option is an array.
         private static function get_option_as_array($optionName){
@@ -62,7 +68,10 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
             // Check for existing Uichemy Theme
             foreach($theme_styles_array as $key => $style){
                 if($key === Uich_Bricks_Globals::UICH_THEME_ID){
-                    $width = sanitize_text_field($style['settings']['container']['width'] ?? Uich_Bricks_Globals::DEFAULT_CONTAINER_WIDTH);
+                    $desktop = sanitize_text_field($style['settings']['container']['width'] ?? Uich_Bricks_Globals::DEFAULT_CONTAINER_WIDTH);
+                    $tablet_portrait = isset($style['settings']['container']['width:tablet_portrait']) ? sanitize_text_field($style['settings']['container']['width:tablet_portrait']) : null;
+                    $mobile_landscape = isset($style['settings']['container']['width:mobile_landscape']) ? sanitize_text_field($style['settings']['container']['width:mobile_landscape']) : null;
+                    $mobile_portrait = isset($style['settings']['container']['width:mobile_portrait']) ? sanitize_text_field($style['settings']['container']['width:mobile_portrait']) : null;
 
                     // Reindex: Remove the current theme and append it to the end
                     $uichemy_theme_style = $style;
@@ -71,8 +80,21 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
 
                     update_option('bricks_theme_styles', $theme_styles_array);
 
+                    $width_data = ['desktop' => $desktop];
+
+                    if($tablet_portrait !== null){
+                        $width_data['tablet_portrait'] = $tablet_portrait;
+                    }
+                    if($mobile_landscape !== null){
+                        $width_data['mobile_landscape'] = $mobile_landscape;
+                    }
+                    if($mobile_portrait !== null){
+                        $width_data['mobile_portrait'] = $mobile_portrait;
+                    }
+            
+
                     return (object)[
-                        'width' => $width,
+                        'width' => (object)$width_data,
                         'themeID' => $key,
                     ];
                 }
@@ -87,10 +109,25 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
                     && isset($style['settings']['conditions']['conditions'][0]['main'])
                     && $style['settings']['conditions']['conditions'][0]['main'] === 'any'
                 ){
-                    $width = sanitize_text_field($style['settings']['container']['width'] ?? Uich_Bricks_Globals::DEFAULT_CONTAINER_WIDTH);
+                    $desktop = sanitize_text_field($style['settings']['container']['width'] ?? Uich_Bricks_Globals::DEFAULT_CONTAINER_WIDTH);
+                    $tablet_portrait = isset($style['settings']['container']['width:tablet_portrait']) ? sanitize_text_field($style['settings']['container']['width:tablet_portrait']) : null;
+                    $mobile_landscape = isset($style['settings']['container']['width:mobile_landscape']) ? sanitize_text_field($style['settings']['container']['width:mobile_landscape']) : null;
+                    $mobile_portrait = isset($style['settings']['container']['width:mobile_portrait']) ? sanitize_text_field($style['settings']['container']['width:mobile_portrait']) : null;
+
+                    $width_data = ['desktop' => $desktop];
+
+                    if($tablet_portrait !== null){
+                        $width_data['tablet_portrait'] = $tablet_portrait;
+                    }
+                    if($mobile_landscape !== null){
+                        $width_data['mobile_landscape'] = $mobile_landscape;
+                    }
+                    if($mobile_portrait !== null){
+                        $width_data['mobile_portrait'] = $mobile_portrait;
+                    }
 
                     return (object)[
-                        'width' => $width,
+                        'width' => (object)$width_data,
                         'themeID' => $key ?? '',
                     ];
                 }
@@ -111,6 +148,8 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
                     ],
                     'container' => [
                         'width' => Uich_Bricks_Globals::DEFAULT_CONTAINER_WIDTH,
+                        'width:tablet_portrait' => Uich_Bricks_Globals::DEFAULT_CONTAINER_TABLET_WIDTH,
+                        'width:mobile_portrait' => Uich_Bricks_Globals::DEFAULT_CONTAINER_MOBILE_WIDTH,
                     ],
                 ],
             ];
@@ -118,7 +157,11 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
             update_option('bricks_theme_styles', $themeStyles);
 
             return (object)[
-                'width' => Uich_Bricks_Globals::DEFAULT_CONTAINER_WIDTH,
+                'width' => [
+                    'desktop' => Uich_Bricks_Globals::DEFAULT_CONTAINER_WIDTH,
+                    'tablet_portrait' => Uich_Bricks_Globals::DEFAULT_CONTAINER_TABLET_WIDTH,
+                    'mobile_portrait' => Uich_Bricks_Globals::DEFAULT_CONTAINER_MOBILE_WIDTH,
+                ],
                 'themeID' => Uich_Bricks_Globals::UICH_THEME_ID,
             ];
         }
@@ -157,7 +200,7 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
             if(!Uich_Bricks_Globals::category_exists($class_categories, $uichemy_category_id)){
                 $class_categories[] = [
                     'id' => $uichemy_category_id,
-                    'name' => 'Uichemy Typography',
+                    'name' => 'UiChemy Typography',
                 ];
                 update_option('bricks_global_classes_categories', $class_categories);
             }
@@ -198,7 +241,7 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
             if(!Uich_Bricks_Globals::category_exists($class_categories, $uichemy_category_id)){
                 $class_categories[] = [
                     'id' => $uichemy_category_id,
-                    'name' => 'Uichemy Padding',
+                    'name' => 'UiChemy Padding',
                 ];
                 update_option('bricks_global_classes_categories', $class_categories);
             }
@@ -230,9 +273,211 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
             return $padding_classes;
         }
 
+        public static function get_uich_shadow_classes(){
+
+            $uichemy_category_id = Uich_Bricks_Globals::SHADOW_CLASS_CATEGORY_ID;
+            $global_classes = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes');
+            $class_categories = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes_categories');
+
+            // Ensure category exists
+            if(!Uich_Bricks_Globals::category_exists($class_categories, $uichemy_category_id)){
+                $class_categories[] = [
+                    'id' => $uichemy_category_id,
+                    'name' => 'UiChemy Shadow',
+                ];
+                update_option('bricks_global_classes_categories', $class_categories);
+            }
+
+            $shadow_classes = [];
+
+            foreach($global_classes as $class){
+
+                if (
+                    !isset($class['category']) ||
+                    $class['category'] !== $uichemy_category_id ||
+                    !isset($class['settings']['_boxShadow'])
+                ) continue;
+
+                $shadow = $class['settings']['_boxShadow'];
+
+                // Convert values to numbers
+                $converted = [
+                    "offsetX" => isset($shadow["values"]["offsetX"]) ? floatval($shadow["values"]["offsetX"]) : 0,
+                    "offsetY" => isset($shadow["values"]["offsetY"]) ? floatval($shadow["values"]["offsetY"]) : 0,
+                    "blur"    => isset($shadow["values"]["blur"])    ? floatval($shadow["values"]["blur"])    : 0,
+                    "spread"  => isset($shadow["values"]["spread"])  ? floatval($shadow["values"]["spread"])  : 0,
+
+                    // Color stays string/object
+                    "color"   => isset($shadow["color"]) ? $shadow["color"] : ["hex" => "#000000"]
+                ];
+
+                // Optional inset (boolean)
+                if (isset($shadow["inset"])) {
+                    $converted["inset"] = $shadow["inset"] == 1 ? true : false;
+                }
+
+                $shadow_classes[] = [
+                    "id"    => sanitize_text_field($class["id"]),
+                    "name"  => sanitize_text_field($class["name"]),
+                    "value" => $converted
+                ];
+            }
+
+            return $shadow_classes;
+        }
+
+        public static function get_uich_border_classes(){
+
+            $uichemy_category_id = Uich_Bricks_Globals::BORDER_CLASS_CATEGORY_ID;
+            $global_classes = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes');
+            $class_categories = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes_categories');
+
+            // Ensure Uichemy Border category exists
+            if (!Uich_Bricks_Globals::category_exists($class_categories, $uichemy_category_id)) {
+                $class_categories[] = [
+                    'id'   => $uichemy_category_id,
+                    'name' => 'UiChemy Border',
+                ];
+                update_option('bricks_global_classes_categories', $class_categories);
+            }
+
+            $border_classes = [];
+
+            foreach ($global_classes as $class) {
+
+                if (
+                    isset($class['category']) &&
+                    $class['category'] === $uichemy_category_id &&
+                    isset($class['settings']['_border'])
+                ) {
+                    $border = $class['settings']['_border'];
+                    $value = [];
+
+                    // Width: convert strings → number
+                    if (isset($border['width'])) {
+                        $value['width'] = [
+                            "top"    => isset($border['width']['top'])    ? floatval($border['width']['top'])    : 0,
+                            "right"  => isset($border['width']['right'])  ? floatval($border['width']['right'])  : 0,
+                            "bottom" => isset($border['width']['bottom']) ? floatval($border['width']['bottom']) : 0,
+                            "left"   => isset($border['width']['left'])   ? floatval($border['width']['left'])   : 0,
+                        ];
+                    }
+
+                    // Style = string
+                    if (isset($border['style'])) {
+                        $value['style'] = $border['style'];
+                    }
+
+                    // Color = object
+                    if (isset($border['color'])) {
+                        $value['color'] = $border['color'];
+                    }
+
+                    // Final return format
+                    $border_classes[] = [
+                        'id'    => sanitize_text_field($class['id'] ?? ''),
+                        'name'  => sanitize_text_field($class['name'] ?? ''),
+                        'value' => $value,
+                    ];
+                }
+            }
+
+            return $border_classes;
+        }
+
+        // get the border radius classes
+        public static function get_uich_border_radius_classes(){
+            $uichemy_category_id = Uich_Bricks_Globals::BORDER_RADIUS_CLASS_CATEGORY_ID;
+            $global_classes = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes');
+            $class_categories = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes_categories');
+
+            // Ensure Uichemy Border category exists
+            if (!Uich_Bricks_Globals::category_exists($class_categories, $uichemy_category_id)) {
+                $class_categories[] = [
+                    'id'   => $uichemy_category_id,
+                    'name' => 'UiChemy Border Radius',
+                ];
+                update_option('bricks_global_classes_categories', $class_categories);
+            }
+
+            $border_radius_classes = [];
+
+            foreach ($global_classes as $class) {
+
+                if (
+                    isset($class['category']) &&
+                    $class['category'] === $uichemy_category_id &&
+                    isset($class['settings']['_border'])
+                ) {
+                    $border = $class['settings']['_border'];
+                    $value = [];
+
+                    // Radius: convert strings → number
+                    if (isset($border['radius'])) {
+                        $value= [
+                            "topLeft"    => isset($border['radius']['top'])    ? floatval($border['radius']['top'])    : 0,
+                            "topRight"  => isset($border['radius']['right'])  ? floatval($border['radius']['right'])  : 0,
+                            "bottomRight" => isset($border['radius']['bottom']) ? floatval($border['radius']['bottom']) : 0,
+                            "bottomLeft"   => isset($border['radius']['left'])   ? floatval($border['radius']['left'])   : 0,
+                        ];
+                    }
+
+                    // Final return format
+                    $border_radius_classes[] = [
+                        'id'    => sanitize_text_field($class['id'] ?? ''),
+                        'name'  => sanitize_text_field($class['name'] ?? ''),
+                        'value' => $value,
+                    ];
+                }
+            }
+
+            return $border_radius_classes;
+        }
+
+        public static function get_uich_gap_classes(){
+
+            $uichemy_category_id = Uich_Bricks_Globals::GAP_CLASS_CATEGORY_ID;
+            $global_classes = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes');
+            $class_categories = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes_categories');
+
+            // Ensure category exists
+            if(!Uich_Bricks_Globals::category_exists($class_categories, $uichemy_category_id)){
+                $class_categories[] = [
+                    'id'   => $uichemy_category_id,
+                    'name' => 'UiChemy Gap',
+                ];
+                update_option('bricks_global_classes_categories', $class_categories);
+            }
+
+            $gap_classes = [];
+
+            foreach ($global_classes as $class) {
+
+                if (
+                    isset($class['category']) &&
+                    $class['category'] === $uichemy_category_id &&
+                    isset($class['settings'])
+                ) {
+                    $settings = $class['settings'];
+
+                    $value = [
+                        "columnGap" => isset($settings['_columnGap']) ? floatval($settings['_columnGap']) : 0,
+                        "rowGap"    => isset($settings['_rowGap'])    ? floatval($settings['_rowGap'])    : 0
+                    ];
+
+                    $gap_classes[] = [
+                        'id'    => sanitize_text_field($class['id'] ?? ''),
+                        'name'  => sanitize_text_field($class['name'] ?? ''),
+                        'value' => $value,
+                    ];
+                }
+            }
+
+            return $gap_classes;
+        }
+
         // Set the Uichemy container width.
         public static function set_uich_container_width( $container_width ){
-            $container_width = sanitize_text_field( $container_width );
             $theme_id = Uich_Bricks_Globals::get_or_create_container_width()->themeID;
             $theme_styles_array = Uich_Bricks_Globals::get_option_as_array('bricks_theme_styles');
 
@@ -240,7 +485,30 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
                 return false;
             }
 
-            $theme_styles_array[$theme_id]['settings']['container']['width'] = $container_width;
+            // Set desktop width (required)
+            $theme_styles_array[$theme_id]['settings']['container']['width'] = sanitize_text_field($container_width->desktop);
+
+            // Handle tablet_portrait
+            if(isset($container_width->tablet_portrait) && !empty($container_width->tablet_portrait)){
+                $theme_styles_array[$theme_id]['settings']['container']['width:tablet_portrait'] = sanitize_text_field($container_width->tablet_portrait);
+            } else {
+                unset($theme_styles_array[$theme_id]['settings']['container']['width:tablet_portrait']);
+            }
+
+            // Handle mobile_landscape
+            if(isset($container_width->mobile_landscape) && !empty($container_width->mobile_landscape)){
+                $theme_styles_array[$theme_id]['settings']['container']['width:mobile_landscape'] = sanitize_text_field($container_width->mobile_landscape);
+            } else {
+                unset($theme_styles_array[$theme_id]['settings']['container']['width:mobile_landscape']);
+            }
+
+            // Handle mobile_portrait
+            if(isset($container_width->mobile_portrait) && !empty($container_width->mobile_portrait)){
+                $theme_styles_array[$theme_id]['settings']['container']['width:mobile_portrait'] = sanitize_text_field($container_width->mobile_portrait);
+            } else {
+                unset($theme_styles_array[$theme_id]['settings']['container']['width:mobile_portrait']);
+            }
+
             return update_option('bricks_theme_styles', $theme_styles_array);
         }
 
@@ -443,13 +711,320 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
             return update_option('bricks_global_classes', $global_classes);
         }
 
+        // Sync shadow classes
+        public static function sync_uich_shadow_classes($shadow_updates){
+            Uich_Bricks_Globals::get_uich_shadow_classes();
+            $uichemy_category_id = Uich_Bricks_Globals::SHADOW_CLASS_CATEGORY_ID;
+            $global_classes = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes');
+
+            $convertIntoArray = Uich_Bricks_Globals::object_to_array($shadow_updates);
+
+            foreach($convertIntoArray as $update){
+
+                if(!isset($update['action'], $update['value']['id'])){
+                    continue;
+                }
+
+                $action = sanitize_text_field($update['action']);
+                $id = sanitize_text_field($update['value']['id']);
+                $name = sanitize_text_field($update['value']['name'] ?? '');
+
+                // DELETE
+                if($action === 'DEL'){
+                    $global_classes = array_values(array_filter(
+                        $global_classes,
+                        fn($class) => !isset($class['id'], $class['category']) ||
+                                    $class['id'] !== $id ||
+                                    $class['category'] !== $uichemy_category_id
+                    ));
+                    continue;
+                }
+
+                // ADD or SET
+                if(($action === 'SET' || $action === 'ADD') && isset($update['value']['value'])){
+
+                    $incoming = $update['value']['value'];
+
+                    // Convert FE → Bricks string values
+                    $converted_shadow = [
+                        "values" => [
+                            "offsetX" => isset($incoming["offsetX"]) ? strval($incoming["offsetX"]) : "0",
+                            "offsetY" => isset($incoming["offsetY"]) ? strval($incoming["offsetY"]) : "0",
+                            "blur"    => isset($incoming["blur"])    ? strval($incoming["blur"])    : "0",
+                            "spread"  => isset($incoming["spread"])  ? strval($incoming["spread"])  : "0",
+                        ],
+                        "color" => $incoming["color"] ?? [ "hex" => "#000000" ]
+                    ];
+
+                    if (isset($incoming["inset"])) {
+                        $converted_shadow["inset"] = $incoming["inset"] ? 1 : 0;
+                    }
+
+                    // UPDATE
+                    $found = false;
+                    foreach($global_classes as &$class){
+                        if(isset($class['id'], $class['category']) &&
+                        $class['id'] === $id &&
+                        $class['category'] === $uichemy_category_id)
+                        {
+                            $class['settings'] = [ "_boxShadow" => $converted_shadow ];
+                            $class['name'] = $name;
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    // ADD
+                    if(!$found){
+                        $global_classes[] = [
+                            'id'       => $id,
+                            'category' => $uichemy_category_id,
+                            'settings' => [ "_boxShadow" => $converted_shadow ],
+                            'name'     => $name,
+                        ];
+                    }
+                }
+            }
+
+            return update_option('bricks_global_classes', $global_classes);
+        }
+
+
+        // Sync Border classes
+        public static function sync_uich_border_classes($border_updates){
+            Uich_Bricks_Globals::get_uich_border_classes();
+            $uichemy_category_id = Uich_Bricks_Globals::BORDER_CLASS_CATEGORY_ID;
+            $global_classes = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes');
+
+            $convertIntoArray = Uich_Bricks_Globals::object_to_array($border_updates);
+
+            foreach($convertIntoArray as $update){
+
+                if(!isset($update['action'], $update['value']['id'])){
+                    continue;
+                }
+
+                $action = sanitize_text_field($update['action']);
+                $id = sanitize_text_field($update['value']['id']);
+                $name = sanitize_text_field($update['value']['name'] ?? '');
+
+                // DELETE
+                if($action === 'DEL'){
+                    $global_classes = array_values(array_filter(
+                        $global_classes,
+                        fn($class) => !isset($class['id'], $class['category']) ||
+                                    $class['id'] !== $id ||
+                                    $class['category'] !== $uichemy_category_id
+                    ));
+                    continue;
+                }
+
+                // ADD or SET
+                if(($action === 'SET' || $action === 'ADD') && isset($update['value']['value'])){
+
+                    $incoming = $update['value']['value']; // FE border JSON
+
+                    // Convert FE → Bricks string format
+                    $converted_border = [
+                        "_border" => [
+                            "width" => [
+                                "top"    => isset($incoming["width"]["top"])    ? strval($incoming["width"]["top"])    : "0",
+                                "right"  => isset($incoming["width"]["right"])  ? strval($incoming["width"]["right"])  : "0",
+                                "bottom" => isset($incoming["width"]["bottom"]) ? strval($incoming["width"]["bottom"]) : "0",
+                                "left"   => isset($incoming["width"]["left"])   ? strval($incoming["width"]["left"])   : "0",
+                            ],
+                            "style" => $incoming["style"] ?? "solid",
+
+                            "color" => $incoming["color"] ?? [ "hex" => "#000000" ]
+                        ]
+                    ];
+
+                    // UPDATE existing
+                    $found = false;
+                    foreach($global_classes as &$class){
+                        if(isset($class['id'], $class['category']) &&
+                        $class['id'] === $id &&
+                        $class['category'] === $uichemy_category_id)
+                        {
+                            $class['settings'] = $converted_border;
+                            $class['name'] = $name;
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    // ADD new
+                    if(!$found){
+                        $global_classes[] = [
+                            'id'       => $id,
+                            'category' => $uichemy_category_id,
+                            'settings' => $converted_border,
+                            'name'     => $name,
+                        ];
+                    }
+                }
+            }
+
+            return update_option('bricks_global_classes', $global_classes);
+        }
+
+        // Sync Border radius classes
+        public static function sync_uich_border_radius_classes($border_updates){
+            Uich_Bricks_Globals::get_uich_border_classes();
+            $uichemy_category_id = Uich_Bricks_Globals::BORDER_RADIUS_CLASS_CATEGORY_ID;
+            $global_classes = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes');
+
+            $convertIntoArray = Uich_Bricks_Globals::object_to_array($border_updates);
+
+            foreach($convertIntoArray as $update){
+
+                if(!isset($update['action'], $update['value']['id'])){
+                    continue;
+                }
+
+                $action = sanitize_text_field($update['action']);
+                $id = sanitize_text_field($update['value']['id']);
+                $name = sanitize_text_field($update['value']['name'] ?? '');
+
+                // DELETE
+                if($action === 'DEL'){
+                    $global_classes = array_values(array_filter(
+                        $global_classes,
+                        fn($class) => !isset($class['id'], $class['category']) ||
+                                    $class['id'] !== $id ||
+                                    $class['category'] !== $uichemy_category_id
+                    ));
+                    continue;
+                }
+
+                // ADD or SET
+                if(($action === 'SET' || $action === 'ADD') && isset($update['value']['value'])){
+
+                    $incoming = $update['value']['value']; // FE border JSON
+
+                    // Convert FE → Bricks string format
+                    $converted_border = [
+                        "_border" => [
+                            "radius" => [
+                                "top"    => isset($incoming["topLeft"])    ? strval($incoming["topLeft"])    : "0",
+                                "right"  => isset($incoming["topRight"])  ? strval($incoming["topRight"])  : "0",
+                                "bottom" => isset($incoming["bottomRight"]) ? strval($incoming["bottomRight"]) : "0",
+                                "left"   => isset($incoming["bottomLeft"])   ? strval($incoming["bottomLeft"])   : "0",
+                            ],
+                        ]
+                    ];
+
+                    // UPDATE existing
+                    $found = false;
+                    foreach($global_classes as &$class){
+                        if(isset($class['id'], $class['category']) &&
+                        $class['id'] === $id &&
+                        $class['category'] === $uichemy_category_id)
+                        {
+                            $class['settings'] = $converted_border;
+                            $class['name'] = $name;
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    // ADD new
+                    if(!$found){
+                        $global_classes[] = [
+                            'id'       => $id,
+                            'category' => $uichemy_category_id,
+                            'settings' => $converted_border,
+                            'name'     => $name,
+                        ];
+                    }
+                }
+            }
+
+            return update_option('bricks_global_classes', $global_classes);
+        }
+
+
+        // Sync Gap classes
+        public static function sync_uich_gap_classes($gap_updates){
+            Uich_Bricks_Globals::get_uich_gap_classes();
+            $uichemy_category_id = Uich_Bricks_Globals::GAP_CLASS_CATEGORY_ID;
+            $global_classes = Uich_Bricks_Globals::get_option_as_array('bricks_global_classes');
+
+            $convertIntoArray = Uich_Bricks_Globals::object_to_array($gap_updates);
+
+            foreach ($convertIntoArray as $update) {
+
+                if (!isset($update['action'], $update['value']['id'])) {
+                    continue;
+                }
+
+                $action = sanitize_text_field($update['action']);
+                $id     = sanitize_text_field($update['value']['id']);
+                $name   = sanitize_text_field($update['value']['name'] ?? '');
+
+                // DELETE
+                if ($action === 'DEL') {
+                    $global_classes = array_values(array_filter(
+                        $global_classes,
+                        fn($class) => !isset($class['id'], $class['category']) ||
+                                    $class['id'] !== $id ||
+                                    $class['category'] !== $uichemy_category_id
+                    ));
+                    continue;
+                }
+
+                // ADD or SET
+                if (($action === 'SET' || $action === 'ADD') && isset($update['value']['value'])) {
+
+                    $incoming = $update['value']['value'];
+
+                    // Convert FE → Bricks string format
+                    $converted_gap = [
+                        "_columnGap" => isset($incoming["columnGap"]) ? strval($incoming["columnGap"]) : "0",
+                        "_rowGap"    => isset($incoming["rowGap"])    ? strval($incoming["rowGap"])    : "0"
+                    ];
+
+                    $found = false;
+
+                    foreach ($global_classes as &$class) {
+                        if (isset($class['id'], $class['category']) &&
+                            $class['id'] === $id &&
+                            $class['category'] === $uichemy_category_id)
+                        {
+                            // Update existing
+                            $class['settings'] = $converted_gap;
+                            $class['name']     = $name;
+                            $found = true;
+                            break;
+                        }
+                    }
+
+                    // ADD new
+                    if (!$found) {
+                        $global_classes[] = [
+                            'id'       => $id,
+                            'category' => $uichemy_category_id,
+                            'settings' => $converted_gap,
+                            'name'     => $name,
+                        ];
+                    }
+                }
+            }
+
+            return update_option('bricks_global_classes', $global_classes);
+        }
+
         // Get current active globals
         public static function get_uich_bricks_globals(){
             return array(
                 'width' => Uich_Bricks_Globals::get_or_create_container_width()->width,
                 'colors' => Uich_Bricks_Globals::get_or_create_uich_color_palette(),
                 'typography' => Uich_Bricks_Globals::get_uich_typography_classes(),
-                'padding' => Uich_Bricks_Globals::get_uich_padding_classes()
+                'padding' => Uich_Bricks_Globals::get_uich_padding_classes(),
+                'shadow' => Uich_Bricks_Globals::get_uich_shadow_classes(),
+                'border' => Uich_Bricks_Globals::get_uich_border_classes(),
+                'border_radius' => Uich_Bricks_Globals::get_uich_border_radius_classes(),
+                'gap' => Uich_Bricks_Globals::get_uich_gap_classes()
             );
         }
 
@@ -470,6 +1045,22 @@ if ( ! class_exists( 'Uich_Bricks_Globals' ) ) {
 
             if(!empty($global_data->padding) && is_array($global_data->padding)){
                 Uich_Bricks_Globals::sync_uich_padding_classes($global_data->padding);
+            }
+
+            if(!empty($global_data->shadow) && is_array($global_data->shadow)){
+                Uich_Bricks_Globals::sync_uich_shadow_classes($global_data->shadow);
+            }
+
+            if(!empty($global_data->border) && is_array($global_data->border)){
+                Uich_Bricks_Globals::sync_uich_border_classes($global_data->border);
+            }
+
+            if(!empty($global_data->border_radius) && is_array($global_data->border_radius)){
+                Uich_Bricks_Globals::sync_uich_border_radius_classes($global_data->border_radius);
+            }
+
+            if(!empty($global_data->gap) && is_array($global_data->gap)){
+                Uich_Bricks_Globals::sync_uich_gap_classes($global_data->gap);
             }
 
             return Uich_Bricks_Globals::get_uich_bricks_globals();
