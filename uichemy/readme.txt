@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.6
 Tested up to: 6.9
 Requires PHP: 7.4
-Stable tag: 4.10.2
+Stable tag: 5.0.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -221,6 +221,9 @@ Yes. UiChemy supports multi-site connections directly from the plugin dashboard.
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.0.0 = 2 July 2026
+- Added : AI Mode. Convert Figma designs to WordPress with AI.
 
 = 4.10.2 = 12 June 2026
 - Fixed : Dashboard JavaScript strings are now detected by translate.wordpress.org.

@@ -66,20 +66,43 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
         /**
             * Save global classes via Elementor's CPT-based repository so the editor picks them up.
             * Repository's put() fires elementor/global_classes/update internally — no need to re-fire.
+            *
+            * put() only writes the FRONTEND context: it commits the class posts, the
+            * frontend order and labels, and clears stale preview data — but it never
+            * sets the PREVIEW order. The Elementor v4 editor's "Design system → Classes"
+            * panel reads the PREVIEW order, so classes we create/sync here would land on
+            * the frontend yet stay invisible in the editor until something else resynced
+            * preview. We therefore mirror order + labels into the preview context via
+            * Elementor's own update_order_and_labels() (its !is_preview branch copies the
+            * order to preview and clears per-id preview labels so they inherit).
         */
         private static function save_global_classes_array(array $new, array $old): void {
             if ( ! class_exists( '\Elementor\Modules\GlobalClasses\Global_Classes_Repository' ) ) {
                 return;
             }
-        
+
             $kit = \Elementor\Plugin::$instance->kits_manager->get_active_kit();
             if ( ! $kit ) {
                 return;
             }
-        
+
+            $order = isset( $new['order'] ) && is_array( $new['order'] ) ? array_values( $new['order'] ) : array();
+
             $repository = \Elementor\Modules\GlobalClasses\Global_Classes_Repository::make( $kit );
-            $repository->put( $new['items'], $new['order'] );
-        
+            $repository->put( $new['items'], $order );
+
+            // Propagate the order + labels to the preview context so the editor lists
+            // the same classes the frontend has. Guarded for older Elementor builds.
+            if ( method_exists( $repository, 'update_order_and_labels' ) ) {
+                $labels = array();
+                foreach ( $order as $id ) {
+                    if ( isset( $new['items'][ $id ]['label'] ) ) {
+                        $labels[ $id ] = $new['items'][ $id ]['label'];
+                    }
+                }
+                $repository->update_order_and_labels( $order, $labels );
+            }
+
             \Elementor\Plugin::$instance->files_manager->clear_cache();
         }
 
@@ -182,6 +205,23 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
         /** Build Elementor size structure */
         private static function size(float $size, string $unit = 'px'): array {
             return ['$$type' => 'size', 'value' => ['size' => $size, 'unit' => $unit]];
+        }
+
+        /**
+         * Inline-auto margin dimensions for the boxed-width class — always
+         * centers the container regardless of the surrounding parent's
+         * alignment. Only the inline sides are set so the kit/page can still
+         * control vertical spacing.
+         */
+        private static function auto_inline_margin(): array {
+            $auto = ['$$type' => 'size', 'value' => ['size' => '', 'unit' => 'auto']];
+            return [
+                '$$type' => 'dimensions',
+                'value'  => [
+                    'inline-start' => $auto,
+                    'inline-end'   => $auto,
+                ],
+            ];
         }
 
         /** Build a standard variant meta wrapper */
@@ -325,9 +365,19 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
                             if (in_array($propName, Uich_Atomic_Globals::TYPO_SIZE_PROPS)
                                 && preg_match('/(-?\d+(?:\.\d+)?)(px|em|rem|%|vh|vw)?/', $propValue, $m)
                             ) {
+                                // Resolve the unit. When a value comes in unitless
+                                // (e.g. line-height "1.2"), the regex leaves $m[2]
+                                // empty. line-height is an em-ratio in our pipeline,
+                                // so defaulting it to px would render `line-height:1.2px`
+                                // and collapse every text line. Only font-size /
+                                // letter-spacing legitimately default to px.
+                                $unit = $m[2] ?? '';
+                                if ($unit === '') {
+                                    $unit = ($propName === 'line-height') ? 'em' : 'px';
+                                }
                                 $props[$propName] = [
                                     '$$type' => 'size',
-                                    'value'  => ['size' => (float)$m[1], 'unit' => $m[2] ?? 'px'],
+                                    'value'  => ['size' => (float)$m[1], 'unit' => $unit],
                                 ];
                             } else {
                                 $props[$propName] = ['$$type' => 'string', 'value' => $propValue];
@@ -376,43 +426,68 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
                 $widths = ['desktop' => '1440px', 'tablet' => '85%', 'mobile' => '90%'];
                 $old_value = unserialize(serialize($global_classes));
 
+                $auto_margin = Uich_Atomic_Globals::auto_inline_margin();
                 $global_classes['items'][$id] = [
                     'id'       => $id,
                     'type'     => 'class',
-                    'label'    => 'boxed-width',
+                    'label'    => 'elementor-atomic-boxed-width',
                     'variants' => [
-                        ['meta' => Uich_Atomic_Globals::variant_meta('desktop'), 'props' => ['max-width' => Uich_Atomic_Globals::size(1440)]],
-                        ['meta' => Uich_Atomic_Globals::variant_meta('tablet'),  'props' => ['max-width' => Uich_Atomic_Globals::size(85, '%')]],
-                        ['meta' => Uich_Atomic_Globals::variant_meta('mobile'),  'props' => ['max-width' => Uich_Atomic_Globals::size(90, '%')]],
+                        ['meta' => Uich_Atomic_Globals::variant_meta('desktop'), 'props' => ['max-width' => Uich_Atomic_Globals::size(1440),     'margin' => $auto_margin]],
+                        ['meta' => Uich_Atomic_Globals::variant_meta('tablet'),  'props' => ['max-width' => Uich_Atomic_Globals::size(85, '%'),  'margin' => $auto_margin]],
+                        ['meta' => Uich_Atomic_Globals::variant_meta('mobile'),  'props' => ['max-width' => Uich_Atomic_Globals::size(90, '%'),  'margin' => $auto_margin]],
                     ],
                 ];
                 $global_classes['order'][] = $id;
                 Uich_Atomic_Globals::save_global_classes_array($global_classes, $old_value);
             }
 
-            $widths['id'] = $id;
+            $widths['id']    = $id;
+            $widths['label'] = isset( $global_classes['items'][ $id ]['label'] )
+                ? (string) $global_classes['items'][ $id ]['label']
+                : '';
             return $widths;
         }
 
         public static function sync_elementor_width_class($sync_data): array {
-            $widths         = isset($sync_data->data->width) ? (array)$sync_data->data->width : [];
+            $widths = isset($sync_data->data->width) ? (array)$sync_data->data->width : [];
+
+            // No width payload? Preserve whatever is already stored. Without
+            // this guard, an MCP call that syncs only typography/colors would
+            // overwrite the existing boxed-width variants with [] — silently
+            // deleting the kit's boxed width across the whole site.
+            $has_width_payload = false;
+            foreach ($widths as $bp => $value) {
+                if ($bp === 'id') continue;
+                if ($value !== null && $value !== '' && $value !== []) {
+                    $has_width_payload = true;
+                    break;
+                }
+            }
+            if (!$has_width_payload) {
+                return Uich_Atomic_Globals::get_elementor_width_class();
+            }
+
             $global_classes = Uich_Atomic_Globals::get_global_classes_array();
             $old_value      = unserialize(serialize($global_classes));
             $id             = Uich_Atomic_Globals::get_global_width_class_id();
 
             if (!isset($global_classes['items'][$id])) {
-                $global_classes['items'][$id] = ['id' => $id, 'type' => 'class', 'label' => 'boxed-width', 'variants' => []];
+                $global_classes['items'][$id] = ['id' => $id, 'type' => 'class', 'label' => 'elementor-atomic-boxed-width', 'variants' => []];
                 $global_classes['order'][]    = $id;
             }
 
-            $variants = [];
+            $variants    = [];
+            $auto_margin = Uich_Atomic_Globals::auto_inline_margin();
             foreach ($widths as $breakpoint => $value) {
                 if ($breakpoint === 'id' || empty($value)) continue;
 
                 preg_match('/^(\d+(?:\.\d+)?)([a-z%]+)$/i', $value, $m);
                 $variants[] = [
                     'meta'  => Uich_Atomic_Globals::variant_meta($breakpoint),
-                    'props' => ['max-width' => Uich_Atomic_Globals::size((float)($m[1] ?? $value), $m[2] ?? 'px')],
+                    'props' => [
+                        'max-width' => Uich_Atomic_Globals::size((float)($m[1] ?? $value), $m[2] ?? 'px'),
+                        'margin'    => $auto_margin,
+                    ],
                 ];
             }
 

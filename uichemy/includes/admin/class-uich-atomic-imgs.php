@@ -133,6 +133,12 @@ if ( ! class_exists( 'Uich_Elementor_Import_Images' ) ) {
 
         // Download + attach helper
         private static function download_and_attach($url) {
+            // SSRF guard — download_url() does no host validation.
+            $url = is_string( $url ) ? trim( $url ) : '';
+            if ( '' === $url || ! wp_http_validate_url( $url ) ) {
+                return false;
+            }
+
             if (!function_exists('download_url')) {
                 require_once ABSPATH . 'wp-admin/includes/file.php';
             }
@@ -186,6 +192,11 @@ if ( ! class_exists( 'Uich_Elementor_Import_Images' ) ) {
         // AJAX handler
         public static function import_media() {
             check_ajax_referer( 'uichemy-ajax-nonce', 'nonce' );
+
+            // Capability gate — the nonce is not an authorization control.
+            if ( ! is_user_logged_in() || ! current_user_can( 'edit_posts' ) || ! current_user_can( 'upload_files' ) ) {
+                wp_send_json_error( array( 'message' => __( 'Insufficient permissions.', 'uichemy' ) ), 403 );
+            }
 
             $post_content = isset($_POST['inputData']) ? json_decode(stripslashes($_POST['inputData']), true) : [];
 

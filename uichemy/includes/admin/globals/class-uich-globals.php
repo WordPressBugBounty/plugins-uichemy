@@ -536,11 +536,472 @@ if ( ! class_exists( 'Uich_Globals' ) ) {
             );
         }
 
+        /**
+         * True when the Elementor e_atomic_elements experiment is active.
+         */
+        private static function is_atomic_enabled(): bool {
+            if ( ! class_exists( '\Elementor\Plugin' ) ) {
+                return false;
+            }
+            $experiments = \Elementor\Plugin::$instance->experiments;
+            if ( ! $experiments || ! method_exists( $experiments, 'is_feature_active' ) ) {
+                return false;
+            }
+            return (bool) $experiments->is_feature_active( 'e_atomic_elements' );
+        }
+
+        /**
+         * Build the AI snapshot for atomic mode.
+         * Format:
+         *   :root { --label: #hex; }
+         *   /* Container Width *\/
+         *   .g-uwXXXu { max-width: 1140px; }
+         *   /* heading-xl *\/
+         *   .g-utabc12 { font-family: Poppins; font-size: 48px; ... }
+         */
+        private static function build_atomic_ai_snapshot(): string {
+            if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
+                return '';
+            }
+
+            $atomic = Uich_Atomic_Globals::get_global_classes_and_variable();
+            $out    = array();
+
+            // ---- :root color variables ----------------------------------------
+            $color_lines = array();
+            foreach ( $atomic['color'] ?? array() as $color ) {
+                $label = isset( $color['label'] ) ? trim( (string) $color['label'] ) : '';
+                $value = isset( $color['value'] ) ? trim( (string) $color['value'] ) : '';
+                if ( '' === $label || '' === $value ) {
+                    continue;
+                }
+                $color_lines[] = '    --' . $label . ': ' . $value . ';';
+            }
+            $out[] = ':root {';
+            if ( ! empty( $color_lines ) ) {
+                $out = array_merge( $out, $color_lines );
+            }
+            $out[] = '}';
+
+            // ---- Container width -----------------------------------------------
+            $width         = $atomic['width'] ?? array();
+            $desktop_width = isset( $width['desktop'] ) ? trim( (string) $width['desktop'] ) : '';
+            if ( '' !== $desktop_width ) {
+                $out[] = '';
+                $out[] = '/* Container Width */';
+                $out[] = '.elementor-atomic-boxed-width {';
+                $out[] = '    max-width: ' . $desktop_width . ';';
+                $out[] = '    margin-left: auto;';
+                $out[] = '    margin-right: auto;';
+                $out[] = '}';
+            }
+
+            // ---- Typography classes --------------------------------------------
+            $typo_props = array(
+                'font-family', 'font-size', 'font-weight', 'line-height',
+                'letter-spacing', 'text-transform', 'text-decoration', 'font-style',
+            );
+            foreach ( $atomic['typography'] ?? array() as $typo ) {
+                $id      = isset( $typo['id'] )    ? trim( (string) $typo['id'] )    : '';
+                $label   = isset( $typo['label'] ) ? trim( (string) $typo['label'] ) : '';
+                $desktop = isset( $typo['value']['desktop'] ) && is_array( $typo['value']['desktop'] )
+                    ? $typo['value']['desktop']
+                    : array();
+                if ( '' === $id || empty( $desktop ) ) {
+                    continue;
+                }
+
+                $prop_lines = array();
+                foreach ( $typo_props as $prop ) {
+                    $val = isset( $desktop[ $prop ] ) ? trim( (string) $desktop[ $prop ] ) : '';
+                    if ( '' === $val ) {
+                        continue;
+                    }
+                    $prop_lines[] = '    ' . $prop . ': ' . $val . ';';
+                }
+                if ( empty( $prop_lines ) ) {
+                    continue;
+                }
+
+                $out[] = '';
+                $out[] = '.' . ( '' !== $label ? $label : $id ) . ' {';
+                $out   = array_merge( $out, $prop_lines );
+                $out[] = '}';
+            }
+
+            return implode( "\n", $out );
+        }
+
+        /**
+         * Build the AI Data Sharing CSS snapshot — server-side equivalent of
+         * the read-only textarea inside the Smart HTML widget editor.
+         *
+         * Output format (same shape `mcp_parse_globals_ai_css_snapshot()` expects):
+         *
+         *     :root {
+         *         --e-global-color-primary: #6EC1E4;
+         *         --e-global-color-secondary: #54595F;
+         *         ...
+         *     }
+         *
+         *     .text-primary {
+         *         font-family: Roboto;
+         *         font-size: 60px;
+         *         ...
+         *     }
+         *
+         * Always uses **fixed CSS values** for the .text-* blocks (not vars) so the
+         * dynamic matcher can compare them against generated CSS literals.
+         *
+         * @return string
+         */
+        public static function get_ai_data_snapshot() {
+            if ( self::is_atomic_enabled() ) {
+                return self::build_atomic_ai_snapshot();
+            }
+
+            $globals = self::get_globals();
+            $colors = isset( $globals['colors'] ) && is_array( $globals['colors'] ) ? $globals['colors'] : array();
+            $typography = isset( $globals['typography'] ) && is_array( $globals['typography'] ) ? $globals['typography'] : array();
+
+            // Mirror the JS sort: preferred system IDs first, then alpha by title.
+            $preferred = array( 'primary', 'secondary', 'text', 'accent' );
+
+            $sort_fn = function ( $a, $b ) use ( $preferred ) {
+                $a_id = isset( $a['id'] ) ? (string) $a['id'] : '';
+                $b_id = isset( $b['id'] ) ? (string) $b['id'] : '';
+                $a_pref = array_search( $a_id, $preferred, true );
+                $b_pref = array_search( $b_id, $preferred, true );
+                if ( false !== $a_pref || false !== $b_pref ) {
+                    if ( false === $a_pref ) return 1;
+                    if ( false === $b_pref ) return -1;
+                    return $a_pref - $b_pref;
+                }
+                $a_title = isset( $a['title'] ) ? (string) $a['title'] : '';
+                $b_title = isset( $b['title'] ) ? (string) $b['title'] : '';
+                $cmp = strcmp( $a_title, $b_title );
+                return 0 !== $cmp ? $cmp : strcmp( $a_id, $b_id );
+            };
+
+            $colors_sorted = $colors;
+            usort( $colors_sorted, $sort_fn );
+
+            $typography_sorted = $typography;
+            usort( $typography_sorted, $sort_fn );
+
+            // ---- :root color variables block ------------------------------
+            $root_lines = array();
+            foreach ( $colors_sorted as $idx => $color ) {
+                $id = isset( $color['id'] ) ? trim( (string) $color['id'] ) : '';
+                $value = isset( $color['value'] ) ? trim( (string) $color['value'] ) : '';
+                if ( '' === $id || '' === $value ) {
+                    continue;
+                }
+                $title = isset( $color['title'] ) ? trim( (string) $color['title'] ) : '';
+                $is_preferred = in_array( $id, $preferred, true );
+                if ( '' !== $title && ! $is_preferred ) {
+                    if ( $idx > 0 ) {
+                        $root_lines[] = '';
+                    }
+                    $root_lines[] = '    /* ' . $title . ' */';
+                }
+                $root_lines[] = '    --e-global-color-' . $id . ': ' . $value . ';';
+            }
+
+            // ---- .text-{id} typography blocks ------------------------------
+            // Mapping of CSS prop -> array of (typography_value_key, optional_unit_key).
+            $prop_map = array(
+                'font-family'      => array( 'typography_font_family',      null ),
+                'font-size'        => array( 'typography_font_size',        'typography_font_size_unit' ),
+                'font-weight'      => array( 'typography_font_weight',      null ),
+                'line-height'      => array( 'typography_line_height',      'typography_line_height_unit' ),
+                'letter-spacing'   => array( 'typography_letter_spacing',   'typography_letter_spacing_unit' ),
+                'text-transform'   => array( 'typography_text_transform',   null ),
+                'text-decoration'  => array( 'typography_text_decoration',  null ),
+                'font-style'       => array( 'typography_font_style',       null ),
+            );
+
+            $typography_blocks = array();
+            foreach ( $typography_sorted as $typo ) {
+                $id = isset( $typo['id'] ) ? trim( (string) $typo['id'] ) : '';
+                if ( '' === $id ) {
+                    continue;
+                }
+                $value = isset( $typo['value'] ) ? (array) $typo['value'] : array();
+                if ( empty( $value ) ) {
+                    continue;
+                }
+
+                $prop_lines = array();
+                foreach ( $prop_map as $css_prop => $keys ) {
+                    list( $value_key, $unit_key ) = $keys;
+                    $raw = isset( $value[ $value_key ] ) ? $value[ $value_key ] : '';
+
+                    // Elementor stores size+unit objects for some props.
+                    if ( is_array( $raw ) ) {
+                        $size = isset( $raw['size'] ) ? trim( (string) $raw['size'] ) : '';
+                        $unit = isset( $raw['unit'] ) ? trim( (string) $raw['unit'] ) : '';
+                        if ( '' === $size ) {
+                            continue;
+                        }
+                        $prop_lines[] = '    ' . $css_prop . ': ' . $size . $unit . ';';
+                        continue;
+                    }
+
+                    $raw = trim( (string) $raw );
+                    if ( '' === $raw ) {
+                        continue;
+                    }
+
+                    if ( null !== $unit_key && isset( $value[ $unit_key ] ) ) {
+                        $unit = trim( (string) $value[ $unit_key ] );
+                        if ( '' !== $unit && ! preg_match( '/(px|em|rem|%|vw|vh)$/i', $raw ) ) {
+                            $raw .= $unit;
+                        }
+                    }
+                    $prop_lines[] = '    ' . $css_prop . ': ' . $raw . ';';
+                }
+
+                if ( empty( $prop_lines ) ) {
+                    continue;
+                }
+
+                $title = isset( $typo['title'] ) ? trim( (string) $typo['title'] ) : '';
+                if ( '' !== $title ) {
+                    $typography_blocks[] = '/* ' . $title . ' */';
+                }
+                $typography_blocks[] = '.text-' . $id . ' {';
+                $typography_blocks = array_merge( $typography_blocks, $prop_lines );
+                $typography_blocks[] = '}';
+                $typography_blocks[] = '';
+            }
+
+            // ---- Desktop container width — standalone, outside :root {} ----
+            // Shown the same way as the Globals Editor tab: a plain CSS custom
+            // property declaration with a comment, not nested inside :root {}.
+            // Only the desktop value is exposed; responsive @media overrides are
+            // omitted so the AI receives a clean single-value reference.
+            $container_width_out = array();
+            $container_widths    = self::get_elementor_container_breakpoints_width();
+
+            if ( is_array( $container_widths ) ) {
+                $desktop = isset( $container_widths['desktop'] ) ? $container_widths['desktop'] : null;
+                $size    = '';
+                $unit    = 'px';
+
+                if ( is_array( $desktop ) ) {
+                    $size = isset( $desktop['size'] ) ? trim( (string) $desktop['size'] ) : '';
+                    $unit = isset( $desktop['unit'] ) && '' !== trim( (string) $desktop['unit'] )
+                        ? trim( (string) $desktop['unit'] )
+                        : 'px';
+                } elseif ( null !== $desktop && '' !== (string) $desktop ) {
+                    // Fallback: desktop stored as a plain scalar (e.g. integer from older kit).
+                    $size = trim( (string) $desktop );
+                    $unit = 'px';
+                }
+
+                if ( '' !== $size && '0' !== $size ) {
+                    $container_width_out[] = '/* Container Width */';
+                    $container_width_out[] = '.elementor-global-boxed-width {';
+                    $container_width_out[] = '    max-width: ' . $size . $unit . ';';
+                    $container_width_out[] = '    margin-left: auto;';
+                    $container_width_out[] = '    margin-right: auto;';
+                    $container_width_out[] = '}';
+                }
+            }
+
+            // ---- Stitch output ---------------------------------------------
+            $out = array();
+            $out[] = ':root {';
+            if ( ! empty( $root_lines ) ) {
+                $out = array_merge( $out, $root_lines );
+            }
+            $out[] = '}';
+
+            if ( ! empty( $container_width_out ) ) {
+                $out[] = '';
+                $out   = array_merge( $out, $container_width_out );
+            }
+
+            if ( ! empty( $typography_blocks ) ) {
+                $out[] = '';
+                $out = array_merge( $out, $typography_blocks );
+            }
+
+            return implode( "\n", $out );
+        }
+
+        /**
+         * Generate dynamic .text-{id} CSS classes that consume Elementor's own
+         * CSS custom properties (--e-global-typography-{id}-*). Elementor outputs
+         * those vars on its kit element on every page load, so these classes stay
+         * in sync with the kit automatically — no hardcoded values here.
+         *
+         * Only properties that have a non-empty value in the kit are emitted, so
+         * we never override inherited styles with an undefined var().
+         *
+         * @return string
+         */
+        public static function get_globals_dynamic_css() {
+            $blocks = array();
+
+            // ---- Typography classes (.text-{id}) ----------------------------
+            $typography = self::get_typography();
+            if ( ! empty( $typography ) && is_array( $typography ) ) {
+                $prop_map = array(
+                    'font-family'     => 'typography_font_family',
+                    'font-size'       => 'typography_font_size',
+                    'font-weight'     => 'typography_font_weight',
+                    'font-style'      => 'typography_font_style',
+                    'line-height'     => 'typography_line_height',
+                    'letter-spacing'  => 'typography_letter_spacing',
+                    'text-transform'  => 'typography_text_transform',
+                    'text-decoration' => 'typography_text_decoration',
+                );
+
+                foreach ( $typography as $typo ) {
+                    $id    = isset( $typo['id'] ) ? trim( (string) $typo['id'] ) : '';
+                    $value = isset( $typo['value'] ) ? (array) $typo['value'] : array();
+                    if ( '' === $id || empty( $value ) ) {
+                        continue;
+                    }
+
+                    $prop_lines = array();
+                    foreach ( $prop_map as $css_prop => $value_key ) {
+                        $raw = isset( $value[ $value_key ] ) ? $value[ $value_key ] : '';
+
+                        if ( is_array( $raw ) || is_object( $raw ) ) {
+                            $raw  = (array) $raw;
+                            $size = isset( $raw['size'] ) ? trim( (string) $raw['size'] ) : '';
+                            if ( '' === $size ) {
+                                continue;
+                            }
+                        } else {
+                            $raw = trim( (string) $raw );
+                            if ( '' === $raw ) {
+                                continue;
+                            }
+                        }
+
+                        $prop_lines[] = '    ' . $css_prop . ': var(--e-global-typography-' . $id . '-' . $css_prop . ');';
+                    }
+
+                    if ( empty( $prop_lines ) ) {
+                        continue;
+                    }
+
+                    $blocks[] = '.text-' . $id . ' {';
+                    foreach ( $prop_lines as $line ) {
+                        $blocks[] = $line;
+                    }
+                    $blocks[] = '}';
+                }
+            }
+
+            // ---- Container width class (.elementor-global-boxed-width) ------
+            $container_widths = self::get_elementor_container_breakpoints_width();
+            if ( is_array( $container_widths ) ) {
+                $desktop = isset( $container_widths['desktop'] ) ? $container_widths['desktop'] : null;
+                $size    = '';
+                $unit    = 'px';
+
+                if ( is_array( $desktop ) ) {
+                    $size = isset( $desktop['size'] ) ? trim( (string) $desktop['size'] ) : '';
+                    $unit = isset( $desktop['unit'] ) && '' !== trim( (string) $desktop['unit'] )
+                        ? trim( (string) $desktop['unit'] )
+                        : 'px';
+                } elseif ( null !== $desktop && '' !== (string) $desktop ) {
+                    $size = trim( (string) $desktop );
+                    $unit = 'px';
+                }
+
+                if ( '' !== $size && '0' !== $size ) {
+                    if ( ! empty( $blocks ) ) {
+                        $blocks[] = '';
+                    }
+                    $blocks[] = '.elementor-global-boxed-width {';
+                    $blocks[] = '    max-width: ' . $size . $unit . ';';
+                    $blocks[] = '    margin-left: auto;';
+                    $blocks[] = '    margin-right: auto;';
+                    $blocks[] = '}';
+                }
+            }
+
+            // ---- Atomic global classes CSS (injected when atomic mode is active) ----
+            if ( self::is_atomic_enabled() && class_exists( 'Uich_Atomic_Globals' ) ) {
+                $atomic     = Uich_Atomic_Globals::get_global_classes_and_variable();
+                $typo_props = array(
+                    'font-family', 'font-size', 'font-weight', 'line-height',
+                    'letter-spacing', 'text-transform', 'text-decoration', 'font-style',
+                );
+
+                // Container width — fixed class name for atomic mode
+                $width         = $atomic['width'] ?? array();
+                $desktop_width = isset( $width['desktop'] ) ? trim( (string) $width['desktop'] ) : '';
+                if ( '' !== $desktop_width ) {
+                    if ( ! empty( $blocks ) ) {
+                        $blocks[] = '';
+                    }
+                    $blocks[] = '.elementor-atomic-boxed-width {';
+                    $blocks[] = '    max-width: ' . $desktop_width . ';';
+                    $blocks[] = '    margin-left: auto;';
+                    $blocks[] = '    margin-right: auto;';
+                    $blocks[] = '}';
+                }
+
+                // Typography classes using label as class name
+                foreach ( $atomic['typography'] ?? array() as $typo ) {
+                    $id         = isset( $typo['id'] )    ? trim( (string) $typo['id'] )    : '';
+                    $label      = isset( $typo['label'] ) ? trim( (string) $typo['label'] ) : '';
+                    $desktop_v  = isset( $typo['value']['desktop'] ) && is_array( $typo['value']['desktop'] )
+                        ? $typo['value']['desktop']
+                        : array();
+                    if ( '' === $id || empty( $desktop_v ) ) {
+                        continue;
+                    }
+                    $class_name = '' !== $label ? $label : $id;
+                    $prop_lines = array();
+                    foreach ( $typo_props as $prop ) {
+                        $val = isset( $desktop_v[ $prop ] ) ? trim( (string) $desktop_v[ $prop ] ) : '';
+                        if ( '' === $val ) {
+                            continue;
+                        }
+                        $prop_lines[] = '    ' . $prop . ': ' . $val . ';';
+                    }
+                    if ( empty( $prop_lines ) ) {
+                        continue;
+                    }
+                    if ( ! empty( $blocks ) ) {
+                        $blocks[] = '';
+                    }
+                    $blocks[] = '.' . $class_name . ' {';
+                    foreach ( $prop_lines as $line ) {
+                        $blocks[] = $line;
+                    }
+                    $blocks[] = '}';
+                }
+            }
+
+            return implode( "\n", $blocks );
+        }
+
         public static function sync_globals( $sync_data ) {
 
-            $sync_color = $sync_data->colors;
-            $sync_typography = $sync_data->typography;
-            $sync_container_width = $sync_data->container_width;
+            // Defensive: any of colors / typography / container_width may be
+            // omitted by the MCP caller. Without these guards PHP 8 throws
+            // "Cannot access property on null" the moment the foreach below
+            // runs, which surfaces as a 500 to the AI — the convert pipeline
+            // then prints no sync log line at all and silently moves on.
+            $sync_color           = isset( $sync_data->colors )          ? $sync_data->colors          : array();
+            $sync_typography      = isset( $sync_data->typography )      ? $sync_data->typography      : array();
+            $sync_container_width = isset( $sync_data->container_width ) ? $sync_data->container_width : null;
+
+            if ( ! is_array( $sync_color ) && ! ( $sync_color instanceof \Traversable ) ) {
+                $sync_color = array();
+            }
+            if ( ! is_array( $sync_typography ) && ! ( $sync_typography instanceof \Traversable ) ) {
+                $sync_typography = array();
+            }
 
             // set container width
             if(isset($sync_container_width)){

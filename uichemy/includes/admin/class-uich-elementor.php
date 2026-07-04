@@ -40,6 +40,14 @@ if ( ! class_exists( 'Uich_Elementor' ) ) {
 				add_action( 'elementor/init', array( $this, 'uich_initialize_controls' ) );
 				add_action( 'elementor/init', array( $this, 'uich_enable_atomic_custom_css' ) );
 			}
+
+			// Inject dynamic .text-{id} globals CSS into <head> — both in the
+			// editor preview iframe and on the frontend. Doing it here (not inside
+			// widget render()) ensures the CSS survives widget re-renders in the editor.
+			if ( defined( 'ELEMENTOR_VERSION' ) ) {
+				add_action( 'elementor/preview/enqueue_styles',          array( $this, 'uich_enqueue_globals_css' ) );
+				add_action( 'elementor/frontend/before_enqueue_styles',  array( $this, 'uich_enqueue_globals_css' ) );
+			}
 		}
 
 		/**
@@ -180,6 +188,25 @@ if ( ! class_exists( 'Uich_Elementor' ) ) {
 			$custom_css = str_replace( 'selector', $unique_selector, $custom_css );
 
 			return wp_strip_all_tags( $custom_css );
+		}
+
+		/**
+		 * Register and enqueue the dynamic globals CSS as a proper stylesheet so
+		 * it lives in <head> and is never affected by widget re-renders in the editor.
+		 */
+		public function uich_enqueue_globals_css() {
+			if ( ! class_exists( 'Uich_Globals' ) || ! method_exists( 'Uich_Globals', 'get_globals_dynamic_css' ) ) {
+				return;
+			}
+			$css = Uich_Globals::get_globals_dynamic_css();
+			if ( '' === trim( $css ) ) {
+				return;
+			}
+			if ( ! wp_style_is( 'uich-globals-dynamic', 'registered' ) ) {
+				wp_register_style( 'uich-globals-dynamic', false, array(), null );
+			}
+			wp_enqueue_style( 'uich-globals-dynamic' );
+			wp_add_inline_style( 'uich-globals-dynamic', $css );
 		}
 	}
 

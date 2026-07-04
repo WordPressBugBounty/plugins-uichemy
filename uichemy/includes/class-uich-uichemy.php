@@ -69,7 +69,12 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 		 * @since 1.0.0
 		 * @return void
 		 */
-		public static function uich_activation() { }
+		public static function uich_activation() {
+			// Consumed once by Uich_ND_Menu::maybe_redirect_after_activation()
+			// on the next admin_init to send first-time activators straight
+			// to the onboarding wizard.
+			set_transient( 'uich_do_activation_redirect', true, MINUTE_IN_SECONDS * 5 );
+		}
 
 		/**
 		 * Plugin deactivation.
@@ -78,7 +83,6 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 		 * @return void
 		 */
 		public static function uich_deactivation() {
-			apply_filters( 'uich_manage_token', 'delete_token' );
 			apply_filters( 'uich_manage_usermanager', 'delete_user' );
 		}
 
@@ -112,8 +116,8 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 		 */
 		public function uich_load_dependencies() {
 			require_once UICH_PATH . 'includes/notices/class-uich-notice-main.php';
-			require_once UICH_PATH . 'includes/admin/class-uich-token-manager.php';
 			require_once UICH_PATH . 'includes/admin/class-uich-usermanager.php';
+			require_once UICH_PATH . 'includes/admin/class-uich-rest-permissions.php';
 			require_once UICH_PATH . 'includes/admin/class-uich-api.php';
 			require_once UICH_PATH . 'includes/admin/class-uich-enqueue.php';
 			require_once UICH_PATH . 'includes/admin/class-uich-bricks-imgs.php';
@@ -121,6 +125,9 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 			require_once UICH_PATH . 'includes/admin/class-uich-elementor.php';
 			require_once UICH_PATH . 'includes/admin/class-uich-copy-images.php';
 			require_once UICH_PATH . 'includes/mcp/class-uich-mcp-loader.php';
+
+			// New dashboard.
+			require_once UICH_PATH . 'includes/new-dashboard/class-uich-nd-loader.php';
 		}
 	}
 

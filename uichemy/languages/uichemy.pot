@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: UiChemy — Figma Converter for Elementor, Gutenberg and Bricks 4.10.1\n"
+"Project-Id-Version: UiChemy — Figma Converter for Elementor, Gutenberg and Bricks 5.0.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/uichemy\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-06-12T07:30:07+00:00\n"
+"POT-Creation-Date: 2026-07-03T12:11:31+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: uichemy\n"
@@ -39,58 +39,49 @@ msgstr ""
 msgid "https://posimyth.com"
 msgstr ""
 
-#: includes/admin/class-uich-api.php:232
-msgid "Reset Successful"
-msgstr ""
-
-#: includes/admin/class-uich-api.php:638
-#: includes/admin/class-uich-api.php:718
-#: includes/admin/class-uich-api.php:1135
+#: includes/admin/class-uich-api.php:1021
+#: includes/admin/class-uich-api.php:1098
+#: includes/admin/class-uich-api.php:1509
 msgid "No JSON data found."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:659
+#: includes/admin/class-uich-api.php:1039
 msgid "Required Elementor Plugin Please Install and Active."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:810
-#: includes/admin/class-uich-api.php:1000
-#: includes/admin/class-uich-api.php:1206
+#: includes/admin/class-uich-api.php:1190
+#: includes/admin/class-uich-api.php:1377
+#: includes/admin/class-uich-api.php:1580
 msgid "Post ID not provided for Updating."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:819
-#: includes/admin/class-uich-api.php:1009
-#: includes/admin/class-uich-api.php:1215
+#: includes/admin/class-uich-api.php:1199
+#: includes/admin/class-uich-api.php:1386
+#: includes/admin/class-uich-api.php:1589
 msgid "Post does not exist with given ID & Type."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:869
+#: includes/admin/class-uich-api.php:1249
 msgid "This post doesn't have Elementor data."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:932
+#: includes/admin/class-uich-api.php:1309
 msgid "No data Provided for Importing."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1276
+#: includes/admin/class-uich-api.php:1650
 msgid "Could not update the data."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1296
+#: includes/admin/class-uich-api.php:1668
 msgid "All Good."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1350
-msgid "Invalid Security Token"
-msgstr ""
-
+#: includes/admin/class-uich-atomic-imgs.php:198
 #: includes/admin/class-uich-bricks-imgs.php:11
-#: includes/admin/class-uich-enqueue.php:308
-#: includes/admin/class-uich-enqueue.php:395
-#: includes/admin/class-uich-enqueue.php:623
-#: includes/admin/class-uich-enqueue.php:749
-#: includes/admin/class-uich-enqueue.php:886
+#: includes/new-dashboard/class-uich-nd-app-password.php:222
+#: includes/new-dashboard/class-uich-nd-auth.php:448
+#: includes/new-dashboard/class-uich-nd-auth.php:481
 msgid "Insufficient permissions."
 msgstr ""
 
@@ -102,40 +93,130 @@ msgstr ""
 msgid "Empty Content."
 msgstr ""
 
-#: includes/admin/class-uich-elementor.php:98
+#: includes/admin/class-uich-elementor.php:106
 #: assets/js/uich-atomic-custom-css.js:192
 msgid "UiChemy : Custom CSS"
 msgstr ""
 
-#: includes/admin/class-uich-elementor.php:105
+#: includes/admin/class-uich-elementor.php:113
 #: assets/js/uich-atomic-custom-css.js:164
 #: assets/js/uich-atomic-custom-css.js:171
 msgid "CSS Code"
 msgstr ""
 
-#: includes/admin/class-uich-enqueue.php:321
-msgid "Bricks theme has been activated."
+#: includes/admin/class-uich-rest-permissions.php:35
+msgid "Sorry, only administrators can use UiChemy endpoints."
 msgstr ""
 
-#: includes/admin/class-uich-enqueue.php:323
-msgid "Bricks theme is not installed."
+#: includes/new-dashboard/class-uich-nd-api.php:173
+#: includes/new-dashboard/class-uich-nd-installer.php:65
+msgid "Unknown builder."
 msgstr ""
 
-#: includes/admin/class-uich-enqueue.php:363
-msgid "Failed to retrieve plugin information."
+#: includes/new-dashboard/class-uich-nd-api.php:192
+msgid "Unknown mode."
 msgstr ""
 
-#: includes/admin/class-uich-enqueue.php:513
+#: includes/new-dashboard/class-uich-nd-api.php:238
+#: includes/new-dashboard/class-uich-nd-api.php:264
+#: includes/new-dashboard/class-uich-nd-api.php:298
+msgid "Not connected to UiChemy."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-app-password.php:136
+#: includes/new-dashboard/class-uich-nd-app-password.php:198
+msgid "Application Passwords need WordPress 5.6+."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-app-password.php:150
+msgid "Application Passwords are disabled for this user. Enable them, then try again."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-app-password.php:203
+msgid "Application Passwords are already available for your account."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-app-password.php:214
+msgid "No UiChemy override is active for your account."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:60
+msgid "Gutenberg is built into WordPress."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:86
+msgid "Install Elementor from WordPress.org, then come back."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:93
+msgid "Elementor is already active."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:96
+msgid "Elementor activated."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:135
+msgid "Activation needs to finish in WP-Admin."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:136
+msgid "Click to activate in WP-Admin."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:168
+msgid "Bricks is a premium theme — install it from bricksbuilder.io, then come back."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:175
+msgid "Bricks theme is already active."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:180
+msgid "Bricks theme activated."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:205
+msgid "Protuno is already active."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:213
+msgid "Protuno download URL is not configured."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:226
+msgid "Protuno was installed but could not be located. Activate it from the Plugins screen."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:254
+msgid "Protuno installed and activated."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:262
+msgid "Protuno installed. Finish activation in WP-Admin."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:263
+msgid "Protuno installed. Click to activate in WP-Admin."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:283
+msgid "WordPress plugin installer is unavailable."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:301
+msgid "Protuno installation failed."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-menu.php:92
+#: includes/new-dashboard/class-uich-nd-menu.php:93
 msgid "UiChemy"
 msgstr ""
 
-#: includes/admin/class-uich-enqueue.php:514
-msgid "MCP Server"
-msgstr ""
-
 #: includes/notices/class-uich-plugin-page.php:86
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:329
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WebShell.jsx:86
+#: new-dashboard/src/components/WebShell.jsx:94
 msgid "Settings"
 msgstr ""
 
@@ -148,12 +229,12 @@ msgid "Video Tutorials"
 msgstr ""
 
 #: includes/notices/class-uich-plugin-page.php:111
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:172
 msgid "Join Community"
 msgstr ""
 
 #: includes/notices/class-uich-plugin-page.php:112
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:201
 msgid "What's New?"
 msgstr ""
 
@@ -169,853 +250,1085 @@ msgstr ""
 msgid "Override CSS"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:27
-msgid "Checks MCP and Elementor readiness. Returns diagnostic details."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:597
+#: new-dashboard/src/components/WebShell.jsx:7
+msgid "Your WordPress version is too old (App Passwords need 5.6+)."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:28
-msgid "Returns all global colors, typography, and container widths from the active Elementor kit."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:598
+#: new-dashboard/src/components/WebShell.jsx:8
+msgid "This site runs on HTTP and isn't flagged as local/dev, so WordPress blocks App Passwords by default."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:29
-msgid "Syncs color and typography changes directly to the active Elementor kit."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:599
+#: new-dashboard/src/components/WebShell.jsx:9
+msgid "A plugin, theme, or wp-config snippet on this site is blocking App Passwords (a filter is returning false)."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:30
-msgid "Imports a converted Elementor JSON from a URL into WordPress as a new page or template."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:600
+#: new-dashboard/src/components/WebShell.jsx:10
+msgid "Your account is allowed but a site-level rule is blocking App Passwords."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:90
-msgid "Active: clients can connect"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WebShell.jsx:72
+msgid "Could not update Application Passwords."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:96
-msgid "Disabled: connections blocked"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WebShell.jsx:98
+#: new-dashboard/src/components/WebShell.jsx:110
+msgid "Force-enable Application Passwords"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:93
-msgid "Inactive: no security token found"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WebShell.jsx:101
+msgid "UiChemy is overriding the site to allow App Passwords for your account."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:107
-#: dashboard/src/dashboard/mcp_section.jsx:455
-msgid "UiChemy MCP Server"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WebShell.jsx:102
+msgid "Application Passwords are currently unavailable on this site."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:121
-msgid "Saving…"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WebShell.jsx:183
+#: new-dashboard/src/components/WizardShell.jsx:89
+msgid "Profile"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:500
-#: dashboard/src/dashboard/dashboard_main.jsx:605
-#: dashboard/src/dashboard/mcp_section.jsx:123
-msgid "Deactivate"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WebShell.jsx:204
+msgid "Switch License"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:437
-#: dashboard/src/dashboard/dashboard_main.jsx:462
-#: dashboard/src/dashboard/dashboard_main.jsx:484
-#: dashboard/src/dashboard/dashboard_main.jsx:500
-#: dashboard/src/dashboard/dashboard_main.jsx:520
-#: dashboard/src/dashboard/dashboard_main.jsx:541
-#: dashboard/src/dashboard/dashboard_main.jsx:585
-#: dashboard/src/dashboard/dashboard_main.jsx:605
-#: dashboard/src/dashboard/dashboard_main.jsx:627
-#: dashboard/src/dashboard/dashboard_main.jsx:652
-#: dashboard/src/dashboard/dashboard_main.jsx:676
-#: dashboard/src/dashboard/dashboard_main.jsx:725
-#: dashboard/src/dashboard/dashboard_main.jsx:752
-#: dashboard/src/dashboard/mcp_section.jsx:124
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:254
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:289
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:310
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:335
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:364
-msgid "Activate"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WebShell.jsx:232
+msgid "there"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:240
-msgid "Copy config to clipboard"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WebShell.jsx:240
+#, js-format
+msgid "Welcome %s"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:243
-msgid "Copied!"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:725
+#: new-dashboard/src/components/WizardShell.jsx:7
+msgid "Page Builder"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:243
-msgid "Copy config"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:748
+#: new-dashboard/src/components/WizardShell.jsx:7
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:98
+msgid "Mode"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:255
-msgid "Details for MCP config"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:766
+#: new-dashboard/src/components/WizardShell.jsx:7
+msgid "Connect"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:256
-msgid "Enter your UiChemy license key and Figma token to reveal and copy the complete WordPress + API MCP setup."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WizardShell.jsx:23
+#, js-format
+msgid "Step %1$s / %2$s"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:262
-msgid "Enter UiChemy license key"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WizardShell.jsx:126
+msgid "Docs"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:268
-msgid "Hide license key"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WizardShell.jsx:127
+msgid "Help"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:268
-msgid "Show license key"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:278
-msgid "Enter Figma token"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:284
-msgid "Hide Figma token"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:284
-msgid "Show Figma token"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:290
-msgid "Need a UiChemy license key ? "
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:296
-msgid "View pricing plans"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:305
-msgid "Show Config"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:314
-msgid "Note:"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:315
-msgid "The token above is masked. The real token is copied when you click "
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:316
-msgid "Copy Config"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:325
-msgid "Setup Claude Desktop"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:327
-msgid "Open "
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:327
-msgid "Claude Desktop"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:329
-msgid "Go to "
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:330
-msgid "Windows"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:330
-msgid "macOS"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:332
-#: dashboard/src/dashboard/mcp_section.jsx:334
-msgid "Click "
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:332
-msgid "Developer"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:332
-msgid " in the sidebar."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:334
-msgid "Edit Config"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:335
-msgid " and open "
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:341
-msgid "Paste the config below inside the root "
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:345
-msgid " of the file."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:347
-msgid "Save and "
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:347
-msgid "restart Claude Desktop"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:359
-msgid "Need help? "
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:362
-msgid "MCP User Quickstart"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:366
-msgid "Installing MCP in Claude Desktop"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:370
-msgid "Connect Local Servers"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:379
-msgid "Available Tools"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:384
-msgid "Tool Name"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:385
-msgid "Description"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:456
-msgid "Manage Elementor globals and import converted designs into WordPress directly from Claude Desktop."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:482
-msgid "How to Set Up MCP"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:484
-msgid "Follow this quick walkthrough to connect Claude Desktop with your WordPress MCP server correctly."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:503
-msgid "After watching, copy the config from the left panel and restart Claude Desktop to apply it."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:507
-msgid "Requirements: "
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:508
-msgid "Elementor (free or Pro) must be installed and active."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:512
-msgid "What Can the MCP Server Do?"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/mcp_section.jsx:513
-msgid "Once connected, Claude can call these tools directly on your WordPress site without leaving the conversation."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:389
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:42
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:81
-msgid "Select Page Builder"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:43
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:158
-msgid "Install Figma Plugin"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:48
-msgid "Required Theme"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:49
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:54
-msgid "Complete"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:53
-msgid "Required Plugins"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:575
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:195
-msgid "Nexter Blocks"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:615
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:203
-msgid "Spectra"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:639
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:211
-msgid "Kadence"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:663
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:219
-msgid "GenerateBlocks"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:236
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:279
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:352
-msgid "Required"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:617
-#: dashboard/src/dashboard/dashboard_main.jsx:641
-#: dashboard/src/dashboard/dashboard_main.jsx:665
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:238
-msgid "Beta"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:435
-#: dashboard/src/dashboard/dashboard_main.jsx:460
-#: dashboard/src/dashboard/dashboard_main.jsx:482
-#: dashboard/src/dashboard/dashboard_main.jsx:518
-#: dashboard/src/dashboard/dashboard_main.jsx:539
-#: dashboard/src/dashboard/dashboard_main.jsx:583
-#: dashboard/src/dashboard/dashboard_main.jsx:626
-#: dashboard/src/dashboard/dashboard_main.jsx:650
-#: dashboard/src/dashboard/dashboard_main.jsx:674
-#: dashboard/src/dashboard/dashboard_main.jsx:723
-#: dashboard/src/dashboard/dashboard_main.jsx:750
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:250
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:287
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:308
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:333
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:362
-msgid "Activated"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:438
-#: dashboard/src/dashboard/dashboard_main.jsx:521
-#: dashboard/src/dashboard/dashboard_main.jsx:586
-#: dashboard/src/dashboard/dashboard_main.jsx:628
-#: dashboard/src/dashboard/dashboard_main.jsx:653
-#: dashboard/src/dashboard/dashboard_main.jsx:677
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:259
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:290
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:336
-msgid "Install & Activate"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:391
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:89
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:278
-msgid "Elementor"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:393
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:98
-msgid "Gutenberg"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:107
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:351
-msgid "Bricks Builder"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:112
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:388
+#: new-dashboard/src/components/WizardShell.jsx:136
 msgid "Continue"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:766
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:144
-msgid "Install UiChemy Figma Plugin"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:149
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:172
-msgid "Get UiChemy Key"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:156
-msgid "Install UiChemy Figma to"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:156
-msgid "Convertor"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:165
-msgid "Install & Run"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:165
-msgid "The Figma Plugin"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:170
-msgid "Connect your UiChemy"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:170
-msgid "Key & Click Connect"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:179
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:390
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:451
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/WizardShell.jsx:158
 msgid "Back"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:180
-msgid "Confirm & Proceed"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:6
+msgid "WordPress is a little out of date"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:531
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:299
-msgid "Elementor Pro"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:6
+msgid "UiChemy needs WordPress 6.6 or newer. Update from Dashboard → Updates and re-run the check."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:300
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:324
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:6
+msgid "Update WordPress"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:7
+msgid "Your PHP version is too old"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:7
+msgid "UiChemy needs PHP 7.4 or newer. Your host can switch the PHP version in seconds."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:7
+msgid "Contact your host"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:8
+msgid "A PHP extension is missing"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:8
+msgid "UiChemy needs the JSON and mbstring extensions to be enabled. Ask your host to enable them."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:8
+msgid "Show me how"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:9
+msgid "Heads up low memory"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:9
+msgid "You can keep going, but conversions of large designs may fail. Bumping memory_limit to 256M is recommended."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:9
+msgid "Continue anyway"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:34
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:10
+msgid "Administrator access required"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:35
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:10
+msgid "You'll need an Administrator account to set up UiChemy. Ask your site admin to finish this step."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:36
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:10
+msgid "OK"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:27
+msgid "Required:"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:14
+msgid "Native Elementor widgets you can open and edit."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:15
+msgid "WordPress' built-in editor. Clean native blocks."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:16
+msgid "Native Bricks elements that stay clean and lightweight."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:67
+#, js-format
+msgid "Couldn't complete %1$s: %2$s"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:86
+msgid "Detected"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LicensePickerScreen.jsx:18
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:88
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:150
+msgid "Active"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LicensePickerScreen.jsx:19
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:90
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:152
+msgid "Inactive"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:91
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:154
+msgid "Not installed"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:105
+#, js-format
+msgid "Activate %s"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:103
+#, js-format
+msgid "Get %s"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:104
+#, js-format
+msgid "Install %s"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:378
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:131
+msgid "Working…"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:160
+msgid "Required"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:168
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:172
+msgid "Protuno"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:176
+msgid "We install Protuno, the UiChemy editing layer. It keeps every converted design fully editable inside your builder."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ModeScreen.jsx:17
+msgid "Recommended"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ModeScreen.jsx:18
+msgid "For designers"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ModeScreen.jsx:19
+msgid "Design in Figma, send it straight to WordPress. This is all you need."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ModeScreen.jsx:27
 msgid "Optional"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:543
-#: dashboard/src/dashboard/dashboard_main.jsx:728
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:312
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:367
-msgid "Install"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ModeScreen.jsx:28
+msgid "Prefer building with AI tools like Claude or Cursor? Generate pages by chatting with them."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:323
-msgid "The Plus Addons for Elementor"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ModeScreen.jsx:66
+msgid "Coming soon"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:384
-msgid "Required Plugins for Figma Export"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:31
+msgid "Prompt"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:391
-msgid "Next"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:214
+msgid "Could not generate Application Password."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:424
-msgid "Setup Up Done Successfully."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:260
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:113
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:150
+msgid "Generating…"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:425
-msgid "Your Figma to WordPress Convertor is Ready to Import Design"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:261
+msgid "Regenerate"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:429
-msgid "Contribute to improving our plugin by sharing non-sensitive details."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:261
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:113
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:150
+msgid "Generate"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:437
-msgid "I just installed UiChemy - Figma to WordPress Convertor Plugin. This connects my WordPress sites with Figma and easily import converted designs from Figma. Excited to use it."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:268
+msgid "Open Cursor and install the server"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:443
-msgid "Post on"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:270
+msgid "Add to Cursor"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/onboarding/onboarding.jsx:454
-msgid "Start Importing Design"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:279
+#: new-dashboard/src/components/MCPConfigTabs.jsx:290
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:35
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:58
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:48
+msgid "Copied"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:123
-msgid "Get Started with UiChemy - Figma to"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:279
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:35
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:58
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:38
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:64
+msgid "Copy"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:123
-msgid "WordPress Convertor"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:290
+#: new-dashboard/src/components/MCPConfigTabs.jsx:312
+msgid "Auto Connect"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:140
-msgid "Skip"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:293
+msgid "Copy & paste this command into your terminal to automatically add the Claude Desktop MCP. Needs Node.js 18+."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:141
-msgid "Get Started"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:310
+msgid "Paste this prompt into Claude Desktop, Cursor, Codex, or Antigravity the AI will add the config for you."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:214
-msgid "Version "
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:312
+#: new-dashboard/src/components/MCPConfigTabs.jsx:314
+msgid "Save to:"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:223
-msgid "Welcome,"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:312
+msgid "Or click"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:224
-msgid "Convert your Figma designs into 100% editable templates for Elementor, Gutenberg, and Bricks in seconds."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:312
+msgid "paste in your terminal, and restart Claude Desktop."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:930
-msgid "Site URL"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:314
+msgid "Then restart the client."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:953
-msgid "Security Token"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/MCPConfigTabs.jsx:308
+msgid "Generate an Application Password to reveal and copy the real config."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:982
-msgid "Regenerate Token"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:77
+msgid "Now playing  watch in the help center."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:990
-msgid "Import as User"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:121
+msgid "We couldn't reach your site"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:395
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:122
+msgid "Something interrupted the connection. Your site is safe just try again."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:124
+msgid "Retry"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/ErrorBoundary.jsx:36
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:109
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:125
+msgid "Contact support"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:128
+msgid "Still stuck after a couple of tries? We usually reply within a few hours."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:155
+msgid "Generating your Application Password…"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:156
+msgid "Waiting for Application Password…"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:107
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:165
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:192
+msgid "Connection Link"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:166
+msgid "One self-authenticating link your WP login and Application Password are already embedded."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:173
+msgid "Connect in three steps"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:179
+msgid "Install the"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:181
+#, js-format
+msgid "UiChemy → %s plugin"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:183
+msgid "in Figma."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:188
+msgid "Open it and go to"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:188
+msgid "Site Connection"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:192
+msgid "Paste your"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:192
+msgid ", then click"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:192
+msgid "Connect."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:198
+msgid "Your site's connected. Here's what's next."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:199
+msgid "A 60-second walkthrough, from connection to your first export."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:227
+msgid "Could not issue Application Password."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:236
+msgid "Your AI tool may not support remote MCP yet. Update it to the latest version, then add the config below."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:242
+msgid "This Application Password is no longer valid. Generate a new one and replace it in your config."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:255
+msgid "Added the MCP here's what to do next"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/ConnectScreen.jsx:256
+msgid "Connect from Claude or Cursor and run your first conversion."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:83
+msgid "Connection"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:89
+msgid "Page builder"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:93
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:102
+msgid "Change"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:123
+msgid "Application Password"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:126
+#, js-format
+msgid "Active · %s"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:158
+msgid "Error"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:169
+msgid "Read Docs"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:169
+msgid "Guides & how-tos"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:170
+msgid "Watch Videos"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:170
+msgid "Watch & learn"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:171
+msgid "Discord Channel"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:171
+msgid "Chat and get help"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:172
+msgid "Facebook Community"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:175
+msgid "Resources"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:191
+msgid "Switch Mode"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:192
+msgid "Switch Page Builder"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:196
+msgid "Switch anytime"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:199
+msgid "Your Application Password stays the same"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:216
+msgid "AI tokens"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:217
+msgid "tokens"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:218
+msgid "You start with 0 tokens. Get yours to begin converting."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:220
+msgid "Get more"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:767
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:233
+msgid "Add the UiChemy MCP"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:235
+msgid "Generate your Application Password, then pick your AI client below copy the snippet into its config or paste the Prompt tab into any AI to add it for you."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:245
+msgid "Can I switch builder or mode later?"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:245
+msgid "Yes - anytime, from this dashboard. Your Application Password stays the same."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:246
+msgid "Is my Application Password safe to share?"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:246
+msgid "Keep it private. Anyone with it can connect to this site. You can rotate it whenever you like."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:247
+msgid "My site is local can I still use UiChemy?"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:247
+msgid "Direct send needs a public URL, but you can use JSON export to move designs from a local site."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:250
+msgid "Frequently asked"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:287
+msgid "Welcome to UiChemy"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:289
+msgid "Manage your connection and switch tools all in one place."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:290
+msgid "You're all set. Here's everything you need to start converting."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:293
+#, js-format
+msgid "v%s"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LoginScreen.jsx:55
+msgid "Connect this site to UiChemy"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LoginScreen.jsx:57
+msgid "Sign in to link your UiChemy account to this WordPress site. Once linked, every design you convert publishes here as a draft, ready for you to review and go live."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LoginScreen.jsx:65
+msgid "Redirecting…"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LoginScreen.jsx:66
+msgid "Sign in with UiChemy"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LoginScreen.jsx:69
+msgid "Secured by UiChemy"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LicensePickerScreen.jsx:106
+msgid "All Page Builder"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LicensePickerScreen.jsx:114
+#, js-format
+msgid "%s session"
+msgid_plural "%s sessions"
+msgstr[0] ""
+msgstr[1] ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LicensePickerScreen.jsx:115
+msgid "Connect this site to your UiChemy license."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LicensePickerScreen.jsx:128
+msgid "No usable licenses were found on your account."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/auth/LicensePickerScreen.jsx:131
+msgid "Get a license"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:9
+msgid "REST API is blocked"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:10
+msgid "A plugin or your host is blocking WordPress's REST API. UiChemy can't connect until it's reachable."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:11
+msgid "Show me how to fix"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:15
+msgid "Security plugin is blocking the connection"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:16
+msgid "Wordfence (or similar) is rejecting our request. One allowlist step usually resolves it."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:17
+msgid "Show me the step"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:21
+msgid "Application Passwords are disabled"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:22
+msgid "WordPress Application Passwords are turned off on this site. UiChemy needs them to connect the Figma plugin or MCP client."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:23
+msgid "Enable for my account"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:24
+msgid "Enabling…"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:28
+msgid "WP_ENVIRONMENT_TYPE is not set to “local”"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:29
+msgid "You're on a localhost site. Add the line below to wp-config.php, then click Re-check."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:30
+msgid "Re-check"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:40
+msgid "Protuno is not installed"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:41
+msgid "Protuno powers the Proton widget it turns your prototype into fully editable Elementor sections, and its MCP server lets AI tools like Claude, Cursor and Codex convert Figma designs and build whole pages on your site. Install it to get started."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:42
+msgid "Install & Activate Protuno"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:376
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:43
+msgid "Installing…"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:96
+msgid "Why it's off: "
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:229
+msgid "Could not register session. Please try again."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:246
+msgid "Could not switch license. Please try again."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:262
+msgid "Could not activate Elementor."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:263
+#: new-dashboard/src/App.jsx:434
+msgid "Finishing activation in WP-Admin…"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:264
+msgid "Elementor installed and activated successfully."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:323
+#: new-dashboard/src/App.jsx:327
+msgid "Elementor"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:324
 msgid "Bricks"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:402
-#: dashboard/src/dashboard/dashboard_main.jsx:554
-#: dashboard/src/dashboard/dashboard_main.jsx:687
-msgid "Install Required Plugins"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:325
+msgid "Gutenberg"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:408
-msgid "Figma to Elementor | UiChemy"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:329
+msgid "UiChemy MCP"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:414
-#: dashboard/src/dashboard/dashboard_main.jsx:566
-#: dashboard/src/dashboard/dashboard_main.jsx:699
-msgid "Install in Figma"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:329
+msgid "UiChemy Figma Plugin"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:423
-msgid "Elementor Page Builder"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:377
+#: new-dashboard/src/App.jsx:657
+msgid "Activating…"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:443
-#: dashboard/src/dashboard/dashboard_main.jsx:591
-#: dashboard/src/dashboard/dashboard_main.jsx:703
-msgid "Recommended Settings"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:386
+msgid "Install & Activate"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:449
-msgid "Flexbox Container"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:387
+msgid "Activate & Continue"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:471
-msgid "Enable Unfiltered File Uploads"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:438
+#, js-format
+msgid "Could not %s Elementor."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:492
-#: dashboard/src/dashboard/dashboard_main.jsx:597
-msgid "Custom CSS Field"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:467
+msgid "Finishing Protuno activation in WP-Admin…"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:504
-#: dashboard/src/dashboard/dashboard_main.jsx:609
-msgid "Optional Plugins"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:474
+msgid "Elementor and Protuno are ready."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:510
-msgid "The Plus Addons for Elementor (Free)"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:477
+msgid "Could not finish setup. Please try again."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:560
-msgid "Figma to Gutenberg | UiChemy"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:558
+msgid "Switch license"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:693
-msgid "Figma to Bricks | UiChemy"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:558
+msgid "Select a license"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:709
-msgid "Bricks Page Builder"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:562
+msgid "Pick the license this site should connect to."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:739
-msgid "SVG Uploads"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:563
+msgid "Your license's session limit was reached. Pick a license to connect this site."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:767
-#: dashboard/src/dashboard/dashboard_main.jsx:777
-msgid "Convert Figma Designs to Elementor Websites and edit in WordPress. Our tool makes it easy to transfer all your design content from Figma to Elementor Website easily."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:560
+msgid "No usable licenses were found on your account. Purchase or activate a license to continue."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:768
-#: dashboard/src/dashboard/dashboard_main.jsx:773
-msgid "Next Step"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:568
+msgid "Connecting…"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:771
-msgid "Connect to Use Import using Security Token"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:569
+msgid "Connect with this License"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:772
-msgid "Connect Figma Plugin to UiChemy Website and edit in WordPress. Our tool makes it easy to transfer all your design content from Figma to Elementor Website easily."
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:619
+msgid "Could not enable Application Passwords."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:776
-msgid "Import in Elementor"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:639
+msgid "Could not install Protuno. Please try again."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:778
-msgid "Go to First Step"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:654
+msgid "Protuno is installed but not active"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:794
-msgid "How Does It Work?"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:655
+msgid "Protuno powers the Proton widget it turns your prototype into fully editable Elementor sections, and its MCP server lets AI tools like Claude, Cursor and Codex convert Figma designs and build whole pages on your site. Activate it to get started."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:801
-msgid "Watch Video"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:656
+msgid "Activate Protuno"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:281
-msgid "Documentation"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:672
+msgid "Continue setup"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:282
-msgid "Read Documentation"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:699
+msgid "Re-run checks"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:286
-msgid "Educational Design Guidelines"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:726
+msgid "Which builder do you build in?"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:287
-msgid "Learn How to Optimize"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:727
+msgid "Your design converts into native, editable elements in the builder you pick."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:291
-msgid "Community"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:749
+msgid "How will you use UiChemy?"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:292
-msgid "Join Our Community"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:750
+msgid "Most designers pick the Figma plugin. You can switch anytime."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:296
-msgid "Join Discord Channel"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:767
+msgid "Connect your WordPress site"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:297
-msgid "Join Now"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:769
+msgid "Copy your Connection Link and paste it into the UiChemy plugin in Figma."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:301
-msgid "YouTube"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:770
+msgid "Drop this config into Claude, Cursor or Codex to start converting."
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:302
-msgid "Watch YouTube Tutorials"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:777
+msgid "Open Dashboard"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:306
-msgid "Template Library"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/ErrorBoundary.jsx:32
+msgid "Something went wrong in the dashboard"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:307
-msgid "Visit Now"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/ErrorBoundary.jsx:33
+msgid "Unknown error"
 msgstr ""
 
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:333
-msgid "How does UiChemy work?"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:334
-msgid "UiChemy works by integrating directly with Figma and WordPress. Once you have designed your website layout in Figma, you can export your design files using UiChemy's conversion feature."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:337
-msgid "Is UiChemy a standalone software or a plugin?"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:338
-msgid "UiChemy provides both a Figma plugin and a WordPress plugin that work together."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:341
-msgid "Does UiChemy require any coding knowledge?"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:342
-msgid "No, UiChemy is designed to be used without any coding knowledge. It automatically converts your Figma designs to Elementor templates."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:345
-msgid "How can I get support or assistance with UiChemy?"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:346
-msgid "You can reach our support team through the Helpdesk, join our community forums, or connect via Live Chat on our website for immediate assistance."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:352
-msgid "Frequently Asked Questions"
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:353
-msgid "For any further help, reach us at Helpdesk or connect via Live Chat on website."
-msgstr ""
-
-#: dashboard/build/index.js:1
-#: dashboard/src/dashboard/dashboard_main.jsx:263
-msgid "Our Products"
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/components/ErrorBoundary.jsx:35
+msgid "Reload"
 msgstr ""
