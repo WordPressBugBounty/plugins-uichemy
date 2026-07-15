@@ -126,10 +126,96 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		}
 
 		/**
-		 * Detect whether the Protuno plugin (Proton widget + MCP) is
-		 * installed / active on this site.
+		 * Raw fetch of the full /plugins/versions payload from the UiChemy API,
+		 * with NO persistent cache — memoized only within the current request so
+		 * repeated reads on one page load don't refetch. This is what makes a
+		 * "check every time" read possible (see get_protuno_latest).
 		 *
-		 * @return array { installed:bool, active:bool, file:string, version:string }
+		 * @return array  slug => array (e.g. [ 'latest_version' => '1.2.3' ]).
+		 */
+		private static function fetch_managed_versions_raw() {
+			static $memo = null;
+			if ( is_array( $memo ) ) {
+				return $memo;
+			}
+
+			$result = array();
+
+			$base = class_exists( 'Uich_ND_Auth' ) ? Uich_ND_Auth::API_BASE : 'https://core.uichemy.com';
+			$url  = rtrim( $base, '/' ) . '/plugins/versions';
+
+			$response = wp_remote_get( $url, array(
+				'timeout' => 10,
+				'headers' => array( 'Accept' => 'application/json' ),
+			) );
+
+			if ( ! is_wp_error( $response ) ) {
+				$code = (int) wp_remote_retrieve_response_code( $response );
+				if ( $code >= 200 && $code < 300 ) {
+					$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
+					if ( isset( $decoded['data'] ) && is_array( $decoded['data'] ) ) {
+						$result = $decoded['data'];
+					}
+				}
+			}
+
+			$memo = $result;
+			return $result;
+		}
+
+		/**
+		 * Latest versions of every managed plugin (protuno + the wp.org-hosted
+		 * elementor / uichemy / nexter / wp), read fresh from the API. There's NO
+		 * WP-side persistent cache — the API already Redis-caches the wp.org
+		 * lookups (~1 hr), so a WP transient would only add duplicate staleness.
+		 * Memoized per request via fetch_managed_versions_raw().
+		 *
+		 * @return array  slug => array (e.g. [ 'latest_version' => '1.2.3' ]).
+		 */
+		public static function get_managed_versions() {
+			return self::fetch_managed_versions_raw();
+		}
+
+		/**
+		 * API-reported latest version for a single wp.org-hosted managed plugin
+		 * slug (elementor / uichemy / nexter / wp), or '' if the API has no value.
+		 *
+		 * @param string $slug
+		 * @return string
+		 */
+		public static function get_managed_latest( $slug ) {
+			$all = self::get_managed_versions();
+			if ( isset( $all[ $slug ]['latest_version'] ) && '' !== (string) $all[ $slug ]['latest_version'] ) {
+				return (string) $all[ $slug ]['latest_version'];
+			}
+			return '';
+		}
+
+		/**
+		 * Latest published Protuno release (version + zip URL). Read FRESH from the
+		 * API on every request (no persistent cache) — Protuno's version is set
+		 * manually on the API, so a change must reflect immediately rather than
+		 * waiting up to an hour like the wp.org plugins.
+		 *
+		 * @return array { version:string, zip_url:string }  Empty strings on failure.
+		 */
+		public static function get_protuno_latest() {
+			$all = self::fetch_managed_versions_raw();
+			$p   = isset( $all['protuno'] ) && is_array( $all['protuno'] ) ? $all['protuno'] : array();
+			return array(
+				'version' => isset( $p['latest_version'] ) ? (string) $p['latest_version'] : '',
+				'zip_url' => isset( $p['zip_url'] ) ? (string) $p['zip_url'] : '',
+			);
+		}
+
+
+		/**
+		 * Detect whether the Protuno plugin (Proton widget + MCP) is
+		 * installed / active on this site, and whether the API reports a newer
+		 * release than what's installed.
+		 *
+		 * @return array { installed:bool, active:bool, file:string, version:string,
+		 *                 latest_version:?string, update_available:bool }
 		 */
 		public static function detect_protuno() {
 			if ( ! function_exists( 'get_plugins' ) ) {
@@ -139,14 +225,32 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 			$active  = $file && is_plugin_active( $file );
 			$version = '';
 			if ( $file ) {
-				$all     = get_plugins();
-				$version = isset( $all[ $file ]['Version'] ) ? (string) $all[ $file ]['Version'] : '';
+				// Prefer Protuno's own PROTUNO_BETA_VERSION constant (defined at
+				// runtime while the plugin is active) so beta builds report their
+				// beta version for the comparison; fall back to the plugin header
+				// Version for inactive installs where the constant isn't loaded.
+				if ( defined( 'PROTUNO_BETA_VERSION' ) && '' !== (string) PROTUNO_BETA_VERSION ) {
+					$version = (string) PROTUNO_BETA_VERSION;
+				} else {
+					$all     = get_plugins();
+					$version = isset( $all[ $file ]['Version'] ) ? (string) $all[ $file ]['Version'] : '';
+				}
 			}
+
+			// Compare the installed version against the API-managed latest.
+			$latest           = self::get_protuno_latest();
+			$latest_version   = '' !== $latest['version'] ? $latest['version'] : '';
+			$update_available = ( $file && '' !== $version && '' !== $latest_version )
+				? version_compare( $version, $latest_version, '<' )
+				: false;
+
 			return array(
-				'installed' => (bool) $file,
-				'active'    => (bool) $active,
-				'file'      => (string) $file,
-				'version'   => $version,
+				'installed'        => (bool) $file,
+				'active'           => (bool) $active,
+				'file'             => (string) $file,
+				'version'          => $version,
+				'latest_version'   => '' !== $latest_version ? $latest_version : null,
+				'update_available' => (bool) $update_available,
 			);
 		}
 

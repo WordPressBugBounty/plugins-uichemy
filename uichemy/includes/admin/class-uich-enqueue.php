@@ -147,15 +147,13 @@ if ( ! class_exists( 'Uich_Enqueue' ) ) {
             );
 
             // Enqueue UiChemy Custom CSS editor for atomic widgets
-            if ( empty( get_option( 'uich_elementor_custom_css' ) ) ) {
-                wp_enqueue_script(
-                    'uich-atomic-custom-css-js',
-                    UICH_URL . 'assets/js/uich-atomic-custom-css.js',
-                    array(),
-                    UICH_VERSION,
-                    true,
-                );
-            }
+            wp_enqueue_script(
+                'uich-atomic-custom-css-js',
+                UICH_URL . 'assets/js/uich-atomic-custom-css.js',
+                array(),
+                UICH_VERSION,
+                true,
+            );
 
 		}
 

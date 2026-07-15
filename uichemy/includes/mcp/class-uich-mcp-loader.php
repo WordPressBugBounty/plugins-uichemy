@@ -27,9 +27,15 @@ require_once plugin_dir_path( __FILE__ ) . 'class-uich-mcp-server.php';
  * The scoped adapter lives under UiChemy\Deps\WP\MCP\... so it never
  * conflicts with the WP\MCP\... namespace used by other plugins.
  *
- * Note: Strauss does NOT rename WP action/filter string literals, so the
- * hooks 'mcp_adapter_init' and 'mcp_adapter_create_default_server' keep
- * their original names inside the scoped adapter.
+ * Strauss does NOT rename WP action/filter string literals, so the scoped
+ * adapter still fires the un-namespaced 'mcp_adapter_init' hook that any other
+ * mcp-adapter on the site (e.g. the site-wide SproutOS gateway) also fires.
+ * Isolation is handled at the listener level instead: Uich_MCP_Server::
+ * register_mcp_server() type-guards its $adapter argument (instanceof the
+ * scoped McpAdapter), so a foreign adapter firing the shared hook can never
+ * register UiChemy's server onto the wrong instance. The default-server factory
+ * likewise resolves its adapter via McpAdapter::instance() (own scoped
+ * singleton), not the passed argument, so cross-fires are inert.
  */
 $uich_mcp_autoload = UICH_PATH . 'vendor-prefixed/autoload.php';
 

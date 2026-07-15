@@ -96,6 +96,34 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 		}
 
 		/**
+		 * Gravatar URL for the connected UiChemy account (the same email the
+		 * profile menu shows), falling back to the WP user's email. Mirrors the
+		 * Figma plugin — d=404 so the UI shows the name initial when the account
+		 * has no Gravatar.
+		 *
+		 * @param WP_User|null $wp_user
+		 * @return string
+		 */
+		private static function account_gravatar_url( $wp_user ) {
+			$email   = '';
+			$license = Uich_ND_Auth::get_license_data();
+			if ( is_array( $license ) ) {
+				if ( isset( $license['data']['user']['email'] ) ) {
+					$email = (string) $license['data']['user']['email'];
+				} elseif ( isset( $license['user']['email'] ) ) {
+					$email = (string) $license['user']['email'];
+				}
+			}
+			if ( '' === $email && $wp_user ) {
+				$email = (string) $wp_user->user_email;
+			}
+			if ( '' === $email ) {
+				return '';
+			}
+			return esc_url_raw( 'https://www.gravatar.com/avatar/' . md5( strtolower( trim( $email ) ) ) . '?s=128&d=404' );
+		}
+
+		/**
 		 * Bootstrap data injected as `window.uich_nd_boot`.
 		 */
 		public static function boot_payload() {
@@ -132,6 +160,7 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 					'login'      => $user ? sanitize_user( $user->user_login ) : '',
 					'email'      => $user ? sanitize_email( $user->user_email ) : '',
 					'avatar'     => $user ? esc_url( get_avatar_url( $user->ID ) ) : '',
+					'gravatar'   => self::account_gravatar_url( $user ),
 					'isAdmin'    => current_user_can( 'manage_options' ),
 				),
 				'auth'       => Uich_ND_Auth::get_boot_state(),

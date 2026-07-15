@@ -457,28 +457,30 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$update_available = false;
 
 			if ( $installed ) {
-				// Make sure WP's update cache is populated — wp_update_plugins()
-				// skips the wp.org call internally when the cache is fresh, so
-				// this is cheap on repeated reads but covers first-load case.
-				if ( function_exists( 'wp_update_plugins' ) ) {
-					wp_update_plugins();
-				}
+				$api_latest = class_exists( 'Uich_ND_Settings' ) ? Uich_ND_Settings::get_managed_latest( $slug ) : '';
 
-				$transient = get_site_transient( 'update_plugins' );
-
-				if ( $transient && isset( $transient->response[ $file ]->new_version ) ) {
-					// WP has flagged this plugin for an update.
-					$latest           = $transient->response[ $file ]->new_version;
-					$update_available = $version
-						? version_compare( $version, $latest, '<' )
-						: true;
-				} elseif ( $transient && isset( $transient->no_update[ $file ]->new_version ) ) {
-					// WP knows about it but says it's up to date.
-					$latest = $transient->no_update[ $file ]->new_version;
+				if ( '' !== $api_latest ) {
+					$latest           = $api_latest;
+					$update_available = $version ? version_compare( $version, $latest, '<' ) : true;
 				} else {
-					// WP has no record yet — fall back to current version
-					// rather than guessing from wp.org slug lookup.
-					$latest = $version;
+					// Fallback: WP's own wp.org update transient, when the API has
+					// no value for this slug (e.g. API unreachable).
+					if ( function_exists( 'wp_update_plugins' ) ) {
+						wp_update_plugins();
+					}
+
+					$transient = get_site_transient( 'update_plugins' );
+
+					if ( $transient && isset( $transient->response[ $file ]->new_version ) ) {
+						$latest           = $transient->response[ $file ]->new_version;
+						$update_available = $version
+							? version_compare( $version, $latest, '<' )
+							: true;
+					} elseif ( $transient && isset( $transient->no_update[ $file ]->new_version ) ) {
+						$latest = $transient->no_update[ $file ]->new_version;
+					} else {
+						$latest = $version;
+					}
 				}
 			}
 
@@ -543,6 +545,12 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				// via the shared helper so install/active/version are reported
 				// the same way as the other managed plugins.
 				'nexter' => $this->uich_build_plugin_status( 'nexter' ),
+				// Nexter THEME — the companion installed/activated alongside the
+				// extension via uich_setup_nexter_companion(). Reported separately so
+				// the AI flow can tell "extension present but theme missing/inactive"
+				// apart from "extension missing" and prompt the right fix. This is the
+				// case Elementor Pro would otherwise cover.
+				'nexter_theme' => $this->uich_build_nexter_theme_status(),
 				// Protuno (the "Proton" widget + MCP) — REQUIRED for the AI flow.
 				// Built separately because Protuno isn't on wordpress.org and
 				// unpacks to a variable folder name, so it's detected by
@@ -554,8 +562,9 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		/**
 		 * Build a SystemPluginStatus-shaped struct for Protuno (the "Proton"
 		 * widget + MCP). Detected by TextDomain via the shared new-dashboard
-		 * helper instead of a fixed plugin file. We never offer an update for
-		 * Protuno here (it isn't on wp.org), so update fields are always inert.
+		 * helper instead of a fixed plugin file. Protuno isn't on wp.org, so its
+		 * latest version + update flag come from the UiChemy API (managed there),
+		 * surfaced via Uich_ND_Settings::detect_protuno().
 		 *
 		 * @return array
 		 */
@@ -581,9 +590,32 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				'installed'        => (bool) $p['installed'],
 				'active'           => (bool) $p['active'],
 				'version'          => '' !== (string) $p['version'] ? (string) $p['version'] : null,
-				'latest_version'   => null,
-				'update_available' => false,
+				'latest_version'   => isset( $p['latest_version'] ) && '' !== (string) $p['latest_version'] ? (string) $p['latest_version'] : null,
+				'update_available' => ! empty( $p['update_available'] ),
 				'plugin_file'      => '' !== (string) $p['file'] ? (string) $p['file'] : null,
+			);
+		}
+
+		/**
+		 * Build a status struct for the Nexter THEME — the companion that ships the
+		 * "Theme Optimization Controls" + header/footer disable that Full Setup relies
+		 * on. Installed/activated alongside the Nexter Extension via
+		 * uich_setup_nexter_companion(). Shape mirrors the plugin-status struct
+		 * (slug/installed/active/version) so the UI can treat it the same way.
+		 *
+		 * @return array
+		 */
+		private function uich_build_nexter_theme_status() {
+			$theme     = wp_get_theme( 'nexter' );
+			$installed = $theme->exists();
+			$active    = $installed && ( 'nexter' === get_stylesheet() );
+			$version   = $installed ? ( $theme->get( 'Version' ) ?: null ) : null;
+
+			return array(
+				'slug'      => 'nexter_theme',
+				'installed' => $installed,
+				'active'    => $active,
+				'version'   => $version,
 			);
 		}
 
@@ -591,8 +623,9 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * Activate an already-installed plugin (Elementor / UiChemy).
 		 */
 		public function uich_handle_plugin_activate( WP_REST_Request $request ) {
-			$slug     = sanitize_key( (string) $request->get_param( 'slug' ) );
-			$resolved = $this->uich_resolve_plugin_slug( $slug );
+			$slug       = sanitize_key( (string) $request->get_param( 'slug' ) );
+			$resolved   = $this->uich_resolve_plugin_slug( $slug );
+			$with_nexter_theme = $request->get_param( 'with_nexter_theme' ) !== false;
 
 			if ( ! $resolved ) {
 				return new WP_Error( 'invalid_slug', 'Unknown plugin slug.', array( 'status' => 400 ) );
@@ -613,6 +646,11 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			}
 
 			if ( is_plugin_active( $file ) ) {
+				// The extension may be active while its companion theme isn't (e.g.
+				// theme deactivated separately). Re-run the companion so activating —
+				if ( 'nexter' === $slug && $with_nexter_theme ) {
+					$this->uich_setup_nexter_companion();
+				}
 				return array(
 					'success' => true,
 					'action'  => 'already_active',
@@ -632,6 +670,11 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$is_active = is_plugin_active( $file );
 
 			if ( $is_active && ! $threw ) {
+				// REST activation runs activate_plugin() in SILENT mode, so WP's
+				// `activated_plugin` hook (which also wires the theme) never fires —
+				if ( 'nexter' === $slug && $with_nexter_theme ) {
+					$this->uich_setup_nexter_companion();
+				}
 				return array(
 					'success' => true,
 					'action'  => 'activated',
@@ -654,8 +697,9 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * Install (from wordpress.org) + activate a plugin.
 		 */
 		public function uich_handle_plugin_install( WP_REST_Request $request ) {
-			$slug     = sanitize_key( (string) $request->get_param( 'slug' ) );
-			$resolved = $this->uich_resolve_plugin_slug( $slug );
+			$slug       = sanitize_key( (string) $request->get_param( 'slug' ) );
+			$resolved   = $this->uich_resolve_plugin_slug( $slug );
+			$with_nexter_theme = $request->get_param( 'with_nexter_theme' ) !== false;
 
 			if ( ! $resolved ) {
 				return new WP_Error( 'invalid_slug', 'Unknown plugin slug.', array( 'status' => 400 ) );
@@ -671,7 +715,8 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			}
 
-			// Already installed → just delegate to activate handler.
+			// Already installed → just delegate to activate handler (which already
+			// respects the with_nexter_theme param since we forward the same $request).
 			$plugins = get_plugins();
 			if ( isset( $plugins[ $file ] ) ) {
 				return $this->uich_handle_plugin_activate( $request );
@@ -724,11 +769,82 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				);
 			}
 
+			// Nexter Extension needs its theme + optimization controls alongside —
+			// unless the caller explicitly opted out (with_nexter_theme=false).
+			if ( 'nexter' === $slug && $with_nexter_theme ) {
+				$this->uich_setup_nexter_companion();
+			}
+
 			return array(
 				'success' => true,
 				'action'  => 'installed_and_activated',
 				'status'  => $this->uich_build_plugin_status( $slug ),
 			);
+		}
+
+		/**
+		 * Companion setup that must accompany a Nexter Extension install:
+		 *   1. Install the Nexter theme (the "Theme Optimization Controls" feature
+		 *      lives in the theme, not the extension plugin).
+		 *   2. Enable "Nexter Theme Optimization Controls" and turn ON every
+		 *      individual control.
+		 *
+		 * Best-effort — failures here never fail the plugin install. The theme is
+		 * installed and activated, and the optimization option is enabled.
+		 *
+		 * @return void
+		 */
+		private function uich_setup_nexter_companion() {
+			// 1. Install the Nexter theme if it isn't already present.
+			if ( ! wp_get_theme( 'nexter' )->exists() ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+				require_once ABSPATH . 'wp-admin/includes/misc.php';
+				require_once ABSPATH . 'wp-admin/includes/theme.php';
+				require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+
+				$api = themes_api( 'theme_information', array(
+					'slug'   => 'nexter',
+					'fields' => array( 'sections' => false ),
+				) );
+
+				if ( ! is_wp_error( $api ) && ! empty( $api->download_link ) ) {
+					$skin     = new WP_Ajax_Upgrader_Skin();
+					$upgrader = new Theme_Upgrader( $skin );
+					$upgrader->install( $api->download_link );
+				}
+			}
+
+			// 1b. Activate the Nexter theme so its optimization controls take effect.
+			if ( wp_get_theme( 'nexter' )->exists() && 'nexter' !== get_stylesheet() ) {
+				switch_theme( 'nexter' );
+			}
+
+			// 2. Enable the theme-optimization controls — master switch on, and
+			//    every individual control turned on (value 1 = optimization applied).
+			$opts = get_option( 'nexter_settings_opts', array() );
+			if ( ! is_array( $opts ) ) {
+				$opts = array();
+			}
+			$opts['switch'] = true;
+
+			$values   = isset( $opts['values'] ) && is_array( $opts['values'] ) ? $opts['values'] : array();
+			$controls = array( 'container_css', 'header_footer_css', 'reset_min_css', 'sidebar_css', 'theme_min_css', 'woocommerce_min_css', 'skip_link' );
+			foreach ( $controls as $ctrl ) {
+				$values[ $ctrl ] = 1;
+			}
+			$opts['values'] = $values;
+			update_option( 'nexter_settings_opts', $opts );
+
+			// Mirror the side-effect the Nexter dashboard applies when
+			// header_footer_css is enabled, so the theme's header/footer disable
+			// flags stay consistent.
+			$theme_opts = get_option( 'nxt-theme-options', array() );
+			if ( ! is_array( $theme_opts ) ) {
+				$theme_opts = array();
+			}
+			$theme_opts['nxt-header-disable-opt'] = 'on';
+			$theme_opts['nxt-footer-disable-opt'] = 'on';
+			update_option( 'nxt-theme-options', $theme_opts );
 		}
 
 		/**

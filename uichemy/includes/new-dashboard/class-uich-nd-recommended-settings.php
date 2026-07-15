@@ -10,7 +10,6 @@
  *
  * Per-builder side-effects:
  *   elementor → flexbox container experiment + unfiltered file uploads
- *               + UiChemy Elementor custom CSS field
  *   gutenberg → UiChemy Gutenberg custom CSS field
  *   bricks    → SVG upload capability for every role with `import`
  *
@@ -30,7 +29,6 @@ if ( ! class_exists( 'Uich_ND_Recommended_Settings' ) ) {
 		// Option / capability keys (mirror the legacy class-uich-api.php).
 		const OPT_FLEXBOX_CONTAINER = 'elementor_experiment-container';
 		const OPT_FILE_UPLOADS      = 'elementor_unfiltered_files_upload';
-		const OPT_ELE_CUSTOM_CSS    = 'uich_elementor_custom_css';
 		const OPT_GB_CUSTOM_CSS     = 'uictmcss_enabled';
 		const CAP_BRICKS_SVG        = 'bricks_upload_svg';
 
@@ -62,9 +60,6 @@ if ( ! class_exists( 'Uich_ND_Recommended_Settings' ) ) {
 					}
 					if ( self::enable_unfiltered_file_uploads() ) {
 						$changes[] = 'unfiltered_file_uploads';
-					}
-					if ( self::enable_elementor_custom_css() ) {
-						$changes[] = 'elementor_custom_css';
 					}
 					break;
 
@@ -131,22 +126,6 @@ if ( ! class_exists( 'Uich_ND_Recommended_Settings' ) ) {
 				return false;
 			}
 			update_option( self::OPT_FILE_UPLOADS, 1 );
-			return true;
-		}
-
-		/**
-		 * Mirrors Uich_Api::uich_add_option() — stores boolean true, the
-		 * shape the legacy dashboard JS and Uich_Elementor expect.
-		 */
-		private static function enable_elementor_custom_css() {
-			if ( ! empty( get_option( self::OPT_ELE_CUSTOM_CSS ) ) ) {
-				return false;
-			}
-			if ( false === get_option( self::OPT_ELE_CUSTOM_CSS ) ) {
-				add_option( self::OPT_ELE_CUSTOM_CSS, true );
-			} else {
-				update_option( self::OPT_ELE_CUSTOM_CSS, true );
-			}
 			return true;
 		}
 

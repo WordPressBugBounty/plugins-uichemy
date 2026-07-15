@@ -59,30 +59,51 @@ if ( ! class_exists( 'Uich_ND_Auth' ) ) {
 		   ajax_start() mints a single-use, per-user `state` nonce that travels
 		   to UiChemy in the SSO URL; the callback is only accepted when that
 		   exact nonce is echoed back, binding the token to this flow.
+
+		   The marker is stored in USER META, not a transient. On a site with a
+		   persistent object cache (Redis/Memcached), transients are written ONLY
+		   to that cache and never to the DB — so a broken or non-persistent
+		   object cache silently drops the marker between the ajax_start request
+		   and the callback request, and every login fails with uich_sso=expired.
+		   User meta always hits the DB (a cache miss falls back to a DB read), so
+		   the marker survives regardless of object-cache health. Because there's
+		   no TTL on user meta, we carry an explicit `expires` timestamp in the
+		   value and enforce it ourselves in consume_pending().
 		   ------------------------------------------------------------- */
 
-		private static function pending_key() {
-			return 'uich_nd_sso_pending_' . get_current_user_id();
-		}
+		const META_PENDING = 'uich_nd_sso_pending';
+		const PENDING_TTL   = 15 * MINUTE_IN_SECONDS;
 
 		/** Start an SSO flow; returns the single-use state nonce to echo back. */
 		public static function set_pending() {
 			$state = wp_generate_password( 40, false );
-			set_transient( self::pending_key(), $state, 15 * MINUTE_IN_SECONDS );
+			update_user_meta( get_current_user_id(), self::META_PENDING, array(
+				'state'   => $state,
+				'expires' => time() + self::PENDING_TTL,
+			) );
 			return $state;
 		}
 
 		/**
 		 * Consume the pending marker. Returns true exactly once after a
-		 * set_pending() whose state nonce matches the value echoed back.
+		 * set_pending() whose state nonce matches the value echoed back and
+		 * hasn't expired. Single-use: the marker is deleted on every read,
+		 * matching or not.
 		 *
 		 * @param string $state The `state` value returned on the callback.
 		 */
 		public static function consume_pending( $state ) {
-			$key      = self::pending_key();
-			$expected = get_transient( $key );
-			delete_transient( $key );
-			return is_string( $expected ) && '' !== $expected && hash_equals( $expected, (string) $state );
+			$uid  = get_current_user_id();
+			$data = get_user_meta( $uid, self::META_PENDING, true );
+			delete_user_meta( $uid, self::META_PENDING );
+
+			if ( ! is_array( $data ) || empty( $data['state'] ) || empty( $data['expires'] ) ) {
+				return false;
+			}
+			if ( time() > (int) $data['expires'] ) {
+				return false; // Expired — same outcome the transient TTL gave us.
+			}
+			return hash_equals( (string) $data['state'], (string) $state );
 		}
 
 		/* -------------------------------------------------------------

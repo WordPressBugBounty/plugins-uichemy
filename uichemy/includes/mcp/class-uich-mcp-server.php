@@ -182,7 +182,7 @@ if ( ! class_exists( 'Uich_MCP_Server' ) ) {
 							'handler'     => $ext['handler'],
 							'permission'  => ( isset( $ext['permission'] ) && is_callable( $ext['permission'] ) )
 								? $ext['permission']
-								: '__return_true',
+								: array( __CLASS__, 'default_tool_permission' ),
 						)
 					);
 
@@ -211,6 +211,18 @@ if ( ! class_exists( 'Uich_MCP_Server' ) ) {
 		 */
 		public static function check_permission( WP_REST_Request $request ) {
 			return Uich_Rest_Permissions::check_admin( $request );
+		}
+
+		/**
+		 * Default per-tool permission when a contributed tool supplies none.
+		 *
+		 * Requires manage_options, matching the transport gate. Never
+		 * '__return_true' — see build_tools().
+		 *
+		 * @return bool
+		 */
+		public static function default_tool_permission() {
+			return current_user_can( 'manage_options' );
 		}
 
 	}

@@ -36,7 +36,7 @@ if ( ! class_exists( 'Uich_Elementor' ) ) {
 		 */
 		public function __construct() {
 
-			if ( defined( 'ELEMENTOR_VERSION' ) && empty( get_option('uich_elementor_custom_css') ) ) {
+			if ( defined( 'ELEMENTOR_VERSION' ) ) {
 				add_action( 'elementor/init', array( $this, 'uich_initialize_controls' ) );
 				add_action( 'elementor/init', array( $this, 'uich_enable_atomic_custom_css' ) );
 			}
