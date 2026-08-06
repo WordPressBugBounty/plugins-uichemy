@@ -115,6 +115,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 						['/v2/system/plugin/activate', 'uich_handle_plugin_activate', 'POST'],
 						['/v2/system/plugin/install', 'uich_handle_plugin_install', 'POST'],
 						['/v2/system/plugin/update', 'uich_handle_plugin_update', 'POST'],
+						['/v2/system/theme/update', 'uich_handle_nexter_theme_update', 'POST'],
 					];
 
 					foreach ($routes as $route_config) {
@@ -601,7 +602,13 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * "Theme Optimization Controls" + header/footer disable that Full Setup relies
 		 * on. Installed/activated alongside the Nexter Extension via
 		 * uich_setup_nexter_companion(). Shape mirrors the plugin-status struct
-		 * (slug/installed/active/version) so the UI can treat it the same way.
+		 * (slug/installed/active/version + latest/update) so the UI can treat it the
+		 * same way as the managed plugins.
+		 *
+		 * Update check follows the SAME API-first path as the plugins: the UiChemy
+		 * API's /plugins/versions (which fetches the theme's wp.org version and
+		 * Redis-caches it) via get_managed_latest('nexter_theme'); if the API has
+		 * no value we fall back to WP's own `update_themes` transient.
 		 *
 		 * @return array
 		 */
@@ -611,11 +618,107 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$active    = $installed && ( 'nexter' === get_stylesheet() );
 			$version   = $installed ? ( $theme->get( 'Version' ) ?: null ) : null;
 
+			$latest           = null;
+			$update_available = false;
+
+			if ( $installed ) {
+				$api_latest = class_exists( 'Uich_ND_Settings' ) ? Uich_ND_Settings::get_managed_latest( 'nexter_theme' ) : '';
+
+				if ( '' !== $api_latest ) {
+					$latest           = $api_latest;
+					$update_available = $version ? version_compare( $version, $latest, '<' ) : false;
+				} else {
+					// Fallback: WP's own wp.org theme update transient, when the API
+					// has no value (e.g. API unreachable).
+					if ( function_exists( 'wp_update_themes' ) ) {
+						wp_update_themes();
+					}
+
+					$transient = get_site_transient( 'update_themes' );
+
+					if ( $transient && isset( $transient->response['nexter']['new_version'] ) ) {
+						$latest           = $transient->response['nexter']['new_version'];
+						$update_available = $version
+							? version_compare( $version, $latest, '<' )
+							: false;
+					} elseif ( $transient && isset( $transient->no_update['nexter']['new_version'] ) ) {
+						$latest = $transient->no_update['nexter']['new_version'];
+					} else {
+						$latest = $version;
+					}
+				}
+			}
+
 			return array(
-				'slug'      => 'nexter_theme',
-				'installed' => $installed,
-				'active'    => $active,
-				'version'   => $version,
+				'slug'             => 'nexter_theme',
+				'installed'        => $installed,
+				'active'           => $active,
+				'version'          => $version,
+				'latest_version'   => $latest,
+				'update_available' => $update_available,
+			);
+		}
+
+		/**
+		 * Update the Nexter THEME to its latest wordpress.org version. Mirrors
+		 * uich_handle_plugin_update() but drives Theme_Upgrader. The theme must
+		 * already be installed; activation state is left untouched.
+		 */
+		public function uich_handle_nexter_theme_update( WP_REST_Request $request ) {
+			if ( ! current_user_can( 'update_themes' ) ) {
+				return new WP_Error( 'forbidden', 'You do not have permission to update themes.', array( 'status' => 403 ) );
+			}
+
+			if ( ! wp_get_theme( 'nexter' )->exists() ) {
+				return array(
+					'success' => false,
+					'reason'  => 'not_installed',
+					'message' => 'Nexter Theme is not installed.',
+				);
+			}
+
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+			require_once ABSPATH . 'wp-admin/includes/misc.php';
+			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+
+			// Refresh the theme update transient so Theme_Upgrader sees the new version.
+			wp_clean_themes_cache( true );
+			if ( function_exists( 'wp_update_themes' ) ) {
+				wp_update_themes();
+			}
+
+			$skin     = new WP_Ajax_Upgrader_Skin();
+			$upgrader = new Theme_Upgrader( $skin );
+			$result   = $upgrader->upgrade( 'nexter' );
+
+			if ( is_wp_error( $result ) ) {
+				return array(
+					'success' => false,
+					'reason'  => 'update_failed',
+					'message' => $result->get_error_message(),
+				);
+			}
+
+			if ( false === $result ) {
+				return array(
+					'success' => false,
+					'reason'  => 'update_failed',
+					'message' => 'Update could not be completed.',
+				);
+			}
+
+			if ( $skin->get_errors() && $skin->get_errors()->has_errors() ) {
+				return array(
+					'success' => false,
+					'reason'  => 'update_failed',
+					'message' => $skin->get_error_messages(),
+				);
+			}
+
+			return array(
+				'success' => true,
+				'action'  => 'updated',
+				'status'  => $this->uich_build_nexter_theme_status(),
 			);
 		}
 

@@ -381,10 +381,10 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 			}
 
 			if ( is_wp_error( $result ) ) {
-				return $result;
+				return self::clarify_install_error( $result );
 			}
 			if ( is_wp_error( $skin->result ) ) {
-				return $skin->result;
+				return self::clarify_install_error( $skin->result );
 			}
 			if ( true !== $result ) {
 				$messages = method_exists( $skin, 'get_upgrade_messages' ) ? $skin->get_upgrade_messages() : array();
@@ -397,6 +397,39 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 			}
 
 			return true;
+		}
+
+		/**
+		 * Turn WordPress core's terse upgrader errors into an actionable message.
+		 *
+		 * On a WP/PHP version mismatch, core returns the generic message "The
+		 * package could not be installed." and stashes the useful detail (e.g.
+		 * "Your WordPress version is 6.9.5, however the uploaded plugin requires
+		 * 7.0.") in the error data, which the dashboard never surfaces. Promote
+		 * that detail into the message so the user knows what to do.
+		 *
+		 * @param WP_Error $error Error returned by Plugin_Upgrader / its skin.
+		 * @return WP_Error Same error, with a clearer message where possible.
+		 */
+		private static function clarify_install_error( $error ) {
+			if ( ! is_wp_error( $error ) ) {
+				return $error;
+			}
+
+			$compat_codes = array(
+				'incompatible_wp_required_version',
+				'incompatible_php_required_version',
+				'incompatible_wp_php_required_version',
+			);
+
+			$code   = $error->get_error_code();
+			$detail = $error->get_error_data();
+
+			if ( in_array( $code, $compat_codes, true ) && is_string( $detail ) && '' !== trim( $detail ) ) {
+				return new WP_Error( $code, trim( $detail ), array( 'status' => 400 ) );
+			}
+
+			return $error;
 		}
 
 		/**

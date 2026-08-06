@@ -1,10 +1,10 @@
 === UiChemy — Figma Converter for Elementor, Gutenberg and Bricks ===
 Contributors: posimyththemes, dhaval4, sagarpatel124
 Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to bricks, figma to code
-Requires at least: 6.6
-Tested up to: 6.9
+Requires at least: 6.9
+Tested up to: 7.0.2
 Requires PHP: 7.4
-Stable tag: 5.0.1
+Stable tag: 5.0.2
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -221,6 +221,12 @@ Yes. UiChemy supports multi-site connections directly from the plugin dashboard.
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.0.2 = 6 August 2026
+- Updated : WordPress 6.9 or newer is now required.
+- Fixed : Connection issue when a security plugin blocked Application Passwords.
+- Improved : Clearer setup messages when the connection needs a fix.
+- Fixed : Various bug fixes and improvements.
 
 = 5.0.1 = 14 July 2026
 - Improved : One-click nexter plugin and theme activation.

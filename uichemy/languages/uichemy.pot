@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: UiChemy — Figma Converter for Elementor, Gutenberg and Bricks 5.0.0\n"
+"Project-Id-Version: UiChemy — Figma Converter for Elementor, Gutenberg and Bricks 5.0.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/uichemy\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-07-03T12:11:31+00:00\n"
+"POT-Creation-Date: 2026-08-05T14:12:50+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: uichemy\n"
@@ -39,49 +39,49 @@ msgstr ""
 msgid "https://posimyth.com"
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1021
-#: includes/admin/class-uich-api.php:1098
-#: includes/admin/class-uich-api.php:1509
+#: includes/admin/class-uich-api.php:1240
+#: includes/admin/class-uich-api.php:1317
+#: includes/admin/class-uich-api.php:1728
 msgid "No JSON data found."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1039
+#: includes/admin/class-uich-api.php:1258
 msgid "Required Elementor Plugin Please Install and Active."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1190
-#: includes/admin/class-uich-api.php:1377
-#: includes/admin/class-uich-api.php:1580
+#: includes/admin/class-uich-api.php:1409
+#: includes/admin/class-uich-api.php:1596
+#: includes/admin/class-uich-api.php:1799
 msgid "Post ID not provided for Updating."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1199
-#: includes/admin/class-uich-api.php:1386
-#: includes/admin/class-uich-api.php:1589
+#: includes/admin/class-uich-api.php:1418
+#: includes/admin/class-uich-api.php:1605
+#: includes/admin/class-uich-api.php:1808
 msgid "Post does not exist with given ID & Type."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1249
+#: includes/admin/class-uich-api.php:1468
 msgid "This post doesn't have Elementor data."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1309
+#: includes/admin/class-uich-api.php:1528
 msgid "No data Provided for Importing."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1650
+#: includes/admin/class-uich-api.php:1869
 msgid "Could not update the data."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1668
+#: includes/admin/class-uich-api.php:1887
 msgid "All Good."
 msgstr ""
 
 #: includes/admin/class-uich-atomic-imgs.php:198
 #: includes/admin/class-uich-bricks-imgs.php:11
-#: includes/new-dashboard/class-uich-nd-app-password.php:222
-#: includes/new-dashboard/class-uich-nd-auth.php:448
-#: includes/new-dashboard/class-uich-nd-auth.php:481
+#: includes/new-dashboard/class-uich-nd-app-password.php:315
+#: includes/new-dashboard/class-uich-nd-auth.php:469
+#: includes/new-dashboard/class-uich-nd-auth.php:502
 msgid "Insufficient permissions."
 msgstr ""
 
@@ -109,7 +109,7 @@ msgid "Sorry, only administrators can use UiChemy endpoints."
 msgstr ""
 
 #: includes/new-dashboard/class-uich-nd-api.php:173
-#: includes/new-dashboard/class-uich-nd-installer.php:65
+#: includes/new-dashboard/class-uich-nd-installer.php:72
 msgid "Unknown builder."
 msgstr ""
 
@@ -123,89 +123,131 @@ msgstr ""
 msgid "Not connected to UiChemy."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-app-password.php:136
-#: includes/new-dashboard/class-uich-nd-app-password.php:198
+#: includes/new-dashboard/class-uich-nd-app-password.php:209
+#: includes/new-dashboard/class-uich-nd-app-password.php:271
 msgid "Application Passwords need WordPress 5.6+."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-app-password.php:150
+#: includes/new-dashboard/class-uich-nd-app-password.php:223
 msgid "Application Passwords are disabled for this user. Enable them, then try again."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-app-password.php:203
+#: includes/new-dashboard/class-uich-nd-app-password.php:276
 msgid "Application Passwords are already available for your account."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-app-password.php:214
+#. translators: %s: name of the plugin blocking Application Passwords.
+#: includes/new-dashboard/class-uich-nd-app-password.php:293
+#, php-format
+msgid "%s is still blocking Application Passwords, so we rolled the override back. Turn its setting off and try again."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-app-password.php:294
+msgid "Something on this site is still blocking Application Passwords, so we rolled the override back."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-app-password.php:307
 msgid "No UiChemy override is active for your account."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:60
+#: includes/new-dashboard/class-uich-nd-installer.php:67
 msgid "Gutenberg is built into WordPress."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:86
+#: includes/new-dashboard/class-uich-nd-installer.php:93
 msgid "Install Elementor from WordPress.org, then come back."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:93
+#: includes/new-dashboard/class-uich-nd-installer.php:100
 msgid "Elementor is already active."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:96
+#: includes/new-dashboard/class-uich-nd-installer.php:103
 msgid "Elementor activated."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:135
+#: includes/new-dashboard/class-uich-nd-installer.php:142
 msgid "Activation needs to finish in WP-Admin."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:136
+#: includes/new-dashboard/class-uich-nd-installer.php:143
 msgid "Click to activate in WP-Admin."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:168
+#: includes/new-dashboard/class-uich-nd-installer.php:175
 msgid "Bricks is a premium theme — install it from bricksbuilder.io, then come back."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:175
+#: includes/new-dashboard/class-uich-nd-installer.php:182
 msgid "Bricks theme is already active."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:180
+#: includes/new-dashboard/class-uich-nd-installer.php:187
 msgid "Bricks theme activated."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:205
+#: includes/new-dashboard/class-uich-nd-installer.php:221
 msgid "Protuno is already active."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:213
+#: includes/new-dashboard/class-uich-nd-installer.php:229
+#: includes/new-dashboard/class-uich-nd-installer.php:269
+#: includes/new-dashboard/class-uich-nd-installer.php:446
 msgid "Protuno download URL is not configured."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:226
+#: includes/new-dashboard/class-uich-nd-installer.php:242
 msgid "Protuno was installed but could not be located. Activate it from the Plugins screen."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:254
-msgid "Protuno installed and activated."
-msgstr ""
-
-#: includes/new-dashboard/class-uich-nd-installer.php:262
-msgid "Protuno installed. Finish activation in WP-Admin."
-msgstr ""
-
-#: includes/new-dashboard/class-uich-nd-installer.php:263
-msgid "Protuno installed. Click to activate in WP-Admin."
-msgstr ""
-
-#: includes/new-dashboard/class-uich-nd-installer.php:283
-msgid "WordPress plugin installer is unavailable."
+#: includes/new-dashboard/class-uich-nd-installer.php:285
+msgid "Could not remove the old Protuno before updating."
 msgstr ""
 
 #: includes/new-dashboard/class-uich-nd-installer.php:301
+msgid "Protuno was updated but could not be located. Activate it from the Plugins screen."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:308
+#: includes/new-dashboard/class-uich-nd-installer.php:310
+msgid "Protuno updated to the latest version."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:324
+msgid "Protuno installed and activated."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:346
+msgid "Protuno installed. Finish activation in WP-Admin."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:347
+msgid "Protuno installed. Click to activate in WP-Admin."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:367
+msgid "WordPress plugin installer is unavailable."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:394
 msgid "Protuno installation failed."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:466
+#, php-format
+msgid "Protuno download failed (HTTP %d)."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:473
+msgid "Protuno download returned an empty package."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:478
+msgid "Could not create a temporary file for the download."
+msgstr ""
+
+#: includes/new-dashboard/class-uich-nd-installer.php:483
+msgid "Could not write the downloaded package."
 msgstr ""
 
 #: includes/new-dashboard/class-uich-nd-menu.php:92
@@ -251,25 +293,25 @@ msgid "Override CSS"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:597
+#: new-dashboard/src/App.jsx:614
 #: new-dashboard/src/components/WebShell.jsx:7
 msgid "Your WordPress version is too old (App Passwords need 5.6+)."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:598
+#: new-dashboard/src/App.jsx:617
 #: new-dashboard/src/components/WebShell.jsx:8
-msgid "This site runs on HTTP and isn't flagged as local/dev, so WordPress blocks App Passwords by default."
+msgid "For security, WordPress enables App Passwords only when your site is set up with HTTPS."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:599
+#: new-dashboard/src/App.jsx:618
 #: new-dashboard/src/components/WebShell.jsx:9
-msgid "A plugin, theme, or wp-config snippet on this site is blocking App Passwords (a filter is returning false)."
+msgid "A plugin, theme, or wp-config snippet on this site is blocking App Passwords."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:600
+#: new-dashboard/src/App.jsx:619
 #: new-dashboard/src/components/WebShell.jsx:10
 msgid "Your account is allowed but a site-level rule is blocking App Passwords."
 msgstr ""
@@ -296,42 +338,45 @@ msgid "Application Passwords are currently unavailable on this site."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/components/WebShell.jsx:183
-#: new-dashboard/src/components/WizardShell.jsx:89
+#: new-dashboard/src/components/WebShell.jsx:185
+#: new-dashboard/src/components/WizardShell.jsx:91
 msgid "Profile"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/components/WebShell.jsx:204
+#: new-dashboard/src/components/WebShell.jsx:224
 msgid "Switch License"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/components/WebShell.jsx:232
+#: new-dashboard/src/components/WebShell.jsx:252
 msgid "there"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/components/WebShell.jsx:240
+#: new-dashboard/src/components/WebShell.jsx:260
 #, js-format
 msgid "Welcome %s"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:725
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:810
 #: new-dashboard/src/components/WizardShell.jsx:7
 msgid "Page Builder"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:748
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:833
 #: new-dashboard/src/components/WizardShell.jsx:7
 #: new-dashboard/src/screens/dashboard/Dashboard.jsx:98
 msgid "Mode"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:766
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:851
 #: new-dashboard/src/components/WizardShell.jsx:7
 msgid "Connect"
 msgstr ""
@@ -343,106 +388,106 @@ msgid "Step %1$s / %2$s"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/components/WizardShell.jsx:126
+#: new-dashboard/src/components/WizardShell.jsx:146
 msgid "Docs"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/components/WizardShell.jsx:127
+#: new-dashboard/src/components/WizardShell.jsx:147
 msgid "Help"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:388
-#: new-dashboard/src/components/WizardShell.jsx:136
+#: new-dashboard/src/App.jsx:402
+#: new-dashboard/src/components/WizardShell.jsx:156
 msgid "Continue"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/components/WizardShell.jsx:158
+#: new-dashboard/src/components/WizardShell.jsx:178
 msgid "Back"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:6
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:7
 msgid "WordPress is a little out of date"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:6
-msgid "UiChemy needs WordPress 6.6 or newer. Update from Dashboard → Updates and re-run the check."
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:7
+msgid "UiChemy needs WordPress 6.9 or newer. Update from Dashboard → Updates and re-run the check."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:6
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:7
 msgid "Update WordPress"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:7
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:8
 msgid "Your PHP version is too old"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:7
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:8
 msgid "UiChemy needs PHP 7.4 or newer. Your host can switch the PHP version in seconds."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:7
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:8
 msgid "Contact your host"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:8
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:9
 msgid "A PHP extension is missing"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:8
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:9
 msgid "UiChemy needs the JSON and mbstring extensions to be enabled. Ask your host to enable them."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:8
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:9
 msgid "Show me how"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:9
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:10
 msgid "Heads up low memory"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:9
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:10
 msgid "You can keep going, but conversions of large designs may fail. Bumping memory_limit to 256M is recommended."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:9
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:10
 msgid "Continue anyway"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:34
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:10
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:36
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:11
 msgid "Administrator access required"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:35
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:10
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:37
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:11
 msgid "You'll need an Administrator account to set up UiChemy. Ask your site admin to finish this step."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:36
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:10
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:38
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:11
 msgid "OK"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:27
+#: new-dashboard/src/screens/wizard/EnvBlocked.jsx:28
 msgid "Required:"
 msgstr ""
 
@@ -475,20 +520,20 @@ msgstr ""
 #: new-dashboard/build/index.js:1
 #: new-dashboard/src/screens/auth/LicensePickerScreen.jsx:18
 #: new-dashboard/src/screens/wizard/BuilderScreen.jsx:88
-#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:150
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:151
 msgid "Active"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
 #: new-dashboard/src/screens/auth/LicensePickerScreen.jsx:19
 #: new-dashboard/src/screens/wizard/BuilderScreen.jsx:90
-#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:152
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:153
 msgid "Inactive"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
 #: new-dashboard/src/screens/wizard/BuilderScreen.jsx:91
-#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:154
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:155
 msgid "Not installed"
 msgstr ""
 
@@ -511,24 +556,35 @@ msgid "Install %s"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:378
+#: new-dashboard/src/App.jsx:391
 #: new-dashboard/src/screens/wizard/BuilderScreen.jsx:131
 msgid "Working…"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:160
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:161
+#, js-format
+msgid "Update available · Beta v%s"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:162
+msgid "Update available"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:170
 msgid "Required"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:168
-#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:172
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:178
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:182
 msgid "Protuno"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:176
+#: new-dashboard/src/screens/wizard/BuilderScreen.jsx:186
 msgid "We install Protuno, the UiChemy editing layer. It keeps every converted design fully editable inside your builder."
 msgstr ""
 
@@ -605,7 +661,7 @@ msgstr ""
 #: new-dashboard/src/components/MCPConfigTabs.jsx:279
 #: new-dashboard/src/components/MCPConfigTabs.jsx:290
 #: new-dashboard/src/screens/dashboard/Dashboard.jsx:35
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:58
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:60
 #: new-dashboard/src/screens/wizard/ConnectScreen.jsx:48
 msgid "Copied"
 msgstr ""
@@ -613,7 +669,7 @@ msgstr ""
 #: new-dashboard/build/index.js:1
 #: new-dashboard/src/components/MCPConfigTabs.jsx:279
 #: new-dashboard/src/screens/dashboard/Dashboard.jsx:35
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:58
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:60
 #: new-dashboard/src/screens/wizard/ConnectScreen.jsx:38
 #: new-dashboard/src/screens/wizard/ConnectScreen.jsx:64
 msgid "Copy"
@@ -682,8 +738,9 @@ msgid "Retry"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
+#: new-dashboard/build/index.js:3
 #: new-dashboard/src/components/ErrorBoundary.jsx:36
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:109
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:145
 #: new-dashboard/src/screens/wizard/ConnectScreen.jsx:125
 msgid "Contact support"
 msgstr ""
@@ -909,7 +966,8 @@ msgid "Get more"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:767
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:852
 #: new-dashboard/src/screens/dashboard/Dashboard.jsx:233
 msgid "Add the UiChemy MCP"
 msgstr ""
@@ -955,22 +1013,54 @@ msgid "Frequently asked"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/dashboard/Dashboard.jsx:287
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:297
+msgid "Could not update Protuno. Please try again."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:309
+msgid "Protuno update available"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:310
+#, js-format
+msgid "Beta v%s"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:313
+msgid "A newer beta version of Protuno is ready with the latest Proton widget."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:390
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:319
+msgid "Updating…"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:320
+msgid "Update now"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:345
 msgid "Welcome to UiChemy"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/dashboard/Dashboard.jsx:289
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:347
 msgid "Manage your connection and switch tools all in one place."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/dashboard/Dashboard.jsx:290
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:348
 msgid "You're all set. Here's everything you need to start converting."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/dashboard/Dashboard.jsx:293
+#: new-dashboard/src/screens/dashboard/Dashboard.jsx:351
 #, js-format
 msgid "v%s"
 msgstr ""
@@ -1044,291 +1134,371 @@ msgid "Show me how to fix"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:15
-msgid "Security plugin is blocking the connection"
-msgstr ""
-
-#: new-dashboard/build/index.js:1
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:739
 #: new-dashboard/src/screens/errors/ErrorCard.jsx:16
-msgid "Wordfence (or similar) is rejecting our request. One allowlist step usually resolves it."
+msgid "Application Passwords are being blocked"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
 #: new-dashboard/src/screens/errors/ErrorCard.jsx:17
-msgid "Show me the step"
+msgid "Something on this site is switching off WordPress Application Passwords, which is what UiChemy connects with."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:21
-msgid "Application Passwords are disabled"
-msgstr ""
-
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:22
-msgid "WordPress Application Passwords are turned off on this site. UiChemy needs them to connect the Figma plugin or MCP client."
-msgstr ""
-
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:23
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:726
+#: new-dashboard/src/App.jsx:734
+#: new-dashboard/src/App.jsx:741
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:18
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:25
 msgid "Enable for my account"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:24
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:727
+#: new-dashboard/src/App.jsx:735
+#: new-dashboard/src/App.jsx:742
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:19
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:26
 msgid "Enabling…"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:28
-msgid "WP_ENVIRONMENT_TYPE is not set to “local”"
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:23
+msgid "Application Passwords are disabled"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:29
-msgid "You're on a localhost site. Add the line below to wp-config.php, then click Re-check."
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:24
+msgid "WordPress Application Passwords are turned off on this site. UiChemy needs them to connect the Figma plugin or MCP client."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
 #: new-dashboard/src/screens/errors/ErrorCard.jsx:30
+msgid "WP_ENVIRONMENT_TYPE is not set to “local”"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:31
+msgid "You're on a localhost site. Add the line below to wp-config.php, then click Re-check."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:32
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:129
 msgid "Re-check"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:40
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:42
 msgid "Protuno is not installed"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:41
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:43
 msgid "Protuno powers the Proton widget it turns your prototype into fully editable Elementor sections, and its MCP server lets AI tools like Claude, Cursor and Codex convert Figma designs and build whole pages on your site. Install it to get started."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:42
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:44
 msgid "Install & Activate Protuno"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:376
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:43
+#: new-dashboard/src/App.jsx:388
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:45
 msgid "Installing…"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/screens/errors/ErrorCard.jsx:96
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:98
 msgid "Why it's off: "
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:229
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:108
+msgid "Or fix it at the source:"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/screens/errors/ErrorCard.jsx:119
+msgid "These active plugins are hooked on the Application Passwords check, so one of them is the likely cause:"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:236
 msgid "Could not register session. Please try again."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:246
+#: new-dashboard/src/App.jsx:253
 msgid "Could not switch license. Please try again."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:262
+#: new-dashboard/src/App.jsx:269
 msgid "Could not activate Elementor."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:263
-#: new-dashboard/src/App.jsx:434
+#: new-dashboard/src/App.jsx:270
+#: new-dashboard/src/App.jsx:448
 msgid "Finishing activation in WP-Admin…"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:264
+#: new-dashboard/src/App.jsx:271
 msgid "Elementor installed and activated successfully."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:323
-#: new-dashboard/src/App.jsx:327
+#: new-dashboard/src/App.jsx:330
+#: new-dashboard/src/App.jsx:334
 msgid "Elementor"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:324
+#: new-dashboard/src/App.jsx:331
 msgid "Bricks"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:325
+#: new-dashboard/src/App.jsx:332
 msgid "Gutenberg"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:329
+#: new-dashboard/src/App.jsx:336
 msgid "UiChemy MCP"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:329
+#: new-dashboard/src/App.jsx:336
 msgid "UiChemy Figma Plugin"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:377
-#: new-dashboard/src/App.jsx:657
+#: new-dashboard/src/App.jsx:389
+#: new-dashboard/src/App.jsx:711
 msgid "Activating…"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:386
+#: new-dashboard/src/App.jsx:399
 msgid "Install & Activate"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:387
+#: new-dashboard/src/App.jsx:400
 msgid "Activate & Continue"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:438
+#: new-dashboard/src/App.jsx:401
+msgid "Update & Continue"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:452
 #, js-format
 msgid "Could not %s Elementor."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:467
+#: new-dashboard/src/App.jsx:482
 msgid "Finishing Protuno activation in WP-Admin…"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:474
+#: new-dashboard/src/App.jsx:489
 msgid "Elementor and Protuno are ready."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:477
+#: new-dashboard/src/App.jsx:492
 msgid "Could not finish setup. Please try again."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:558
+#: new-dashboard/src/App.jsx:573
 msgid "Switch license"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:558
+#: new-dashboard/src/App.jsx:573
 msgid "Select a license"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:562
+#: new-dashboard/src/App.jsx:577
 msgid "Pick the license this site should connect to."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:563
+#: new-dashboard/src/App.jsx:578
 msgid "Your license's session limit was reached. Pick a license to connect this site."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:560
+#: new-dashboard/src/App.jsx:575
 msgid "No usable licenses were found on your account. Purchase or activate a license to continue."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:568
+#: new-dashboard/src/App.jsx:583
 msgid "Connecting…"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:569
+#: new-dashboard/src/App.jsx:584
 msgid "Connect with this License"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:619
-msgid "Could not enable Application Passwords."
+#: new-dashboard/src/App.jsx:637
+msgid "You can still enable it for your account with the button below."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:639
-msgid "Could not install Protuno. Please try again."
+#: new-dashboard/src/App.jsx:648
+msgid "In WP-Admin, go to Wordfence → <a>All Options</a>."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:654
-msgid "Protuno is installed but not active"
+#: new-dashboard/src/App.jsx:651
+msgid "In WP-Admin, go to Wordfence → All Options."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
 #: new-dashboard/src/App.jsx:655
-msgid "Protuno powers the Proton widget it turns your prototype into fully editable Elementor sections, and its MCP server lets AI tools like Claude, Cursor and Codex convert Figma designs and build whole pages on your site. Activate it to get started."
+msgid "Find Brute Force Protection and expand its advanced options."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
 #: new-dashboard/src/App.jsx:656
+msgid "Uncheck “Disable WordPress application passwords”."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:657
+msgid "Save the change, then click Re-check below."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:673
+msgid "Could not enable Application Passwords."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:693
+msgid "Could not install Protuno. Please try again."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:708
+msgid "Protuno is installed but not active"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:709
+msgid "Protuno powers the Proton widget it turns your prototype into fully editable Elementor sections, and its MCP server lets AI tools like Claude, Cursor and Codex convert Figma designs and build whole pages on your site. Activate it to get started."
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:710
 msgid "Activate Protuno"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:672
+#: new-dashboard/src/App.jsx:724
+msgid "Wordfence is blocking Application Passwords"
+msgstr ""
+
+#: new-dashboard/build/index.js:1
+#: new-dashboard/src/App.jsx:725
+msgid "Wordfence has “Disable WordPress application passwords” switched on, which is its default, so WordPress won't let UiChemy connect. Enable it for your account in one click, or turn the option off in Wordfence."
+msgstr ""
+
+#. translators: %s: name of the plugin blocking Application Passwords.
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:732
+#, js-format
+msgid "%s is blocking Application Passwords"
+msgstr ""
+
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:733
+msgid "WordPress Application Passwords are switched off on this site, which is what UiChemy connects with. Enable them for your account in one click, or change the setting in that plugin."
+msgstr ""
+
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:740
+msgid "Something on this site is switching off WordPress Application Passwords, which is what UiChemy connects with. Enabling them for your account usually resolves it."
+msgstr ""
+
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:757
 msgid "Continue setup"
 msgstr ""
 
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:699
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:784
 msgid "Re-run checks"
 msgstr ""
 
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:726
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:811
 msgid "Which builder do you build in?"
 msgstr ""
 
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:727
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:812
 msgid "Your design converts into native, editable elements in the builder you pick."
 msgstr ""
 
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:749
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:834
 msgid "How will you use UiChemy?"
 msgstr ""
 
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:750
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:835
 msgid "Most designers pick the Figma plugin. You can switch anytime."
 msgstr ""
 
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:767
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:852
 msgid "Connect your WordPress site"
 msgstr ""
 
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:769
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:854
 msgid "Copy your Connection Link and paste it into the UiChemy plugin in Figma."
 msgstr ""
 
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:770
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:855
 msgid "Drop this config into Claude, Cursor or Codex to start converting."
 msgstr ""
 
-#: new-dashboard/build/index.js:1
-#: new-dashboard/src/App.jsx:777
+#: new-dashboard/build/index.js:3
+#: new-dashboard/src/App.jsx:862
 msgid "Open Dashboard"
 msgstr ""
 
-#: new-dashboard/build/index.js:1
+#: new-dashboard/build/index.js:3
 #: new-dashboard/src/components/ErrorBoundary.jsx:32
 msgid "Something went wrong in the dashboard"
 msgstr ""
 
-#: new-dashboard/build/index.js:1
+#: new-dashboard/build/index.js:3
 #: new-dashboard/src/components/ErrorBoundary.jsx:33
 msgid "Unknown error"
 msgstr ""
 
-#: new-dashboard/build/index.js:1
+#: new-dashboard/build/index.js:3
 #: new-dashboard/src/components/ErrorBoundary.jsx:35
 msgid "Reload"
 msgstr ""

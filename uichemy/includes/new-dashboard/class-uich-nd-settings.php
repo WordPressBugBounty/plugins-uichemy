@@ -275,6 +275,8 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 
 			return array(
 				'wp_version'   => $wp_version,
+				// Minimum is 6.9.0, but compare against '6.9': WP reports majors
+				// without a patch part, so '6.9.0' would reject 6.9 itself.
 				'wp_ok'        => version_compare( $wp_version, '6.9', '>=' ),
 				'php_version'  => PHP_VERSION,
 				'php_ok'       => version_compare( PHP_VERSION, '7.4', '>=' ),
@@ -316,7 +318,8 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 			}
 			$rest_ok = ! ( $rest_disabled_plugin || $rest_filter_blocking );
 
-			// Known security plugins — presence is enough to hint the user.
+			// Known security plugins — informational only. Presence is NOT
+			// evidence of a block; `app_passwords_ok` + `security_blocking` are.
 			if ( ! function_exists( 'get_plugins' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			}
@@ -349,12 +352,19 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 				? (bool) wp_is_application_passwords_available()
 				: false;
 
+			// Attribution, only when there is a real block to attribute.
+			$blocker = ( ! $app_passwords_ok && class_exists( 'Uich_ND_App_Password' ) )
+				? Uich_ND_App_Password::detect_blocker()
+				: null;
+
 			return array(
 				'permalinks_pretty' => $permalinks_pretty,
 				'permalinks_ok'     => $permalinks_pretty,
 				'rest_ok'           => $rest_ok,
 				'security_active'   => $security_active,
-				'security_ok'       => empty( $security_active ),
+				// Back-compat only; no longer gates the dashboard.
+				'security_ok'       => $app_passwords_ok || null === $blocker,
+				'security_blocking' => $blocker,
 				'reachable'         => $reachable,
 				'reachable_ok'      => $reachable,
 				'host'              => $host,
