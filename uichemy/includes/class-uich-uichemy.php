@@ -74,6 +74,32 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 			// on the next admin_init to send first-time activators straight
 			// to the onboarding wizard.
 			set_transient( 'uich_do_activation_redirect', true, MINUTE_IN_SECONDS * 5 );
+
+			// The merged builder runtime owns tables of its own (form submissions,
+			// and AI chat in Pro). Standalone UiChemy installed them from its own
+			// activation hook; that plugin file is not the one WordPress activates
+			// any more, so this hook has to do it.
+			//
+			// UICH_COMPOSER_MERGED first: without it, UICHEMY_PATH and
+			// UiChemy_Activator can both belong to a still-active STANDALONE UiChemy
+			// plugin, and this would run that plugin's activator instead of ours.
+			//
+			// The runtime's classes are all global — this file is namespaced Uich, so
+			// they need the leading \ or PHP looks for Uich\UiChemy_Activator.
+			if ( defined( 'UICH_COMPOSER_MERGED' ) && defined( 'UICHEMY_PATH' ) && file_exists( UICHEMY_PATH . 'includes/class-uichemy-activator.php' ) ) {
+				require_once UICHEMY_PATH . 'includes/class-uichemy-activator.php';
+				if ( class_exists( '\UiChemy_Activator' ) ) {
+					\UiChemy_Activator::activate();
+				}
+			}
+
+			// Queue the UiChemy → UiChemy Builder data migration. Only queued here,
+			// never run: activation is a sandboxed request with its own timeout, and
+			// a site with thousands of Elementor rows would fail to activate at all.
+			// admin_init and cron drain the queue from the next request onward.
+			if ( class_exists( '\Uich_Composer_Migration' ) ) {
+				\Uich_Composer_Migration::schedule_on_activation();
+			}
 		}
 
 		/**
@@ -103,7 +129,7 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 		 * @since 1.0.0
 		 */
 		public function uich_load_textdomain() {
-			load_plugin_textdomain( 'uichemy', false, UICH_BDNAME . '/languages/' );
+			load_plugin_textdomain( 'uichemy', false, UICH_BDNAME . '/languages/' ); // phpcs:ignore PluginCheck.CodeAnalysis.DiscouragedFunctions.load_plugin_textdomainFound -- Plugin also distributed outside wp.org; explicit textdomain load required.
 		}
 
 		/**
@@ -128,6 +154,11 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 
 			// New dashboard.
 			require_once UICH_PATH . 'includes/new-dashboard/class-uich-nd-loader.php';
+
+			// AI Website Creator — the Import tab's "from scratch" mode. Loaded
+			// after the new dashboard so its enqueue hook can attach the flow's
+			// boot payload to the dashboard script handle.
+			require_once UICH_PATH . 'includes/webpage/class-uich-webpage-loader.php';
 		}
 	}
 

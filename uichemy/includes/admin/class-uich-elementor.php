@@ -45,8 +45,8 @@ if ( ! class_exists( 'Uich_Elementor' ) ) {
 			// editor preview iframe and on the frontend. Doing it here (not inside
 			// widget render()) ensures the CSS survives widget re-renders in the editor.
 			if ( defined( 'ELEMENTOR_VERSION' ) ) {
-				add_action( 'elementor/preview/enqueue_styles',          array( $this, 'uich_enqueue_globals_css' ) );
-				add_action( 'elementor/frontend/before_enqueue_styles',  array( $this, 'uich_enqueue_globals_css' ) );
+				add_action( 'elementor/preview/enqueue_styles', array( $this, 'uich_enqueue_globals_css' ) );
+				add_action( 'elementor/frontend/before_enqueue_styles', array( $this, 'uich_enqueue_globals_css' ) );
 			}
 		}
 
@@ -161,7 +161,6 @@ if ( ! class_exists( 'Uich_Elementor' ) ) {
 				20,
 				2
 			);
-
 		}
 
 		/**
@@ -203,7 +202,7 @@ if ( ! class_exists( 'Uich_Elementor' ) ) {
 				return;
 			}
 			if ( ! wp_style_is( 'uich-globals-dynamic', 'registered' ) ) {
-				wp_register_style( 'uich-globals-dynamic', false, array(), null );
+				wp_register_style( 'uich-globals-dynamic', false, array(), UICH_VERSION );
 			}
 			wp_enqueue_style( 'uich-globals-dynamic' );
 			wp_add_inline_style( 'uich-globals-dynamic', $css );

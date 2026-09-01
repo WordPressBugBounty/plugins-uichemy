@@ -8,49 +8,113 @@ document.addEventListener('DOMContentLoaded', () => {
     function injectButton(toolbar) {
         if (!toolbar || toolbar.querySelector('.uichemy-upload-btn')) return;
 
-        // Create modal overlay
+        // White Label: an uploaded brand logo replaces the UiChemy glyph below.
+        // `wl_logo` is empty unless white-labeling is on AND a logo was set, so the
+        // inline glyph stays the default — this button used to paint the UiChemy
+        // mark into the Elementor toolbar of every white-labelled site.
+        const brandName = () => (window.uich_ajax_object_data && uich_ajax_object_data.wl_name) || 'UiChemy';
+        const brandMark = (size) => {
+            const logo = (window.uich_ajax_object_data && uich_ajax_object_data.wl_logo) || '';
+            return logo
+                ? `<img src="${logo}" alt="" width="${size}" height="${size}" style="display:block;object-fit:contain" />`
+                : `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block">
+            <path d="M14.2081 17.8755C14.2081 17.8755 9.77244 18.1264 9.77244 14.7703V6.21257C9.77244 5.39663 9.60889 4.5887 9.29109 3.83488C8.9733 3.08107 8.50748 2.39614 7.92028 1.81923C7.33308 1.24233 6.63598 0.784742 5.86878 0.472593C5.10159 0.160445 4.27932 -0.000139528 3.44896 9.09654e-08H0V17.0569C0 18.8896 0.740883 20.6471 2.05966 21.943C3.37843 23.2389 5.16707 23.9669 7.0321 23.9669H7.04182C7.51895 24.011 7.99924 24.011 8.47637 23.9669H16.8749C18.7646 23.9669 20.5769 23.2292 21.9131 21.9162C23.2493 20.6032 24 18.8224 24 16.9655V12.7217H14.2308L14.2081 17.8755ZM15.0736 13.5499H23.1497V16.9602C23.1471 18.5947 22.4852 20.1615 21.309 21.3173C20.1328 22.473 18.5383 23.1235 16.8749 23.126H12.8958C13.3198 22.792 13.691 22.3979 13.9971 21.9566C14.9405 20.5874 15.0617 19.0555 15.0617 17.8766L15.0736 13.5499Z" fill="#fff"/>
+            <path d="M19.9128 0C18.4046 -2.68126e-08 16.9581 0.58864 15.8916 1.63647C14.825 2.68429 14.2257 4.1055 14.2254 5.58749V8.93826H23.9979V0H19.9128Z" fill="#fff"/>
+            </svg>`;
+        };
+
+
+        // ---- UiChemy design-system tokens (uc-*), inlined because the DS
+        //      stylesheet is not loaded inside the Elementor editor. -------
+        const UC = {
+            fontSans: '"Zalando Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif',
+            surfaceBase: '#F4F4F4',      // grey tray
+            surfaceRaised: '#FFFFFF',    // white card
+            surfaceSunken: '#EBEBEB',
+            textStrong: '#0A0A0A',
+            textMuted: '#737373',
+            border: 'rgba(0, 0, 0, 0.09)',
+            borderSubtle: 'rgba(0, 0, 0, 0.055)',
+            ring: 'rgba(23, 23, 23, 0.40)',
+            brand: '#FD6A35',
+            brandOn: '#FFFFFF',
+            radiusMd: '8px',
+            radiusXl: '16px',
+            shadow5: '0 0 0 1px rgba(128,128,128,0.06), 0 12px 24px -8px rgba(0,0,0,0.08), 0 28px 56px -12px rgba(0,0,0,0.14)',
+            shadowControl: 'inset 0 1px 0 0 rgba(255,255,255,0.6), inset 0 0 0 1px rgba(0,0,0,0.09), 0 1px 2px rgba(0,0,0,0.06)',
+            shadowControlBrand: 'inset 0 1px 0 0 rgba(255,255,255,0.24), inset 0 0 0 1px rgba(0,0,0,0.14), 0 1px 2px rgba(0,0,0,0.09), 0 2px 3px -1px rgba(0,0,0,0.06)',
+            shadowInput: 'inset 0 1px 2px rgba(0,0,0,0.05), inset 0 2px 4px -2px rgba(0,0,0,0.04)',
+            sheen: 'linear-gradient(to bottom, rgba(255,255,255,0.08), rgba(0,0,0,0.03))',
+        };
+
+        // Scoped placeholder color for the DS-styled textarea.
+        const dsStyle = document.createElement('style');
+        dsStyle.innerHTML = `
+            .uich-ds-textarea::placeholder { color: ${UC.textMuted}; opacity: 1; }
+            .uich-ds-textarea:focus-visible { outline: 2px solid ${UC.ring}; outline-offset: 2px; border-color: transparent; }
+        `;
+        document.head.appendChild(dsStyle);
+
+        // Overlay (dark, blurred) ---------------------------------------------
         const modalOverlay = document.createElement("div");
         modalOverlay.style.display = "none";
         modalOverlay.style.position = "fixed";
-        modalOverlay.style.top = "0";
-        modalOverlay.style.left = "0";
-        modalOverlay.style.width = "100%";
-        modalOverlay.style.gap = "10px";
-        modalOverlay.style.height = "100%";
-        modalOverlay.style.backgroundColor = "rgba(0, 0, 0, 0.5)";
-        modalOverlay.style.zIndex = "999";
+        modalOverlay.style.inset = "0";
+        modalOverlay.style.backgroundColor = "rgba(17, 17, 19, 0.44)";
+        modalOverlay.style.backdropFilter = "blur(2px)";
+        modalOverlay.style.webkitBackdropFilter = "blur(2px)";
+        modalOverlay.style.zIndex = "9998";
         document.body.appendChild(modalOverlay);
 
-        // Create modal container
+        // Grey tray (positioner + content) ------------------------------------
         const modal = document.createElement("div");
         modal.style.display = "none";
-        modal.style.flexWrap = "wrap";
+        modal.style.flexDirection = "column";
         modal.style.position = "fixed";
         modal.style.top = "50%";
         modal.style.left = "50%";
         modal.style.transform = "translate(-50%, -50%)";
-        modal.style.width = "470px";
-        modal.style.padding = "20px";
-        modal.style.gap = "10px";
-        modal.style.backgroundColor = "#fff";
-        modal.style.boxShadow = "0 2px 2px rgba(0, 0, 0, 0.2)";
-        modal.style.borderRadius = "5px";
-        modal.style.justifyContent = "center";
-        modal.style.zIndex = "1000";
+        modal.style.width = "min(calc(100vw - 32px), 480px)";
+        modal.style.maxHeight = "calc(100vh - 48px)";
+        modal.style.overflow = "visible";
+        modal.style.padding = "4px";
+        modal.style.gap = "4px";
+        modal.style.backgroundColor = UC.surfaceBase;
+        modal.style.boxShadow = UC.shadow5;
+        modal.style.borderRadius = UC.radiusXl;
+        modal.style.fontFamily = UC.fontSans;
+        modal.style.zIndex = "9999";
         document.body.appendChild(modal);
 
-        const closeIcon = document.createElement("div");
-        const svgString = `
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M5.63623 5.63672L18.3642 18.3646" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M5.63623 18.3633L18.3642 5.63536" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-            </svg>
-            `;
-        closeIcon.innerHTML = svgString;
-        closeIcon.style.position = 'absolute';
-        closeIcon.style.top = '10px';
-        closeIcon.style.right = '10px';
-        closeIcon.style.cursor = "pointer";
+        // Close button — sits just outside the tray's top-right corner --------
+        const closeIcon = document.createElement("button");
+        closeIcon.type = "button";
+        closeIcon.setAttribute("aria-label", "Close");
+        closeIcon.innerHTML = `
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path d="M5.63623 5.63672L18.3642 18.3646" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M5.63623 18.3633L18.3642 5.63536" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>`;
+        closeIcon.style.cssText = `
+            position: absolute;
+            top: 0;
+            left: calc(100% + 8px);
+            width: 32px;
+            height: 32px;
+            display: grid;
+            place-items: center;
+            border: none;
+            background: ${UC.surfaceRaised};
+            color: ${UC.textStrong};
+            border-radius: ${UC.radiusMd};
+            box-shadow: ${UC.shadowControl};
+            cursor: pointer;
+            transition: background 160ms cubic-bezier(0.2,0,0,1), transform 160ms cubic-bezier(0.2,0,0,1);
+        `;
+        closeIcon.addEventListener('mouseenter', () => { closeIcon.style.background = UC.surfaceSunken; });
+        closeIcon.addEventListener('mouseleave', () => { closeIcon.style.background = UC.surfaceRaised; });
+        closeIcon.addEventListener('mousedown', () => { closeIcon.style.transform = "translateY(1px)"; });
+        closeIcon.addEventListener('mouseup', () => { closeIcon.style.transform = "translateY(0)"; });
         modal.appendChild(closeIcon);
 
         let currentAjaxCall = null;
@@ -59,128 +123,177 @@ document.addEventListener('DOMContentLoaded', () => {
         const closeModal = () => {
             modal.style.display = "none";
             modalOverlay.style.display = "none";
-            inputField.innerText = "";
+            inputField.value = "";
             submitBtn.innerText = "Upload Images to WordPress";
             if (currentAjaxCall) currentAjaxCall.abort();
             timeoutIDs.forEach(id => clearTimeout(id));
         };
         closeIcon.addEventListener("click", closeModal);
 
-        const icon = document.createElement("div");
-        icon.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" width="60" height="60" viewBox="0 0 60 60"><path d="M57.6682 27.162V44.1891C57.8349 45.6269 57.6742 47.0838 57.1983 48.4507C56.7225 49.8177 55.9436 51.0594 54.9202 52.0829C53.8967 53.1064 52.655 53.8852 51.288 54.3611C49.921 54.837 48.4641 54.9976 47.0263 54.8309H12.9722C11.5344 54.9976 10.0775 54.837 8.71056 54.3611C7.34358 53.8852 6.1019 53.1064 5.07841 52.0829C4.05491 51.0594 3.27609 49.8177 2.80021 48.4507C2.32433 47.0838 2.1637 45.6269 2.33035 44.1891V15.8107C2.1637 14.3729 2.32433 12.916 2.80021 11.549C3.27609 10.182 4.05491 8.94033 5.07841 7.91683C6.1019 6.89333 7.34358 6.11451 8.71056 5.63863C10.0775 5.16275 11.5344 5.00213 12.9722 5.16878H35.675C36.2394 5.16878 36.7808 5.39302 37.1799 5.79217C37.5791 6.19131 37.8033 6.73268 37.8033 7.29716C37.8033 7.86164 37.5791 8.403 37.1799 8.80215C36.7808 9.2013 36.2394 9.42554 35.675 9.42554H12.9722C8.49698 9.42554 6.58711 11.3354 6.58711 15.8107V42.0607L13.7952 34.8526C14.331 34.3209 15.0553 34.0225 15.8101 34.0225C16.5649 34.0225 17.2891 34.3209 17.825 34.8526L20.4925 37.5201C20.7578 37.7801 21.1144 37.9257 21.4858 37.9257C21.8572 37.9257 22.2138 37.7801 22.479 37.5201L36.4979 23.5012C37.0337 22.9695 37.758 22.6712 38.5128 22.6712C39.2676 22.6712 39.9919 22.9695 40.5277 23.5012L53.4114 36.385V27.162C53.4114 26.5975 53.6357 26.0562 54.0348 25.657C54.434 25.2579 54.9753 25.0336 55.5398 25.0336C56.1043 25.0336 56.6457 25.2579 57.0448 25.657C57.444 26.0562 57.6682 26.5975 57.6682 27.162ZM18.6281 17.939C17.6859 17.9417 16.7832 18.3182 16.1184 18.9858C15.4536 19.6534 15.0809 20.5576 15.0822 21.4998C15.0835 22.442 15.4587 23.3452 16.1254 24.0109C16.7921 24.6767 17.6958 25.0507 18.638 25.0507C19.5802 25.0507 20.4839 24.6767 21.1506 24.0109C21.8173 23.3452 22.1925 22.442 22.1938 21.4998C22.1951 20.5576 21.8224 19.6534 21.1576 18.9858C20.4928 18.3182 19.5901 17.9417 18.6479 17.939H18.6281ZM48.5304 10.2201L49.1547 9.59864V15.8107C49.1547 16.3752 49.3789 16.9165 49.7781 17.3157C50.1772 17.7148 50.7186 17.939 51.2831 17.939C51.8475 17.939 52.3889 17.7148 52.7881 17.3157C53.1872 16.9165 53.4114 16.3752 53.4114 15.8107V9.59864L54.0358 10.2201C54.4392 10.5961 54.9729 10.8008 55.5243 10.791C56.0757 10.7813 56.6018 10.5579 56.9917 10.168C57.3817 9.77802 57.605 9.25193 57.6148 8.70053C57.6245 8.14914 57.4198 7.61549 57.0439 7.21202L52.7871 2.95527C52.3877 2.55738 51.8469 2.33398 51.2831 2.33398C50.7193 2.33398 50.1784 2.55738 49.779 2.95527L45.5223 7.21202C45.1463 7.61549 44.9416 8.14914 44.9514 8.70053C44.9611 9.25193 45.1845 9.77802 45.5744 10.168C45.9644 10.5579 46.4905 10.7813 47.0419 10.791C47.5932 10.8008 48.1269 10.5961 48.5304 10.2201Z" fill="#1E1E1E"/></svg>`;
-        icon.style.textAlign = "center";
-        icon.style.marginBottom = "10px";
-        icon.style.opacity = "1";
-        modal.appendChild(icon);
-
-        // Create input field
-        const inputField = document.createElement("textarea");
-        inputField.type = "text";
-        inputField.placeholder = "Paste Content Here & Click the button below";
-        const style = document.createElement('style');
-        style.innerHTML = `
-            textarea::placeholder {
-                color: white;
-                opacity: 0.5;
-            }
+        // White content card --------------------------------------------------
+        const card = document.createElement("div");
+        card.style.cssText = `
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            padding: 20px;
+            background: ${UC.surfaceRaised};
+            border-radius: ${UC.radiusXl};
+            border: 1px solid ${UC.border};
+            overflow: hidden;
         `;
-        document.head.appendChild(style);
-        inputField.style.width = "100%";
-        inputField.style.height = "104px";
-        inputField.style.borderRadius = "5px";
-        inputField.style.padding = "10px";
-        inputField.style.textAlign = "start";
-        inputField.style.fontFamily = "Plus Jakarta Sans";
-        inputField.style.border = '0.5px solid #7A7A7A';
-        inputField.style.marginBottom = "10px";
-        inputField.style.resize = "none";
-        modal.appendChild(inputField);
+        modal.appendChild(card);
 
-        // Styles for the button
+        // Header: title + description (left-aligned) ---------------------------
+        const header = document.createElement("div");
+        header.style.cssText = "display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:4px;";
+
+        const title = document.createElement("h2");
+        title.innerText = "Upload Media & Paste";
+        // DS .title: --uc-text-xl (1.25rem) / --uc-weight-semibold (folded to 500).
+        title.style.cssText = `margin:0; font-family:${UC.fontSans}; font-size:1.25rem; font-weight:500; line-height:1.2; color:${UC.textStrong};`;
+        header.appendChild(title);
+
+        const desc = document.createElement("p");
+        desc.innerText = "Paste your copied content below and we'll upload its images to your WordPress media library.";
+        desc.style.cssText = `margin:0; font-family:${UC.fontSans}; font-size:0.875rem; line-height:1.4; color:${UC.textMuted};`;
+        header.appendChild(desc);
+
+        card.appendChild(header);
+
+        // Body: textarea -------------------------------------------------------
+        const inputField = document.createElement("textarea");
+        inputField.className = "uich-ds-textarea";
+        inputField.placeholder = "Paste Content Here & Click the button below";
+        inputField.style.cssText = `
+            width: 100%;
+            height: 104px;
+            box-sizing: border-box;
+            border-radius: ${UC.radiusMd};
+            padding: 10px 12px;
+            text-align: start;
+            font-family: ${UC.fontSans};
+            font-size: 0.875rem;
+            color: ${UC.textStrong};
+            background: ${UC.surfaceRaised};
+            border: 1px solid ${UC.border};
+            box-shadow: ${UC.shadowInput};
+            resize: none;
+        `;
+        card.appendChild(inputField);
+
+        // Footer — sits on the grey tray, below the white card -----------------
+        const footer = document.createElement("div");
+        footer.style.cssText = "display:flex; flex-direction:column; gap:8px; padding:16px 16px 12px;";
+        modal.appendChild(footer);
+
+        // Primary CTA (brand solid) --------------------------------------------
         const submitButtonStyles = `
-            background-color: #4B22CC;
-            color: white;
+            width: 100%;
+            box-sizing: border-box;
+            background-color: ${UC.brand};
+            background-image: ${UC.sheen};
+            color: ${UC.brandOn};
             border: none;
-            padding: 10px 20px;
-            gap: 4px;
-            font-size: 16px;
-            border-radius: 5px;
+            padding: 0 16px;
+            min-height: 40px;
+            gap: 6px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            line-height: 1;
+            border-radius: ${UC.radiusMd};
+            box-shadow: ${UC.shadowControlBrand};
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.3s;
-            margin: 5px;
-            width: 100%;
-            font-family: 'Plus Jakarta Sans';
-            font-weight: 'normal ;
+            transition: background-image 160ms cubic-bezier(0.2,0,0,1);
+            font-family: ${UC.fontSans};
         `;
-        // Create submit button
         const submitBtn = document.createElement("button");
+        submitBtn.type = "button";
         submitBtn.innerText = "Upload Images to WordPress";
         submitBtn.style.cssText = submitButtonStyles;
-        modal.appendChild(submitBtn);
+        submitBtn.addEventListener('mouseenter', () => {
+            submitBtn.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.12), rgba(255,255,255,0.12)), ${UC.sheen}`;
+        });
+        submitBtn.addEventListener('mouseleave', () => {
+            submitBtn.style.backgroundImage = UC.sheen;
+        });
+        footer.appendChild(submitBtn);
 
-        // Copy Now button (optional, hidden)
-        const copyButtonStyles = `
-            background-color: #28a745;
-            color: white;
+        // Copy Now button (optional, hidden) -----------------------------------
+        const copyNowBtn = document.createElement("button");
+        copyNowBtn.type = "button";
+        copyNowBtn.innerText = "Copy Now";
+        copyNowBtn.style.cssText = `
+            width: 100%;
+            box-sizing: border-box;
+            background: ${UC.surfaceRaised};
+            background-image: ${UC.sheen};
+            color: ${UC.textStrong};
             border: none;
-            padding: 10px 20px;
-            font-size: 16px;
-            font-family: Plus Jakarta Sans;
-            border-radius: 5px;
+            padding: 0 16px;
+            min-height: 40px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            font-family: ${UC.fontSans};
+            border-radius: ${UC.radiusMd};
+            box-shadow: inset 0 0 0 1px ${UC.borderSubtle}, ${UC.shadowControl};
             cursor: pointer;
             align-items: center;
             justify-content: center;
-            transition: background-color 0.3s;
         `;
-        const copyNowBtn = document.createElement("button");
-        copyNowBtn.innerText = "Copy Now";
-        copyNowBtn.style.cssText = copyButtonStyles;
         copyNowBtn.style.display = "none";
-        modal.appendChild(copyNowBtn);
+        footer.appendChild(copyNowBtn);
 
-        // Styles for the open modal button
+        // Neutral dark-grey button — white UiChemy glyph + "Paste" label on grey.
+        // Matches the Gutenberg paste button (#uich-paste-clipboard in uich-cp.css,
+        // #525252 / #404040 hover); grey reads on both the dark Elementor bar and a
+        // light bar. Styled inline here because that stylesheet isn't loaded in the
+        // Elementor editor.
+        // Matched to Elementor's own top-bar "+" (Add Element) button — a dark
+        // toolbar grey, a step above the near-black bar. Tune here if the exact
+        // Elementor value differs.
+        const PASTE_BG = '#3a3d42';
+        const PASTE_BG_HOVER = '#4a4e55';
         const buttonStyles = `
-            background-color: #E3ED5D;
-            color: white;
-            border: none;
-            padding: 5px 5px;
-            font-size: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            border-radius: 5px;
-            cursor: pointer;
-            font-family: 'Plus Jakarta Sans';
-            font-weight: 600;
             gap: 8px;
+            height: 34px;
+            padding: 0 13px;
             margin: 5px;
-            pointerEvents: 'none';
-            color: black;
+            border: none;
+            border-radius: 8px;
+            background-color: ${PASTE_BG};
+            color: ${UC.brandOn};
+            font-family: ${UC.fontSans};
+            font-size: 13px;
+            font-weight: 500;
+            line-height: 1;
+            cursor: pointer;
+            transition: background-color 0.2s;
         `;
         const openModalBtn = document.createElement("button");
         openModalBtn.className = 'uichemy-upload-btn';
+        openModalBtn.type = "button";
         openModalBtn.style.cssText = buttonStyles;
-        const logoImg = document.createElement("img");
-        logoImg.setAttribute("src", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAASCAYAAAC5DOVpAAAACXBIWXMAABCcAAAQnAEmzTo0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAFCSURBVHgBxVRLToRAEO1uJgRISFjyWcgR5ga4dCc3cG4w3EA9geMN5ih4Atm6sk1I2GIghJAQfG3QtNjMQFz4kkrTVa8f1UUV1HXdkDH2SkYMw8Bhx7ZtH0uAKOB53h5LQikNJfeRTYmCAPE70zSfHUAh9ADOYSL0iV9isqhlWXvZh1tE8CdzZ2bFRvw4qGlafIp8TszBtS6+Nqil8xexVdiQdeCoWaoKwJ/RaWtMgauFRVG8kQX4v2v6vn+NZauK9X2fra1ZrOv6vSrQdd3tWjHCAZUfWS+qWUIWYmMYRokUZwlifNC4ovMzfFllvURHYOEMWZcgpeQExJzCYtjcBERoryc2kg9kAVQvFVnh/C7P81QTjqqqXmzbFo+XZ/Su6rp+l4SiMZGd8FOZGQTBjQjAtoqh5rBU2ot41jTN90/0AyMtajDXKkJTAAAAAElFTkSuQmCC");
-        logoImg.style.width = "15px";
-        logoImg.style.height = "15px";
-        openModalBtn.appendChild(logoImg);
-        const text = document.createElement("span");
-        text.innerText = "Upload Media & Paste";
-        openModalBtn.appendChild(text);
+        openModalBtn.innerHTML = `
+            ${brandMark(15)}
+            <span>Paste</span>
+        `;
         openModalBtn.addEventListener('mouseenter', () => {
-            openModalBtn.style.backgroundColor = '#B2BA45';
+            openModalBtn.style.backgroundColor = PASTE_BG_HOVER;
         });
         openModalBtn.addEventListener('mouseleave', () => {
-            openModalBtn.style.backgroundColor = '#E3ED5D';
+            openModalBtn.style.backgroundColor = PASTE_BG;
         });
         const div = document.createElement("div");
         div.className = 'preview-dimension';
         div.style.cssText = "align-self: center";
-        div.setAttribute('data-balloon', 'Upload Media & Paste Using UiChemy');
+        div.setAttribute('data-balloon', 'Upload Media & Paste Using ' + brandName());
         div.setAttribute('data-balloon-pos','bottom');
         div.appendChild(openModalBtn);
         toolbar.appendChild(div);

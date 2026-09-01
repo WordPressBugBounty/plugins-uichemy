@@ -35,20 +35,36 @@ if ( ! class_exists( 'Uich_ND_Analytics' ) ) {
 		 * Fire the onboarding ping. No-op if it's already been sent
 		 * once for this site.
 		 */
-		public static function ping_onboarding() {
+		public static function ping_onboarding( $consent = false ) {
+			// Explicit opt-in is required before ANY site data leaves the site.
+			// Re-checked here — not only at the caller — so this method can never
+			// send without consent, whatever path reaches it in future.
+			if ( ! $consent ) {
+				return array(
+					'sent'   => false,
+					'reason' => 'no_consent',
+				);
+			}
+
 			if ( '1' === (string) get_option( self::OPT_PINGED, '0' ) ) {
-				return array( 'sent' => false, 'reason' => 'already_pinged' );
+				return array(
+					'sent'   => false,
+					'reason' => 'already_pinged',
+				);
 			}
 
 			$payload = self::build_payload();
 
-			$response = wp_remote_post( self::ENDPOINT, array(
-				'method'   => 'POST',
-				'timeout'  => self::TIMEOUT_SECS,
-				'blocking' => true,
-				'headers'  => array( 'Content-Type' => 'application/json' ),
-				'body'     => wp_json_encode( $payload ),
-			) );
+			$response = wp_remote_post(
+				self::ENDPOINT,
+				array(
+					'method'   => 'POST',
+					'timeout'  => self::TIMEOUT_SECS,
+					'blocking' => true,
+					'headers'  => array( 'Content-Type' => 'application/json' ),
+					'body'     => wp_json_encode( $payload ),
+				)
+			);
 
 			// Mark sent even if the POST failed — we don't want to ping
 			// the intake endpoint on every refresh just because a single
@@ -56,7 +72,11 @@ if ( ! class_exists( 'Uich_ND_Analytics' ) ) {
 			update_option( self::OPT_PINGED, '1' );
 
 			if ( is_wp_error( $response ) ) {
-				return array( 'sent' => false, 'reason' => 'wp_error', 'message' => $response->get_error_message() );
+				return array(
+					'sent'    => false,
+					'reason'  => 'wp_error',
+					'message' => $response->get_error_message(),
+				);
 			}
 
 			return array(

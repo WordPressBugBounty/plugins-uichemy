@@ -3,14 +3,14 @@
  * Plugin Name:       UiChemy — Figma Converter for Elementor, Gutenberg and Bricks
  * Plugin URI:        https://uichemy.com
  * Description:       Convert Figma Design to 100% Editable WordPress websites in Elementor Website Builder and Gutenberg aka WordPress Block Editor.
- * Version:           5.0.2
+ * Version:           5.1.0
  * Author:            POSIMYTH
  * Author URI:        https://posimyth.com
  * License:           GPLv3
- * License URI:       https://www.gnu.org/licenses/gpl-2.0.html
+ * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain:       uichemy
  * Requires at least: 6.9
- * Tested up to:      7.0.2
+ * Tested up to:      7.1
  * Requires PHP:      7.4
  *
  * @link              https://posimyth.com
@@ -22,7 +22,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'UICH_VERSION', '5.0.2' );
+define( 'UICH_VERSION', '5.1.0' );
 define( 'UICH_FILE', __FILE__ );
 define( 'UICH_PATH', plugin_dir_path( __FILE__ ) );
 define( 'UICH_URL', plugins_url( '/', __FILE__ ) );
@@ -31,4 +31,22 @@ define( 'UICH_PBNAME', plugin_basename( __FILE__ ) );
 define( 'UICH_USER_OPTION', 'uichemy_user' );
 define( 'UICH_ADMIN_NOTICE_FALG', 1 );
 
+/**
+ * Brand helpers (name / logo / menu icon) — see includes/class-uich-brand.php.
+ *
+ * Required here, before anything else, because `admin_menu`, the editor enqueues
+ * and the dashboard boot payload all brand themselves through these functions.
+ */
+require UICH_PATH . 'includes/class-uich-brand.php';
+
 require UICH_PATH . 'includes/class-uich-uichemy.php';
+
+/**
+ * The merged UiChemy builder runtime (uichemy-composer/).
+ *
+ * Required here, at plugin-file load time, rather than from
+ * Uich_Uichemy::uich_load_dependencies() — that method already runs INSIDE
+ * `plugins_loaded`, and the runtime registers its own `plugins_loaded` callback,
+ * which is unreliable to add while that same hook is mid-flight.
+ */
+require UICH_PATH . 'includes/composer/class-uich-composer-loader.php';

@@ -1,6 +1,32 @@
 // Gutenberg Paste Button
 (function(window, wp) {
-    const copyButton = '<svg width="14" height="15" viewBox="0 0 14 15" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M8.15443 7.91705L8.14325 10.9265C8.14325 10.9265 5.60113 11.0735 5.60113 9.11541V4.12304C5.60071 3.162 5.21864 2.24047 4.53893 1.56107C3.85923 0.881661 2.93753 0.5 1.9765 0.5H3.17421e-07V10.4512C-0.000209837 10.9806 0.103934 11.5048 0.30647 11.9939C0.509006 12.483 0.805964 12.9274 1.18037 13.3016C1.55477 13.6759 1.99926 13.9727 2.48845 14.175C2.97763 14.3773 3.5019 14.4813 4.03128 14.4809C4.30471 14.5064 4.57992 14.5064 4.85335 14.4809H9.66757C10.7509 14.4809 11.7899 14.0505 12.556 13.2844C13.322 12.5184 13.7524 11.4794 13.7524 10.3961V7.91945L8.15443 7.91705ZM13.2674 10.3937C13.2655 11.3465 12.8862 12.2599 12.2124 12.9337C11.5386 13.6074 10.6252 13.9868 9.67235 13.9887H7.38669C7.62987 13.794 7.8426 13.564 8.01782 13.3065C8.55948 12.5076 8.62818 11.6136 8.62818 10.9257L8.63857 8.40117H13.2674V10.3937Z" fill="white"/><path d="M11.413 0.5C10.5485 0.5 9.71933 0.843391 9.10792 1.45465C8.49652 2.06591 8.15293 2.89498 8.15271 3.75954V5.71446H13.7546V0.5H11.413Z" fill="white"/></svg> Paste';
+    // White UiChemy glyph (mark only, transparent background) so it reads on the
+    // orange button fill. Inlined so the button is fully self-contained.
+    const glyphMark = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style="display:block"><path d="M14.2081 17.8755C14.2081 17.8755 9.77244 18.1264 9.77244 14.7703V6.21257C9.77244 5.39663 9.60889 4.5887 9.29109 3.83488C8.9733 3.08107 8.50748 2.39614 7.92028 1.81923C7.33308 1.24233 6.63598 0.784742 5.86878 0.472593C5.10159 0.160445 4.27932 -0.000139528 3.44896 9.09654e-08H0V17.0569C0 18.8896 0.740883 20.6471 2.05966 21.943C3.37843 23.2389 5.16707 23.9669 7.0321 23.9669H7.04182C7.51895 24.011 7.99924 24.011 8.47637 23.9669H16.8749C18.7646 23.9669 20.5769 23.2292 21.9131 21.9162C23.2493 20.6032 24 18.8224 24 16.9655V12.7217H14.2308L14.2081 17.8755ZM15.0736 13.5499H23.1497V16.9602C23.1471 18.5947 22.4852 20.1615 21.309 21.3173C20.1328 22.473 18.5383 23.1235 16.8749 23.126H12.8958C13.3198 22.792 13.691 22.3979 13.9971 21.9566C14.9405 20.5874 15.0617 19.0555 15.0617 17.8766L15.0736 13.5499Z" fill="#fff"/><path d="M19.9128 0C18.4046 -2.68126e-08 16.9581 0.58864 15.8916 1.63647C14.825 2.68429 14.2257 4.1055 14.2254 5.58749V8.93826H23.9979V0H19.9128Z" fill="#fff"/></svg>';
+
+    // White Label: an uploaded brand logo replaces the glyph above. `wl_logo` is
+    // empty (so the glyph stays) unless white-labeling is on AND a logo was set —
+    // the button used to paint the UiChemy mark on every white-labelled site.
+    function brandMark() {
+        const logo = (window.uichemy_ajax_object && uichemy_ajax_object.wl_logo) || '';
+        return logo
+            ? '<img src="' + logo + '" alt="" width="20" height="20" style="display:block;object-fit:contain" />'
+            : glyphMark;
+    }
+
+    function brandName() {
+        return (window.uichemy_ajax_object && uichemy_ajax_object.wl_name) || 'UiChemy';
+    }
+
+    // Solid brand button: mark + "Paste" label on UiChemy orange. All styling
+    // lives in assets/css/uich-cp.css (#uich-paste-clipboard).
+    //
+    // A getter, not a constant: wp_localize_script data is attached to the script
+    // handle and is guaranteed present by the time a handler runs, but not
+    // necessarily while this module body evaluates.
+    function copyButtonHtml() {
+        return brandMark() + '<span class="uich-pc-label">Paste</span>';
+    }
 
     const loadingButton = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><style>.spinner_ajPY{transform-origin:center;animation:spinner_AtaB .75s infinite linear}@keyframes spinner_AtaB{100%{transform:rotate(360deg)}}</style><path fill="#FFFFFF" d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z" opacity=".25"/><path fill="#FFFFFF" d="M10.14,1.16a11,11,0,0,0-9,8.92A1.59,1.59,0,0,0,2.46,12,1.52,1.52,0,0,0,4.11,10.7a8,8,0,0,1,6.66-6.61A1.42,1.42,0,0,0,12,2.69h0A1.57,1.57,0,0,0,10.14,1.16Z" class="spinner_ajPY"/></svg> Uploading...';
 
@@ -71,7 +97,7 @@
                         </span>
                     </div>
                 </div>
-                <div class='uich-head-clip-pop' style="margin-bottom: 15px; font-size: 16px; font-weight: 600; color: #333;">To paste with images from UiChemy</div>
+                <div class='uich-head-clip-pop' style="margin-bottom: 15px; font-size: 16px; font-weight: 600; color: #333;">To paste with images from ${brandName()}</div>
                 <input type="text" id="uich-paste-area-input" autocomplete="off" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 4px; font-size: 14px; outline: none;" />
             </div>
         `;
@@ -106,7 +132,7 @@
         }
         const clipboardBtn = document.querySelector("#uich-paste-clipboard");
         if (clipboardBtn) {
-            clipboardBtn.innerHTML = copyButton;
+            clipboardBtn.innerHTML = copyButtonHtml();
         }
     }
 
@@ -162,7 +188,7 @@
                         }).done(function(e) {
                             if (e.success) {
                                 if (clipboardBtn) {
-                                    clipboardBtn.innerHTML = copyButton;
+                                    clipboardBtn.innerHTML = copyButtonHtml();
                                 }
                                 const data = e.data[0];
                                 wp.data.dispatch('core/block-editor').insertBlocks(data);
@@ -170,7 +196,7 @@
                         });
                     } else {
                         if (clipboardBtn) {
-                            clipboardBtn.innerHTML = copyButton;
+                            clipboardBtn.innerHTML = copyButtonHtml();
                         }
                         wp.data.dispatch("core/block-editor").insertBlocks(block);
                     }
@@ -200,27 +226,9 @@
                     const button = document.createElement("button");
                     button.id = "uich-paste-clipboard";
                     button.title = "Paste";
-                    button.innerHTML = copyButton;
-                    button.style.cssText = `
-                        background: #4B22CC;
-                        border: none;
-                        border-radius: 4px;
-                        padding: 8px 12px;
-                        cursor: pointer;
-                        display: flex;
-                        align-items: center;
-                        gap: 5px;
-                        transition: background 0.2s;
-                    `;
-                    
-                    button.addEventListener('mouseenter', function() {
-                        button.style.background = '#2e0d98';
-                    });
-                    
-                    button.addEventListener('mouseleave', function() {
-                        button.style.background = '#4B22CC';
-                    });
-                    
+                    button.innerHTML = copyButtonHtml();
+                    // Styling (solid orange, white glyph + label, hover) lives in
+                    // assets/css/uich-cp.css so both editors stay in sync.
                     button.addEventListener("click", openModal);
                     
                     wrapper.appendChild(button);

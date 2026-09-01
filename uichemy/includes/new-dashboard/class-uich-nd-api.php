@@ -34,96 +34,196 @@ if ( ! class_exists( 'Uich_ND_Api' ) ) {
 		public static function register_routes() {
 			$auth = array( __CLASS__, 'permission_check' );
 
-			register_rest_route( self::NS, '/env', array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'route_env' ),
-				'permission_callback' => $auth,
-			) );
+			register_rest_route(
+				self::NS,
+				'/env',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'route_env' ),
+					'permission_callback' => $auth,
+				)
+			);
 
-			register_rest_route( self::NS, '/builders', array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'route_builders' ),
-				'permission_callback' => $auth,
-			) );
+			register_rest_route(
+				self::NS,
+				'/builders',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'route_builders' ),
+					'permission_callback' => $auth,
+				)
+			);
 
-			register_rest_route( self::NS, '/state', array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'route_state' ),
-				'permission_callback' => $auth,
-			) );
+			register_rest_route(
+				self::NS,
+				'/state',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'route_state' ),
+					'permission_callback' => $auth,
+				)
+			);
 
-			register_rest_route( self::NS, '/builder', array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( __CLASS__, 'route_set_builder' ),
-				'permission_callback' => $auth,
-				'args'                => array(
-					'builder' => array( 'required' => true, 'type' => 'string' ),
-				),
-			) );
+			register_rest_route(
+				self::NS,
+				'/builder',
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'route_set_builder' ),
+					'permission_callback' => $auth,
+					'args'                => array(
+						'builder' => array(
+							'required' => true,
+							'type'     => 'string',
+						),
+					),
+				)
+			);
 
-			register_rest_route( self::NS, '/mode', array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( __CLASS__, 'route_set_mode' ),
-				'permission_callback' => $auth,
-				'args'                => array(
-					'mode' => array( 'required' => true, 'type' => 'string' ),
-				),
-			) );
+			register_rest_route(
+				self::NS,
+				'/mode',
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'route_set_mode' ),
+					'permission_callback' => $auth,
+					'args'                => array(
+						'mode' => array(
+							'required' => true,
+							'type'     => 'string',
+						),
+					),
+				)
+			);
 
-			register_rest_route( self::NS, '/onboarded', array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( __CLASS__, 'route_set_onboarded' ),
-				'permission_callback' => $auth,
-				'args'                => array(
-					'done'    => array( 'required' => false, 'type' => 'boolean', 'default' => true ),
-					'consent' => array( 'required' => false, 'type' => 'boolean', 'default' => false ),
-				),
-			) );
+			register_rest_route(
+				self::NS,
+				'/onboarded',
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'route_set_onboarded' ),
+					'permission_callback' => $auth,
+					'args'                => array(
+						'done'    => array(
+							'required' => false,
+							'type'     => 'boolean',
+							'default'  => true,
+						),
+						'consent' => array(
+							'required' => false,
+							'type'     => 'boolean',
+							'default'  => false,
+						),
+					),
+				)
+			);
 
-			register_rest_route( self::NS, '/install', array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( __CLASS__, 'route_install' ),
-				'permission_callback' => array( __CLASS__, 'permission_install' ),
-				'args'                => array(
-					'builder' => array( 'required' => true, 'type' => 'string' ),
-				),
-			) );
+			register_rest_route(
+				self::NS,
+				'/install',
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'route_install' ),
+					'permission_callback' => array( __CLASS__, 'permission_install' ),
+					'args'                => array(
+						'builder' => array(
+							'required' => true,
+							'type'     => 'string',
+						),
+					),
+				)
+			);
 
-			register_rest_route( self::NS, '/protuno/install', array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( __CLASS__, 'route_protuno_install' ),
-				'permission_callback' => array( __CLASS__, 'permission_protuno_install' ),
-			) );
+			register_rest_route(
+				self::NS,
+				'/uichemy/install',
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'route_uichemy_install' ),
+					'permission_callback' => array( __CLASS__, 'permission_uichemy_install' ),
+				)
+			);
 
-			register_rest_route( self::NS, '/register-session', array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( __CLASS__, 'route_register_session' ),
-				'permission_callback' => $auth,
-				'args'                => array(
-					'licenseId' => array( 'required' => true, 'type' => 'string' ),
-				),
-			) );
+			/*
+			 * UiChemy Pro — install-from-zip then activate, or just activate when
+			 * it is already on the site. Same capability gate as the free install:
+			 * this writes to wp-content/plugins and flips active_plugins.
+			 */
+			register_rest_route(
+				self::NS,
+				'/uichemy-pro/install',
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'route_uichemy_pro_install' ),
+					'permission_callback' => array( __CLASS__, 'permission_uichemy_install' ),
+				)
+			);
 
-			register_rest_route( self::NS, '/licenses/user', array(
-				'methods'             => WP_REST_Server::READABLE,
-				'callback'            => array( __CLASS__, 'route_licenses_user' ),
-				'permission_callback' => $auth,
-			) );
+			/*
+			 * The /register-session and /change-license routes were removed with
+			 * the app.uichemy.com SSO they proxied. Sign-in is an OAuth flow
+			 * against the AI Website Creator now (Uich_ND_Auth →
+			 * Uich_Webpage_Auth), and there is no per-site license session to
+			 * register or switch.
+			 */
 
-			register_rest_route( self::NS, '/change-license', array(
-				'methods'             => WP_REST_Server::CREATABLE,
-				'callback'            => array( __CLASS__, 'route_change_license' ),
-				'permission_callback' => $auth,
-				'args'                => array(
-					'newLicenseId' => array( 'required' => true, 'type' => 'string' ),
-				),
-			) );
+			/*
+			 * /licenses/user survived that removal because the dashboard still
+			 * calls it on every visit as its session check (getSession() in
+			 * new-dashboard/src/lib/api.js): a 401 signs the user out, anything
+			 * else is ignored. With the route gone it answered 404 — not 401 — so
+			 * the sign-out branch could never run and a site stayed "logged in"
+			 * long after its account had been disconnected from the app.
+			 *
+			 * It no longer proxies anything; it just reports this site's own auth
+			 * state, which is what the caller actually wanted.
+			 */
+			register_rest_route(
+				self::NS,
+				'/licenses/user',
+				array(
+					'methods'             => WP_REST_Server::READABLE,
+					'callback'            => array( __CLASS__, 'route_licenses_user' ),
+					'permission_callback' => $auth,
+				)
+			);
 		}
 
 		/**
-		 * Installing Protuno needs install_plugins + activate_plugins.
+		 * Report the connected AI Website Creator account.
+		 *
+		 * 401 when nothing is connected — the dashboard treats that as "sign out",
+		 * so it must stay a 401 and not a 200 with an empty body.
+		 *
+		 * @return WP_REST_Response|WP_Error
 		 */
-		public static function permission_protuno_install() {
+		public static function route_licenses_user() {
+			if ( ! class_exists( 'Uich_ND_Auth' ) || ! Uich_ND_Auth::is_authed() ) {
+				return new WP_Error(
+					'uich_not_connected',
+					__( 'No UiChemy account is connected to this site.', 'uichemy' ),
+					array( 'status' => 401 )
+				);
+			}
+
+			$account = Uich_ND_Auth::get_account();
+
+			return new WP_REST_Response(
+				array(
+					'user' => array(
+						'id'    => isset( $account['sub'] ) ? $account['sub'] : '',
+						'name'  => isset( $account['name'] ) ? $account['name'] : '',
+						'email' => isset( $account['email'] ) ? $account['email'] : '',
+					),
+				),
+				200
+			);
+		}
+
+		/**
+		 * Installing UiChemy needs install_plugins + activate_plugins.
+		 */
+		public static function permission_uichemy_install() {
 			return current_user_can( 'install_plugins' ) && current_user_can( 'activate_plugins' );
 		}
 
@@ -148,23 +248,26 @@ if ( ! class_exists( 'Uich_ND_Api' ) ) {
 		}
 
 		public static function route_state( WP_REST_Request $req ) {
-			return rest_ensure_response( array(
-				'auth'        => Uich_ND_Auth::get_boot_state(),
-				'env'         => Uich_ND_Settings::env_check(),
-				'builders'    => Uich_ND_Settings::detect_builders(),
-				'builder'     => Uich_ND_Settings::get_builder(),
-				'mode'        => Uich_ND_Settings::get_mode(),
-				'onboarded'   => Uich_ND_Settings::is_onboarded(),
-				'appPassword' => Uich_ND_App_Password::get_dashboard_state(),
-				'localEnv'    => Uich_ND_Settings::get_local_env_state(),
-				'protuno'     => Uich_ND_Settings::detect_protuno(),
-				'site'        => array(
-					'name'       => get_bloginfo( 'name' ),
-					'url'        => get_option( 'siteurl' ),
-					'restUrl'    => rest_url(),
-					'connectUrl' => esc_url_raw( Uich_ND_Enqueue::connect_url_base() ),
-				),
-			) );
+			return rest_ensure_response(
+				array(
+					'auth'        => Uich_ND_Auth::get_boot_state(),
+					'env'         => Uich_ND_Settings::env_check(),
+					'builders'    => Uich_ND_Settings::detect_builders(),
+					'builder'     => Uich_ND_Settings::get_builder(),
+					'mode'        => Uich_ND_Settings::get_mode(),
+					'onboarded'   => Uich_ND_Settings::is_onboarded(),
+					'appPassword' => Uich_ND_App_Password::get_dashboard_state(),
+					'localEnv'    => Uich_ND_Settings::get_local_env_state(),
+					'uichemy'     => Uich_ND_Settings::detect_uichemy(),
+					'uichemyPro'  => Uich_ND_Settings::detect_uichemy_pro(),
+					'site'        => array(
+						'name'       => get_bloginfo( 'name' ),
+						'url'        => get_option( 'siteurl' ),
+						'restUrl'    => rest_url(),
+						'connectUrl' => esc_url_raw( Uich_ND_Enqueue::connect_url_base() ),
+					),
+				)
+			);
 		}
 
 		public static function route_set_builder( WP_REST_Request $req ) {
@@ -180,10 +283,12 @@ if ( ! class_exists( 'Uich_ND_Api' ) ) {
 
 			$recommended = Uich_ND_Recommended_Settings::apply_for( $builder );
 
-			return rest_ensure_response( array(
-				'builder'     => Uich_ND_Settings::get_builder(),
-				'recommended' => $recommended,
-			) );
+			return rest_ensure_response(
+				array(
+					'builder'     => Uich_ND_Settings::get_builder(),
+					'recommended' => $recommended,
+				)
+			);
 		}
 
 		public static function route_set_mode( WP_REST_Request $req ) {
@@ -205,13 +310,15 @@ if ( ! class_exists( 'Uich_ND_Api' ) ) {
 			// external server. Failures are swallowed; never blocks the user.
 			$ping = null;
 			if ( $done && $consent ) {
-				$ping = Uich_ND_Analytics::ping_onboarding();
+				$ping = Uich_ND_Analytics::ping_onboarding( $consent );
 			}
 
-			return rest_ensure_response( array(
-				'onboarded' => Uich_ND_Settings::is_onboarded(),
-				'analytics' => $ping,
-			) );
+			return rest_ensure_response(
+				array(
+					'onboarded' => Uich_ND_Settings::is_onboarded(),
+					'analytics' => $ping,
+				)
+			);
 		}
 
 		public static function route_install( WP_REST_Request $req ) {
@@ -222,100 +329,25 @@ if ( ! class_exists( 'Uich_ND_Api' ) ) {
 			return rest_ensure_response( $result );
 		}
 
-		public static function route_protuno_install() {
-			$result = Uich_ND_Installer::install_protuno();
+		public static function route_uichemy_install() {
+			$result = Uich_ND_Installer::install_uichemy();
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
 			return rest_ensure_response( $result );
 		}
 
-		public static function route_register_session( WP_REST_Request $req ) {
-			$license_id = sanitize_text_field( (string) $req->get_param( 'licenseId' ) );
-			$token      = Uich_ND_Auth::get_token();
-
-			if ( '' === $token ) {
-				return new WP_Error( 'not_authed', __( 'Not connected to UiChemy.', 'uichemy' ), array( 'status' => 401 ) );
-			}
-
-			$session = Uich_ND_Auth::register_license_session( $token, $license_id );
-
-			if ( is_wp_error( $session ) ) {
-				return new WP_Error(
-					$session->get_error_code(),
-					$session->get_error_message(),
-					array( 'status' => 'license_session_limit_reached' === $session->get_error_code() ? 409 : 400 )
-				);
-			}
-
-			return rest_ensure_response( array( 'session' => $session ) );
-		}
-
 		/**
-		 * GET /licenses/user — server-side proxy to the UiChemy API so the
-		 * browser never makes the cross-origin call itself (no CORS). Forwards
-		 * the stored SSO token as a Bearer header. A 401 from the API means the
-		 * token is dead, so we clear it (and the cached license/session options)
-		 * and report 401 — the dashboard then signs the user out.
+		 * Install + activate UiChemy Pro (or activate an already-installed copy).
+		 *
+		 * @return WP_REST_Response|WP_Error
 		 */
-		public static function route_licenses_user() {
-			$token = Uich_ND_Auth::get_token();
-			if ( '' === $token ) {
-				return new WP_Error( 'not_authed', __( 'Not connected to UiChemy.', 'uichemy' ), array( 'status' => 401 ) );
-			}
-
-			$result = Uich_ND_Auth::fetch_license_user( $token );
-
+		public static function route_uichemy_pro_install() {
+			$result = Uich_ND_Installer::install_uichemy_pro();
 			if ( is_wp_error( $result ) ) {
-				$data   = $result->get_error_data();
-				$status = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
-
-				if ( 401 === $status ) {
-					Uich_ND_Auth::clear_token();
-					return new WP_Error( 'unauthorized', $result->get_error_message(), array( 'status' => 401 ) );
-				}
-
-				return new WP_Error(
-					$result->get_error_code(),
-					$result->get_error_message(),
-					array( 'status' => $status >= 400 ? $status : 502 )
-				);
+				return $result;
 			}
-
 			return rest_ensure_response( $result );
-		}
-
-		/**
-		 * POST /change-license — switch this site's session onto a different
-		 * license via the UiChemy API (POST /licenses/change-license-activation).
-		 * A 401 clears the token so the dashboard returns to sign-in.
-		 */
-		public static function route_change_license( WP_REST_Request $req ) {
-			$new_id = sanitize_text_field( (string) $req->get_param( 'newLicenseId' ) );
-			$token  = Uich_ND_Auth::get_token();
-
-			if ( '' === $token ) {
-				return new WP_Error( 'not_authed', __( 'Not connected to UiChemy.', 'uichemy' ), array( 'status' => 401 ) );
-			}
-
-			$result = Uich_ND_Auth::change_license_activation( $token, $new_id );
-
-			if ( is_wp_error( $result ) ) {
-				$data   = $result->get_error_data();
-				$status = is_array( $data ) && isset( $data['status'] ) ? (int) $data['status'] : 0;
-
-				if ( 401 === $status ) {
-					Uich_ND_Auth::clear_token();
-				}
-
-				return new WP_Error(
-					$result->get_error_code(),
-					$result->get_error_message(),
-					array( 'status' => $status >= 400 ? $status : 400 )
-				);
-			}
-
-			return rest_ensure_response( array( 'session' => $result ) );
 		}
 	}
 }

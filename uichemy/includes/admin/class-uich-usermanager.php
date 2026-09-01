@@ -99,7 +99,7 @@ if ( ! class_exists( 'Uich_UserManager' ) ) {
 		 * @since 1.0.0
 		 */
 		public static function get_selected_user() {
-			if( false === get_option( UICH_USER_OPTION  ) ) {
+			if ( false === get_option( UICH_USER_OPTION ) ) {
 				self::init_selected_user();
 			}
 

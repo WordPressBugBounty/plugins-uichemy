@@ -76,24 +76,32 @@ if ( ! class_exists( 'Uich_ND_Recommended_Settings' ) ) {
 					break;
 
 				default:
-					return array( 'builder' => $builder, 'changes' => array(), 'runCount' => 0 );
+					return array(
+						'builder'  => $builder,
+						'changes'  => array(),
+						'runCount' => 0,
+					);
 			}
 
 			// Bump a per-builder run counter so we can see in logs / debug
 			// how many times we've re-asserted these settings.
-			$applied                 = self::get_applied();
-			$prev                    = isset( $applied[ $builder ] ) && is_array( $applied[ $builder ] )
+			$applied             = self::get_applied();
+			$prev                = isset( $applied[ $builder ] ) && is_array( $applied[ $builder ] )
 				? $applied[ $builder ]
 				: array( 'runCount' => 0 );
-			$run_count               = isset( $prev['runCount'] ) ? (int) $prev['runCount'] + 1 : 1;
-			$applied[ $builder ]     = array(
+			$run_count           = isset( $prev['runCount'] ) ? (int) $prev['runCount'] + 1 : 1;
+			$applied[ $builder ] = array(
 				'runCount' => $run_count,
 				'lastRun'  => time(),
 				'lastDiff' => $changes,
 			);
 			update_option( self::OPT_APPLIED, $applied );
 
-			return array( 'builder' => $builder, 'changes' => $changes, 'runCount' => $run_count );
+			return array(
+				'builder'  => $builder,
+				'changes'  => $changes,
+				'runCount' => $run_count,
+			);
 		}
 
 		/**

@@ -36,7 +36,7 @@ if ( ! class_exists( 'Uich_MCP_Server' ) ) {
 		const SERVER_ID          = 'uichemy-wordpress-mcp';
 		const SERVER_NAME        = 'UiChemy WordPress MCP';
 		const SERVER_VERSION     = '1.0.0';
-		const SERVER_DESCRIPTION = 'UiChemy WordPress MCP — aggregation endpoint that exposes MCP tools registered by active UiChemy-family plugins (e.g. Protuno / Proton).';
+		const SERVER_DESCRIPTION = 'UiChemy WordPress MCP aggregation endpoint that exposes MCP tools registered by active UiChemy-family plugins (e.g. UiChemy / Composer).';
 		const REST_NAMESPACE     = 'uichemy/v1';
 		const REST_ROUTE         = 'mcp';
 
@@ -148,9 +148,9 @@ if ( ! class_exists( 'Uich_MCP_Server' ) ) {
 
 			// UiChemy no longer ships its own MCP tools — this endpoint is now a
 			// pure aggregation host: it only exposes tools that other plugins
-			// (e.g. Protuno) register through the `uichemy_mcp_tools` filter.
+			// (e.g. UiChemy) register through the `uichemy_mcp_tools` filter.
 			// Each entry is plain data + a PHP callable:
-			//   array( 'name', 'description', 'inputSchema', 'handler', 'permission'? )
+			// array( 'name', 'description', 'inputSchema', 'handler', 'permission'? )
 			// The McpTool is built here in UiChemy's own scoped namespace, so
 			// contributors never need UiChemy's adapter classes (avoids Strauss
 			// clashes between separately-prefixed adapter copies). Duplicate tool
@@ -224,6 +224,5 @@ if ( ! class_exists( 'Uich_MCP_Server' ) ) {
 		public static function default_tool_permission() {
 			return current_user_can( 'manage_options' );
 		}
-
 	}
 }

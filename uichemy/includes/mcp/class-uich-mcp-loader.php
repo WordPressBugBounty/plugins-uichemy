@@ -29,7 +29,7 @@ require_once plugin_dir_path( __FILE__ ) . 'class-uich-mcp-server.php';
  *
  * Strauss does NOT rename WP action/filter string literals, so the scoped
  * adapter still fires the un-namespaced 'mcp_adapter_init' hook that any other
- * mcp-adapter on the site (e.g. the site-wide SproutOS gateway) also fires.
+ * mcp-adapter on the site (e.g. a site-wide MCP gateway) also fires.
  * Isolation is handled at the listener level instead: Uich_MCP_Server::
  * register_mcp_server() type-guards its $adapter argument (instanceof the
  * scoped McpAdapter), so a foreign adapter firing the shared hook can never

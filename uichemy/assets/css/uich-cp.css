@@ -9,38 +9,45 @@
 .editor-document-tools__left ~ .uich-paste-clipboard-wrap {
     margin-left: 8px;
 }
+/* Neutral grey button: white UiChemy glyph + "Paste" label on a solid grey fill
+   (grey reads on both the dark Elementor bar and the light Gutenberg bar). */
 #uich-paste-clipboard {
     position: relative;
     display: -ms-flexbox;
     display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
     cursor: pointer;
     border: 0;
     -webkit-box-shadow: none;
     box-shadow: none;
     outline: 0;
-    border-radius: 4px;
-    background: 0 0;
-    font-size: 22px;
-    background-color: #4B22CC;
-    color: white;
-    gap: 4px;
-    align-items: center;
-    font-size: 14px;
-    padding: 4px 6px;
+    border-radius: 8px;
+    background: #525252;
+    color: #fff;
+    height: 34px;
+    padding: 0 13px;
+    font-family: "Zalando Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
     transition: background-color 200ms ease-in-out;
 }
-#uich-paste-clipboard:hover svg {
-    fill: var(--wp-admin-theme-color);
-}
 #uich-paste-clipboard:hover {
-    background-color: #2e0d98;
+    background: #404040;
 }
 #uich-paste-clipboard:active {
-    transform: scale(96%);
+    transform: translateY(1px);
 }
-
-#uich-paste-clipboard svg {
-    fill: #1e1e1e;
+#uich-paste-clipboard .uich-pc-label {
+    color: #fff;
+}
+#uich-paste-clipboard svg,
+#uich-paste-clipboard img {
+    display: block;
+    height: 16px;
+    width: auto;
 }
 
 .uich-clip-pop-content {

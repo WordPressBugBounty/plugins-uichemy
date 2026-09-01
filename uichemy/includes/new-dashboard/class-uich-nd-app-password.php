@@ -171,8 +171,8 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 		 * user picks when to issue a fresh password (no auto-issue).
 		 */
 		public static function get_dashboard_state() {
-			$user      = wp_get_current_user();
-			$available = function_exists( 'wp_is_application_passwords_available' )
+			$user               = wp_get_current_user();
+			$available          = function_exists( 'wp_is_application_passwords_available' )
 				? (bool) wp_is_application_passwords_available()
 				: false;
 			$available_for_user = function_exists( 'wp_is_application_passwords_available_for_user' )
@@ -206,7 +206,13 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 			self::guard();
 
 			if ( ! class_exists( 'WP_Application_Passwords' ) ) {
-				wp_send_json_error( array( 'code' => 'no_class', 'message' => __( 'Application Passwords need WordPress 5.6+.', 'uichemy' ) ), 400 );
+				wp_send_json_error(
+					array(
+						'code'    => 'no_class',
+						'message' => __( 'Application Passwords need WordPress 5.6+.', 'uichemy' ),
+					),
+					400
+				);
 			}
 
 			$user = wp_get_current_user();
@@ -218,16 +224,19 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 
 			if ( function_exists( 'wp_is_application_passwords_available_for_user' )
 				&& ! wp_is_application_passwords_available_for_user( $user ) ) {
-				wp_send_json_error( array(
-					'code'    => 'user_blocked',
-					'message' => __( 'Application Passwords are disabled for this user. Enable them, then try again.', 'uichemy' ),
-				), 400 );
+				wp_send_json_error(
+					array(
+						'code'    => 'user_blocked',
+						'message' => __( 'Application Passwords are disabled for this user. Enable them, then try again.', 'uichemy' ),
+					),
+					400
+				);
 			}
 
 			// Mode determines the naming convention: uichemy-figma-N /
 			// uichemy-mcp-N. Default to figma when the JS side doesn't
 			// pass it (e.g. dashboard Generate before mode is set).
-			$mode = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : 'figma';
+			$mode = isset( $_POST['mode'] ) ? sanitize_key( wp_unslash( $_POST['mode'] ) ) : 'figma';  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce and capability verified at handler entry.
 			if ( ! in_array( $mode, array( 'figma', 'mcp' ), true ) ) {
 				$mode = 'figma';
 			}
@@ -236,14 +245,20 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 			// stay in the user's WP profile (they can revoke manually if
 			// they want). Counter is monotonic so names never collide.
 			$counter = (int) get_user_meta( $user->ID, self::USER_META_COUNTER, true );
-			$counter++;
+			++$counter;
 			update_user_meta( $user->ID, self::USER_META_COUNTER, $counter );
 
 			$name = sprintf( 'uichemy-%s-%d', $mode, $counter );
 
 			$created = WP_Application_Passwords::create_new_application_password( $user->ID, array( 'name' => $name ) );
 			if ( is_wp_error( $created ) ) {
-				wp_send_json_error( array( 'code' => 'wp_error', 'message' => $created->get_error_message() ), 500 );
+				wp_send_json_error(
+					array(
+						'code'    => 'wp_error',
+						'message' => $created->get_error_message(),
+					),
+					500
+				);
 			}
 
 			list( $password, $details ) = $created;
@@ -254,26 +269,40 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 			// `Authorization: Basic …` flow is gone, so we don't compute
 			// the base64 token or the masked variant any more.
 
-			wp_send_json_success( array(
-				'uuid'      => isset( $details['uuid'] ) ? (string) $details['uuid'] : '',
-				'name'      => $name,
-				'created'   => isset( $details['created'] ) ? (int) $details['created'] : time(),
-				'userLogin' => $user->user_login,
-				'password'  => $password,
-				'state'     => self::get_dashboard_state(),
-			) );
+			wp_send_json_success(
+				array(
+					'uuid'      => isset( $details['uuid'] ) ? (string) $details['uuid'] : '',
+					'name'      => $name,
+					'created'   => isset( $details['created'] ) ? (int) $details['created'] : time(),
+					'userLogin' => $user->user_login,
+					'password'  => $password,
+					'state'     => self::get_dashboard_state(),
+				)
+			);
 		}
 
 		public static function ajax_enable() {
 			self::guard();
 
 			if ( ! class_exists( 'WP_Application_Passwords' ) ) {
-				wp_send_json_error( array( 'code' => 'no_class', 'message' => __( 'Application Passwords need WordPress 5.6+.', 'uichemy' ) ), 400 );
+				wp_send_json_error(
+					array(
+						'code'    => 'no_class',
+						'message' => __( 'Application Passwords need WordPress 5.6+.', 'uichemy' ),
+					),
+					400
+				);
 			}
 
 			$user = wp_get_current_user();
 			if ( ! self::is_native_disabled_for_user( $user ) ) {
-				wp_send_json_error( array( 'code' => 'already', 'message' => __( 'Application Passwords are already available for your account.', 'uichemy' ) ), 400 );
+				wp_send_json_error(
+					array(
+						'code'    => 'already',
+						'message' => __( 'Application Passwords are already available for your account.', 'uichemy' ),
+					),
+					400
+				);
 			}
 
 			update_user_meta( $user->ID, self::USER_META_FORCE, '1' );
@@ -304,7 +333,13 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 			self::guard();
 			$user = wp_get_current_user();
 			if ( ! self::is_user_force_enabled( $user->ID ) ) {
-				wp_send_json_error( array( 'code' => 'noop', 'message' => __( 'No UiChemy override is active for your account.', 'uichemy' ) ), 400 );
+				wp_send_json_error(
+					array(
+						'code'    => 'noop',
+						'message' => __( 'No UiChemy override is active for your account.', 'uichemy' ),
+					),
+					400
+				);
 			}
 			delete_user_meta( $user->ID, self::USER_META_FORCE );
 			wp_send_json_success( self::get_dashboard_state() );
@@ -312,7 +347,13 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 
 		private static function guard() {
 			if ( ! current_user_can( 'manage_options' ) ) {
-				wp_send_json_error( array( 'code' => 'forbidden', 'message' => __( 'Insufficient permissions.', 'uichemy' ) ), 403 );
+				wp_send_json_error(
+					array(
+						'code'    => 'forbidden',
+						'message' => __( 'Insufficient permissions.', 'uichemy' ),
+					),
+					403
+				);
 			}
 			check_ajax_referer( self::NONCE_ACTION, 'nonce' );
 		}
@@ -550,7 +591,7 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 			try {
 				if ( is_string( $callback ) && false !== strpos( $callback, '::' ) ) {
 					list( $class, $method ) = explode( '::', $callback, 2 );
-					$ref = new ReflectionMethod( $class, $method );
+					$ref                    = new ReflectionMethod( $class, $method );
 				} elseif ( is_array( $callback ) && count( $callback ) === 2 ) {
 					$ref = new ReflectionMethod( is_object( $callback[0] ) ? get_class( $callback[0] ) : $callback[0], $callback[1] );
 				} elseif ( is_object( $callback ) && ! ( $callback instanceof Closure ) && method_exists( $callback, '__invoke' ) ) {

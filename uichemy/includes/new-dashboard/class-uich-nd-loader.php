@@ -76,7 +76,6 @@ if ( ! class_exists( 'Uich_ND_Loader' ) ) {
 			Uich_ND_Enqueue::boot();
 			Uich_ND_Menu::boot();
 		}
-
 	}
 
 	Uich_ND_Loader::get_instance();

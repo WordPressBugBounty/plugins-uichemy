@@ -170,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
     openModalBtn.style.cssText = buttonStyles;
 
     const logoImg = document.createElement("img");
-    logoImg.setAttribute("src", "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABMAAAASCAYAAAC5DOVpAAAACXBIWXMAABCcAAAQnAEmzTo0AAAAAXNSR0IArs4c6QAAAARnQU1BAACxjwv8YQUAAAFCSURBVHgBxVRLToRAEO1uJgRISFjyWcgR5ga4dCc3cG4w3EA9geMN5ih4Atm6sk1I2GIghJAQfG3QtNjMQFz4kkrTVa8f1UUV1HXdkDH2SkYMw8Bhx7ZtH0uAKOB53h5LQikNJfeRTYmCAPE70zSfHUAh9ADOYSL0iV9isqhlWXvZh1tE8CdzZ2bFRvw4qGlafIp8TszBtS6+Nqil8xexVdiQdeCoWaoKwJ/RaWtMgauFRVG8kQX4v2v6vn+NZauK9X2fra1ZrOv6vSrQdd3tWjHCAZUfWS+qWUIWYmMYRokUZwlifNC4ovMzfFllvURHYOEMWZcgpeQExJzCYtjcBERoryc2kg9kAVQvFVnh/C7P81QTjqqqXmzbFo+XZ/Su6rp+l4SiMZGd8FOZGQTBjQjAtoqh5rBU2ot41jTN90/0AyMtajDXKkJTAAAAAElFTkSuQmCC")
+    logoImg.setAttribute("src", (window.uich_ajax_object_data && uich_ajax_object_data.logo_url) || "")
 
     logoImg.style.width = "15px";
     logoImg.style.height = "15px";

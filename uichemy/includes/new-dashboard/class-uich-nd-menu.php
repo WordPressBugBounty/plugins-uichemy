@@ -40,6 +40,13 @@ if ( ! class_exists( 'Uich_ND_Menu' ) ) {
 		}
 
 		public static function menu_icon_active_css() {
+			// Only for OUR bundled monochrome mark. A white-label logo is the
+			// customer's own artwork — `brightness(0) invert(1)` would flatten it
+			// to a white silhouette, so leave it exactly as uploaded.
+			if ( '' !== uich_brand_logo_url() ) {
+				return;
+			}
+
 			echo '<style>'
 				// Our icon is an <img>, so WP's admin-color rules don't recolor
 				// it and its default state renders dimmed/off-tint compared to
@@ -51,7 +58,7 @@ if ( ! class_exists( 'Uich_ND_Menu' ) ) {
 		}
 
 		public static function redirect_after_uichemy_activate( $plugin ) {
-			if ( ! isset( $_GET['from'] ) || 'uichemy' !== $_GET['from'] ) {
+			if ( ! isset( $_GET['from'] ) || 'uichemy' !== $_GET['from'] ) {  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin screen; capability verified; read-only navigation param.
 				return;
 			}
 			wp_safe_redirect( admin_url( 'admin.php?page=uichemy' ) );
@@ -66,7 +73,7 @@ if ( ! class_exists( 'Uich_ND_Menu' ) ) {
 
 			// Skip on bulk activation, AJAX, network admin, or if the user
 			// simply doesn't have access to the dashboard page.
-			if ( wp_doing_ajax() || is_network_admin() || isset( $_GET['activate-multi'] ) || ! current_user_can( 'manage_options' ) ) {
+			if ( wp_doing_ajax() || is_network_admin() || isset( $_GET['activate-multi'] ) || ! current_user_can( 'manage_options' ) ) {  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin screen; capability verified; read-only navigation param.
 				return;
 			}
 
@@ -75,7 +82,7 @@ if ( ! class_exists( 'Uich_ND_Menu' ) ) {
 		}
 
 		public static function redirect_legacy_slug() {
-			if ( isset( $_GET['page'] ) && 'uichemy-welcome' === $_GET['page'] ) {
+			if ( isset( $_GET['page'] ) && 'uichemy-welcome' === $_GET['page'] ) {  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Admin screen; capability verified; read-only navigation param.
 				wp_safe_redirect( admin_url( 'admin.php?page=uichemy' ) );
 				exit;
 			}
@@ -86,11 +93,25 @@ if ( ! class_exists( 'Uich_ND_Menu' ) ) {
 				return;
 			}
 
-			$icon = defined( 'UICH_URL' ) ? UICH_URL . 'assets/svg/bw-logo.svg' : '';
+			/*
+			 * White Label owns this menu's name and icon.
+			 *
+			 * UiChemy_Admin_Menu has done this since White Label shipped, but that
+			 * method returns early in a merged build (this plugin owns the one menu),
+			 * so its branding never ran on a real site — a white-labelled install
+			 * still showed "UiChemy" and the UiChemy mark here. Same for "hide from
+			 * other admins", whose only implementation lived in that dead branch.
+			 */
+			if ( uich_brand_hidden_from_current_user() ) {
+				return;
+			}
+
+			$label = uich_brand_name();
+			$icon  = uich_brand_menu_icon();
 
 			add_menu_page(
-				__( 'UiChemy', 'uichemy' ),
-				__( 'UiChemy', 'uichemy' ),
+				$label,
+				$label,
 				'manage_options',
 				'uichemy',
 				array( __CLASS__, 'render_page' ),

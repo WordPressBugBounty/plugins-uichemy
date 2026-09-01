@@ -2,9 +2,9 @@
 Contributors: posimyththemes, dhaval4, sagarpatel124
 Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to bricks, figma to code
 Requires at least: 6.9
-Tested up to: 7.0.2
+Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.0.2
+Stable tag: 5.1.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -222,6 +222,16 @@ Yes. UiChemy supports multi-site connections directly from the plugin dashboard.
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
 
+= 5.1.0 = 1 September 2026
+- Added : New Composer, a visual editor to fine-tune your imported designs, no coding needed.
+- Added : AI Website Creator import flow, right from the Import tab.
+- Added : Built-in chat assistant to help you edit your designs faster.
+- Added : MCP v2, connect Claude, Cursor, Codex and other AI tools to your site to build amazing websites quickly.
+- Improved : Redesigned dashboard, onboarding, and import screens for a cleaner, easier experience.
+- Improved : Faster and more reliable sign-in.
+- Security : Multiple security hardening improvements across login, file uploads, and site data handling.
+- Fixed : Various bug fixes and stability improvements.
+
 = 5.0.2 = 6 August 2026
 - Updated : WordPress 6.9 or newer is now required.
 - Fixed : Connection issue when a security plugin blocked Application Passwords.
@@ -424,3 +434,9 @@ This plugin connects to the following external services:
 
 **Figma API** : UiChemy's Figma plugin reads your design data from Figma to generate the export. This requires the Figma plugin to access your currently open Figma file.
 [Figma Privacy Policy](https://www.figma.com/legal/privacy/) | [Figma Terms](https://www.figma.com/legal/tos/)
+
+**jsDelivr CDN** : The composer's "Add library" catalog offers a curated list of popular open-source JavaScript and CSS libraries. When you choose one, UiChemy adds a pinned `cdn.jsdelivr.net` URL to that widget's assets, so visitors to the published page load the file from jsDelivr. Nothing is requested until you add a library, and you can remove or edit the URL at any time. No data about you or your visitors is sent by UiChemy to jsDelivr.
+[jsDelivr Privacy Policy](https://www.jsdelivr.com/privacy-policy-jsdelivr-net) | [jsDelivr Terms](https://www.jsdelivr.com/terms)
+
+**Google Fonts** : The same "Add library" catalog offers a list of Google Fonts. Choosing one adds a `fonts.googleapis.com` stylesheet URL to that widget's assets, so visitors to the published page load the font from Google. Nothing is requested until you add a font, and you can remove the URL at any time.
+[Google Privacy Policy](https://policies.google.com/privacy) | [Google Terms](https://policies.google.com/terms)

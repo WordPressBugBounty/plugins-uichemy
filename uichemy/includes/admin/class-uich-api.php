@@ -90,43 +90,47 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 					// Password (HTTP Basic) authentication.
 					$permission = array( 'Uich_Rest_Permissions', 'check_admin' );
 
-					$routes = [
-						['/v1/import', 'uich_handle_import', 'POST'],
-						['/v2/elementor/import', 'uich_handle_elementor_import_v2', 'POST'],
-						['/v2/elementor/get_posts', 'uich_get_elementor_posts'],
-						['/v2/elementor/get_config', 'uich_get_elementor_config'],
-						['/v1/check', 'uich_handle_check', ['GET', 'POST']],
-						['/v2/gutenberg/import', 'uich_handle_gutenberg_import', 'POST'],
-						['/v2/gutenberg/get_posts', 'uich_get_gutenberg_posts'],
-						['/v2/gutenberg/get_config', 'uich_get_gutenberg_config'],
-						['/v2/bricks/import', 'uich_handle_bricks_import_v2', 'POST'],
-						['/v2/bricks/get_posts', 'uich_get_bricks_posts'],
-						['/v2/bricks/get_config', 'uich_get_bricks_config'],
-						['/v1/bricks/getnonce', 'uich_handle_bricks_get_nonce'],
-						['/v1/bricks/import', 'uich_handle_bricks_import', 'POST'],
-						['/v1/elementor/globals', 'uich_handle_elementor_globals_list'],
-						['/v1/elementor/globals/sync', 'uich_handle_elementor_globals_sync', 'POST'],
-						['/v1/bricks/globals', 'uich_handle_bricks_globals_list'],
-						['/v1/bricks/globals/sync', 'uich_handle_bricks_globals_sync', 'POST'],
-						['/v1/elementor/atomic_enable', 'uich_handle_elementor_atomic_enable'],
-						['/v1/elementor/classes_variables', 'uich_handle_elementor_classes_variables'],
-						['/v1/elementor/classes_variables/sync', 'uich_handle_elementor_classes_variables_sync', 'POST'],
-						['/v2/system/status', 'uich_get_system_status'],
-						['/v2/system/plugin/activate', 'uich_handle_plugin_activate', 'POST'],
-						['/v2/system/plugin/install', 'uich_handle_plugin_install', 'POST'],
-						['/v2/system/plugin/update', 'uich_handle_plugin_update', 'POST'],
-						['/v2/system/theme/update', 'uich_handle_nexter_theme_update', 'POST'],
-					];
+					$routes = array(
+						array( '/v1/import', 'uich_handle_import', 'POST' ),
+						array( '/v2/elementor/import', 'uich_handle_elementor_import_v2', 'POST' ),
+						array( '/v2/elementor/get_posts', 'uich_get_elementor_posts' ),
+						array( '/v2/elementor/get_config', 'uich_get_elementor_config' ),
+						array( '/v1/check', 'uich_handle_check', array( 'GET', 'POST' ) ),
+						array( '/v2/gutenberg/import', 'uich_handle_gutenberg_import', 'POST' ),
+						array( '/v2/gutenberg/get_posts', 'uich_get_gutenberg_posts' ),
+						array( '/v2/gutenberg/get_config', 'uich_get_gutenberg_config' ),
+						array( '/v2/bricks/import', 'uich_handle_bricks_import_v2', 'POST' ),
+						array( '/v2/bricks/get_posts', 'uich_get_bricks_posts' ),
+						array( '/v2/bricks/get_config', 'uich_get_bricks_config' ),
+						array( '/v1/bricks/getnonce', 'uich_handle_bricks_get_nonce' ),
+						array( '/v1/bricks/import', 'uich_handle_bricks_import', 'POST' ),
+						array( '/v1/elementor/globals', 'uich_handle_elementor_globals_list' ),
+						array( '/v1/elementor/globals/sync', 'uich_handle_elementor_globals_sync', 'POST' ),
+						array( '/v1/bricks/globals', 'uich_handle_bricks_globals_list' ),
+						array( '/v1/bricks/globals/sync', 'uich_handle_bricks_globals_sync', 'POST' ),
+						array( '/v1/elementor/atomic_enable', 'uich_handle_elementor_atomic_enable' ),
+						array( '/v1/elementor/classes_variables', 'uich_handle_elementor_classes_variables' ),
+						array( '/v1/elementor/classes_variables/sync', 'uich_handle_elementor_classes_variables_sync', 'POST' ),
+						array( '/v2/system/status', 'uich_get_system_status' ),
+						array( '/v2/system/plugin/activate', 'uich_handle_plugin_activate', 'POST' ),
+						array( '/v2/system/plugin/install', 'uich_handle_plugin_install', 'POST' ),
+						array( '/v2/system/plugin/update', 'uich_handle_plugin_update', 'POST' ),
+						array( '/v2/system/theme/update', 'uich_handle_nexter_theme_update', 'POST' ),
+					);
 
-					foreach ($routes as $route_config) {
-						[$route, $callback, $method] = array_pad($route_config, 3, null);
-						$method = $method ?? 'GET';
-						register_rest_route('uichemy', $route, array(
-							'methods'             => $method,
-							'callback'            => array( $this, $callback ),
-							'permission_callback' => $permission,
-						));
-					};
+					foreach ( $routes as $route_config ) {
+						[$route, $callback, $method] = array_pad( $route_config, 3, null );
+						$method                      = $method ?? 'GET';
+						register_rest_route(
+							'uichemy',
+							$route,
+							array(
+								'methods'             => $method,
+								'callback'            => array( $this, $callback ),
+								'permission_callback' => $permission,
+							)
+						);
+					}
 				}
 			);
 		}
@@ -134,73 +138,75 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		/**
 		 * Globals
 		 */
-		public function uich_handle_elementor_globals_list( WP_REST_Request $request ){
-			return  Uich_Globals::get_globals();
+		public function uich_handle_elementor_globals_list( WP_REST_Request $request ) {
+			return Uich_Globals::get_globals();
 		}
 
 		/**
 		 * Sync Globals
 		 */
-		public function uich_handle_elementor_globals_sync( WP_REST_Request $request ){
+		public function uich_handle_elementor_globals_sync( WP_REST_Request $request ) {
 			$sync_data = json_decode( $request->get_body() );
 
 			$update_sync_data = Uich_Globals::sync_globals( $sync_data );
 
 			return array(
 				'success' => true,
-				'data' => $update_sync_data,
+				'data'    => $update_sync_data,
 			);
 		}
 
-		public function uich_handle_bricks_globals_list( WP_REST_Request $request ){
+		public function uich_handle_bricks_globals_list( WP_REST_Request $request ) {
 			return array(
 				'success' => true,
-				'data' => Uich_Bricks_Globals::get_uich_bricks_globals(),
+				'data'    => Uich_Bricks_Globals::get_uich_bricks_globals(),
 			);
 		}
 
-		public function uich_handle_bricks_globals_sync( WP_REST_Request $request ){
+		public function uich_handle_bricks_globals_sync( WP_REST_Request $request ) {
 			$sync_data = json_decode( $request->get_body() );
 
-			$update_sync_data = Uich_Bricks_Globals::sync_uich_globals($sync_data);
+			$update_sync_data = Uich_Bricks_Globals::sync_uich_globals( $sync_data );
 
 			return array(
 				'success' => true,
-				'data' => $update_sync_data,
+				'data'    => $update_sync_data,
 			);
 		}
 
 		/**
 		 * Elementor Clasess
- 		 */
-		public function uich_handle_elementor_classes_variables( WP_REST_Request $request) {
+		 */
+		public function uich_handle_elementor_classes_variables( WP_REST_Request $request ) {
 
 			$uich_classes_variables = Uich_Atomic_Globals::get_global_classes_and_variable();
 
 			return array(
 				'success' => true,
-				'data' => $uich_classes_variables,
+				'data'    => $uich_classes_variables,
 			);
 		}
 
-		public function uich_handle_elementor_classes_variables_sync( WP_REST_Request $request){
+		public function uich_handle_elementor_classes_variables_sync( WP_REST_Request $request ) {
 
 			$sync_data = json_decode( $request->get_body() );
 
-			$uich_sync_variables = Uich_Atomic_Globals::sych_uich_elementor_classes_and_variables_sync($sync_data);
+			$uich_sync_variables = Uich_Atomic_Globals::sych_uich_elementor_classes_and_variables_sync( $sync_data );
 
 			return array(
 				'success' => true,
-				'data' => $uich_sync_variables,
+				'data'    => $uich_sync_variables,
 			);
 		}
 
 		/**
 		 * Upload mimes Type
 		 */
-		public function add_svg_to_upload_mimes($mimes) {
-			if(current_user_can('import') ) $mimes['svg'] = 'image/svg+xml';
-            return $mimes;
+		public function add_svg_to_upload_mimes( $mimes ) {
+			if ( current_user_can( 'import' ) ) {
+				$mimes['svg'] = 'image/svg+xml';
+			}
+			return $mimes;
 		}
 
 		/**
@@ -228,15 +234,16 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			wp_send_json_success( $response );
 		}
 
-		public function uich_get_elementor_posts( WP_REST_Request $request ){
+		public function uich_get_elementor_posts( WP_REST_Request $request ) {
 
 			// fetch all post Types
-			$all_post_types = get_post_types( [
-				'public' => true,
-				'can_export' => true,
-				'_builtin' => false,
-			] );
-
+			$all_post_types = get_post_types(
+				array(
+					'public'     => true,
+					'can_export' => true,
+					'_builtin'   => false,
+				)
+			);
 
 			// Create a response
 			$response = array(
@@ -245,18 +252,18 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 			// Establishing installed things
 			$is_elementor_installed = class_exists( 'Elementor\Plugin' );
-			$is_nexter_installed = array_key_exists('nxt_builder', $all_post_types);
+			$is_nexter_installed    = array_key_exists( 'nxt_builder', $all_post_types );
 
 			// To Check if required plugins have been installed
 			$response['is_elementor_pro_installed'] = class_exists( 'ElementorPro\Plugin' );
-			$response['is_elementor_installed'] = $is_elementor_installed;
-			$response['is_nexter_installed'] = $is_nexter_installed;
+			$response['is_elementor_installed']     = $is_elementor_installed;
+			$response['is_nexter_installed']        = $is_nexter_installed;
 
 			// Initiate empty array for gathering posts
 			$response['posts'] = array(
 				'elementor_library' => array(),
-				'page' => array(),
-				'nxt_builder' => array(),
+				'page'              => array(),
+				'nxt_builder'       => array(),
 			);
 
 			// all post types to gather
@@ -265,19 +272,23 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			// Add built-in post types
 			// $post_types_to_query['post'] = 'post';
 			$post_types_to_query['page'] = 'page';
-			if($is_elementor_installed) $post_types_to_query['elementor_library'] = 'elementor_library';
-			if($is_nexter_installed) $post_types_to_query['nxt_builder'] = 'nxt_builder';
+			if ( $is_elementor_installed ) {
+				$post_types_to_query['elementor_library'] = 'elementor_library';
+			}
+			if ( $is_nexter_installed ) {
+				$post_types_to_query['nxt_builder'] = 'nxt_builder';
+			}
 
-			if ( !class_exists( '\Elementor\Plugin' ) ) {
+			if ( ! class_exists( '\Elementor\Plugin' ) ) {
 				return $response;
 			}
-			
+
 			// Fetch posts for each post type
 			foreach ( $post_types_to_query as $post_type ) {
 				$args = array(
 					'post_type'      => $post_type,
 					'posts_per_page' => -1,
-					'post_status'	 => 'any',
+					'post_status'    => 'any',
 				);
 
 				$query = new WP_Query( $args );
@@ -287,12 +298,15 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 						$query->the_post();
 						$document = Elementor\Plugin::$instance->documents->get( get_the_ID() );
 
-						if($document->is_built_with_elementor()){
+						if ( $document->is_built_with_elementor() ) {
 
-							array_push($response['posts'][$post_type], array(
-								'id' => get_the_ID(),
-								'title' => html_entity_decode(get_the_title()),
-							));
+							array_push(
+								$response['posts'][ $post_type ],
+								array(
+									'id'    => get_the_ID(),
+									'title' => html_entity_decode( get_the_title() ),
+								)
+							);
 
 						}
 					}
@@ -303,27 +317,27 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			return $response;
 		}
 
-		public function uich_handle_elementor_atomic_enable( WP_REST_Request $request){
+		public function uich_handle_elementor_atomic_enable( WP_REST_Request $request ) {
 
-			if ( ! class_exists('\Elementor\Plugin') ) {
+			if ( ! class_exists( '\Elementor\Plugin' ) ) {
 				return array(
 					'success' => false,
-					'message' => 'Elementor is not active.'
+					'message' => 'Elementor is not active.',
 				);
 			}
 
-			$state = \Elementor\Core\Experiments\Manager::STATE_ACTIVE; // 'active'
+			$state           = \Elementor\Core\Experiments\Manager::STATE_ACTIVE; // 'active'
 			$plugin_instance = \Elementor\Plugin::$instance;
 			$experiments     = $plugin_instance->experiments;
 
-			$features = [
+			$features = array(
 				'e_opt_in_v4',
 				'container',
 				\Elementor\Modules\NestedElements\Module::EXPERIMENT_NAME,
 				\Elementor\Modules\AtomicWidgets\Module::EXPERIMENT_NAME,
 				\Elementor\Modules\GlobalClasses\Module::NAME,
 				\Elementor\Modules\Variables\Module::EXPERIMENT_NAME,
-			];
+			);
 
 			foreach ( $features as $feature ) {
 				$option_key = $experiments->get_feature_option_key( $feature );
@@ -333,39 +347,41 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$is_active = get_option( $experiments->get_feature_option_key( 'e_opt_in_v4' ) ) === $state;
 
 			return array(
-				'success' => true,
+				'success'        => true,
 				'isAtomicEnable' => $is_active,
 			);
 		}
 
-		public function uich_get_elementor_config( WP_REST_Request $request){
+		public function uich_get_elementor_config( WP_REST_Request $request ) {
 			$response = array(
 				'success' => true,
 				'version' => UICH_VERSION,
 			);
 
 			// fetch all post Types
-			$all_post_types = get_post_types( [
-				'public' => true,
-				'can_export' => true,
-				'_builtin' => false,
-			] );
+			$all_post_types = get_post_types(
+				array(
+					'public'     => true,
+					'can_export' => true,
+					'_builtin'   => false,
+				)
+			);
 
 			$response['is_elementor_pro_installed'] = class_exists( 'ElementorPro\Plugin' );
-			$response['is_elementor_installed'] = class_exists( 'Elementor\Plugin' );
-			$response['isNexterInstalled'] = array_key_exists('nxt_builder', $all_post_types);
+			$response['is_elementor_installed']     = class_exists( 'Elementor\Plugin' );
+			$response['isNexterInstalled']          = array_key_exists( 'nxt_builder', $all_post_types );
 
 			$response['isAtomicEnable'] = false;
 
 			// Only try to access experiments if Elementor is active
 			if ( $response['is_elementor_installed'] && isset( \Elementor\Plugin::$instance ) ) {
 				$experiments_manager = \Elementor\Plugin::$instance->experiments;
-				if (method_exists( $experiments_manager, 'is_feature_active' ) ) {
+				if ( method_exists( $experiments_manager, 'is_feature_active' ) ) {
 					$response['isAtomicEnable'] = $experiments_manager->is_feature_active( 'e_atomic_elements' );
 				}
 			}
 
-			$response['elementor_version'] = defined('ELEMENTOR_VERSION') ? ELEMENTOR_VERSION : '';
+			$response['elementor_version'] = defined( 'ELEMENTOR_VERSION' ) ? ELEMENTOR_VERSION : '';
 
 			return $response;
 		}
@@ -379,12 +395,21 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 */
 		private function uich_resolve_plugin_slug( $slug ) {
 			$map = array(
-				'elementor' => array( 'file' => 'elementor/elementor.php',   'wporg_slug' => 'elementor' ),
-				'uichemy'   => array( 'file' => defined( 'UICH_PBNAME' ) ? UICH_PBNAME : 'uichemy/uichemy.php', 'wporg_slug' => 'uichemy' ),
+				'elementor' => array(
+					'file'       => 'elementor/elementor.php',
+					'wporg_slug' => 'elementor',
+				),
+				'uichemy'   => array(
+					'file'       => defined( 'UICH_PBNAME' ) ? UICH_PBNAME : 'uichemy/uichemy.php',
+					'wporg_slug' => 'uichemy',
+				),
 				// Nexter Extension provides the `nxt_builder` theme-builder post
 				// type that the AI flow's "Full Setup" uses for header/footer
 				// templates. One-click enable activates (or installs) this plugin.
-				'nexter'    => array( 'file' => 'nexter-extension/nexter-extension.php', 'wporg_slug' => 'nexter-extension' ),
+				'nexter'    => array(
+					'file'       => 'nexter-extension/nexter-extension.php',
+					'wporg_slug' => 'nexter-extension',
+				),
 			);
 
 			return $map[ $slug ] ?? null;
@@ -401,14 +426,17 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/plugin-install.php';
 			}
 
-			$info = plugins_api( 'plugin_information', array(
-				'slug'   => $wporg_slug,
-				'fields' => array(
-					'sections'       => false,
-					'tags'           => false,
-					'short_description' => false,
-				),
-			) );
+			$info = plugins_api(
+				'plugin_information',
+				array(
+					'slug'   => $wporg_slug,
+					'fields' => array(
+						'sections'          => false,
+						'tags'              => false,
+						'short_description' => false,
+					),
+				)
+			);
 
 			if ( is_wp_error( $info ) ) {
 				return null;
@@ -504,18 +532,18 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		public function uich_get_system_status( WP_REST_Request $request ) {
 			global $wp_version;
 
-			$elementor       = $this->uich_build_plugin_status( 'elementor' );
-			$uichemy         = $this->uich_build_plugin_status( 'uichemy' );
+			$elementor = $this->uich_build_plugin_status( 'elementor' );
+			$uichemy   = $this->uich_build_plugin_status( 'uichemy' );
 
 			// Elementor Pro is premium — we never offer install, only report.
 			$elementor_pro_file = 'elementor-pro/elementor-pro.php';
 			if ( ! function_exists( 'get_plugins' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			}
-			$plugins                  = get_plugins();
-			$elementor_pro_installed  = isset( $plugins[ $elementor_pro_file ] );
-			$elementor_pro_active     = $elementor_pro_installed && is_plugin_active( $elementor_pro_file );
-			$elementor_pro_version    = $elementor_pro_installed ? ( $plugins[ $elementor_pro_file ]['Version'] ?? null ) : null;
+			$plugins                 = get_plugins();
+			$elementor_pro_installed = isset( $plugins[ $elementor_pro_file ] );
+			$elementor_pro_active    = $elementor_pro_installed && is_plugin_active( $elementor_pro_file );
+			$elementor_pro_version   = $elementor_pro_installed ? ( $plugins[ $elementor_pro_file ]['Version'] ?? null ) : null;
 
 			$atomic_enabled = false;
 			if ( $elementor['active'] && isset( \Elementor\Plugin::$instance ) ) {
@@ -526,14 +554,17 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			}
 
 			return array(
-				'success' => true,
-				'wp'      => array(
+				'success'       => true,
+				'wp'            => array(
 					'version' => $wp_version,
 				),
-				'uichemy' => $uichemy,
-				'elementor' => array_merge( $elementor, array(
-					'atomic_enabled' => (bool) $atomic_enabled,
-				) ),
+				'uichemy'       => $uichemy,
+				'elementor'     => array_merge(
+					$elementor,
+					array(
+						'atomic_enabled' => (bool) $atomic_enabled,
+					)
+				),
 				'elementor_pro' => array(
 					'slug'        => 'elementor_pro',
 					'installed'   => $elementor_pro_installed,
@@ -545,33 +576,38 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				// Pro, for the AI flow's "Full Setup" header/footer import. Built
 				// via the shared helper so install/active/version are reported
 				// the same way as the other managed plugins.
-				'nexter' => $this->uich_build_plugin_status( 'nexter' ),
+				'nexter'        => $this->uich_build_plugin_status( 'nexter' ),
 				// Nexter THEME — the companion installed/activated alongside the
 				// extension via uich_setup_nexter_companion(). Reported separately so
 				// the AI flow can tell "extension present but theme missing/inactive"
 				// apart from "extension missing" and prompt the right fix. This is the
 				// case Elementor Pro would otherwise cover.
-				'nexter_theme' => $this->uich_build_nexter_theme_status(),
-				// Protuno (the "Proton" widget + MCP) — REQUIRED for the AI flow.
-				// Built separately because Protuno isn't on wordpress.org and
+				'nexter_theme'  => $this->uich_build_nexter_theme_status(),
+				// UiChemy (the "Composer" widget + MCP) — REQUIRED for the AI flow.
+				// Built separately because UiChemy isn't on wordpress.org and
 				// unpacks to a variable folder name, so it's detected by
 				// TextDomain rather than the fixed-path plugin-status route.
-				'protuno' => $this->uich_build_protuno_status(),
+				'uichemy'       => $this->uich_build_uichemy_status(),
+				// UiChemy Pro — the premium plugin, REQUIRED for the AI flow. Not on
+				// wordpress.org either: it is installed from the API's
+				// /plugins/uichemy-pro/download package and detected by filename, so it
+				// gets its own struct rather than the fixed-path plugin-status route.
+				'uichemy_pro'   => $this->uich_build_uichemy_pro_status(),
 			);
 		}
 
 		/**
-		 * Build a SystemPluginStatus-shaped struct for Protuno (the "Proton"
+		 * Build a SystemPluginStatus-shaped struct for UiChemy (the "Composer"
 		 * widget + MCP). Detected by TextDomain via the shared new-dashboard
-		 * helper instead of a fixed plugin file. Protuno isn't on wp.org, so its
+		 * helper instead of a fixed plugin file. UiChemy isn't on wp.org, so its
 		 * latest version + update flag come from the UiChemy API (managed there),
-		 * surfaced via Uich_ND_Settings::detect_protuno().
+		 * surfaced via Uich_ND_Settings::detect_uichemy().
 		 *
 		 * @return array
 		 */
-		private function uich_build_protuno_status() {
+		private function uich_build_uichemy_status() {
 			$empty = array(
-				'slug'             => 'protuno',
+				'slug'             => 'uichemy',
 				'installed'        => false,
 				'active'           => false,
 				'version'          => null,
@@ -584,12 +620,58 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				return $empty;
 			}
 
-			$p = Uich_ND_Settings::detect_protuno();
+			$p = Uich_ND_Settings::detect_uichemy();
 
 			return array(
-				'slug'             => 'protuno',
+				'slug'             => 'uichemy',
 				'installed'        => (bool) $p['installed'],
 				'active'           => (bool) $p['active'],
+				'version'          => '' !== (string) $p['version'] ? (string) $p['version'] : null,
+				'latest_version'   => isset( $p['latest_version'] ) && '' !== (string) $p['latest_version'] ? (string) $p['latest_version'] : null,
+				'update_available' => ! empty( $p['update_available'] ),
+				'plugin_file'      => '' !== (string) $p['file'] ? (string) $p['file'] : null,
+			);
+		}
+
+		/**
+		 * Build a SystemPluginStatus-shaped struct for UiChemy Pro — the premium
+		 * plugin the AI flow requires alongside the free build. Detected by filename
+		 * via the shared new-dashboard helper (Pro and free share the `uichemy` text
+		 * domain, so a domain match cannot tell them apart), and its latest version
+		 * comes from the UiChemy API's manually-managed `uichemy_pro` entry, surfaced
+		 * through Uich_ND_Settings::detect_uichemy_pro().
+		 *
+		 * `update_available` is reported but is NOT a gate: there is no Pro update
+		 * route here (Pro ships its own updater), so the panel offers Install &
+		 * Activate / Activate only.
+		 *
+		 * @return array
+		 */
+		private function uich_build_uichemy_pro_status() {
+			$empty = array(
+				'slug'             => 'uichemy_pro',
+				'installed'        => false,
+				'active'           => false,
+				'version'          => null,
+				'latest_version'   => null,
+				'update_available' => false,
+				'plugin_file'      => null,
+			);
+
+			if ( ! class_exists( 'Uich_ND_Settings' ) ) {
+				return $empty;
+			}
+
+			$p = Uich_ND_Settings::detect_uichemy_pro();
+
+			return array(
+				'slug'             => 'uichemy_pro',
+				'installed'        => (bool) $p['installed'],
+				// A site can unlock Pro without the plugin (the UICHEMY_PRO constant or
+				// the `uich_composer_is_pro` filter). `is_pro` is what the features
+				// actually read, so such a site reports active and is never nagged to
+				// install a package it does not need.
+				'active'           => (bool) $p['active'] || ! empty( $p['is_pro'] ),
 				'version'          => '' !== (string) $p['version'] ? (string) $p['version'] : null,
 				'latest_version'   => isset( $p['latest_version'] ) && '' !== (string) $p['latest_version'] ? (string) $p['latest_version'] : null,
 				'update_available' => ! empty( $p['update_available'] ),
@@ -726,8 +808,8 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * Activate an already-installed plugin (Elementor / UiChemy).
 		 */
 		public function uich_handle_plugin_activate( WP_REST_Request $request ) {
-			$slug       = sanitize_key( (string) $request->get_param( 'slug' ) );
-			$resolved   = $this->uich_resolve_plugin_slug( $slug );
+			$slug              = sanitize_key( (string) $request->get_param( 'slug' ) );
+			$resolved          = $this->uich_resolve_plugin_slug( $slug );
 			$with_nexter_theme = $request->get_param( 'with_nexter_theme' ) !== false;
 
 			if ( ! $resolved ) {
@@ -800,8 +882,8 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * Install (from wordpress.org) + activate a plugin.
 		 */
 		public function uich_handle_plugin_install( WP_REST_Request $request ) {
-			$slug       = sanitize_key( (string) $request->get_param( 'slug' ) );
-			$resolved   = $this->uich_resolve_plugin_slug( $slug );
+			$slug              = sanitize_key( (string) $request->get_param( 'slug' ) );
+			$resolved          = $this->uich_resolve_plugin_slug( $slug );
 			$with_nexter_theme = $request->get_param( 'with_nexter_theme' ) !== false;
 
 			if ( ! $resolved ) {
@@ -905,10 +987,13 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/theme.php';
 				require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
-				$api = themes_api( 'theme_information', array(
-					'slug'   => 'nexter',
-					'fields' => array( 'sections' => false ),
-				) );
+				$api = themes_api(
+					'theme_information',
+					array(
+						'slug'   => 'nexter',
+						'fields' => array( 'sections' => false ),
+					)
+				);
 
 				if ( ! is_wp_error( $api ) && ! empty( $api->download_link ) ) {
 					$skin     = new WP_Ajax_Upgrader_Skin();
@@ -923,7 +1008,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			}
 
 			// 2. Enable the theme-optimization controls — master switch on, and
-			//    every individual control turned on (value 1 = optimization applied).
+			// every individual control turned on (value 1 = optimization applied).
 			$opts = get_option( 'nexter_settings_opts', array() );
 			if ( ! is_array( $opts ) ) {
 				$opts = array();
@@ -1031,13 +1116,15 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		}
 
 
-		public function uich_get_gutenberg_posts( WP_REST_Request $request ){
+		public function uich_get_gutenberg_posts( WP_REST_Request $request ) {
 			// fetch all post Types
-			$all_post_types = get_post_types( [
-				'public' => true,
-				'can_export' => true,
-				'_builtin' => false,
-			] );
+			$all_post_types = get_post_types(
+				array(
+					'public'     => true,
+					'can_export' => true,
+					'_builtin'   => false,
+				)
+			);
 
 			// Create a response
 			$response = array(
@@ -1045,16 +1132,16 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			);
 
 			// Establishing installed things
-			$is_nexter_installed = array_key_exists('nxt_builder', $all_post_types);
+			$is_nexter_installed = array_key_exists( 'nxt_builder', $all_post_types );
 
 			// To Check if required plugins have been installed
-			$response['is_tpag_installed'] = defined('TPGB_VERSION');
+			$response['is_tpag_installed']   = defined( 'TPGB_VERSION' );
 			$response['is_nexter_installed'] = $is_nexter_installed;
 
 			// Initiate empty array for gathering posts
 			$response['posts'] = array(
-				'wp_block' => array(),
-				'page' => array(),
+				'wp_block'    => array(),
+				'page'        => array(),
 				'nxt_builder' => array(),
 			);
 
@@ -1062,16 +1149,18 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$post_types_to_query = array();
 
 			// Add built-in post types
-			$post_types_to_query['page'] = 'page';
+			$post_types_to_query['page']     = 'page';
 			$post_types_to_query['wp_block'] = 'wp_block';
-			if($is_nexter_installed) $post_types_to_query['nxt_builder'] = 'nxt_builder';
+			if ( $is_nexter_installed ) {
+				$post_types_to_query['nxt_builder'] = 'nxt_builder';
+			}
 
 			// Fetch posts for each post type
 			foreach ( $post_types_to_query as $post_type ) {
 				$args = array(
 					'post_type'      => $post_type,
 					'posts_per_page' => -1,
-					'post_status'	 => 'any',
+					'post_status'    => 'any',
 				);
 
 				$query = new WP_Query( $args );
@@ -1080,10 +1169,13 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 					while ( $query->have_posts() ) {
 						$query->the_post();
 
-						array_push($response['posts'][$post_type], array(
-							'id' => get_the_ID(),
-							'title' => html_entity_decode(get_the_title()),
-						));
+						array_push(
+							$response['posts'][ $post_type ],
+							array(
+								'id'    => get_the_ID(),
+								'title' => html_entity_decode( get_the_title() ),
+							)
+						);
 					}
 
 					wp_reset_postdata();
@@ -1093,7 +1185,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			return $response;
 		}
 
-		public function uich_get_gutenberg_config( WP_REST_Request $request ){
+		public function uich_get_gutenberg_config( WP_REST_Request $request ) {
 			// Create a response
 			$response = array(
 				'success' => true,
@@ -1101,41 +1193,43 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			);
 
 			// fetch all post Types
-			$all_post_types = get_post_types( [
-				'public' => true,
-				'can_export' => true,
-				'_builtin' => false,
-			] );
+			$all_post_types = get_post_types(
+				array(
+					'public'     => true,
+					'can_export' => true,
+					'_builtin'   => false,
+				)
+			);
 
 			// Establishing installed things
-			$is_nexter_installed = array_key_exists('nxt_builder', $all_post_types);
+			$is_nexter_installed = array_key_exists( 'nxt_builder', $all_post_types );
 
 			// To Check if required plugins have been installed
-			$response['is_tpag_installed'] = defined('TPGB_VERSION');
-			$response['is_nexter_installed'] = $is_nexter_installed;
-			$response['is_spectra_installed'] = defined('UAGB_PLUGIN_NAME');
-			$response['is_kadence_installed'] = defined('KADENCE_BLOCKS_VERSION');
-			$response['is_generate_block_installed'] = defined('GENERATEBLOCKS_VERSION');
+			$response['is_tpag_installed']           = defined( 'TPGB_VERSION' );
+			$response['is_nexter_installed']         = $is_nexter_installed;
+			$response['is_spectra_installed']        = defined( 'UAGB_PLUGIN_NAME' );
+			$response['is_kadence_installed']        = defined( 'KADENCE_BLOCKS_VERSION' );
+			$response['is_generate_block_installed'] = defined( 'GENERATEBLOCKS_VERSION' );
 
 			return $response;
 		}
 
 
-		public function uich_get_bricks_posts( WP_REST_Request $request ){
+		public function uich_get_bricks_posts( WP_REST_Request $request ) {
 			// Create a response
 			$response = array(
 				'success' => true,
 			);
 
 			// Establishing installed things
-			$is_bricks_installed = ( class_exists( '\Bricks\Theme' ) && class_exists(( '\Bricks\Templates' )) );
+			$is_bricks_installed = ( class_exists( '\Bricks\Theme' ) && class_exists( ( '\Bricks\Templates' ) ) );
 
 			// To Check if required plugins have been installed
 			$response['is_bricks_installed'] = $is_bricks_installed;
 
 			// Initiate empty array for gathering posts
 			$response['posts'] = array(
-				'page' => array(),
+				'page'            => array(),
 				'bricks_template' => array(),
 			);
 
@@ -1144,15 +1238,16 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 			// Add built-in post types
 			$post_types_to_query['page'] = 'page';
-			if($is_bricks_installed) $post_types_to_query['bricks_template'] = 'bricks_template';
+			if ( $is_bricks_installed ) {
+				$post_types_to_query['bricks_template'] = 'bricks_template';
+			}
 
-
-			//Fetch posts for each post type
+			// Fetch posts for each post type
 			foreach ( $post_types_to_query as $post_type ) {
 				$args = array(
 					'post_type'      => $post_type,
 					'posts_per_page' => -1,
-					'post_status'	 => 'any',
+					'post_status'    => 'any',
 				);
 
 				$query = new WP_Query( $args );
@@ -1162,12 +1257,15 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 						$query->the_post();
 						$check_bricks = get_post_meta( get_the_ID(), '_bricks_editor_mode', true );
 
-						if($check_bricks == 'bricks'){
+						if ( 'bricks' == $check_bricks ) {
 
-							array_push($response['posts'][$post_type], array(
-								'id' => get_the_ID(),
-								'title' => html_entity_decode(get_the_title()),
-							));
+							array_push(
+								$response['posts'][ $post_type ],
+								array(
+									'id'    => get_the_ID(),
+									'title' => html_entity_decode( get_the_title() ),
+								)
+							);
 
 						}
 					}
@@ -1178,7 +1276,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			return $response;
 		}
 
-		public function uich_get_bricks_config( WP_REST_Request $request ){
+		public function uich_get_bricks_config( WP_REST_Request $request ) {
 			// Create a response
 			$response = array(
 				'success' => true,
@@ -1186,7 +1284,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			);
 
 			// Establishing installed things
-			$is_bricks_installed = ( class_exists( '\Bricks\Theme' ) && class_exists(( '\Bricks\Templates' )) );
+			$is_bricks_installed = ( class_exists( '\Bricks\Theme' ) && class_exists( ( '\Bricks\Templates' ) ) );
 
 			// To Check if required plugins have been installed
 			$response['is_bricks_installed'] = $is_bricks_installed;
@@ -1215,7 +1313,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				$temp_filename = \Elementor\Plugin::$instance->uploads_manager->create_temp_file( $json, $file_name );
 				$file_data     = array(
 					'fileName' => $file_name,
-            		'fileData' => base64_encode($json),
+					'fileData' => base64_encode( $json ),
 				);
 
 				$selected_user = apply_filters( 'uich_manage_usermanager', 'get_user' );
@@ -1224,8 +1322,8 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				wp_set_current_user( null, $selected_user );
 
 				// Disable Error Displaying
-				ini_set( 'display_errors', 0 );
-				
+				ini_set( 'display_errors', 0 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- Suppress notices so the REST import returns clean JSON.
+
 				// Start the import.
 				$import_result = \Elementor\Plugin::$instance->templates_manager->import_template( $file_data );
 
@@ -1252,57 +1350,56 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 */
 		public function uich_handle_elementor_import_v2( WP_REST_Request $request ) {
 
-			if( !class_exists( '\Elementor\Plugin' ) ){
+			if ( ! class_exists( '\Elementor\Plugin' ) ) {
 				return array(
 					'success' => false,
-					'message' => esc_html__( 'Required Elementor Plugin Please Install and Active.', 'uichemy' ),
+					'message' => esc_html__( 'Elementor is required. Please install and activate it.', 'uichemy' ),
 				);
 			}
 
 			// Get Parameters
-			$new_import = ( isset( $_GET['newImport'] ) && ! empty( $_GET['newImport'] ) ) ? sanitize_text_field( wp_unslash( $_GET['newImport'] ) ) : 'true';
-			$post_type = (isset( $_GET['postType'] ) && !empty( $_GET['postType'] )) ? sanitize_text_field(wp_unslash($_GET['postType'])) : 'elementor';
-			$elementor_post_sub_type = (isset( $_GET['elementorPostSubType'] ) && !empty( $_GET['elementorPostSubType'] )) ? sanitize_text_field( wp_unslash($_GET['elementorPostSubType']) ) : '';
-			$nexter_post_sub_type = (isset( $_GET['nexterPostSubType'] ) && !empty( $_GET['nexterPostSubType'] )) ? sanitize_text_field( wp_unslash($_GET['nexterPostSubType']) ) : '';
+			$new_import              = ( isset( $_GET['newImport'] ) && ! empty( $_GET['newImport'] ) ) ? sanitize_text_field( wp_unslash( $_GET['newImport'] ) ) : 'true';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+			$post_type               = ( isset( $_GET['postType'] ) && ! empty( $_GET['postType'] ) ) ? sanitize_text_field( wp_unslash( $_GET['postType'] ) ) : 'elementor';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+			$elementor_post_sub_type = ( isset( $_GET['elementorPostSubType'] ) && ! empty( $_GET['elementorPostSubType'] ) ) ? sanitize_text_field( wp_unslash( $_GET['elementorPostSubType'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+			$nexter_post_sub_type    = ( isset( $_GET['nexterPostSubType'] ) && ! empty( $_GET['nexterPostSubType'] ) ) ? sanitize_text_field( wp_unslash( $_GET['nexterPostSubType'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 
 			// postType: 'page' | 'nexter' | 'elementor'
 			$post_type_map = array(
-				'page' => 'page',
+				'page'      => 'page',
 				'elementor' => 'elementor_library',
-				'nexter' => 'nxt_builder',
+				'nexter'    => 'nxt_builder',
 			);
-			$post_type = array_key_exists($post_type, $post_type_map) ? $post_type_map[$post_type] : 'elementor_library';
-
+			$post_type     = array_key_exists( $post_type, $post_type_map ) ? $post_type_map[ $post_type ] : 'elementor_library';
 
 			// elementorPostSubType: "header" | "footer" | "single-post" | "single-page" | "archive-page" | "search-page" | "404-page" | null
-			if('elementor_library' === $post_type){
+			if ( 'elementor_library' === $post_type ) {
 				$el_type_map = array(
 					'standard-template' => 'page',
-					'header' => 'header',
-					'footer' => 'footer',
-					'single-post' => 'single-post',
-					'single-page' => 'single-page',
-					'archive-page' => 'archive',
-					'search-page' => 'search-results',
-					'404-page' => 'error-404',
+					'header'            => 'header',
+					'footer'            => 'footer',
+					'single-post'       => 'single-post',
+					'single-page'       => 'single-page',
+					'archive-page'      => 'archive',
+					'search-page'       => 'search-results',
+					'404-page'          => 'error-404',
 				);
 
-				$el_type = array_key_exists($elementor_post_sub_type, $el_type_map)
-					? $el_type_map[$elementor_post_sub_type]
+				$el_type = array_key_exists( $elementor_post_sub_type, $el_type_map )
+					? $el_type_map[ $elementor_post_sub_type ]
 					: 'single-page';
 
-			} elseif ('nxt_builder' === $post_type){
+			} elseif ( 'nxt_builder' === $post_type ) {
 				$el_type_map = array(
 					'standard-template' => 'none',
-					'header' => 'header',
-					'footer' => 'footer',
-					'singular' => 'singular',
-					'archive-page' => 'archives',
-					'404-page' => 'page-404',
+					'header'            => 'header',
+					'footer'            => 'footer',
+					'singular'          => 'singular',
+					'archive-page'      => 'archives',
+					'404-page'          => 'page-404',
 				);
 
-				$el_type = array_key_exists($nexter_post_sub_type, $el_type_map)
-					? $el_type_map[$nexter_post_sub_type]
+				$el_type = array_key_exists( $nexter_post_sub_type, $el_type_map )
+					? $el_type_map[ $nexter_post_sub_type ]
 					: 'none';
 			}
 
@@ -1310,7 +1407,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$json = $request->get_body();
 
 			// Check if Empty
-			if ( empty( $json ) ){
+			if ( empty( $json ) ) {
 				// Return an error response.
 				return array(
 					'success' => false,
@@ -1319,18 +1416,18 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			}
 
 			// Import
-			if($new_import === "true"){
+			if ( 'true' === $new_import ) {
 
-				$json = json_decode( $json, true );
+				$json          = json_decode( $json, true );
 				$selected_user = apply_filters( 'uich_manage_usermanager', 'get_user' );
 
 				// Set current user as admin.
 				wp_set_current_user( null, $selected_user );
 
 				// Disable Error Displaying
-				ini_set( 'display_errors', 0 );
-				
-				$post_title = !empty($json) && isset($json['title']) ? sanitize_text_field($json['title']) : 'Temp 1';
+				ini_set( 'display_errors', 0 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- Suppress notices so the REST import returns clean JSON.
+
+				$post_title = ! empty( $json ) && isset( $json['title'] ) ? sanitize_text_field( $json['title'] ) : 'Temp 1';
 
 				$post_attributes = array(
 					'post_title'  => $post_title,
@@ -1339,7 +1436,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				);
 
 				if ( 'elementor_library' === $post_type ) {
-					$ell_type = empty($el_type) ? 'page' : $el_type;
+					$ell_type     = empty( $el_type ) ? 'page' : $el_type;
 					$new_document = \Elementor\Plugin::$instance->documents->create(
 						$ell_type,
 						$post_attributes
@@ -1353,19 +1450,19 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 				if ( is_wp_error( $new_document ) ) {
 					return array(
-						'success' => false,
+						'success'       => false,
 						'import_failed' => $new_document->get_error_message(),
 						'code'          => $new_document->get_error_code(),
 					);
 				}
 
-				$post_content = isset($json) && !empty($json) && isset($json['content']) ? $json['content'] : [];
-				$post_settings = isset($json) && !empty($json) && isset($json['page_settings']) ? $json['page_settings'] : [];
-				$post_content = $this->ele_media_import($post_content);
+				$post_content  = isset( $json ) && ! empty( $json ) && isset( $json['content'] ) ? $json['content'] : array();
+				$post_settings = isset( $json ) && ! empty( $json ) && isset( $json['page_settings'] ) ? $json['page_settings'] : array();
+				$post_content  = $this->ele_media_import( $post_content );
 
 				// Loop through each top-level element (For Atomic Images Upload)
-				foreach ($post_content as &$element) {
-					Uich_Elementor_Import_Images::process_and_upload_images($element);
+				foreach ( $post_content as &$element ) {
+					Uich_Elementor_Import_Images::process_and_upload_images( $element );
 				}
 
 				$new_document->save(
@@ -1377,13 +1474,13 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 				$inserted_id = $new_document->get_main_id();
 
-				if('nxt_builder'===$post_type && !empty($el_type)){
+				if ( 'nxt_builder' === $post_type && ! empty( $el_type ) ) {
 					if ( '' === get_post_meta( $inserted_id, 'nxt-hooks-layout', true ) ) {
-						if($el_type=='header' || $el_type=='footer'){
+						if ( 'header' == $el_type || 'footer' == $el_type ) {
 							add_post_meta( $inserted_id, 'nxt-hooks-layout-sections', $el_type );
 							add_post_meta( $inserted_id, 'nxt-hooks-layout', 'sections' );
 						}
-						if($el_type=='page-404' || $el_type=='singular' || $el_type=='archives'){
+						if ( 'page-404' == $el_type || 'singular' == $el_type || 'archives' == $el_type ) {
 							add_post_meta( $inserted_id, 'nxt-hooks-layout-pages', $el_type );
 							add_post_meta( $inserted_id, 'nxt-hooks-layout', 'pages' );
 						}
@@ -1399,11 +1496,11 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 					),
 				);
 
-			}else if($new_import === "false"){
-				$exist_post_id = (isset($_GET['importToPost']) && !empty($_GET['importToPost'])) ? (int) sanitize_text_field(wp_unslash($_GET['importToPost'])) : '';
-				$importByReplacing = (isset($_GET['importByReplacing']) && !empty($_GET['importByReplacing'])) ? sanitize_text_field(wp_unslash($_GET['importByReplacing'])) : 'false';
+			} elseif ( 'false' === $new_import ) {
+				$exist_post_id     = ( isset( $_GET['importToPost'] ) && ! empty( $_GET['importToPost'] ) ) ? (int) sanitize_text_field( wp_unslash( $_GET['importToPost'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+				$importByReplacing = ( isset( $_GET['importByReplacing'] ) && ! empty( $_GET['importByReplacing'] ) ) ? sanitize_text_field( wp_unslash( $_GET['importByReplacing'] ) ) : 'false';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 
-				if(empty($exist_post_id)){
+				if ( empty( $exist_post_id ) ) {
 					return array(
 						'success' => false,
 						'message' => esc_html__( 'Post ID not provided for Updating.', 'uichemy' ),
@@ -1412,16 +1509,16 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 				$exits_post_type = get_post_type( $exist_post_id );
 
-				if(empty($exits_post_type) || $exits_post_type !== $post_type ) {
+				if ( empty( $exits_post_type ) || $exits_post_type !== $post_type ) {
 					return array(
 						'success' => false,
 						'message' => esc_html__( 'Post does not exist with given ID & Type.', 'uichemy' ),
 					);
 				}
 
-				$document = Elementor\Plugin::$instance->documents->get_doc_or_auto_save($exist_post_id);
+				$document = Elementor\Plugin::$instance->documents->get_doc_or_auto_save( $exist_post_id );
 
-				if ($document) {
+				if ( $document ) {
 					$selected_user = apply_filters( 'uich_manage_usermanager', 'get_user' );
 
 					// Set current user as admin.
@@ -1429,23 +1526,23 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 					// Get the content and convert it to JSON
 					$exits_content = $document->get_elements_data();
-					
-					$json_array = json_decode($json, true);
-					$update_content = !empty($json_array) && isset($json_array['content']) ? $json_array['content'] : [];
+
+					$json_array     = json_decode( $json, true );
+					$update_content = ! empty( $json_array ) && isset( $json_array['content'] ) ? $json_array['content'] : array();
 
 					// Loop through each top-level element (For Atomic Images Upload)
-					foreach ($update_content as &$element) {
-						Uich_Elementor_Import_Images::process_and_upload_images($element);
+					foreach ( $update_content as &$element ) {
+						Uich_Elementor_Import_Images::process_and_upload_images( $element );
 					}
 
-					if(!empty($importByReplacing) && $importByReplacing=='false'){
-						$merged_content = array_merge($exits_content, $update_content);
-					}else if(!empty($importByReplacing) && $importByReplacing=='true'){
+					if ( ! empty( $importByReplacing ) && 'false' == $importByReplacing ) {
+						$merged_content = array_merge( $exits_content, $update_content );
+					} elseif ( ! empty( $importByReplacing ) && 'true' == $importByReplacing ) {
 						$merged_content = $update_content;
 					}
 
 					// Save Images <-- Test this
-					$merged_content = $this->ele_media_import($merged_content);
+					$merged_content = $this->ele_media_import( $merged_content );
 
 					$document->save(
 						array(
@@ -1485,35 +1582,34 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$builder = sanitize_text_field( $request->get_param( 'subBuilderType' ) ?? '' );
 
 			// Get Parameters
-			$new_import = (isset( $_GET['newImport'] ) && !empty( $_GET['newImport'] )) ? sanitize_text_field(wp_unslash($_GET['newImport'])) : "true";
-			$post_type = (isset( $_GET['postType'] ) && !empty( $_GET['postType'] )) ? sanitize_text_field(wp_unslash($_GET['postType'])) : 'page';
-			$nexter_post_sub_type = (isset( $_GET['nexterPostSubType'] ) && !empty( $_GET['nexterPostSubType'] )) ? sanitize_text_field( wp_unslash($_GET['nexterPostSubType']) ) : '';
-			$post_title = (isset( $_GET['postTitle'] ) && !empty( $_GET['postTitle'] )) ? sanitize_text_field(wp_unslash($_GET['postTitle'])) : "New Post - UiChemy";
+			$new_import           = ( isset( $_GET['newImport'] ) && ! empty( $_GET['newImport'] ) ) ? sanitize_text_field( wp_unslash( $_GET['newImport'] ) ) : 'true';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+			$post_type            = ( isset( $_GET['postType'] ) && ! empty( $_GET['postType'] ) ) ? sanitize_text_field( wp_unslash( $_GET['postType'] ) ) : 'page';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+			$nexter_post_sub_type = ( isset( $_GET['nexterPostSubType'] ) && ! empty( $_GET['nexterPostSubType'] ) ) ? sanitize_text_field( wp_unslash( $_GET['nexterPostSubType'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+			$post_title           = ( isset( $_GET['postTitle'] ) && ! empty( $_GET['postTitle'] ) ) ? sanitize_text_field( wp_unslash( $_GET['postTitle'] ) ) : 'New Post - UiChemy';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 
-			
 			// postType: 'page' | 'nexter' | 'gutenberg_pattern'
 			$post_type_map = array(
-				'page' => 'page',
+				'page'              => 'page',
 				'gutenberg_pattern' => 'wp_block',
-				'nexter' => 'nxt_builder',
+				'nexter'            => 'nxt_builder',
 			);
-			$post_type = array_key_exists($post_type, $post_type_map)
-				? $post_type_map[$post_type]
+			$post_type     = array_key_exists( $post_type, $post_type_map )
+				? $post_type_map[ $post_type ]
 				: 'wp_block';
 
 			// nexterPostSubType: "standard-template" | "header" | "footer" | "singular" | "archive-page" | "404-page" | null
-			if ('nxt_builder' === $post_type){
+			if ( 'nxt_builder' === $post_type ) {
 				$temp_type_map = array(
 					'standard-template' => 'none',
-					'header' => 'header',
-					'footer' => 'footer',
-					'singular' => 'singular',
-					'archive-page' => 'archives',
-					'404-page' => 'page-404',
+					'header'            => 'header',
+					'footer'            => 'footer',
+					'singular'          => 'singular',
+					'archive-page'      => 'archives',
+					'404-page'          => 'page-404',
 				);
 
-				$el_type = array_key_exists($nexter_post_sub_type, $temp_type_map)
-					? $temp_type_map[$nexter_post_sub_type]
+				$el_type = array_key_exists( $nexter_post_sub_type, $temp_type_map )
+					? $temp_type_map[ $nexter_post_sub_type ]
 					: 'none';
 			}
 
@@ -1521,15 +1617,15 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$data = $request->get_body();
 
 			// Check if Empty
-			if ( empty( $data ) ){
+			if ( empty( $data ) ) {
 				// Return an error response.
 				return array(
 					'success' => false,
-					'message' => esc_html__( 'No data Provided for Importing.', 'uichemy' ),
+					'message' => esc_html__( 'No data was provided to import.', 'uichemy' ),
 				);
 			}
 
-			if($new_import === "true"){
+			if ( 'true' === $new_import ) {
 
 				// Get the data & Import
 				$selected_user = apply_filters( 'uich_manage_usermanager', 'get_user' );
@@ -1538,35 +1634,35 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				wp_set_current_user( null, $selected_user );
 
 				// Disable Error Displaying
-				ini_set( 'display_errors', 0 );
+				ini_set( 'display_errors', 0 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- Suppress notices so the REST import returns clean JSON.
 
-				$data = $this->import_gutenberg_media($data);
+				$data = $this->import_gutenberg_media( $data );
 
 				// Replace \n with \\n for custom css
-				$data = preg_replace('/\\\\n/', "\\\\\\\\n", $data);
+				$data = preg_replace( '/\\\\n/', "\\\\\\\\n", $data );
 
 				$post_attributes = array(
-					'post_title'  => $post_title,
+					'post_title'   => $post_title,
 					'post_content' => $data,
-					'post_type'   => $post_type,
-					'post_status' => 'draft',
+					'post_type'    => $post_type,
+					'post_status'  => 'draft',
 				);
 
-				$inserted_id = wp_insert_post($post_attributes);
+				$inserted_id = wp_insert_post( $post_attributes );
 
-				if (is_wp_error($inserted_id)) {
+				if ( is_wp_error( $inserted_id ) ) {
 					return array(
 						'success' => false,
 						'message' => $inserted_id->get_error_message(),
 					);
 				} else {
-					if('nxt_builder'===$post_type && !empty($el_type)){
+					if ( 'nxt_builder' === $post_type && ! empty( $el_type ) ) {
 						if ( '' === get_post_meta( $inserted_id, 'nxt-hooks-layout', true ) ) {
-							if($el_type=='header' || $el_type=='footer'){
+							if ( 'header' == $el_type || 'footer' == $el_type ) {
 								add_post_meta( $inserted_id, 'nxt-hooks-layout-sections', $el_type );
 								add_post_meta( $inserted_id, 'nxt-hooks-layout', 'sections' );
 							}
-							if($el_type=='page-404' || $el_type=='singular' || $el_type=='archives'){
+							if ( 'page-404' == $el_type || 'singular' == $el_type || 'archives' == $el_type ) {
 								add_post_meta( $inserted_id, 'nxt-hooks-layout-pages', $el_type );
 								add_post_meta( $inserted_id, 'nxt-hooks-layout', 'pages' );
 							}
@@ -1578,19 +1674,18 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 						'result'  => array(
 							'title'     => get_the_title( $inserted_id ),
 							'edit_link' => get_edit_post_link( $inserted_id, 'internal' ),
-							'view'      =>  $post_type === 'wp_block' || $builder === 'GenBlocks'
+							'view'      => 'wp_block' === $post_type || 'GenBlocks' === $builder
 								? get_edit_post_link( $inserted_id, 'internal' )
 								: get_permalink( $inserted_id ),
 						),
 					);
 				}
-
-			}else if( $new_import === "false"){
+			} elseif ( 'false' === $new_import ) {
 				// In case of Existing Import
-				$exist_post_id = (isset($_GET['importToPost']) && !empty($_GET['importToPost'])) ? (int) sanitize_text_field(wp_unslash($_GET['importToPost'])) : '';
-				$importByReplacing = (isset($_GET['importByReplacing']) && !empty($_GET['importByReplacing'])) ? sanitize_text_field(wp_unslash($_GET['importByReplacing'])) : 'false';
+				$exist_post_id     = ( isset( $_GET['importToPost'] ) && ! empty( $_GET['importToPost'] ) ) ? (int) sanitize_text_field( wp_unslash( $_GET['importToPost'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+				$importByReplacing = ( isset( $_GET['importByReplacing'] ) && ! empty( $_GET['importByReplacing'] ) ) ? sanitize_text_field( wp_unslash( $_GET['importByReplacing'] ) ) : 'false';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 
-				if(empty($exist_post_id)){
+				if ( empty( $exist_post_id ) ) {
 					return array(
 						'success' => false,
 						'message' => esc_html__( 'Post ID not provided for Updating.', 'uichemy' ),
@@ -1599,7 +1694,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 				$exits_post_type = get_post_type( $exist_post_id );
 
-				if(empty($exits_post_type) || $exits_post_type !== $post_type ) {
+				if ( empty( $exits_post_type ) || $exits_post_type !== $post_type ) {
 					return array(
 						'success' => false,
 						'message' => esc_html__( 'Post does not exist with given ID & Type.', 'uichemy' ),
@@ -1613,24 +1708,24 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				wp_set_current_user( null, $selected_user );
 
 				// Get the content and convert it to JSON
-				$post = get_post($exist_post_id);
+				$post = get_post( $exist_post_id );
 
 				// Initialize a variable to store the post content
 				$exits_content = '';
 
-				if (!empty($post) && isset($post->post_content)) {
+				if ( ! empty( $post ) && isset( $post->post_content ) ) {
 					$exits_content = $post->post_content;
 				}
 
 				// Content to Update
-				$data = $this->import_gutenberg_media($data);
+				$data = $this->import_gutenberg_media( $data );
 
 				// Replace \n with \\n for custom css
-				$data = preg_replace('/\\\\n/', "\\\\\\\\n", $data);
+				$data = preg_replace( '/\\\\n/', "\\\\\\\\n", $data );
 
-				if(!empty($importByReplacing) && $importByReplacing=='false'){
+				if ( ! empty( $importByReplacing ) && 'false' == $importByReplacing ) {
 					$merged_content = $exits_content . $data;
-				}else if(!empty($importByReplacing) && $importByReplacing=='true'){
+				} elseif ( ! empty( $importByReplacing ) && 'true' == $importByReplacing ) {
 					$merged_content = $data;
 				}
 
@@ -1641,9 +1736,9 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				);
 
 				// Update the Post
-				$update_post = wp_update_post($post_attributes);
+				$update_post = wp_update_post( $post_attributes );
 
-				if (is_wp_error($update_post)) {
+				if ( is_wp_error( $update_post ) ) {
 					return array(
 						'success' => false,
 						'message' => $update_post->get_error_message(),
@@ -1659,9 +1754,9 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 							'title'     => get_the_title( $exist_post_id ),
 							'edit_link' => get_edit_post_link( $exist_post_id, 'internal' ),
 							'view'      => get_edit_post_link( $exist_post_id, 'internal' ), // Temp Fix for Caching Issue
-							// 'view'      => $post_type === 'wp_block'
-							// 	? get_edit_post_link( $exist_post_id, 'internal' )
-							// 	: get_permalink( $exist_post_id ),
+						// 'view'      => $post_type === 'wp_block'
+						// ? get_edit_post_link( $exist_post_id, 'internal' )
+						// : get_permalink( $exist_post_id ),
 						),
 					);
 				}
@@ -1679,7 +1774,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 */
 		public function uich_handle_bricks_import_v2( WP_REST_Request $request ) {
 			// Check if Bricks Installed
-			if( !class_exists( '\Bricks\Theme' ) || !class_exists(( '\Bricks\Templates' )) || !class_exists('Bricks\Frontend')) {
+			if ( ! class_exists( '\Bricks\Theme' ) || ! class_exists( ( '\Bricks\Templates' ) ) || ! class_exists( 'Bricks\Frontend' ) ) {
 				return array(
 					'success' => false,
 					'message' => 'Please Install & Activate Bricks First.',
@@ -1687,33 +1782,33 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			}
 
 			// Get Parameters
-			$new_import = (isset( $_GET['newImport'] ) && !empty( $_GET['newImport'] )) ? sanitize_text_field(wp_unslash($_GET['newImport'])) : "true";
-			$post_type = (isset( $_GET['postType'] ) && !empty( $_GET['postType'] )) ? sanitize_text_field(wp_unslash($_GET['postType'])) : 'page';
-			$bricks_post_sub_type = (isset( $_GET['bricksPostSubType'] ) && !empty( $_GET['bricksPostSubType'] )) ? sanitize_text_field( wp_unslash($_GET['bricksPostSubType']) ) : '';
+			$new_import           = ( isset( $_GET['newImport'] ) && ! empty( $_GET['newImport'] ) ) ? sanitize_text_field( wp_unslash( $_GET['newImport'] ) ) : 'true';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+			$post_type            = ( isset( $_GET['postType'] ) && ! empty( $_GET['postType'] ) ) ? sanitize_text_field( wp_unslash( $_GET['postType'] ) ) : 'page';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+			$bricks_post_sub_type = ( isset( $_GET['bricksPostSubType'] ) && ! empty( $_GET['bricksPostSubType'] ) ) ? sanitize_text_field( wp_unslash( $_GET['bricksPostSubType'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 
 			// postType: 'page' | 'bricks'
 			$post_type_map = array(
-				'page' => 'page',
+				'page'   => 'page',
 				'bricks' => 'bricks_template',
 			);
-			$post_type = array_key_exists($post_type, $post_type_map) ? $post_type_map[$post_type] : 'page';
+			$post_type     = array_key_exists( $post_type, $post_type_map ) ? $post_type_map[ $post_type ] : 'page';
 
 			// bricksPostSubType: "standard-template" | "header" | "footer" | "section" | "popup" | "archive" | "search-results" | "error-page" | null
 			$el_type = 'content';
-			if ('bricks_template' === $post_type){
+			if ( 'bricks_template' === $post_type ) {
 				$temp_type_map = array(
 					'standard-template' => 'content',
-					'header' => 'header',
-					'footer' => 'footer',
-					'section' => 'section',
-					'popup' => 'popup',
-					'archive' => 'archive',
-					'search-results' => 'search',
-					'error-page' => 'error',
+					'header'            => 'header',
+					'footer'            => 'footer',
+					'section'           => 'section',
+					'popup'             => 'popup',
+					'archive'           => 'archive',
+					'search-results'    => 'search',
+					'error-page'        => 'error',
 				);
 
-				$el_type = array_key_exists($bricks_post_sub_type, $temp_type_map)
-					? $temp_type_map[$bricks_post_sub_type]
+				$el_type = array_key_exists( $bricks_post_sub_type, $temp_type_map )
+					? $temp_type_map[ $bricks_post_sub_type ]
 					: 'content';
 			}
 
@@ -1721,7 +1816,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$json = $request->get_body();
 
 			// Check if Empty
-			if ( empty( $json ) ){
+			if ( empty( $json ) ) {
 				// Return an error response.
 				return array(
 					'success' => false,
@@ -1730,7 +1825,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			}
 
 			// Import
-			if($new_import === "true"){
+			if ( 'true' === $new_import ) {
 
 				// Get the data & Import
 				$json = json_decode( $json, true );
@@ -1742,41 +1837,41 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				wp_set_current_user( null, $selected_user );
 
 				// Disable Error Displaying
-				ini_set( 'display_errors', 0 );
+				ini_set( 'display_errors', 0 ); // phpcs:ignore Squiz.PHP.DiscouragedFunctions.Discouraged -- Suppress notices so the REST import returns clean JSON.
 
-				$post_title = !empty($json) && isset($json['title']) ? sanitize_text_field($json['title']) : 'Bricks Template';
-				$post_content = isset($json) && !empty($json) && isset($json['content']) ? $json['content'] : [];
-				$post_content = $this->import_bricks_media($post_content);
+				$post_title   = ! empty( $json ) && isset( $json['title'] ) ? sanitize_text_field( $json['title'] ) : 'Bricks Template';
+				$post_content = isset( $json ) && ! empty( $json ) && isset( $json['content'] ) ? $json['content'] : array();
+				$post_content = $this->import_bricks_media( $post_content );
 
 				// for page settings
-				$page_settings = isset($json) && !empty($json) && isset($json['pageSettings']) ? $json['pageSettings'] : [];
-				$page_settings = $this->import_bricks_media($page_settings); // Optional: Process media in pageSettings if needed
+				$page_settings = isset( $json ) && ! empty( $json ) && isset( $json['pageSettings'] ) ? $json['pageSettings'] : array();
+				$page_settings = $this->import_bricks_media( $page_settings ); // Optional: Process media in pageSettings if needed
 
 				$post_attributes = array(
-					'post_title'  => $post_title,
+					'post_title'   => $post_title,
 					'post_content' => '',
-					'post_type'   => $post_type,
-					'post_status' => 'draft',
+					'post_type'    => $post_type,
+					'post_status'  => 'draft',
 				);
 
-				$inserted_id = wp_insert_post($post_attributes);
+				$inserted_id = wp_insert_post( $post_attributes );
 
-				if (is_wp_error($inserted_id)) {
+				if ( is_wp_error( $inserted_id ) ) {
 					return array(
 						'success' => false,
 						'message' => $inserted_id->get_error_message(),
 					);
 				} else {
-					$meta_el_type = $el_type === 'header' || $el_type === 'footer'
+					$meta_el_type = 'header' === $el_type || 'footer' === $el_type
 						? $el_type
 						: 'content';
 
 					// Add the Bricks content meta key
-					update_post_meta($inserted_id, '_bricks_page_'.esc_attr($meta_el_type).'_2', $post_content);
+					update_post_meta( $inserted_id, '_bricks_page_' . esc_attr( $meta_el_type ) . '_2', $post_content );
 
-					update_post_meta($inserted_id, '_bricks_editor_mode', 'bricks');
-					update_post_meta($inserted_id, '_bricks_template_type', esc_attr($el_type));
-					update_post_meta($inserted_id, '_bricks_page_settings', $page_settings);
+					update_post_meta( $inserted_id, '_bricks_editor_mode', 'bricks' );
+					update_post_meta( $inserted_id, '_bricks_template_type', esc_attr( $el_type ) );
+					update_post_meta( $inserted_id, '_bricks_page_settings', $page_settings );
 
 					return array(
 						'success' => true,
@@ -1787,13 +1882,12 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 						),
 					);
 				}
-
-			}else if( $new_import === "false"){
+			} elseif ( 'false' === $new_import ) {
 				// In case of Existing Import
-				$exist_post_id = (isset($_GET['importToPost']) && !empty($_GET['importToPost'])) ? (int) sanitize_text_field(wp_unslash($_GET['importToPost'])) : '';
-				$importByReplacing = (isset($_GET['importByReplacing']) && !empty($_GET['importByReplacing'])) ? sanitize_text_field(wp_unslash($_GET['importByReplacing'])) : 'false';
+				$exist_post_id     = ( isset( $_GET['importToPost'] ) && ! empty( $_GET['importToPost'] ) ) ? (int) sanitize_text_field( wp_unslash( $_GET['importToPost'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+				$importByReplacing = ( isset( $_GET['importByReplacing'] ) && ! empty( $_GET['importByReplacing'] ) ) ? sanitize_text_field( wp_unslash( $_GET['importByReplacing'] ) ) : 'false';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 
-				if(empty($exist_post_id)){
+				if ( empty( $exist_post_id ) ) {
 					return array(
 						'success' => false,
 						'message' => esc_html__( 'Post ID not provided for Updating.', 'uichemy' ),
@@ -1802,7 +1896,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 				$exits_post_type = get_post_type( $exist_post_id );
 
-				if(empty($exits_post_type) || $exits_post_type !== $post_type ) {
+				if ( empty( $exits_post_type ) || $exits_post_type !== $post_type ) {
 					return array(
 						'success' => false,
 						'message' => esc_html__( 'Post does not exist with given ID & Type.', 'uichemy' ),
@@ -1816,44 +1910,44 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				wp_set_current_user( null, $selected_user );
 
 				// Get the content and convert it to JSON
-				$post = get_post($exist_post_id);
+				$post = get_post( $exist_post_id );
 
 				// Initialize a variable to store the post content
-				$exits_content = [];
-				$exits_page_settings = [];
-				$get_temp_type = 'content';
-				if (!empty($post) ) {
-					$get_temp_type = get_post_meta($exist_post_id, '_bricks_template_type', true);
+				$exits_content       = array();
+				$exits_page_settings = array();
+				$get_temp_type       = 'content';
+				if ( ! empty( $post ) ) {
+					$get_temp_type = get_post_meta( $exist_post_id, '_bricks_template_type', true );
 
 					// Content key
-					$get_temp_type = $get_temp_type === 'header' || $get_temp_type === 'footer'
+					$get_temp_type = 'header' === $get_temp_type || 'footer' === $get_temp_type
 						? $get_temp_type
 						: 'content';
 
-					if(!empty($get_temp_type)){
-						$exits_content = get_post_meta($exist_post_id, '_bricks_page_'.esc_attr($get_temp_type).'_2', true);
-						$exits_page_settings = get_post_meta($exist_post_id, '_bricks_page_settings', true);
+					if ( ! empty( $get_temp_type ) ) {
+						$exits_content       = get_post_meta( $exist_post_id, '_bricks_page_' . esc_attr( $get_temp_type ) . '_2', true );
+						$exits_page_settings = get_post_meta( $exist_post_id, '_bricks_page_settings', true );
 					}
 				}
 
-				$json_array = json_decode($json, true);
-				$update_content = !empty($json_array) && isset($json_array['content']) ? $json_array['content'] : [];
-				$update_page_settings = !empty($json_array) && isset($json_array['pageSettings']) ? $json_array['pageSettings'] : [];
-				$update_page_settings = $this->import_bricks_media($update_page_settings);
-				$update_content = $this->import_bricks_media($update_content);
+				$json_array           = json_decode( $json, true );
+				$update_content       = ! empty( $json_array ) && isset( $json_array['content'] ) ? $json_array['content'] : array();
+				$update_page_settings = ! empty( $json_array ) && isset( $json_array['pageSettings'] ) ? $json_array['pageSettings'] : array();
+				$update_page_settings = $this->import_bricks_media( $update_page_settings );
+				$update_content       = $this->import_bricks_media( $update_content );
 
-				if(!empty($importByReplacing) && $importByReplacing=='false'){
-					$merged_content = array_merge($exits_content, $update_content);
-					$merged_page_settings = array_merge($exits_page_settings, $update_page_settings);
-				}else if(!empty($importByReplacing) && $importByReplacing=='true'){
-					$merged_content = $update_content;
+				if ( ! empty( $importByReplacing ) && 'false' == $importByReplacing ) {
+					$merged_content       = array_merge( $exits_content, $update_content );
+					$merged_page_settings = array_merge( $exits_page_settings, $update_page_settings );
+				} elseif ( ! empty( $importByReplacing ) && 'true' == $importByReplacing ) {
+					$merged_content       = $update_content;
 					$merged_page_settings = $update_page_settings;
 				}
 
-				if(!empty($get_temp_type)){
+				if ( ! empty( $get_temp_type ) ) {
 
-					update_post_meta($exist_post_id, '_bricks_page_'.esc_attr($get_temp_type).'_2', $merged_content);
-					update_post_meta($exist_post_id, '_bricks_page_settings', $merged_page_settings);
+					update_post_meta( $exist_post_id, '_bricks_page_' . esc_attr( $get_temp_type ) . '_2', $merged_content );
+					update_post_meta( $exist_post_id, '_bricks_page_settings', $merged_page_settings );
 					return array(
 						'success' => true,
 						'result'  => array(
@@ -1897,18 +1991,18 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 */
 		public function uiche_rest_send_cors_headers( $value ) {
 			$origin     = get_http_origin();
-			$requesturi = (isset( $_SERVER['REQUEST_URI'] ) && ! empty( $_SERVER['REQUEST_URI'] )) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+			$requesturi = ( isset( $_SERVER['REQUEST_URI'] ) && ! empty( $_SERVER['REQUEST_URI'] ) ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
 
 			// In case of non-pretty REST URLs
 			$rest_route_str = '';
-			if ( isset( $_GET['rest_route'] ) && ! empty( $_GET['rest_route'] ) ) {
+			if ( isset( $_GET['rest_route'] ) && ! empty( $_GET['rest_route'] ) ) {  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 				// Sanitize GET param
-				$rest_route_str = sanitize_text_field( wp_unslash( $_GET['rest_route'] ) );
+				$rest_route_str = sanitize_text_field( wp_unslash( $_GET['rest_route'] ) );  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 			}
 
 			if ( ! empty( $origin )
-				&& ((preg_match( '/\/wp-json\/uichemy\/v/', wp_parse_url( $requesturi, PHP_URL_PATH ) ) === 1)
-				|| (preg_match( '/^\/uichemy\/v/', $rest_route_str ) === 1))
+				&& ( ( preg_match( '/\/wp-json\/uichemy\/v/', wp_parse_url( $requesturi, PHP_URL_PATH ) ) === 1 )
+				|| ( preg_match( '/^\/uichemy\/v/', $rest_route_str ) === 1 ) )
 			) {
 				// WP REST Takes care of Access-Control-Allow-Origin
 				header( 'Access-Control-Allow-Headers: Authorization, Content-Type' );
@@ -1942,14 +2036,14 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			wp_set_current_user( null, $selected_user );
 
 			// Create Nonce
-			$nonce = wp_create_nonce("bricks-nonce-admin");
+			$nonce = wp_create_nonce( 'bricks-nonce-admin' );
 
 			return array(
-		        'success' => true,
-		        'nonce' => $nonce,
-		    );
+				'success' => true,
+				'nonce'   => $nonce,
+			);
 		}
-		
+
 		/**
 		 * Handle import for Bricks
 		 *
@@ -1959,14 +2053,14 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 */
 		public function uich_handle_bricks_import( WP_REST_Request $request ) {
 
-			if( !class_exists( '\Bricks\Theme' ) || !class_exists(( '\Bricks\Templates' )) ) {
+			if ( ! class_exists( '\Bricks\Theme' ) || ! class_exists( ( '\Bricks\Templates' ) ) ) {
 				return array(
 					'success' => false,
 					'message' => 'Please Install & Activate Bricks First.',
 				);
 			}
 
-			if( empty($_FILES) || empty($_FILES['files']) ) {
+			if ( empty( $_FILES ) || empty( $_FILES['files'] ) ) {  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 				return array(
 					'success' => false,
 					'message' => 'No file provided',
@@ -1989,14 +2083,14 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			/**
 			 * Safe template import with sanitization
 			 */
-			if ( isset( $_FILES['files']['tmp_name'][0] ) && isset($_FILES['files']['name'][0]) ) {
+			if ( isset( $_FILES['files']['tmp_name'][0] ) && isset( $_FILES['files']['name'][0] ) ) {  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 				// Sanitize uploaded file info
-				$file_tmp  = sanitize_text_field( wp_unslash( $_FILES['files']['tmp_name'][0] ) );
-				$file_name = sanitize_file_name( wp_unslash( $_FILES['files']['name'][0] ) );
+				$file_tmp  = sanitize_text_field( wp_unslash( $_FILES['files']['tmp_name'][0] ) );  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+				$file_name = sanitize_file_name( wp_unslash( $_FILES['files']['name'][0] ) );  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 
 				// Verify JSON file type
 				$filetype = wp_check_filetype_and_ext( $file_tmp, $file_name );
-				if ( $filetype['ext'] === 'json' && $filetype['type'] === 'application/json' ) {
+				if ( 'json' === $filetype['ext'] && 'application/json' === $filetype['type'] ) {
 
 					// Read contents
 					$contents = $wp_filesystem->get_contents( $file_tmp );
@@ -2008,7 +2102,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 							$elements = $template['content'];
 
-							\Bricks\Templates::$template_images = [];
+							\Bricks\Templates::$template_images = array();
 
 							foreach ( $elements as $index => $element ) {
 								if ( ! empty( $element['settings'] ) && is_array( $element['settings'] ) ) {
@@ -2045,8 +2139,6 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 					}
 				}
 			}
-
-
 		}
 
 		/**
@@ -2063,18 +2155,18 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		/**
 		 * Response Message
 		 *
-		 * @param array  $success give array.
+		 * @param array   $success give array.
 		 * @param message $status api code number.
 		 * @param message $description api code number.
 		 * @param message $data give array or string.
 		 * */
-		public function uich_response( $message = '', $description = '', $success = false, $data = '' ){
+		public function uich_response( $message = '', $description = '', $success = false, $data = '' ) {
 
-			return array( 
-				'message' => $message, 
-				'description' => $description, 
-				'success' => $success,
-				'data' => $data, 
+			return array(
+				'message'     => $message,
+				'description' => $description,
+				'success'     => $success,
+				'data'        => $data,
 			);
 		}
 
@@ -2090,50 +2182,50 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			if ( 'elementor_install' === $type ) {
 				if ( is_plugin_active( $this->elementor_pluginpath ) ) {
 					return $this->uich_response( 'Elementor Activated', 'Elementor Activated', true, '' );
-				}else{
+				} else {
 					return $this->uich_response( 'Elementor Not Activated', 'Elementor Not Activated', false, '' );
 				}
-			}else if ( 'flexbox_container' === $type ) {
+			} elseif ( 'flexbox_container' === $type ) {
 				$get_default = get_option( $this->flexbox_container_db );
 
 				return $this->uich_response( '', '', true, $get_default );
-			}else if( 'enable_unfiltered_file_uploads' === $type ){
+			} elseif ( 'enable_unfiltered_file_uploads' === $type ) {
 				$get_default = get_option( $this->file_uploads_db );
 
 				return $this->uich_response( '', '', true, $get_default );
-			}else if( 'bricks_svg_uploads' === $type ) {
-				$uroles = get_editable_roles();
+			} elseif ( 'bricks_svg_uploads' === $type ) {
+				$uroles     = get_editable_roles();
 				$capability = 'bricks_upload_svg';
-				$briRole = array();
-				foreach ($uroles as $role_key => $role_data) {
-					if (isset($role_data['capabilities'][$capability]) && $role_data['capabilities'][$capability] === true) {
-						$briRole[$role_key] = $role_data;
+				$briRole    = array();
+				foreach ( $uroles as $role_key => $role_data ) {
+					if ( isset( $role_data['capabilities'][ $capability ] ) && true === $role_data['capabilities'][ $capability ] ) {
+						$briRole[ $role_key ] = $role_data;
 					}
 				}
 
 				return $this->uich_response( '', '', true, $briRole );
-			}else if ( 'tpgb_install' === $type ) {
+			} elseif ( 'tpgb_install' === $type ) {
 				if ( is_plugin_active( $this->tpgb_plugin_path ) ) {
 					return $this->uich_response( 'The Plus Blocks for Block Editor Activated', 'The Plus Blocks for Block Edito Activated', true, '' );
-				}else{
+				} else {
 					return $this->uich_response( 'The Plus Blocks for Block Editor Not Activated', 'The Plus Blocks for Block Edito Not Activated', false, '' );
 				}
-			}else if( 'kadence_install' === $type ) {
+			} elseif ( 'kadence_install' === $type ) {
 				if ( is_plugin_active( 'kadence-blocks/kadence-blocks.php' ) ) {
 					return $this->uich_response( 'Kadence Blocks Activated', 'Kadence Blocks Activated', true, '' );
-				}else{
+				} else {
 					return $this->uich_response( 'Kadence Blocks Not Activated', 'Kadence Blocks Not Activated', false, '' );
 				}
-			}else if( 'generateblocks_install' === $type ) {
+			} elseif ( 'generateblocks_install' === $type ) {
 				if ( is_plugin_active( 'generateblocks/plugin.php' ) ) {
 					return $this->uich_response( 'GenerateBlocks Activated', 'GenerateBlocks Activated', true, '' );
-				}else{
+				} else {
 					return $this->uich_response( 'GenerateBlocks Not Activated', 'GenerateBlocks Not Activated', false, '' );
 				}
-			}else if( 'spectra_install' === $type ) {
+			} elseif ( 'spectra_install' === $type ) {
 				if ( is_plugin_active( 'ultimate-addons-for-gutenberg/ultimate-addons-for-gutenberg.php' ) ) {
 					return $this->uich_response( 'Spectra Activated', 'Spectra Activated', true, '' );
-				}else{
+				} else {
 					return $this->uich_response( 'Spectra Not Activated', 'Spectra Not Activated', false, '' );
 				}
 			}
@@ -2159,27 +2251,27 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				wp_die();
 			}
 
-            $key = isset( $_POST['key'] ) ? strtolower( sanitize_text_field( wp_unslash( $_POST['key'] ) ) ) : false;
-           
+			$key = isset( $_POST['key'] ) ? strtolower( sanitize_text_field( wp_unslash( $_POST['key'] ) ) ) : false;
+
 			switch ( $type ) {
 				case 'install_elementor':
 					$data = $this->uich_install_elementor();
-				break;
+					break;
 				case 'flexbox_container':
 					$data = $this->uich_flexbox_container();
-				break;
+					break;
 				case 'elementor_file_uploads':
 					$data = $this->uich_elementor_file_uploads();
-				break;
+					break;
 				case 'bricks_file_uploads':
 					$data = $this->uich_bricks_file_uploads();
-				break;
+					break;
 				case 'install_tpgb':
 					$data = $this->uich_install_tpgb();
-                break;
-                case 'add_custom_option':
-                    $data = $this->uich_add_option($key);
-				break;
+					break;
+				case 'add_custom_option':
+					$data = $this->uich_add_option( $key );
+					break;
 			}
 
 			wp_send_json( $data );
@@ -2188,7 +2280,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 		/**
 		 * Install Elementor
-		 * 
+		 *
 		 * @since 1.0.0
 		 * */
 		public function uich_install_elementor() {
@@ -2196,30 +2288,19 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 			include_once ABSPATH . 'wp-admin/includes/class-automatic-upgrader-skin.php';
 
-			$response = wp_remote_post('http://api.wordpress.org/plugins/info/1.0/',
-				[
-					'body' => [
-						'action' => 'plugin_information',
-						'request' => serialize((object) [
-							'slug' => 'elementor',
-							'fields' => [
-								'version' => false,
-							],
-						]),
-					],
-				]
-			);
-
-			$elementor_plugin = unserialize(wp_remote_retrieve_body($response));
-			if ( is_wp_error($elementor_plugin) ) {
-				return $this->uich_response( 'Something Went Wrong', 'get body', false, $elementor_plugin );
+			// Resolve the package from wordpress.org via WP's native plugins_api()
+			// (HTTPS + JSON). Never unserialize() a raw remote HTTP body — a
+			// tampered/MITM'd response would be a PHP object-injection sink.
+			$wporg = $this->uich_lookup_wporg_info( 'elementor' );
+			if ( ! $wporg || empty( $wporg['download_link'] ) ) {
+				return $this->uich_response( 'Something Went Wrong', 'get body', false, '' );
 			}
 
-			$upgrad = new \Plugin_Upgrader(new \Automatic_Upgrader_Skin());
+			$upgrad = new \Plugin_Upgrader( new \Automatic_Upgrader_Skin() );
 
 			/**Install Plugin*/
-			$elementor_Install = $upgrad->install($elementor_plugin->download_link);
-			if ( is_wp_error($elementor_Install) ) {
+			$elementor_Install = $upgrad->install( $wporg['download_link'] );
+			if ( is_wp_error( $elementor_Install ) ) {
 				return $this->uich_response( 'Something Went Wrong', 'Install Plugin', false, $elementor_Install );
 			}
 
@@ -2227,14 +2308,14 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			if ( true === $elementor_Install ) {
 				$elementor_active = activate_plugin( $upgrad->plugin_info(), '', false, true );
 
-				if ( is_wp_error($elementor_active) ) {
+				if ( is_wp_error( $elementor_active ) ) {
 					return $this->uich_response( 'Something Went Wrong', 'Activate Plugin', false, $elementor_active );
 				}
 
 				$success = null === $elementor_active;
 
 				return $this->uich_response( 'Successfully Activated!', 'Elementor Installed and Activated Successfully.', $success, '' );
-			}else{
+			} else {
 				activate_plugin( $this->elementor_pluginpath );
 
 				if ( is_plugin_active( $this->elementor_pluginpath ) ) {
@@ -2242,7 +2323,6 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				} else {
 					return $this->uich_response( 'Something Went Wrong', 'Not Activate Plugin', false, '' );
 				}
-
 			}
 		}
 
@@ -2252,29 +2332,29 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * @since 1.2.2
 		 * */
 		public function uich_flexbox_container() {
-			
+
 			if ( 'active' !== get_option( $this->flexbox_container_db ) ) {
 				update_option( $this->flexbox_container_db, 'active' );
 
 				return $this->uich_response( 'Successfully Enabled!', 'Flexbox Container activated Successfully.', true, '' );
-			}else {
+			} else {
 				return $this->uich_response( 'Something Went Wrong', 'Flexbox Container Alredy Activated', true, '' );
 			}
 		}
 
 		/**
 		 * Flexbox Container
-		 * 
+		 *
 		 * @since 1.2.2
 		 * */
 		public function uich_elementor_file_uploads() {
 			$fileupload = get_option( $this->file_uploads_db );
 
-			if ( empty( $fileupload ) && $fileupload !== 1 ) {
+			if ( empty( $fileupload ) && 1 !== $fileupload ) {
 				update_option( $this->file_uploads_db, 1 );
 
 				return $this->uich_response( 'Successfully Enabled!', 'Unfiltered File Uploads activated Successfully.', true, '' );
-			}else {
+			} else {
 				return $this->uich_response( 'Something Went Wrong', 'File Uploads Alredy Activated', true, '' );
 			}
 		}
@@ -2284,12 +2364,14 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 *
 		 * @since 1.2.2
 		 */
-		public function uich_bricks_file_uploads(){
+		public function uich_bricks_file_uploads() {
 
 			$roles = wp_roles()->get_names();
 			foreach ( $roles as $role_key => $label ) {
 				$role = get_role( $role_key );
-				if( $role && $role->has_cap( 'import' ) ) wp_roles()->add_cap( $role_key, 'bricks_upload_svg' );
+				if ( $role && $role->has_cap( 'import' ) ) {
+					wp_roles()->add_cap( $role_key, 'bricks_upload_svg' );
+				}
 			}
 
 			return $this->uich_response( 'Successfully Enabled!', 'Unfiltered File Uploads activated Successfully.', true, '' );
@@ -2309,46 +2391,45 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		}
 
 
-		public function import_gutenberg_media($content = ''){
+		public function import_gutenberg_media( $content = '' ) {
 			if ( ! class_exists( 'Uich_Import_Images' ) ) {
 				require_once UICH_PATH . 'includes/admin/class-uich-import-images.php';
 			}
 
-			if(defined('TPGB_VERSION') && defined('TPGB_PATH')){
+			if ( defined( 'TPGB_VERSION' ) && defined( 'TPGB_PATH' ) ) {
 
 				require_once TPGB_PATH . 'classes/global-options/tp-import-media.php';
-				
-				$content = parse_blocks( $content );
-				
-				$new_content = Uich_Import_Images::gutenberg_import_media_copy_content( $content );
-				
-				$content = '';
-				foreach ($new_content as $block) {
-					$content .= serialize_block($block);
-				}
 
+				$content = parse_blocks( $content );
+
+				$new_content = Uich_Import_Images::gutenberg_import_media_copy_content( $content );
+
+				$content = '';
+				foreach ( $new_content as $block ) {
+					$content .= serialize_block( $block );
+				}
 			} else {
 				$content = parse_blocks( $content );
-				
+
 				$new_content = Uich_Import_Images::gutenberg_import_media_copy_content( $content );
-				
+
 				$content = '';
-				foreach ($new_content as $block) {
-					$content .= serialize_block($block);
+				foreach ( $new_content as $block ) {
+					$content .= serialize_block( $block );
 				}
 			}
 
 			return $content;
 		}
 
-		public function import_bricks_media($content = []){
-			
-			if(!empty($content)){
-				$elements = $content;
-				\Bricks\Templates::$template_images = [];
-	
+		public function import_bricks_media( $content = array() ) {
+
+			if ( ! empty( $content ) ) {
+				$elements                           = $content;
+				\Bricks\Templates::$template_images = array();
+
 				foreach ( $elements as $index => $element ) {
-					if ( !empty( $element['settings'] ) ) {
+					if ( ! empty( $element['settings'] ) ) {
 						\Bricks\Theme::instance()->templates->import_images( $element['settings'], true );
 					}
 				}
@@ -2356,7 +2437,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				// STEP: Replace remote image data with imported/existing image data.
 				if ( count( \Bricks\Templates::$template_images ) ) {
 					$elements_encoded = wp_json_encode( $elements );
-	
+
 					foreach ( \Bricks\Templates::$template_images as $template_image ) {
 						$elements_encoded = str_replace(
 							wp_json_encode( $template_image['old'] ),
@@ -2364,7 +2445,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 							$elements_encoded
 						);
 					}
-	
+
 					$content = json_decode( $elements_encoded, true );
 				}
 			}
@@ -2377,37 +2458,26 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 *
 		 * @since 2.3.2
 		 * */
-		public function uich_install_tpgb(){
+		public function uich_install_tpgb() {
 			include_once ABSPATH . 'wp-admin/includes/file.php';
 			include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 			include_once ABSPATH . 'wp-admin/includes/class-automatic-upgrader-skin.php';
 
-            $pluginName = isset( $_POST['pluginName'] ) ? strtolower( sanitize_text_field( wp_unslash( $_POST['pluginName'] ) ) ) : false;
+			$pluginName = isset( $_POST['pluginName'] ) ? strtolower( sanitize_text_field( wp_unslash( $_POST['pluginName'] ) ) ) : false;  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 
-			$response = wp_remote_post('http://api.wordpress.org/plugins/info/1.0/',
-				[
-					'body' => [
-						'action' => 'plugin_information',
-						'request' => serialize((object) [
-							'slug' => $pluginName,
-							'fields' => [
-								'version' => false,
-							],
-						]),
-					],
-				]
-			);
-
-			$tpgb_plugin = unserialize(wp_remote_retrieve_body($response));
-			if ( is_wp_error($tpgb_plugin) ) {
-				return $this->uich_response( 'Something Went Wrong', 'get body', false, $tpgb_plugin );
+			// Resolve the package from wordpress.org via WP's native plugins_api()
+			// (HTTPS + JSON) instead of unserialize()-ing a raw remote HTTP body,
+			// which is a PHP object-injection sink on a tampered/MITM'd response.
+			$wporg = $pluginName ? $this->uich_lookup_wporg_info( $pluginName ) : null;
+			if ( ! $wporg || empty( $wporg['download_link'] ) ) {
+				return $this->uich_response( 'Something Went Wrong', 'get body', false, '' );
 			}
 
-			$upgrad = new \Plugin_Upgrader(new \Automatic_Upgrader_Skin());
+			$upgrad = new \Plugin_Upgrader( new \Automatic_Upgrader_Skin() );
 
 			/**Install Plugin*/
-			$tpgb_plugin = $upgrad->install($tpgb_plugin->download_link);
-			if ( is_wp_error($tpgb_plugin) ) {
+			$tpgb_plugin = $upgrad->install( $wporg['download_link'] );
+			if ( is_wp_error( $tpgb_plugin ) ) {
 				return $this->uich_response( 'Something Went Wrong', 'Install Plugin', false, $tpgb_plugin );
 			}
 
@@ -2415,41 +2485,55 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			if ( true === $tpgb_plugin ) {
 				$tpgb_active = activate_plugin( $upgrad->plugin_info(), '', false, true );
 
-				if ( is_wp_error($tpgb_active) ) {
+				if ( is_wp_error( $tpgb_active ) ) {
 					return $this->uich_response( 'Something Went Wrong', 'Activate Plugin', false, $tpgb_active );
 				}
 
 				$success = null === $tpgb_active;
 
 				return $this->uich_response( 'Successfully Activated!', 'The Plus Blocks for Block Editor Installed and Activated Successfully.', $success, '' );
-			}else{
-				activate_plugin( $pluginName.'/'.$pluginName.'.php' );
+			} else {
+				activate_plugin( $pluginName . '/' . $pluginName . '.php' );
 
-				if ( is_plugin_active( $pluginName.'/'.$pluginName.'.php' ) ) {
+				if ( is_plugin_active( $pluginName . '/' . $pluginName . '.php' ) ) {
 					return $this->uich_response( 'Successfully Activated!', 'The Plus Blocks for Block Editor Installed and Activated Successfully.', true, '' );
 				} else {
 					return $this->uich_response( 'Something Went Wrong', 'Not Activate Plugin', false, '' );
 				}
-
 			}
 		}
-        
-        public function uich_add_option( $key ) {
-            $current_value = get_option( $key );
-        
-            if ( ! empty( $current_value ) ) {
-                update_option( $key, false );
-                return $this->uich_response(  'Successfully Disabled!', 'Custom CSS Field Deactivated Successfully.', true, '');
-            }  else {
-                if ( get_option( $key ) === false ) {
-                    add_option( $key, true );
-                } else {
-                    update_option( $key, true );
-                }
-        
-                return $this->uich_response( 'Successfully Enabled!', 'Custom CSS Field Activated Successfully.', true, '' );
-            }
-        }
+
+		public function uich_add_option( $key ) {
+			/**
+			 * Option keys this toggle is allowed to flip. The handler only ever
+			 * exposes UiChemy's own "Custom CSS Field" switch, but $key arrives from
+			 * the request ($_POST['key']); without this allowlist an admin request
+			 * could toggle ANY option — users_can_register, default_role, another
+			 * plugin's flag — to a boolean. Bound it to UiChemy-owned keys.
+			 *
+			 * @param string[] $keys Allowed option names.
+			 */
+			$allowed = (array) apply_filters( 'uich_custom_option_allowed_keys', array( 'uictmcss_enabled' ) );
+
+			if ( ! in_array( (string) $key, $allowed, true ) ) {
+				return $this->uich_response( 'Not Allowed', 'This option cannot be changed.', false, '' );
+			}
+
+			$current_value = get_option( $key );
+
+			if ( ! empty( $current_value ) ) {
+				update_option( $key, false );
+				return $this->uich_response( 'Successfully Disabled!', 'Custom CSS Field Deactivated Successfully.', true, '' );
+			} else {
+				if ( get_option( $key ) === false ) {
+					add_option( $key, true );
+				} else {
+					update_option( $key, true );
+				}
+
+				return $this->uich_response( 'Successfully Enabled!', 'Custom CSS Field Activated Successfully.', true, '' );
+			}
+		}
 	}
 
 	new Uich_Api();

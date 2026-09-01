@@ -15,7 +15,7 @@ This dashboard owns the top-level **UiChemy** admin page (`admin.php?page=uichem
 | File | Purpose |
 |---|---|
 | `class-uich-nd-loader.php` | Entry point. Defines `UICH_ND_*` constants and boots all classes. |
-| `class-uich-nd-settings.php` | Centralised option getters/setters (all keys prefixed `uich_nd_`) plus the `env_check()`, `connection_check()`, `detect_builders()`, and `detect_protuno()` state snapshots. Feature code reads/writes options only through here. |
+| `class-uich-nd-settings.php` | Centralised option getters/setters (all keys prefixed `uich_nd_`) plus the `env_check()`, `connection_check()`, `detect_builders()`, and `detect_uichemy()` state snapshots. Feature code reads/writes options only through here. |
 | `class-uich-nd-auth.php` | SSO against `app.uichemy.com` — initiates the login redirect, handles the signed callback, exposes `get_boot_state()`, and manages logout. |
 | `class-uich-nd-app-password.php` | WP application-password handling (AJAX `wp_ajax_uich_nd_{generate,enable,disable}_app_passwords`). Uses the `uichemy-nd-` name prefix and its own meta keys so its state is independent of the legacy `Uich_App_Password`. |
 | `class-uich-nd-recommended-settings.php` | On first builder selection, silently enables the settings UiChemy needs for clean conversion. Applied once per builder, tracked via `uich_nd_recommended_applied`. |
@@ -41,7 +41,7 @@ All routes require `manage_options`. Defined in `class-uich-nd-api.php`.
 | POST | `/mode` | Persist the conversion mode (`{ mode }`). |
 | POST | `/onboarded` | Mark onboarding complete. |
 | POST | `/install` | Install/activate the selected builder. |
-| POST | `/protuno/install` | Install/activate the Protuno companion. |
+| POST | `/uichemy/install` | Install/activate the UiChemy companion. |
 | POST | `/register-session` | Register a connection session for the Figma plugin. |
 
 ---
@@ -76,7 +76,7 @@ Built by `Uich_ND_Enqueue::boot_payload()` and localised onto the dashboard scri
   "siteUrl":    "https://site",
   "restUrl":    "https://site/wp-json/",
   "connectUrl": "https://site/index.php", // route-free base for the Figma connection link
-  "mcpUrls":    { "regular": "https://site/wp-json/uichemy/v1/mcp" },
+  "mcpUrls":    { "regular": "https://site/wp-json/uichemy/v2/mcp" },
   "user":       { "id": 1, "name": "Admin", "login": "admin", "email": "...", "avatar": "...", "isAdmin": true },
   "auth":       { /* Uich_ND_Auth::get_boot_state() — SSO status */ },
   "state": {
@@ -88,7 +88,7 @@ Built by `Uich_ND_Enqueue::boot_payload()` and localised onto the dashboard scri
     "onboarded":   false,
     "appPassword": { "available": true, "has_token": false, "masked": "", "name": "" },
     "localEnv":    { /* get_local_env_state() */ },
-    "protuno":     { /* detect_protuno() */ }
+    "uichemy":     { /* detect_uichemy() */ }
   },
   "urls": { "docs": "https://uichemy.com/docs", "chat": "https://uichemy.com/chat", "community": "https://store.posimyth.com/helpdesk" }
 }

@@ -10,7 +10,7 @@ declare( strict_types=1 );
 namespace UiChemy\Deps\WP\MCP\Transport\Infrastructure;
 
 use UiChemy\Deps\WP\MCP\Infrastructure\ErrorHandling\McpErrorFactory;
-use UiChemy\Deps\WP\MCP\Infrastructure\Observability\ErrorLogMcpObservabilityHandler;
+use UiChemy\Deps\WP\MCP\Infrastructure\Observability\McpObservabilityHelperTrait;
 use UiChemy\Deps\WP\McpSchema\Common\AbstractDataTransferObject;
 use UiChemy\Deps\WP\McpSchema\Common\Content\DTO\TextContent;
 use UiChemy\Deps\WP\McpSchema\Common\JsonRpc\DTO\JSONRPCErrorResponse;
@@ -289,8 +289,7 @@ class RequestRouter {
 			// Filter argument keys to exclude sensitive-looking ones.
 			$safe_keys = array();
 			foreach ( array_keys( $params['arguments'] ) as $arg_key ) {
-				// @todo Replace this with a less-coupled way to access `McpObservabilityHelperTrait:is_sensitive_key()`.
-				if ( ErrorLogMcpObservabilityHandler::is_sensitive_key( (string) $arg_key ) ) {
+				if ( McpObservabilityHelperTrait::is_sensitive_key( (string) $arg_key ) ) {
 					$safe_keys[] = '[REDACTED]';
 				} else {
 					$safe_keys[] = $arg_key;
