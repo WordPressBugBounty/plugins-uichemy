@@ -40,6 +40,35 @@ require_once plugin_dir_path( __FILE__ ) . 'shared/class-uichemy-composer-upload
 require_once UICHEMY_PATH . 'includes/plugin-modules.php';
 
 /**
+ * The custom-field and content-model layers.
+ *
+ * Required BEFORE the abilities that route into them: the cpt ability builds its
+ * own action schema from Uich_Model::field_types(), and the custom-fields
+ * ability decides whether to expose its *-relations actions by asking
+ * Uich_Field_Relations - both at registration time, not on first call.
+ *
+ * Ordering inside the group matters only for inheritance: the two abstract base
+ * classes have to be declared before their subclasses are.
+ */
+$uichemy_field_layer = plugin_dir_path( dirname( __FILE__ ) ) . 'fields/';
+require_once $uichemy_field_layer . 'class-uich-field-guard.php';
+require_once $uichemy_field_layer . 'class-uich-field-value.php';
+require_once $uichemy_field_layer . 'class-uich-field-provider.php';
+require_once $uichemy_field_layer . 'class-uich-field-provider-meta.php';
+require_once $uichemy_field_layer . 'class-uich-field-provider-acf.php';
+require_once $uichemy_field_layer . 'class-uich-field-provider-jet.php';
+require_once $uichemy_field_layer . 'class-uich-field-registry.php';
+require_once $uichemy_field_layer . 'class-uich-field-relations.php';
+require_once $uichemy_field_layer . 'class-uich-field-service.php';
+
+$uichemy_model_layer = plugin_dir_path( dirname( __FILE__ ) ) . 'model/';
+require_once $uichemy_model_layer . 'class-uich-model-provider.php';
+require_once $uichemy_model_layer . 'class-uich-model-acf.php';
+require_once $uichemy_model_layer . 'class-uich-model-jet.php';
+require_once $uichemy_model_layer . 'class-uich-model.php';
+require_once $uichemy_model_layer . 'class-uich-model-terms.php';
+
+/**
  * Expose Composer's pipeline tools as first-class WordPress abilities
  * (uichemy/ namespace, meta.mcp.public) so a single site-wide MCP gateway
  * serves them. This is the ONLY path UiChemy's tools reach MCP by.
@@ -48,6 +77,20 @@ require_once UICHEMY_PATH . 'includes/plugin-modules.php';
 require_once plugin_dir_path( __FILE__ ) . 'v2/class-uichemy-mcp-v2-router.php';
 require_once plugin_dir_path( __FILE__ ) . 'v2/class-uichemy-abilities.php';
 UiChemy_Abilities::init();
+
+/**
+ * The two abilities over the field and model layers.
+ *
+ * Registered whether or not ACF or JetEngine is present. An ability that
+ * disappears with its provider teaches a model the capability does not exist
+ * here at all; one that is present and answers "install ACF or JetEngine, or
+ * model this with plain posts and categories" tells it what to do instead. The
+ * guard lives in the handler, not in the registration.
+ */
+require_once plugin_dir_path( __FILE__ ) . 'v2/class-uich-custom-fields-ability.php';
+require_once plugin_dir_path( __FILE__ ) . 'v2/class-uich-cpt-ability.php';
+Uich_Custom_Fields_Ability::init();
+Uich_CPT_Ability::init();
 
 /**
  * Contribute UiChemy's briefing to UiChemy's v2 discovery document, so a client

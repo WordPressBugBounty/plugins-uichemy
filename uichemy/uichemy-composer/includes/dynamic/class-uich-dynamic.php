@@ -206,10 +206,10 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		}
 
 		/**
-		 * Introspect the site's real custom fields (ACF / Meta Box / registered meta) per provider,
-		 * plus the list of public post types — so the visual picker can list actual field names
-		 * instead of making the user type meta('key'). Each field carries a `metaKey` the picker
-		 * compiles to post.meta('key').
+		 * Introspect the site's real custom fields (ACF / JetEngine / registered meta)
+		 * per provider, plus the list of public post types - so the visual picker can
+		 * list actual field names instead of making the user type meta('key'). Each
+		 * field carries a `metaKey` the picker compiles to post.meta('key').
 		 */
 		public static function get_fields() {
 			return new WP_REST_Response( self::fields_map(), 200 );
@@ -218,7 +218,20 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		/**
 		 * The field map itself — shared by the picker REST route and describe_site().
 		 *
-		 * @return array{post:array,product:array,user:array,term:array,postTypes:array}
+		 * Buckets are PROVIDER KINDS, not object types: they name the Twig provider a
+		 * field is reachable through, which is what the picker and a model both need.
+		 * `options` is one of them and is NOT `post`: an options-page field belongs to
+		 * no post, so filing it under `post` advertises a token that can never resolve
+		 * - and bind-field then confirms it, which is worse than not listing it.
+		 *
+		 * Sourced from includes/fields/ rather than reading ACF directly, so the
+		 * picker, describe-site and uichemy-composer/custom-fields all report the same
+		 * types, choices, sub-fields and return formats. They used to drift: the
+		 * picker's own map typed link, taxonomy, post_object, google_map and
+		 * flexible_content all as "text", and dropped every sub-field, so a model
+		 * could build a repeater loop and had no way to learn its body's field names.
+		 *
+		 * @return array{post:array,product:array,user:array,term:array,options:array,postTypes:array}
 		 */
 		public static function fields_map() {
 			$out = array(
@@ -226,6 +239,7 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 				'product'   => array(),
 				'user'      => array(),
 				'term'      => array(),
+				'options'   => array(),
 				'postTypes' => array(),
 			);
 
@@ -237,96 +251,267 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 				);
 			}
 
-			// Custom fields (ACF / Meta Box / registered meta) are a Pro tag: Free
+			// Custom fields (ACF / JetEngine / registered meta) are a Pro tag: Free
 			// resolves nothing but the five free fields, so listing them in the picker
 			// would only offer bindings that render empty. Post types stay — the Loop
 			// tab's "Post type" select is a Free feature and holds no field data.
+			//
+			// Returns the ARRAY. It used to return a WP_REST_Response here, which
+			// get_fields() then wrapped a second time and describe_site() handed to a
+			// model where it expected { post: [], product: [] } - invisible on Pro,
+			// broken on every Free install.
 			if ( ! uichemy_is_pro() ) {
-				return new WP_REST_Response( $out, 200 );
+				return $out;
 			}
 
-			// ACF field groups → fields, grouped by the post type(s) they target.
-			if ( function_exists( 'acf_get_field_groups' ) && function_exists( 'acf_get_fields' ) ) {
-				foreach ( acf_get_field_groups() as $group ) {
-					$fields = acf_get_fields( $group['key'] );
-					if ( ! $fields ) {
-						continue;
-					}
-					$targets = self::acf_group_targets( $group );
-					foreach ( $fields as $f ) {
-						$entry = array(
-							'key'     => 'meta_' . $f['name'],
-							'label'   => $f['label'] ? $f['label'] : $f['name'],
-							'type'    => self::map_acf_type( $f['type'] ),
-							'metaKey' => $f['name'],
-							// ACF field-group title so the picker can sub-group fields
-							// under their group (Job Fields / Post Fields / …), like ACF.
-							'group'   => isset( $group['title'] ) ? (string) $group['title'] : '',
-						);
-						if ( in_array( 'user', $targets, true ) ) {
-							$out['user'][] = $entry;
-						}
-						if ( in_array( 'term', $targets, true ) ) {
-							$out['term'][] = $entry;
-						}
-						if ( in_array( 'product', $targets, true ) ) {
-							$out['product'][] = $entry;
-						}
-						if ( in_array( 'post', $targets, true ) || empty( $targets ) ) {
-							$out['post'][] = $entry;
-						}
-					}
-				}
-			}
+			$out = self::merge_provider_fields( $out );
 
-			/** Let extensions add provider fields (Meta Box, Pods, JetEngine, custom). */
+			/** Let extensions add provider fields (Meta Box, Pods, custom). */
 			return apply_filters( 'uich_dynamic_introspected_fields', $out );
 		}
 
-		/** Which providers an ACF group's location targets (post types / user / term). */
-		private static function acf_group_targets( $group ) {
-			$targets = array();
-			if ( empty( $group['location'] ) || ! is_array( $group['location'] ) ) {
-				return array( 'post' );
+		/**
+		 * Fold every active field provider's definitions into the picker buckets.
+		 *
+		 * @param array $out The map being built.
+		 * @return array
+		 */
+		private static function merge_provider_fields( $out ) {
+			if ( ! class_exists( 'Uich_Field_Registry' ) ) {
+				return $out;
 			}
-			foreach ( $group['location'] as $or ) {
-				foreach ( (array) $or as $rule ) {
-					$param = isset( $rule['param'] ) ? $rule['param'] : '';
-					$val   = isset( $rule['value'] ) ? $rule['value'] : '';
-					if ( 'post_type' === $param ) {
-						$targets[] = ( 'product' === $val ) ? 'product' : 'post';
-					} elseif ( 'user_form' === $param || 'user_role' === $param ) {
-						$targets[] = 'user';
-					} elseif ( 'taxonomy' === $param || 'term' === $param ) {
-						$targets[] = 'term';
-					} else {
-						$targets[] = 'post';
+
+			foreach ( self::introspection_targets() as $row ) {
+				$bucket = $row['bucket'];
+				$target = $row['target'];
+
+				foreach ( Uich_Field_Registry::flat_definitions( $target ) as $def ) {
+					$entry = self::picker_entry( $def );
+
+					// A field on `product` is also on `post` as far as the Twig
+					// engine is concerned (Uich_Product_Provider extends the post
+					// provider), but the picker wants it under Products.
+					$in = $bucket;
+
+					if ( 'post' === $bucket && ! empty( $def['object_subtypes'] ) && in_array( 'product', (array) $def['object_subtypes'], true ) ) {
+						$in = 'product';
 					}
+
+					if ( ! isset( $out[ $in ] ) ) {
+						$out[ $in ] = array();
+					}
+
+					// First provider wins on a name collision, and the collision is
+					// reported rather than hidden - with ACF and JetEngine both
+					// defining a name, whichever the template reads through decides
+					// the value, and that is worth knowing before binding it.
+					foreach ( $out[ $in ] as $existing ) {
+						if ( $existing['key'] === $entry['key'] ) {
+							continue 2;
+						}
+					}
+
+					$out[ $in ][] = $entry;
 				}
 			}
-			return array_unique( $targets );
+
+			return $out;
 		}
 
-		/** Map an ACF field type to our picker value-type. */
-		private static function map_acf_type( $acf_type ) {
-			$map = array(
-				'textarea'         => 'text',
-				'wysiwyg'          => 'html',
-				'number'           => 'number',
-				'range'            => 'number',
-				'email'            => 'text',
-				'url'              => 'url',
-				'image'            => 'image',
-				'gallery'          => 'array',
-				'true_false'       => 'bool',
-				'date_picker'      => 'date',
-				'date_time_picker' => 'date',
-				'select'           => 'text',
-				'checkbox'         => 'array',
-				'relationship'     => 'array',
-				'repeater'         => 'array',
+		/**
+		 * The object types the picker introspects, keyed by the bucket they land in.
+		 *
+		 * Every registered post type is walked rather than only `post`, because a
+		 * single flat unbounded bucket offers a `jet_case` field as a candidate on a
+		 * `movie` template, where it can never resolve.
+		 *
+		 * @return array<int,array{bucket:string,target:array}>
+		 */
+		private static function introspection_targets() {
+			$targets = array();
+
+			foreach ( get_post_types( array(), 'names' ) as $post_type ) {
+				$targets[] = array(
+					'bucket' => 'post',
+					'target' => array(
+						'object_type'    => 'post',
+						'object_subtype' => $post_type,
+						'object_id'      => 0,
+						'acf_id'         => '',
+						'label'          => 'post / ' . $post_type,
+					),
+				);
+			}
+
+			foreach ( get_taxonomies( array(), 'names' ) as $taxonomy ) {
+				$targets[] = array(
+					'bucket' => 'term',
+					'target' => array(
+						'object_type'    => 'term',
+						'object_subtype' => $taxonomy,
+						'object_id'      => 0,
+						'acf_id'         => '',
+						'label'          => 'term / ' . $taxonomy,
+					),
+				);
+			}
+
+			$targets[] = array(
+				'bucket' => 'user',
+				'target' => array(
+					'object_type'    => 'user',
+					'object_subtype' => 'user',
+					'object_id'      => 0,
+					'acf_id'         => '',
+					'label'          => 'user',
+				),
 			);
-			return isset( $map[ $acf_type ] ) ? $map[ $acf_type ] : 'text';
+
+			$targets[] = array(
+				'bucket' => 'options',
+				'target' => array(
+					'object_type'    => 'options',
+					'object_subtype' => 'option',
+					'object_id'      => 0,
+					'acf_id'         => 'option',
+					'label'          => 'site options',
+				),
+			);
+
+			return $targets;
+		}
+
+		/**
+		 * One normalised field definition as the picker's entry shape.
+		 *
+		 * The first four keys are the contract the picker JS reads (uich-dd-schema.js
+		 * => extend()). Everything after them is additive: a model reading
+		 * describe-site gets the type detail it needs, and the JS ignores keys it does
+		 * not know.
+		 *
+		 * @param array $def Normalised definition from includes/fields/.
+		 * @return array
+		 */
+		private static function picker_entry( $def ) {
+			$entry = array(
+				'key'      => 'meta_' . $def['name'],
+				'label'    => '' !== (string) $def['label'] ? $def['label'] : $def['name'],
+				'type'     => self::picker_type( $def ),
+				'metaKey'  => $def['name'],
+				'group'    => (string) $def['group'],
+				'provider' => $def['provider'],
+			);
+
+			// The owning plugin's own type name, alongside our normalised shape.
+			// A model that knows a field is an ACF `link` can print
+			// {{ post.meta('cta').url }}; one told only "text" prints the whole
+			// object and gets nothing.
+			$entry['fieldType'] = $def['type'];
+
+			if ( ! empty( $def['shape'] ) ) {
+				$entry['shape'] = $def['shape'];
+			}
+
+			// Carried because it is NOT cosmetic. Verified:
+			// {{ post.meta('hero').src('large') }} resolves for an Image ID and an
+			// Image Array field and renders EMPTY for Image URL - while
+			// describe-site's own binding hint recommends exactly that token.
+			if ( null !== $def['return_format'] && '' !== (string) $def['return_format'] ) {
+				$entry['returnFormat'] = $def['return_format'];
+			}
+
+			if ( ! empty( $def['required'] ) ) {
+				$entry['required'] = true;
+			}
+
+			if ( ! empty( $def['choices'] ) ) {
+				$entry['choices'] = $def['choices'];
+			}
+
+			if ( ! empty( $def['object_subtypes'] ) ) {
+				$entry['postTypes'] = array_values( (array) $def['object_subtypes'] );
+			}
+
+			// acf_get_fields() and JetEngine's field store both return the top
+			// level only. Without the sub-fields a model can build the repeater
+			// loop and cannot write its body - it has no way to learn the names.
+			if ( ! empty( $def['sub_fields'] ) ) {
+				$entry['subFields'] = array();
+
+				foreach ( (array) $def['sub_fields'] as $sub ) {
+					$entry['subFields'][] = array(
+						'metaKey'   => $sub['name'],
+						'label'     => $sub['label'],
+						'type'      => self::picker_type( $sub ),
+						'fieldType' => $sub['type'],
+					);
+				}
+
+				$entry['loopExample'] = sprintf(
+					"{%% for row in post.meta('%s') %%}{{ row.%s }}{%% endfor %%}",
+					$def['name'],
+					isset( $entry['subFields'][0]['metaKey'] ) ? $entry['subFields'][0]['metaKey'] : 'field'
+				);
+			}
+
+			// Flexible content: each layout has its own body, so the layout names
+			// are the only way to know what a row can be.
+			if ( ! empty( $def['layouts'] ) ) {
+				$entry['layouts'] = array();
+
+				foreach ( (array) $def['layouts'] as $layout ) {
+					$entry['layouts'][] = array(
+						'name'      => $layout['name'],
+						'label'     => $layout['label'],
+						'subFields' => wp_list_pluck( (array) $layout['sub_fields'], 'name' ),
+					);
+				}
+			}
+
+			if ( empty( $def['writable'] ) && '' !== (string) $def['reason'] ) {
+				$entry['writable'] = false;
+				$entry['reason']   = $def['reason'];
+			}
+
+			return $entry;
+		}
+
+		/**
+		 * The picker's coarse value-type for a normalised definition.
+		 *
+		 * The picker only branches on a handful of these (it needs to know whether
+		 * to offer a size selector for an image and a loop for an array), so the
+		 * shape vocabulary is collapsed rather than passed through - the precise
+		 * type travels as `fieldType`.
+		 *
+		 * @param array $def Normalised definition.
+		 * @return string
+		 */
+		private static function picker_type( $def ) {
+			$shape = isset( $def['value_shape'] ) ? $def['value_shape'] : 'string';
+
+			$map = array(
+				'string'   => 'text',
+				'email'    => 'text',
+				'choice'   => 'text',
+				'html'     => 'html',
+				'number'   => 'number',
+				'bool'     => 'bool',
+				'date'     => 'date',
+				'datetime' => 'date',
+				'time'     => 'text',
+				'url'      => 'url',
+				'image'    => 'image',
+				'file'     => 'url',
+				'array'    => 'array',
+				'choices'  => 'array',
+				'relation' => 'array',
+				'rows'     => 'array',
+				'object'   => 'object',
+				'unknown'  => 'text',
+			);
+
+			return isset( $map[ $shape ] ) ? $map[ $shape ] : 'text';
 		}
 
 		// ============================================================
@@ -438,27 +623,35 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 			$fields = self::fields_map();
 
 			return array(
-				'action'        => 'schema',
-				'site'          => array(
+				'action'          => 'schema',
+				'site'            => array(
 					'name'        => get_bloginfo( 'name' ),
 					'url'         => home_url( '/' ),
 					'description' => get_bloginfo( 'description' ),
 					'language'    => get_bloginfo( 'language' ),
 				),
-				'platform'      => self::describe_platform(),
-				'post_types'    => self::describe_post_types(),
-				'taxonomies'    => self::describe_taxonomies(),
-				'fields'        => $fields,
-				'meta_keys'     => self::describe_registered_meta(),
-				'menus'         => self::describe_menus(),
-				'woocommerce'   => self::describe_woocommerce(),
-				'binding_hints' => array(
+				'platform'        => self::describe_platform(),
+				'post_types'      => self::describe_post_types(),
+				'taxonomies'      => self::describe_taxonomies(),
+				'fields'          => $fields,
+				// Which field-modelling plugins are here, and their edition. Without
+				// this an empty `fields` map is indistinguishable from "this site has
+				// no field plugin", and a model reads the first as the second and
+				// hardcodes the page.
+				'field_providers' => class_exists( 'Uich_Field_Registry' ) ? Uich_Field_Registry::status() : array(),
+				'meta_keys'       => self::describe_registered_meta(),
+				'menus'           => self::describe_menus(),
+				'woocommerce'     => self::describe_woocommerce(),
+				'binding_hints'   => array(
 					'build'    => 'Route header/footer work by platform.header_footer_system, and STOP if platform.checks.elementor_active is false.',
-					'field'    => "{{ post.meta('metaKey') }} use the metaKey from fields.post / fields.product / fields.user / fields.term, never a guessed name.",
+					'field'    => "{{ post.meta('metaKey') }} use the metaKey from fields.post / fields.product / fields.user / fields.term / fields.options, never a guessed name. An unknown name renders EMPTY rather than failing, so a guess yields a page that looks built and is blank.",
 					'tokens'   => 'For the BUILT-IN accessors (post.title, product.price, product.sale_percentage, …) call uichemy-composer/dynamic (action="list-fields"). This payload only carries the custom fields.',
-					'image'    => "{{ post.meta('metaKey').src('large') }} for an image field.",
+					'image'    => "{{ post.meta('metaKey').src('large') }} for an image field - but ONLY when the field stores an attachment ID or array. Check the entry's returnFormat: on an ACF image field set to \"Image URL\" this token renders EMPTY, because there is no id to derive a size from.",
+					'repeater' => 'A repeater entry carries subFields and a ready loopExample. Its body binds row.<subFieldName>, not post.meta().',
+					'options'  => 'fields.options are site-wide values on an ACF or JetEngine options page. They belong to no post, so a post.meta() token can never reach them.',
 					'loop'     => 'Build listings with uichemy-composer/dynamic (action="create-loop") using a post type from post_types[].name.',
 					'taxonomy' => 'Filter by taxonomies[].name and a real term resolve terms with action="entities", kind="terms".',
+					'model'    => 'To CREATE a post type, taxonomy or field, call uichemy-composer/cpt. To read or write field VALUES, call uichemy-composer/custom-fields.',
 				),
 			);
 		}

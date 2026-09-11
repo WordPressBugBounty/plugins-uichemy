@@ -340,3 +340,42 @@ if ( ! function_exists( 'uichemy_pro_feature_map' ) ) {
 		);
 	}
 }
+
+if ( ! function_exists( 'uichemy_field_writes_allowed' ) ) {
+	/**
+	 * Whether this build may read and write custom-field VALUES, and create
+	 * post types, taxonomies and fields through ACF / JetEngine.
+	 *
+	 * Pro, on the same reasoning as every other custom-field gate: ACF,
+	 * JetEngine and WooCommerce field data are Pro dynamic tags
+	 * (uichemy_dynamic_free_fields() lets Free resolve five post fields and the
+	 * image chain, and nothing else), so a Free user who could WRITE an ACF
+	 * value still could not RENDER it. The write would be real and useless.
+	 *
+	 * Field DEFINITIONS are deliberately NOT behind this. Knowing the content
+	 * model is what stops a guessed binding - an unknown field name renders
+	 * empty rather than failing - so `custom-fields/list` and `cpt/describe`
+	 * answer in every build, and in Free the most valuable thing they report is
+	 * that the value layer needs Pro.
+	 *
+	 * One function, so the Free/Pro line for this whole subsystem moves in one
+	 * place if that decision changes.
+	 *
+	 * DELIBERATELY NOT FILTERABLE, and do not add a filter here. This gate is a
+	 * thin read of uichemy_is_pro(), which is already the one supported seam:
+	 * merged and bundled builds ship no separate Pro plugin and decide Pro by
+	 * licence tier through `uich_composer_is_pro` (see
+	 * includes/composer/class-uich-composer-loader.php), so such a build reaches
+	 * this subsystem the same way it reaches every other Pro feature. A filter
+	 * of its own would add nothing a legitimate build needs, and would be a
+	 * second door into the value and content-model layers that bypasses the
+	 * licence tier entirely.
+	 *
+	 * @since 5.1.1
+	 *
+	 * @return bool
+	 */
+	function uichemy_field_writes_allowed() {
+		return uichemy_is_pro();
+	}
+}

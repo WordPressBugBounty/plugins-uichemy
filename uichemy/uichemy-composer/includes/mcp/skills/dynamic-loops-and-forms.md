@@ -26,9 +26,10 @@ The `dynamic` ability returns **markup and writes nothing** (except `list-fields
 
 Print a token as-is with `{{ … }}`:
 
-- `{{ post.title }}`, `{{ post.excerpt }}`, `{{ post.permalink }}`
+- `{{ post.title }}`, `{{ post.permalink }}`
+- `{{ post.excerpt }}` reads the **`post_excerpt` column**, not the visible text. On any post built with a Composer widget that column is **empty**, so the token renders blank while the page plainly shows text — it looks like a broken binding and is not one. Either set a real excerpt (`uichemy-composer/post` action="update", `excerpt`), or print `{{ post.content }}`, or write the summary as a custom field.
 - **Chaining** — a token that returns another provider: `{{ post.author.name }}`, `{{ post.thumbnail.src('large') }}`
-- **Custom / ACF fields are meta** — reach them with `meta()`, never as a bare accessor: `{{ post.meta('price') }}`, image field: `{{ post.meta('hero').src('large') }}`. Use the exact `metaKey` from `list-fields`, never a guessed one.
+- **Custom / ACF fields are meta** — reach them with `meta()`, not a bare accessor: `{{ post.meta('price') }}`, or `{{ post.meta('hero').src('large') }}` for an image. Take the `metaKey` verbatim from `uichemy-composer/dynamic (action="list-fields")` — never guess it.
 - `product.*` (price, sale_percentage, …) resolves **only when WooCommerce is active**.
 
 When you need the exact token for one field on one provider, call `uichemy-composer/dynamic (action="bind-field")`.
@@ -60,6 +61,25 @@ Params:
 | `query` | Structured filter object: status, offset, include/exclude, author, date range, **one** meta clause. |
 | `raw_query` | Escape hatch — the raw query args object, for what the structured `query` can't express (several post types, OR between taxonomies, more than one meta clause). Taken verbatim. |
 
+#### `raw_query` — never put `{{ }}` inside a query
+
+Inside a query — and inside any `{% %}` expression position, so `{% set %}` and `{% for %}` too — you write the **bare expression**, not a printed token:
+
+```
+raw_query: { "post_parent": post.id }          ✅
+raw_query: { "post_parent": "{{ post.id }}" }  ❌
+```
+
+```
+{% set slug = term.slug %}          ✅
+{% set slug = "{{ term.slug }}" %}  ❌
+{% for p in post.meta('related') %} ✅
+```
+
+`{{ }}` is the **print** syntax and it is only valid in output position. In an expression it **fails silently**: the query still runs, with the literal string `{{ post.id }}` where the value should be, and returns the wrong rows — a listing that looks populated and is showing the wrong thing. Nothing errors, so this only ever surfaces in a browser. One verification build shipped exactly this bug inside a theme-builder template.
+
+Rule: **inside a query or a `{% %}` tag, write `post.id` / `term.slug`. Never `{{ }}`.**
+
 The loop variable matches the source: `post` for posts, `product` for products, `term` for terms, `user` for users. So `item_html` for a post listing uses `{{ post.title }}`, `{{ post.thumbnail.src('medium') }}`, etc.
 
 Example `item_html` for a blog grid card:
@@ -68,7 +88,7 @@ Example `item_html` for a blog grid card:
 <a class="card" href="{{ post.permalink }}">
   <img src="{{ post.thumbnail.src('medium') }}" alt="{{ post.title }}">
   <h3>{{ post.title }}</h3>
-  <p>{{ post.excerpt }}</p>
+  <p>{{ post.excerpt }}</p>{# blank unless the post has a real post_excerpt — see the note above #}
 </a>
 ```
 
@@ -121,5 +141,15 @@ Submissions are saved to the database and are viewable in the UiChemy Forms dash
 - **Do** use `create-loop` for listings rather than hand-authoring `{% for %}` + a query.
 - **Do** give loops an `{% else %}` empty state and forms a `data-atom-success` message.
 - **Don't** guess post types, taxonomies, terms, or meta keys — an unknown token renders blank.
+- **Don't** write `{{ }}` inside `raw_query`, `{% set %}` or `{% for %}` — it fails silently and returns the wrong rows.
+- **Don't** rely on `{{ post.excerpt }}` for Composer-authored posts — the column is empty; set one with `uichemy-composer/post` action="update".
 - **Don't** add nonces, `action`/`method`, or hidden fields to a form — the plugin injects them.
 - **Don't** loop over form inputs or expect `{{ }}` to collect data — Twig is output only.
+
+---
+
+## Where this skill ends
+
+- **Custom fields and post types** — creating them, and writing their VALUES — are `custom-fields-and-cpt`. Come back here to print what you wrote.
+- **Terms** are created and assigned with `uichemy-composer/cpt` (`ensure-term`, `set-terms`). A taxonomy with no terms makes every loop filtered by it render its `{% else %}` branch forever, which looks like a broken query.
+- **Publishing** is `uichemy-composer/post` / `page` action="update". A loop over drafts returns nothing: `get_posts()` defaults to `post_status: publish`, so an unpublished post is invisible to every listing you build here.

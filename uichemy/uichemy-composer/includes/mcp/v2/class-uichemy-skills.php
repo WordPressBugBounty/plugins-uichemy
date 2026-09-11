@@ -154,13 +154,31 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 					),
 				),
 				'dynamic-loops-and-forms' => array(
-					// NOT YET WRITTEN, and said so here: advertising a process that
-					// turns out to be a stub costs a read and teaches nothing. The
-					// uichemy-composer/dynamic and uichemy-composer/forms abilities carry the working
-					// mechanics in their own schemas meanwhile.
-					'description' => 'NOT YET WRITTEN - skip it. Dynamic loops and forms have no process document yet; use the uichemy-composer/dynamic and uichemy-composer/forms abilities directly, reading their action schemas with get-ability-info.',
-					'keywords'    => array( 'loop', 'query', 'cpt', 'custom post type', 'posts', 'form', 'submission', 'dynamic' ),
+					// The document exists and is complete; this entry described it as
+					// unwritten long after it was written, so every client was told to
+					// skip a working skill. The description is generated from nothing —
+					// it is hand-maintained — so it needs updating whenever the file
+					// gains or loses a section.
+					'description' => 'Build a section that is not static: print LIVE site data with Twig tokens and validated {% for %} listings, or collect input with a managed <form data-atom-form="key">. Read this when the user wants a post/product/term/user listing, a page bound to custom fields, or a working contact or signup form.',
+					'keywords'    => array( 'loop', 'query', 'posts', 'form', 'submission', 'dynamic' ),
 					'files'       => array( 'skills/dynamic-loops-and-forms.md' ),
+					'additional_parts' => array(
+						'custom-fields-and-cpt' => array(
+							'description' => 'Create the content model itself, and read and write field values. Read before any register-post-type / add-fields / custom-fields call.',
+							'files'       => array( 'skills/custom-fields-and-cpt.md' ),
+						),
+					),
+				),
+				'custom-fields-and-cpt'   => array(
+					// Deliberately its own skill as well as a part of the dynamic
+					// one. The two jobs arrive from opposite directions - "build a
+					// listing of case studies" starts at the loop, "add a price
+					// field to products" starts at the model - and a model that
+					// enters at the second should not have to read about forms to
+					// find the delegation rule.
+					'description' => 'Create and configure a WordPress content model - custom post types, taxonomies, field groups and fields - through ACF or JetEngine, and read and write the field values on posts, terms, users and options pages. Read this when the user asks for a custom post type, a custom field, ACF, JetEngine, or wants field values filled in or read back.',
+					'keywords'    => array( 'cpt', 'custom post type', 'custom field', 'custom fields', 'acf', 'advanced custom fields', 'jetengine', 'jet engine', 'taxonomy', 'field group', 'meta', 'meta box', 'repeater', 'relation', 'content model', 'schema' ),
+					'files'       => array( 'skills/custom-fields-and-cpt.md' ),
 					'additional_parts' => array(),
 				),
 			);

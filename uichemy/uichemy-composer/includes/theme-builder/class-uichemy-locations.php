@@ -158,7 +158,7 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 				// Nexter handler drives them.
 				$type      = 'nexter';
 				$supported = true;
-			} elseif ( current_theme_supports( 'elementor-header-footer' ) || has_action( 'elementor/theme/register_locations' ) ) {
+			} elseif ( self::theme_uses_elementor_locations() ) {
 				// Themes (e.g. Hello Elementor) that gate header/footer on the
 				// Elementor Theme Locations API — our shim drives them.
 				$type      = 'elementor';
@@ -189,6 +189,164 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 				'conflicts'             => $conflicts,
 				'woocommerce'           => class_exists( 'WooCommerce' ),
 			);
+		}
+
+		/**
+		 * Can a header/footer template ACTUALLY render on this site, and if not, why.
+		 *
+		 * This exists because "active" used to mean "a flag was written". Two of
+		 * three independent verification builds shipped with no header and no
+		 * footer while `create` returned active:true, `architecture` returned
+		 * filled:true and `list` still said active days later. Nothing in any
+		 * response contradicted a site that had neither.
+		 *
+		 * There are exactly two ways that happens, and both are reported here:
+		 *
+		 *  1. THE THEME HAS NO SLOT. environment() falls through to `generic`
+		 *     for a classic theme that neither supports Elementor locations nor
+		 *     fires header/footer actions of its own. Nothing is hooked, so
+		 *     nothing renders - and the template is still created and flagged.
+		 *
+		 *  2. ANOTHER BUILDER OWNS THE SLOT. The resolver defers to an active
+		 *     Elementor Pro or Nexter template for the same location, which is
+		 *     the right call - two headers is worse than one - but it was
+		 *     completely silent.
+		 *
+		 * @param string $type 'header' or 'footer'.
+		 * @return array
+		 */
+		public static function injection_report( $type = 'header' ) {
+			$type        = in_array( (string) $type, array( 'header', 'footer' ), true ) ? (string) $type : 'header';
+			$environment = self::environment();
+
+			$out = array(
+				'theme'          => get_template(),
+				'theme_type'     => $environment['type'],
+				'block_theme'    => function_exists( 'wp_is_block_theme' ) ? (bool) wp_is_block_theme() : false,
+				'supported'      => (bool) $environment['headerFooterSupported'],
+				'will_render'    => (bool) $environment['headerFooterSupported'],
+				'handler'        => '',
+				'blocked_by'     => '',
+				'reason'         => '',
+				'what_to_do'     => '',
+			);
+
+			$handlers = array(
+				'block'         => 'A - the core/template-part block for this area is replaced with the UiChemy template.',
+				'elementor'     => 'B - the theme calls elementor_theme_do_location(), which UiChemy answers.',
+				'nexter'        => 'C - UiChemy takes the theme\'s own header/footer action slot.',
+				'theme-actions' => 'C - UiChemy takes the theme\'s own header/footer action slot.',
+				'generic'       => '',
+			);
+
+			$out['handler'] = isset( $handlers[ $environment['type'] ] ) ? $handlers[ $environment['type'] ] : '';
+
+			if ( ! $out['supported'] ) {
+				$out['will_render'] = false;
+				$out['blocked_by']  = 'theme';
+				$out['reason']      = sprintf(
+					'The active theme ("%s") is a classic theme that neither supports Elementor theme locations nor fires header/footer actions of its own, so there is NO SLOT to inject into. A template can be created and flagged active here and it will never appear on any page.',
+					get_template()
+				);
+				$out['what_to_do'] = 'Build the header and footer as ordinary page sections instead (first and last section of each page), or switch to a theme that supports Elementor locations - Hello Elementor - or a block theme.';
+
+				return $out;
+			}
+
+			// Handler B renders through elementor_theme_do_location(), and UiChemy
+			// only owns that function when nothing else has declared it. Elementor
+			// Pro declares the real one, and Pro's implementation serves Pro's own
+			// documents and knows nothing about a uichemy_template - so on a
+			// locations-API theme WITH Pro installed, a UiChemy header is created,
+			// flagged active, and never called. This is reported, not worked
+			// around: the alternative is monkey-patching another plugin's render
+			// pipeline.
+			if ( 'elementor' === $environment['type'] && ! self::owns_do_location() ) {
+				$out['will_render'] = false;
+				$out['blocked_by']  = 'elementor_pro_owns_location_api';
+				$out['reason']      = 'This theme renders its header and footer through elementor_theme_do_location(), and Elementor Pro owns that function on this site. Pro\'s implementation only serves Pro\'s own theme-builder templates, so a UiChemy template in this slot is never asked for - it is created, flagged active, and silently skipped.';
+				$out['what_to_do']  = sprintf( 'Build the %s with Elementor Pro\'s own theme builder (uichemy-composer/template action="create"), which does render here - or build it as ordinary page sections. Deactivating Elementor Pro would also hand the slot back to UiChemy, but do not do that on the user\'s behalf.', $type );
+
+				return $out;
+			}
+
+			if ( class_exists( 'UiChemy_Template_Resolver' )
+				&& method_exists( 'UiChemy_Template_Resolver', 'competing_system_owns' )
+				&& UiChemy_Template_Resolver::competing_system_owns( $type )
+			) {
+				$out['will_render'] = false;
+				$out['blocked_by']  = 'competing_template';
+				$out['reason']      = sprintf(
+					'Another theme-builder system already has an ACTIVE %s template for this slot, and UiChemy stands down rather than render a second one. The UiChemy template is created and flagged active, and it will not appear while the other one is live.',
+					$type
+				);
+				$out['what_to_do'] = sprintf( 'Deactivate the other system\'s %s template, or use that system for the %s instead of this one. Ask the user which they want - do not disable their existing template on your own.', $type, $type );
+
+				return $out;
+			}
+
+			$out['reason'] = sprintf( 'The theme exposes a %s slot and no other builder is claiming it.', $type );
+
+			return $out;
+		}
+
+		/**
+		 * Whether the elementor_theme_do_location() a theme will call is OURS.
+		 *
+		 * Answered by reflection rather than by a flag, because the shim is
+		 * declared conditionally at `init` 99 and whoever got there first wins.
+		 *
+		 * @return bool
+		 */
+		private static function owns_do_location() {
+			if ( ! function_exists( 'elementor_theme_do_location' ) ) {
+				// Nothing has declared it yet. Our shim is scheduled for init 99
+				// and will take it unless Elementor Pro is here to do so first.
+				return ! ( class_exists( '\ElementorPro\Plugin' ) || defined( 'ELEMENTOR_PRO_VERSION' ) );
+			}
+
+			$file = self::callback_file( 'elementor_theme_do_location' );
+
+			return '' !== $file && false !== strpos( $file, 'class-uichemy-locations.php' );
+		}
+
+		/**
+		 * Render one template to markup and report whether it produced anything.
+		 *
+		 * The cheap half of "verify it renders": it exercises the real renderer
+		 * rather than echoing back the HTML that was submitted, so an empty
+		 * template, a broken widget or a disabled builder shows up here instead
+		 * of on the user's home page.
+		 *
+		 * It does NOT prove the markup reaches a visitor - that depends on the
+		 * theme slot, which injection_report() answers - and the two are reported
+		 * together for exactly that reason.
+		 *
+		 * @param int $template_id Template post ID.
+		 * @return array
+		 */
+		public static function render_probe( $template_id ) {
+			$template_id = (int) $template_id;
+
+			if ( ! $template_id || ! class_exists( 'UiChemy_Template_Render' ) ) {
+				return array(
+					'rendered'  => false,
+					'bytes'     => 0,
+					'reason'    => 'The UiChemy template renderer is not available on this request.',
+				);
+			}
+
+			$html = (string) UiChemy_Template_Render::get_render_html_for( $template_id );
+			$out  = array(
+				'rendered' => '' !== trim( $html ),
+				'bytes'    => strlen( $html ),
+			);
+
+			if ( ! $out['rendered'] ) {
+				$out['reason'] = 'The template renders to an EMPTY string. Whatever the theme does with the slot, nothing would appear. Check that the template actually contains a section with markup.';
+			}
+
+			return $out;
 		}
 
 		/**
@@ -226,6 +384,84 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 		 */
 		private static function is_nexter_theme() {
 			return 'nexter' === get_template() || function_exists( 'nexter_header_template' );
+		}
+
+		/**
+		 * Whether THE ACTIVE THEME gates its header/footer on Elementor's Theme
+		 * Locations API.
+		 *
+		 * This used to accept `has_action( 'elementor/theme/register_locations' )`
+		 * as proof, and that was the single largest cause of a header being
+		 * reported active and never appearing: ELEMENTOR PRO REGISTERS THAT HOOK
+		 * ITSELF. So the test was true on every site with Pro installed,
+		 * whatever the theme - a plain classic theme that calls neither
+		 * elementor_theme_do_location() nor any hook of its own was classified
+		 * `elementor`, marked supported, and no handler was ever reached. Two of
+		 * three verification builds shipped with no header and no footer this
+		 * way, while three separate calls asserted the opposite.
+		 *
+		 * A theme declares this properly with add_theme_support(). The action is
+		 * only accepted as evidence when one of ITS callbacks is a function or
+		 * class defined inside the active theme.
+		 *
+		 * @return bool
+		 */
+		private static function theme_uses_elementor_locations() {
+			if ( current_theme_supports( 'elementor-header-footer' ) ) {
+				return true;
+			}
+
+			global $wp_filter;
+
+			if ( ! isset( $wp_filter['elementor/theme/register_locations'] ) ) {
+				return false;
+			}
+
+			$theme_dirs = array_unique( array( get_template_directory(), get_stylesheet_directory() ) );
+
+			foreach ( $wp_filter['elementor/theme/register_locations'] as $callbacks ) {
+				foreach ( (array) $callbacks as $callback ) {
+					$file = self::callback_file( isset( $callback['function'] ) ? $callback['function'] : null );
+
+					if ( '' === $file ) {
+						continue;
+					}
+
+					foreach ( $theme_dirs as $dir ) {
+						if ( $dir && 0 === strpos( $file, $dir ) ) {
+							return true;
+						}
+					}
+				}
+			}
+
+			return false;
+		}
+
+		/**
+		 * The file a hook callback was declared in, or '' when it cannot be told.
+		 *
+		 * @param mixed $callback Any callable form WordPress stores.
+		 * @return string
+		 */
+		private static function callback_file( $callback ) {
+			try {
+				if ( is_string( $callback ) && function_exists( $callback ) ) {
+					$ref = new ReflectionFunction( $callback );
+				} elseif ( $callback instanceof Closure ) {
+					$ref = new ReflectionFunction( $callback );
+				} elseif ( is_array( $callback ) && isset( $callback[0] ) ) {
+					$ref = new ReflectionClass( is_object( $callback[0] ) ? get_class( $callback[0] ) : (string) $callback[0] );
+				} else {
+					return '';
+				}
+
+				$file = $ref->getFileName();
+
+				return is_string( $file ) ? $file : '';
+			} catch ( \Throwable $e ) {
+				return '';
+			}
 		}
 
 		/**

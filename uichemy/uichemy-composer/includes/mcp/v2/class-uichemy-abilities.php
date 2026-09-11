@@ -122,6 +122,32 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		}
 
 		/**
+		 * The call contract every action-routed ability repeats.
+		 *
+		 * This used to live only in the discovery briefing, which is served by
+		 * UiChemy's own gateway and nowhere else — so on any other MCP host (a
+		 * third-party MCP plugin, core's default mcp-adapter server) a model saw
+		 * the abilities and never learned the envelope, and guessed `action` as a
+		 * top-level key.
+		 *
+		 * A schema description travels with the ability itself, so putting the
+		 * contract here means every gateway teaches it. It is paid per
+		 * get-ability-info call rather than per discovery, which is why the
+		 * envelope rule sits here and not in the short `description`.
+		 *
+		 * @return string
+		 */
+		public static function contract() {
+			$instructions = class_exists( 'UiChemy_Usage_Guide' )
+				? UiChemy_Usage_Guide::ABILITY_NAME
+				: 'uichemy-composer/instructions';
+
+			return 'Call ' . $instructions . ' FIRST if you have not already - it carries the build order and the rules this one schema cannot. '
+				. 'TWO LEVELS OF NESTING: the gateway envelope is "ability_name" plus "parameters"; this ability\'s "action" and "action_parameters" go INSIDE "parameters", never as envelope keys. '
+				. 'Pick "action", then pass that action\'s own parameters as "action_parameters" - meta.actions carries the exact schema for each one.';
+		}
+
+		/**
 		 * The three content abilities and what makes each one different.
 		 *
 		 * Everything they have in common lives in content_actions() and the shared
@@ -139,7 +165,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				. 'Target a section by element_id (exact, survives reordering) or section_index (positional). '
 				. 'Every section write runs kit matching on the CSS and sideloads <img> URLs into the media library.';
 
-			$preamble = 'Pick "action", then pass that action\'s own parameters as "action_parameters" - meta.actions carries the exact schema for each one.';
+			$preamble = self::contract();
 
 			return array(
 				'page'     => array(
@@ -290,7 +316,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					)
 					: array(
 						'name'                     => 'create',
-						'description'              => 'Create a ' . $noun . ' with ONE section. Use create-with-sections instead when you already have every section.',
+						'description'              => 'Create a ' . $noun . ' with ONE section. Use create-with-sections instead when you already have every section. REQUIRES AT LEAST ONE OF html, css OR js - a cross-field rule that JSON Schema\'s "required" cannot express, so it is stated here: an empty "required" list does NOT mean every parameter is optional, and a call with only a title is refused. It is created as a DRAFT unless you pass status="publish"; a draft is skipped by every loop on the site and 404s for logged-out visitors, so publish it (here, or later with action="update") before trying to look at it.',
 						'action_parameters_schema' => array(
 							'type'       => 'object',
 							'properties' => array_merge(
@@ -371,7 +397,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					? null
 					: array(
 						'name'                     => 'create-with-sections',
-						'description'              => 'Create a ' . $noun . ' where EACH item in sections[] becomes its own editable widget, in one call. The default when you already have every section.',
+						'description'              => 'Create a ' . $noun . ' where EACH item in sections[] becomes its own editable widget, in one call. The default when you already have every section. Each section needs at least one of html, css or js. Created as a DRAFT unless you pass status="publish".',
 						'action_parameters_schema' => array(
 							'type'       => 'object',
 							'properties' => array_merge(
@@ -406,6 +432,42 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 								)
 							),
 							'required'   => array( 'sections' ),
+						),
+					),
+
+				// ---------- The post's own attributes ----------
+				$is_template
+					? null
+					: array(
+						'name'                     => 'update',
+						'description'              => 'Change the ' . $noun . '\'s OWN attributes - status, date, title, slug, excerpt, featured image, parent, menu order. Nothing to do with its sections. PUBLISHING IS THE COMMON CASE and it is the step that makes a build visible at all: content left as a draft is skipped by get_posts() (which defaults to post_status=publish), so every loop, listing and archive returns zero rows and every URL 404s while the tool log shows nothing but successes. Also the only way to give a plain ' . $noun . ' a FEATURED IMAGE - _thumbnail_id is protected meta and the field layer refuses it by design.',
+						'action_parameters_schema' => array(
+							'type'       => 'object',
+							'properties' => array(
+								'post_id'        => $post_id,
+								'status'         => array(
+									'type'        => 'string',
+									'enum'        => array( 'draft', 'publish', 'pending', 'private', 'future' ),
+									'description' => 'The new status. "publish" is what makes it queryable and visible. "trash" is deliberately not offered - deleting content is not an attribute change.',
+								),
+								'date'           => array(
+									'type'        => 'string',
+									'description' => 'Publish date, read in the SITE\'s timezone: "2026-09-10 14:30:00", "2026-09-10", or a relative phrase like "3 days ago". Worth setting explicitly when you create several posts in one run - they otherwise share one timestamp to the second, which makes "recent posts" and every date-ordered loop untestable. A future date on a published post makes WordPress schedule it, and the response reports the status it actually ended up with.',
+								),
+								'title'          => array( 'type' => 'string', 'description' => 'Rename it. The slug does NOT follow - pass "slug" too if the URL should change.' ),
+								'slug'           => array( 'type' => 'string', 'description' => 'The URL segment. Changing it on published content breaks every existing link to it.' ),
+								'excerpt'        => array(
+									'type'        => 'string',
+									'description' => 'The real post_excerpt. Worth setting for any Composer-built ' . $noun . ': {{ post.excerpt }} reads this column and NOT the widget content, so it renders blank on a ' . $noun . ' whose text lives in a Composer section - which looks like a broken binding and is not one.',
+								),
+								'featured_image' => array(
+									'type'        => array( 'integer', 'string', 'null' ),
+									'description' => 'An attachment ID, or a URL that is already in this site\'s media library; null or 0 clears it. A remote URL is REFUSED, not downloaded - upload it with uichemy-composer/media (action="request-upload") first. This is what makes {% if post.thumbnail %} and {{ post.thumbnail.src(\'large\') }} resolve.',
+								),
+								'parent'         => array( 'type' => 'integer', 'description' => 'Parent post ID for a hierarchical type, or 0 for none.' ),
+								'menu_order'     => array( 'type' => 'integer', 'description' => 'Manual sort position, for types and queries ordered by menu_order.' ),
+							),
+							'required'   => array( 'post_id' ),
 						),
 					),
 
@@ -483,7 +545,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				),
 				array(
 					'name'                     => 'patch-section-code',
-					'description'              => 'Apply literal find/replace edits to one section instead of resending it. Each edit reports its own match count, so a find that matched nothing is visible rather than silently dropped.',
+					'description'              => 'Apply literal find/replace edits to one section instead of resending it. Each edit reports its own match count, so a find that matched nothing is visible rather than silently dropped. "find" MUST MATCH THE STORED CODE, NOT THE CODE YOU SENT: saving re-serialises CSS - declarations are re-indented and whitespace normalised - so text copied from your own payload can return count:0 for a section that plainly contains it. Read it back with action="get-section-code" first and copy from that. Whitespace differences alone are tolerated when they resolve to exactly one match, and the response says so.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => array(
@@ -496,7 +558,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 								'items'       => array(
 									'type'       => 'object',
 									'properties' => array(
-										'find'    => array( 'type' => 'string', 'description' => 'Exact text to look for.' ),
+										'find'    => array( 'type' => 'string', 'description' => 'Text to look for, as it appears in STORED code (action="get-section-code"), not as you sent it. Case-sensitive; every occurrence is replaced, so include enough context to make it unique.' ),
 										'replace' => array( 'type' => 'string', 'description' => 'What to put in its place. Empty string deletes.' ),
 										'field'   => array( 'type' => 'string', 'enum' => array( 'html', 'css', 'js' ), 'description' => 'Which part of the section to edit (default "html").' ),
 									),
@@ -647,12 +709,12 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 			return array(
 				array(
 					'name'                     => 'architecture',
-					'description'              => 'The site\'s template MAP: every slot the WordPress hierarchy has here (header, footer, each public post type, each taxonomy archive, author, date, search, 404, and the WooCommerce ones when Woo is active), which of them a UiChemy template already fills, and which still fall through to the active theme. Returns a "gaps" list naming the exact create call that fills each one, and marks any slot whose type this build cannot create. Start here when asked what a site is missing - action="list" only reports templates that already exist, so it cannot answer that.',
+					'description'              => 'The site\'s template MAP: every slot the WordPress hierarchy has here (header, footer, each public post type, each taxonomy archive, author, date, search, 404, and the WooCommerce ones when Woo is active), which of them a UiChemy template already fills, and which still fall through to the active theme. Returns a "gaps" list naming the exact create call that fills each one, and marks any slot whose type this build cannot create. Start here when asked what a site is missing - action="list" only reports templates that already exist, so it cannot answer that. "filled" means a template exists in the slot, NOT that it renders: any slot holding an active header/footer that never reaches a visitor is also listed under "not_rendering" with the reason.',
 					'action_parameters_schema' => array( 'type' => 'object', 'properties' => new stdClass(), 'required' => array() ),
 				),
 				array(
 					'name'                     => 'create',
-					'description'              => 'Create a NATIVE UiChemy theme-builder template from HTML/CSS/JS. Works on ANY Elementor including free - no Pro and no Nexter. Templates are ACTIVE by default, and activating one deactivates any other active UiChemy template in the same slot.',
+					'description'              => 'Create a NATIVE UiChemy theme-builder template from HTML/CSS/JS. Works on ANY Elementor including free - no Pro and no Nexter. Templates are ACTIVE by default, and activating one deactivates any other active UiChemy template in the same slot. READ "will_render" IN THE RESPONSE, NOT "active": active means the flag was written, and a header or footer can be active and still never appear - on a classic theme with no Elementor location support there is no slot to inject into; on a theme that renders through elementor_theme_do_location() Elementor Pro owns that function and only serves its own templates; and where another builder already has an active template for the slot UiChemy stands down rather than render a second one. When will_render is false the response says which of those it is and what to do instead; do not report the slot as done until it is true, and look at a real page even then.',
 					'action_parameters_schema' => array(
 						'type'        => 'object',
 						'description' => 'Choose "type" strictly by the user\'s wording: "header" → header; "footer" → footer; "single post / blog post / article template" → single; "archive / blog listing / category / tag / author / date" → archive; "product page / single product" → single_product (WooCommerce); "shop / product listing" → product_archive (WooCommerce); "search results" → search; "404 / not found" → error_404. PLACEMENT is type-aware: header/footer → { scope: "entire" (default) | "specific", include: [ids], exclude: [ids] }; single → { post_type: "post" (default) | "page" | "{cpt}" | "all" | "front", include: [ids], exclude: [ids] }; archive → { archive: "blog" (default) | "author" | "date" | "tax:{taxonomy}" | "all" }; single_product / product_archive / search / error_404 → OMIT placement, they apply to their whole context automatically. A single/archive body should use dynamic bindings (uichemy-composer/dynamic) rather than hardcoded content.',
@@ -675,7 +737,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				),
 				array(
 					'name'                     => 'list',
-					'description'              => 'List the native UiChemy templates with their type, status, target and conditions, so you can see which slot is filled and which are live.',
+					'description'              => 'List the native UiChemy templates with their type, status, target and conditions, so you can see which slot is filled and which are live. Every ACTIVE header/footer also carries "will_render" and, when false, a "render_check" explaining why it never reaches a visitor - status:"active" alone has been true for templates that had never once appeared on the site.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => array(
@@ -1185,14 +1247,14 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		 * @return array<string,array>
 		 */
 		private static function small_domains() {
-			$preamble = 'Pick "action", then pass that action\'s own parameters as "action_parameters" - meta.actions carries the exact schema for each one.';
+			$preamble = self::contract();
 
 			return array(
 				'dynamic' => array(
 					'slug'               => 'uichemy-composer/dynamic',
 					'label'              => 'UiChemy Builder: Dynamic',
 					'description'        => 'Bind LIVE WordPress content into a section instead of hardcoding it: list the tokens this site can resolve, build a data-bound listing, get the exact Twig token for one field, or emit a UiChemy placeholder tag.',
-					'schema_description' => $preamble . ' "list-fields" is the catalog of every token this build resolves - post, product (WooCommerce), user, term, image, site, request - plus the site\'s own ACF / meta fields. Read it BEFORE writing a binding: an unknown token renders EMPTY rather than failing, so a guessed name yields a page that looks built and is blank. "create-loop" wraps your per-item markup in a validated {% for %} over posts, products, terms or users; its "query" object carries the full filter set (status, offset, include/exclude, author, date range, one meta clause) and "raw_query" is the unvalidated escape hatch for what that cannot express - several post types, OR between taxonomies, several meta clauses. "bind-field" returns the EXACT token for one field on one provider. "add-tag" emits a placeholder (post-content, nav-menu, site-logo, site-icon, toc) that resolves server-side at render time. Everything except list-fields returns MARKUP and writes nothing: pass the html to uichemy-composer/page, post or template. Call uichemy-composer/describe-site FIRST so every taxonomy and term you reference is real.',
+					'schema_description' => $preamble . ' "list-fields" is the catalog of every token this build resolves - post, product (WooCommerce), user, term, image, site, request - plus the site\'s own ACF / JetEngine / registered-meta fields. Read it BEFORE writing a binding: an unknown token renders EMPTY rather than failing, so a guessed name yields a page that looks built and is blank. "create-loop" wraps your per-item markup in a validated {% for %} over posts, products, terms or users; its "query" object carries the full filter set (status, offset, include/exclude, author, date range, one meta clause) and "raw_query" is the unvalidated escape hatch for what that cannot express - several post types, OR between taxonomies, several meta clauses. "bind-field" returns the EXACT token for one field on one provider. "add-tag" emits a placeholder (post-content, nav-menu, site-logo, site-icon, toc) that resolves server-side at render time. Everything except list-fields returns MARKUP and writes nothing: pass the html to uichemy-composer/page, post or template. Call uichemy-composer/describe-site FIRST so every taxonomy and term you reference is real. This ability only PRINTS field data. To read or write the values themselves use uichemy-composer/custom-fields, and to create the post type, taxonomy or field in the first place use uichemy-composer/cpt.',
 					'handler'            => 'execute_dynamic',
 					'readonly'           => true,
 				),
@@ -1252,7 +1314,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				self::CATEGORY,
 				array(
 					'label'       => __( 'UiChemy', 'uichemy' ),
-					'description' => __( 'UiChemy pipeline: Figma-to-HTML conversion, Elementor globals, and full WordPress site building.', 'uichemy' ),
+					'description' => __( 'UiChemy pipeline: Figma-to-HTML conversion, Elementor globals, and full WordPress site building. Call uichemy-composer/instructions first for the build order.', 'uichemy' ),
 				)
 			);
 		}
@@ -1312,7 +1374,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 						'permission_callback' => array( __CLASS__, 'permission_check' ),
 						'meta'                => array(
 							'show_in_rest' => true,
-							'mcp'          => array( 'public' => true ),
+							'mcp'          => array( 'public' => self::is_mcp_public( $ability_name ) ),
 							'annotations'  => array(
 								'title'       => self::label_for( $ability_name ),
 								'readonly'    => $is_readonly,
@@ -1335,10 +1397,10 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				self::register_standalone_ability(
 					'uichemy-composer/describe-site',
 					'UiChemy Builder: Describe Site',
-					'Call first on any build: what this site can do (Elementor/Nexter, header_footer_system, kit, logo) and what content it has (post types, taxonomies, real field metaKeys, menus, Woo). Required before any data binding.',
+					'Call uichemy-composer/instructions first, then this on any build: what this site can do (Elementor/Nexter, header_footer_system, kit, logo) and what content it has (post types, taxonomies, real field metaKeys, menus, Woo). Required before any data binding.',
 					array(
 						'type'        => 'object',
-						'description' => 'Pick "action", then pass that action\'s own parameters as "action_parameters" - meta.actions carries the exact schema for each one. "schema" (the default) returns the whole site: "platform" is build readiness - Elementor / Elementor Pro / Nexter detection, active kit, header_footer_system ("elementor_pro" | "nexter" | "elementor" - route header/footer work by this), atomic_enabled, active_header / active_footer, branding; STOP the build if platform.checks.elementor_active is false. The rest is the content model: public post types, taxonomies, the ACF / registered-meta FIELD MAP (name, type and metaKey, grouped by post/product/user/term), registered meta keys, nav menus + locations, and WooCommerce presence + product count. Bind fields by the metaKey it returns, never by a guessed name. "entities" resolves concrete records to real IDs. Read-only either way.',
+						'description' => self::contract() . ' "schema" (the default) returns the whole site: "platform" is build readiness - Elementor / Elementor Pro / Nexter detection, active kit, header_footer_system ("elementor_pro" | "nexter" | "elementor" - route header/footer work by this), atomic_enabled, active_header / active_footer, branding; STOP the build if platform.checks.elementor_active is false. The rest is the content model: public post types, taxonomies, the ACF / registered-meta FIELD MAP (name, type and metaKey, grouped by post/product/user/term), registered meta keys, nav menus + locations, and WooCommerce presence + product count. Bind fields by the metaKey it returns, never by a guessed name. "entities" resolves concrete records to real IDs. Read-only either way.',
 						'properties'  => array(
 							'action'            => array(
 								'type'        => 'string',
@@ -1404,7 +1466,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'Native UiChemy theme-builder templates - header, footer, single, archive, product, search and 404 - on ANY Elementor including free. No Elementor Pro and no Nexter required.',
 					array(
 						'type'        => 'object',
-						'description' => 'Pick "action", then pass that action\'s own parameters as "action_parameters" - meta.actions carries the exact schema for each one. "architecture" maps every slot the site HAS and which ones still fall through to the theme, with a "gaps" list naming the call that fills each - start there when asked what a site is missing, because "list" only reports templates that already exist. "create" builds a template and places it (placement is type-aware; see the create action\'s schema), "set-conditions" moves an existing one, "toggle" activates or deactivates, "delete" removes it (DESTRUCTIVE, two-step confirm_token). Templates are ACTIVE by default and activating one deactivates any other in the same slot. This is the native engine, stored in UiChemy\'s own CPT; uichemy-composer/template is the separate path that drives Elementor Pro and Nexter, and it only covers header, footer and single.',
+						'description' => self::contract() . ' "architecture" maps every slot the site HAS and which ones still fall through to the theme, with a "gaps" list naming the call that fills each - start there when asked what a site is missing, because "list" only reports templates that already exist. "create" builds a template and places it (placement is type-aware; see the create action\'s schema), "set-conditions" moves an existing one, "toggle" activates or deactivates, "delete" removes it (DESTRUCTIVE, two-step confirm_token). Templates are ACTIVE by default and activating one deactivates any other in the same slot. This is the native engine, stored in UiChemy\'s own CPT; uichemy-composer/template is the separate path that drives Elementor Pro and Nexter, and it only covers header, footer and single.',
 						'properties'  => array(
 							'action'            => array(
 								'type'        => 'string',
@@ -1433,7 +1495,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'Site-level configuration: the site title, tagline, logo, icon and front page; the head and body code injected into every page; and the WordPress nav menus a header renders from.',
 					array(
 						'type'        => 'object',
-						'description' => 'Pick "action", then pass that action\'s own parameters as "action_parameters" - meta.actions carries the exact schema for each one. SETTINGS: "get-site-settings" reads title, tagline, url, language, timezone, front-page wiring and current branding; "update-site-settings" writes only where nothing is set yet (the safe default); "set-site-settings" REPLACES what is there. SITE CODE: "get-site-code" / "update-site-code" (append, deduped) / "set-site-code" (replace) manage the head and body code injected into EVERY page - this is the only place site-wide code is written; the page, post and template abilities handle page-level code only. MENUS: "get-menu" reads every menu with its items and theme locations - what a <uichemy-nav-menu> placeholder will actually render; "update-menu" creates or amends one (with no parameters it builds a Main Menu from the published pages and assigns it everywhere); "delete-menu" removes one (DESTRUCTIVE, two-step confirm_token). Logo and icon URLs are sideloaded, so they must be fetchable over HTTPS - upload a local file through uichemy-composer/media first.',
+						'description' => self::contract() . ' SETTINGS: "get-site-settings" reads title, tagline, url, language, timezone, front-page wiring and current branding; "update-site-settings" writes only where nothing is set yet (the safe default); "set-site-settings" REPLACES what is there. SITE CODE: "get-site-code" / "update-site-code" (append, deduped) / "set-site-code" (replace) manage the head and body code injected into EVERY page - this is the only place site-wide code is written; the page, post and template abilities handle page-level code only. MENUS: "get-menu" reads every menu with its items and theme locations - what a <uichemy-nav-menu> placeholder will actually render; "update-menu" creates or amends one (with no parameters it builds a Main Menu from the published pages and assigns it everywhere); "delete-menu" removes one (DESTRUCTIVE, two-step confirm_token). Logo and icon URLs are sideloaded, so they must be fetchable over HTTPS - upload a local file through uichemy-composer/media first.',
 						'properties'  => array(
 							'action'            => array(
 								'type'        => 'string',
@@ -1462,7 +1524,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'The WordPress media library: search what is already uploaded, read an attachment in full, set alt text and captions, and get an upload slot for a file you have locally.',
 					array(
 						'type'        => 'object',
-						'description' => 'Pick "action", then pass that action\'s own parameters as "action_parameters" - meta.actions carries the exact schema for each one. "find" searches by text (title, caption, description, filename and alt); "list" pages through everything newest first; "get" reads one attachment in full including every image size; "update" sets alt, title, caption or description; "request-upload" issues a one-time slot for a local file and hands back a real public URL. Always "find" before "request-upload": an asset already in the library should be reused rather than uploaded again. Whatever the source, only a real media-library URL belongs in your HTML - never a data: URI, a blob: URI or a local path.',
+						'description' => self::contract() . ' "find" searches by text (title, caption, description, filename and alt); "list" pages through everything newest first; "get" reads one attachment in full including every image size; "update" sets alt, title, caption or description; "request-upload" issues a one-time slot for a local file and hands back a real public URL. Always "find" before "request-upload": an asset already in the library should be reused rather than uploaded again. Whatever the source, only a real media-library URL belongs in your HTML - never a data: URI, a blob: URI or a local path.',
 						'properties'  => array(
 							'action'            => array(
 								'type'        => 'string',
@@ -1492,7 +1554,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'The site design system - the #uichemy-globals CSS block holding every global token (colors, spacing, type scale) and reusable .text-* / .pr-* class. Read it before writing any section CSS.',
 					array(
 						'type'        => 'object',
-						'description' => 'Pick "action", then pass that action\'s own parameters as "action_parameters" - meta.actions carries the exact schema for each one. "get" reads the block; "set" replaces it with a complete file; "patch" applies literal find/replace edits. Always "get" first: "set" without it overwrites the existing design system, and a "patch" find has to match the current text exactly. Reference these tokens from section CSS as var(--name), and use the matched .text-* class for typography rather than repeating font declarations.',
+						'description' => self::contract() . ' "get" reads the block; "set" replaces it with a complete file; "patch" applies literal find/replace edits. Always "get" first: "set" without it overwrites the existing design system, and a "patch" find has to match the current text exactly. Reference these tokens from section CSS as var(--name), and use the matched .text-* class for typography rather than repeating font declarations.',
 						'properties'  => array(
 							'action'            => array(
 								'type'        => 'string',
@@ -1546,6 +1608,36 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		}
 
 		/**
+		 * Should this ability be exposed to MCP gateways at all?
+		 *
+		 * The v2 exclusion list (UiChemy_Usage_Guide::add_exclusions) held the
+		 * process abilities back from UiChemy's OWN gateway only, because the
+		 * filter behind it is ours. Foreign gateways read `meta.mcp.public`, so
+		 * they showed exactly the three abilities we had decided to hide — the
+		 * surface was inverted on every host but ours.
+		 *
+		 * Deciding it here instead makes one list authoritative everywhere. The
+		 * abilities stay REGISTERED: v1 and the Figma relay reach them through
+		 * UiChemy_Composer_MCP_Server::get_tool_definitions() and the
+		 * `uichemy_mcp_tools` filter, neither of which looks at this flag.
+		 *
+		 * @param string $ability_name Full ability name.
+		 * @return bool
+		 */
+		private static function is_mcp_public( $ability_name ) {
+			if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
+				return true;
+			}
+
+			// hidden_everywhere(), NOT add_exclusions(): the latter also carries the
+			// abilities we merely keep out of our own catalogue, and those must stay
+			// public so foreign gateways can serve them.
+			$excluded = UiChemy_Usage_Guide::hidden_everywhere();
+
+			return ! ( is_array( $excluded ) && in_array( (string) $ability_name, $excluded, true ) );
+		}
+
+		/**
 		 * Register an ability that has no entry in name_map — i.e. one that is not
 		 * backed by a v1 Composer tool spec and so cannot ride the register loop.
 		 *
@@ -1587,7 +1679,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'meta'                => array_merge(
 						array(
 							'show_in_rest' => true,
-							'mcp'          => array( 'public' => true ),
+							'mcp'          => array( 'public' => self::is_mcp_public( $slug ) ),
 							'annotations'  => array(
 								'title'       => $label,
 								'readonly'    => (bool) $ann['readonly'],

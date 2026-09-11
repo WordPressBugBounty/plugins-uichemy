@@ -56,6 +56,15 @@ if ( ! class_exists( 'Uich_DD_Catalog' ) ) {
 							'key'   => 'excerpt',
 							'label' => 'Excerpt',
 							'type'  => 'text',
+							// Documented as plain "Excerpt", it reads as the
+							// visible summary of the post. It is not: it is the
+							// post_excerpt COLUMN, which is empty on every post
+							// whose text lives in a Composer widget - so the
+							// token renders blank on a page that plainly has
+							// text on it, and that looks like a broken binding.
+							// One verification build shipped a whole menu page
+							// of blank descriptions this way.
+							'note'  => 'Reads the post_excerpt column, NOT the visible content. It is EMPTY on a Composer-authored post unless an excerpt was set explicitly, and renders blank. Set one with uichemy-composer/post (action="update", "excerpt"), or print post.content, or hold the summary in a custom field.',
 						),
 						array(
 							'key'   => 'link',
@@ -637,6 +646,9 @@ if ( ! class_exists( 'Uich_DD_Catalog' ) ) {
 				);
 				if ( ! empty( $f['chains_to'] ) ) {
 					$row['chains_to'] = $f['chains_to'];
+				}
+				if ( ! empty( $f['note'] ) ) {
+					$row['note'] = $f['note'];
 				}
 				$out[] = $row;
 			}

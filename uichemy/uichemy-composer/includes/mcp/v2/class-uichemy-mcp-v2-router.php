@@ -137,6 +137,19 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 					// site has at all and which of them are still falling through to
 					// the theme — the question you have to ask before you can say what
 					// is missing.
+					// The class file is required behind an is_admin() gate (it also
+					// carries the admin ajax endpoints), and an MCP call is a REST
+					// request — so without this lazy require the map was unreachable
+					// from every gateway, on every build. Load it on demand rather
+					// than moving the gate: architecture() is all we want here, not
+					// Admin::init()'s ajax hooks.
+					if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
+						$uich_tb_admin = UICHEMY_PATH . 'includes/theme-builder/class-uichemy-theme-builder-admin.php';
+						if ( is_readable( $uich_tb_admin ) ) {
+							require_once $uich_tb_admin;
+						}
+					}
+
 					if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' )
 						|| ! method_exists( 'UiChemy_Theme_Builder_Admin', 'architecture' ) ) {
 						return new WP_Error( 'uich_mcp_error', 'The theme-builder architecture map is unavailable in this build.' );
@@ -170,6 +183,7 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 			$slots     = isset( $arch['slots'] ) && is_array( $arch['slots'] ) ? $arch['slots'] : array();
 			$allowed   = class_exists( 'UiChemy_Template_CPT' ) ? UiChemy_Template_CPT::allowed_types() : array();
 			$gaps      = array();
+			$dark      = array();
 			$out       = array();
 			$templates = 0;
 
@@ -195,12 +209,39 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 					$row['sub_label'] = $slot['sub_label'];
 				}
 				foreach ( $list as $t ) {
-					$row['templates'][] = array(
+					$entry = array(
 						'id'     => isset( $t['id'] ) ? (int) $t['id'] : 0,
 						'title'  => isset( $t['title'] ) ? $t['title'] : '',
 						'status' => isset( $t['status'] ) ? $t['status'] : '',
 						'editor' => isset( $t['editor'] ) ? $t['editor'] : '',
 					);
+
+					// filled:true used to mean "a template exists in this slot",
+					// which is not the same as "this slot renders". Two of three
+					// verification builds read filled:true for header and footer
+					// on sites that had neither.
+					if ( 'active' === $entry['status']
+						&& $entry['id']
+						&& in_array( $type, array( 'header', 'footer' ), true )
+						&& method_exists( 'UiChemy_Composer_Manager', 'mcp_template_render_verification' )
+					) {
+						$check                = UiChemy_Composer_Manager::mcp_template_render_verification( $entry['id'], $type );
+						$entry['will_render'] = ! empty( $check['will_render'] );
+
+						if ( ! $entry['will_render'] ) {
+							$entry['render_check'] = $check;
+							$row['renders']        = false;
+							$dark[]                = array(
+								'key'    => $row['key'],
+								'type'   => $type,
+								'id'     => $entry['id'],
+								'reason' => isset( $check['reason'] ) ? $check['reason'] : '',
+								'fix'    => isset( $check['what_to_do'] ) ? $check['what_to_do'] : '',
+							);
+						}
+					}
+
+					$row['templates'][] = $entry;
 				}
 
 				// A gap is a slot that MATTERS and that this build could actually
@@ -218,13 +259,14 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 				$out[] = $row;
 			}
 
-			return array(
+			$shaped = array(
 				'site'      => isset( $arch['site'] ) ? $arch['site'] : array(),
 				'summary'   => array(
-					'slots'     => count( $out ),
-					'filled'    => count( array_filter( $out, static function ( $s ) { return $s['filled']; } ) ),
-					'templates' => $templates,
-					'gaps'      => count( $gaps ),
+					'slots'         => count( $out ),
+					'filled'        => count( array_filter( $out, static function ( $s ) { return $s['filled']; } ) ),
+					'not_rendering' => count( $dark ),
+					'templates'     => $templates,
+					'gaps'          => count( $gaps ),
 				),
 				'gaps'      => $gaps,
 				'slots'     => $out,
@@ -232,6 +274,13 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 					? 'These slots fall through to the active theme. Each gap names the call that fills it.'
 					: 'Every critical slot this build can fill already has a template.',
 			);
+
+			if ( $dark ) {
+				$shaped['not_rendering'] = $dark;
+				$shaped['warning']       = 'FILLED IS NOT THE SAME AS RENDERING. The slots in "not_rendering" hold an active template that never reaches a visitor - the theme has no slot for it, or another builder owns it. Each entry says which, and what to do.';
+			}
+
+			return $shaped;
 		}
 
 		/**
@@ -628,6 +677,16 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 						array_merge( $params, self::map_page_code_params( $params ) )
 					);
 
+				// --- The post's own attributes -----------------------------------
+				case 'update':
+					if ( 'template' === $domain ) {
+						return new WP_Error(
+							'uich_mcp_error',
+							'A template has no publish status, date or featured image to change - use action="toggle" to activate it and action="set-conditions" for where it renders.'
+						);
+					}
+					return UiChemy_Composer_Manager::mcp_update_post_attributes( $params );
+
 				// --- Section creation ------------------------------------------
 				case 'append_section':
 					return UiChemy_Composer_MCP_Server::execute_add_uichemy_composer_section( $params );
@@ -690,10 +749,11 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 		 * @return string
 		 */
 		private static function page_action_hint() {
-			return 'Valid: list, grep, create, create-with-sections, append-section, insert-section, '
+			return 'Valid: list, grep, create, create-with-sections, update, append-section, insert-section, '
 				. 'get-section-code, set-section-code, patch-section-code, get-structure, move-section, '
 				. 'duplicate-section, delete-section, set-page-code, get-page-code, update-page-code '
-				. '(templates also: set-conditions, toggle, delete).';
+				. '(templates also: set-conditions, toggle, delete). "update" changes the post itself - '
+				. 'status (publish it, or nothing can be looked at), date, title, slug, excerpt, featured image.';
 		}
 
 		/**

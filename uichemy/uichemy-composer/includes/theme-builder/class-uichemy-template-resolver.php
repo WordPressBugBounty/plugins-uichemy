@@ -199,6 +199,25 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 		}
 
 		/**
+		 * Public read of the coexistence check, for reporting.
+		 *
+		 * The suppression itself is correct - two systems both rendering a header
+		 * is worse than one - but it was INVISIBLE. A template could be created,
+		 * flagged active, and then quietly stood down at render time because
+		 * another builder owned the slot, with nothing in any response saying so.
+		 *
+		 * @param string $type 'header' or 'footer'.
+		 * @return bool
+		 */
+		public static function competing_system_owns( $type ) {
+			if ( ! in_array( (string) $type, array( 'header', 'footer' ), true ) ) {
+				return false;
+			}
+
+			return self::has_competing_active_template( (string) $type );
+		}
+
+		/**
 		 * Whether Elementor Pro or Nexter already has its OWN active template for
 		 * this exact header/footer slot — used to decide slot ownership when both
 		 * systems are present (UiChemy only takes the slot when neither does).

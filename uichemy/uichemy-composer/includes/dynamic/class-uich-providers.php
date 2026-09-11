@@ -66,6 +66,27 @@ if ( ! class_exists( 'Uich_Provider' ) ) {
 			return $this->uich_get( $name, $args );
 		}
 
+		/**
+		 * Stringify through the same gate the template engine uses.
+		 *
+		 * Declared because a provider reaching a PHP string or number cast
+		 * WITHOUT it is a fatal Error (string) or a warning printed onto the live
+		 * page (float) - which is exactly what a filter like `| format('%.2f')`
+		 * does when it is handed a provider by mistake. An empty string is a
+		 * blank on the page; an uncaught Error is a white screen.
+		 *
+		 * @return string
+		 */
+		public function __toString() {
+			$value = $this->uich_read( '__toString', array() );
+
+			if ( null === $value || is_array( $value ) || is_object( $value ) ) {
+				return '';
+			}
+
+			return (string) $value;
+		}
+
 		/** Helper: format a date string. */
 		protected function fmt_date( $value, $args ) {
 			$format = ! empty( $args[0] ) ? (string) $args[0] : get_option( 'date_format' );
@@ -199,6 +220,55 @@ if ( ! class_exists( 'Uich_Image_Provider' ) ) {
 					return $this->id;
 			}
 			return null;
+		}
+	}
+}
+
+if ( ! class_exists( 'Uich_Numeric_Image_Provider' ) ) {
+	/**
+	 * An UNMODELLED numeric meta value that happens to name an image attachment.
+	 *
+	 * It prints as the number it is and still answers the image chain. The plain
+	 * Uich_Image_Provider used to be returned for this case, which meant any
+	 * numeric meta colliding with an attachment ID - a price, a rating, a year, a
+	 * floor area, a reading time - rendered as an unrelated photo URL, silently.
+	 *
+	 * A field whose type IS declared never reaches here: a declared media field
+	 * gets the real image provider, and a declared number gets the raw number.
+	 * This exists only for loose meta, where there is no declaration to consult
+	 * and both readings are plausible.
+	 */
+	class Uich_Numeric_Image_Provider extends Uich_Image_Provider {
+
+		/**
+		 * The stored value, exactly as it was read.
+		 *
+		 * @var int|float|string
+		 */
+		protected $raw;
+
+		/**
+		 * @param int              $id  Attachment ID.
+		 * @param int|float|string $raw The stored value to print.
+		 */
+		public function __construct( $id, $raw ) {
+			parent::__construct( $id );
+			$this->raw = $raw;
+		}
+
+		/**
+		 * Printing yields the number; every image accessor still resolves.
+		 *
+		 * @param string $name Field name.
+		 * @param array  $args Call arguments.
+		 * @return mixed
+		 */
+		public function uich_get( $name, $args = array() ) {
+			if ( '__toString' === $name ) {
+				return $this->raw;
+			}
+
+			return parent::uich_get( $name, $args );
 		}
 	}
 }

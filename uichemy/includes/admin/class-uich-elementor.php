@@ -139,6 +139,10 @@ if ( ! class_exists( 'Uich_Elementor' ) ) {
 
 			$processed_css = $this->uich_generate_css( $element_settings, $css->get_element_unique_selector( $element ) );
 
+			if ( '' === $processed_css ) {
+				return;
+			}
+
 			$css->get_stylesheet()->add_raw_css( $processed_css );
 		}
 
@@ -170,18 +174,18 @@ if ( ! class_exists( 'Uich_Elementor' ) ) {
 		 *
 		 * @param array  $element_settings The widget's settings.
 		 * @param string $unique_selector The unique selector for the widget.
-		 * @return string The processed custom CSS.
+		 * @return string The processed custom CSS, or an empty string when none is set.
 		 */
 		public function uich_generate_css( $element_settings, $unique_selector ) {
 
 			if ( empty( $element_settings['uich_custom_css_field'] ) ) {
-				return;
+				return '';
 			}
 
-			$custom_css = trim( $element_settings['uich_custom_css_field'] );
+			$custom_css = trim( (string) $element_settings['uich_custom_css_field'] );
 
 			if ( empty( $custom_css ) ) {
-				return;
+				return '';
 			}
 
 			$custom_css = str_replace( 'selector', $unique_selector, $custom_css );

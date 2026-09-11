@@ -652,10 +652,23 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					'dynamic_globals' => null,
 				);
 			}
+			$matches = isset( $result['matches'] ) ? $result['matches'] : array();
+
+			// Folded in here rather than at each of the dozen call sites, so
+			// EVERY write that runs the globals pass reports what it removed from
+			// the payload it was handed. A write that edits its input silently is
+			// the expensive kind of bug: nothing in the response contradicts it,
+			// so the only way to find it is to read the stored CSS back and
+			// diff it by hand.
+			if ( ! empty( $result['stripped'] ) ) {
+				$matches['stripped']      = $result['stripped'];
+				$matches['stripped_note'] = isset( $result['stripped_note'] ) ? $result['stripped_note'] : '';
+			}
+
 			return array(
 				'html'            => isset( $result['html'] ) ? (string) $result['html'] : $html,
 				'css'             => isset( $result['css'] ) ? (string) $result['css'] : $css,
-				'dynamic_globals' => isset( $result['matches'] ) ? $result['matches'] : array(),
+				'dynamic_globals' => $matches,
 			);
 		}
 
@@ -1073,16 +1086,32 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			$type_label = ucfirst( str_replace( 'error_404', '404', $type ) );
-			$message    = $type_label . ' template created via the UiChemy Theme Builder and is ACTIVE on the entire site.';
-			if ( ! empty( $conflicts ) ) {
+
+			// "active" is a flag in the database. Whether the thing APPEARS is a
+			// different question with two other answers in it - does the theme
+			// expose a slot, and does another builder already own it - and both
+			// were previously invisible. So the flag is reported alongside a real
+			// answer rather than in place of one.
+			$verification = self::mcp_template_render_verification( $post_id, $type );
+
+			$message = $type_label . ' template created via the UiChemy Theme Builder and is flagged ACTIVE on the entire site.';
+
+			if ( empty( $verification['will_render'] ) ) {
+				$message = $type_label . ' template created and flagged active, but IT WILL NOT RENDER on this site. '
+					. ( isset( $verification['reason'] ) ? $verification['reason'] : '' )
+					. ' ' . ( isset( $verification['what_to_do'] ) ? $verification['what_to_do'] : '' )
+					. ' Do not report the header/footer as done - look at a real page first.';
+			} elseif ( ! empty( $conflicts ) ) {
 				$message .= ' Note: another theme-builder system (' . implode( ', ', $conflicts ) . ') is active on this site; UiChemy has NOT changed it, so you may need to disable its ' . $type . ' template to avoid a duplicate.';
 			}
 
-			return array(
+			$out = array(
 				'post_id'                 => $post_id,
 				'system'                  => 'uichemy_native',
 				'type'                    => $type,
 				'active'                  => true,
+				'will_render'             => ! empty( $verification['will_render'] ),
+				'render_check'            => $verification,
 				'title'                   => get_the_title( $post_id ),
 				'elementor_link'          => add_query_arg(
 					array( 'post' => $post_id, 'action' => 'elementor' ),
@@ -1094,6 +1123,76 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'dynamic_globals_matches' => $globals_prepared['dynamic_globals'],
 				'message'                 => $message,
 			);
+
+			if ( empty( $verification['will_render'] ) ) {
+				$out['warning'] = 'active:true means the flag was written, NOT that anything appears on the site. Read "render_check".';
+			}
+
+			return $out;
+		}
+
+		/**
+		 * Whether a header/footer template will actually reach a visitor.
+		 *
+		 * Combines the two independent questions: does this template render to
+		 * markup at all, and does the theme have a slot for it that no other
+		 * builder has claimed.
+		 *
+		 * @param int    $template_id Template post ID.
+		 * @param string $type        Location type.
+		 * @return array
+		 */
+		public static function mcp_template_render_verification( $template_id, $type ) {
+			$type = (string) $type;
+
+			if ( ! in_array( $type, array( 'header', 'footer' ), true ) || ! class_exists( 'UiChemy_Locations' ) ) {
+				// Only header and footer depend on a theme slot. single / 404 are
+				// resolved through the template loader and are not affected.
+				return array(
+					'will_render' => true,
+					'checked'     => false,
+					'reason'      => 'This location does not depend on a theme header/footer slot.',
+				);
+			}
+
+			$slot  = UiChemy_Locations::injection_report( $type );
+			$probe = method_exists( 'UiChemy_Locations', 'render_probe' )
+				? UiChemy_Locations::render_probe( $template_id )
+				: array( 'rendered' => true, 'bytes' => 0 );
+
+			$will = ! empty( $slot['will_render'] ) && ! empty( $probe['rendered'] );
+
+			$out = array(
+				'will_render'    => $will,
+				'checked'        => true,
+				'theme'          => isset( $slot['theme'] ) ? $slot['theme'] : '',
+				'theme_type'     => isset( $slot['theme_type'] ) ? $slot['theme_type'] : '',
+				'slot_available' => ! empty( $slot['will_render'] ),
+				'handler'        => isset( $slot['handler'] ) ? $slot['handler'] : '',
+				'renders_markup' => ! empty( $probe['rendered'] ),
+				'rendered_bytes' => isset( $probe['bytes'] ) ? (int) $probe['bytes'] : 0,
+			);
+
+			if ( ! empty( $slot['blocked_by'] ) ) {
+				$out['blocked_by'] = $slot['blocked_by'];
+			}
+
+			if ( $will ) {
+				$out['reason']     = isset( $slot['reason'] ) ? $slot['reason'] : '';
+				$out['still_true'] = 'This confirms the template renders to markup and the theme has a slot for it. It is NOT proof the page looks right - open a real URL before calling the build done.';
+
+				return $out;
+			}
+
+			$out['reason'] = empty( $probe['rendered'] ) && isset( $probe['reason'] )
+				? $probe['reason']
+				: ( isset( $slot['reason'] ) ? $slot['reason'] : '' );
+
+			$out['what_to_do'] = isset( $slot['what_to_do'] ) && '' !== $slot['what_to_do']
+				? $slot['what_to_do']
+				: 'Open the template in the editor and check it has a section with markup in it.';
+
+			return $out;
 		}
 
 		/**
@@ -1195,12 +1294,18 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					return $post_id;
 				}
 
-				return array(
+				$verification = ( 'active' === $status )
+					? self::mcp_template_render_verification( $post_id, $type )
+					: array( 'will_render' => false, 'checked' => false, 'reason' => 'The template was created INACTIVE, so it renders nowhere until you activate it with action="toggle".' );
+
+				$out = array(
 					'post_id'           => $post_id,
 					'system'            => 'uichemy_native',
 					'type'              => $type,
 					'editor'            => 'gutenberg',
 					'active'            => ( 'active' === $status ),
+					'will_render'       => ! empty( $verification['will_render'] ),
+					'render_check'      => $verification,
 					'status'            => $status,
 					'target'            => $resolved['target'],
 					'conditions'        => $resolved['conditions'],
@@ -1210,6 +1315,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					'message'           => ucfirst( str_replace( 'error_404', '404', $type ) )
 						. ' template created via the UiChemy Theme Builder as Gutenberg blocks (' . $resolved['summary'] . ').',
 				);
+
+				if ( 'active' === $status && empty( $verification['will_render'] ) ) {
+					$out['warning']  = 'active:true means the flag was written, NOT that anything appears on the site. Read "render_check".';
+					$out['message'] .= ' IT WILL NOT RENDER: ' . ( isset( $verification['reason'] ) ? $verification['reason'] : '' ) . ' ' . ( isset( $verification['what_to_do'] ) ? $verification['what_to_do'] : '' );
+				}
+
+				return $out;
 			}
 
 			if ( '' === trim( $raw_html ) && '' === trim( $raw_css ) ) {
@@ -1295,11 +1407,24 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				$message .= ' Note: another theme-builder system (' . implode( ', ', $conflicts ) . ') is active; UiChemy has NOT changed it, so you may need to disable its ' . $type . ' template to avoid a duplicate.';
 			}
 
-			return array(
+			$verification = ( 'active' === $status )
+				? self::mcp_template_render_verification( $post_id, $type )
+				: array( 'will_render' => false, 'checked' => false, 'reason' => 'The template was created INACTIVE, so it renders nowhere until you activate it with action="toggle".' );
+
+			if ( 'active' === $status && empty( $verification['will_render'] ) ) {
+				$message = $type_label . ' template created and flagged active, but IT WILL NOT RENDER on this site. '
+					. ( isset( $verification['reason'] ) ? $verification['reason'] : '' )
+					. ' ' . ( isset( $verification['what_to_do'] ) ? $verification['what_to_do'] : '' )
+					. ' Do not report this slot as done - look at a real page first.';
+			}
+
+			$out = array(
 				'post_id'                 => $post_id,
 				'system'                  => 'uichemy_native',
 				'type'                    => $type,
 				'active'                  => ( 'active' === $status ),
+				'will_render'             => ! empty( $verification['will_render'] ),
+				'render_check'            => $verification,
 				'status'                  => $status,
 				'target'                  => $resolved['target'],
 				'conditions'              => $resolved['conditions'],
@@ -1315,6 +1440,12 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'dynamic_globals_matches' => $globals_prepared['dynamic_globals'],
 				'message'                 => $message,
 			);
+
+			if ( 'active' === $status && empty( $verification['will_render'] ) ) {
+				$out['warning'] = 'active:true means the flag was written, NOT that anything appears on the site. Read "render_check".';
+			}
+
+			return $out;
 		}
 
 		/**
@@ -4255,6 +4386,47 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return new \WP_Error( 'uich_menu_not_found', "No nav menu with id {$menu_id}." );
 			}
 
+			// EVERYTHING IS VALIDATED BEFORE ANYTHING IS WRITTEN. This used to
+			// rename the menu and add every item, and only then discover that a
+			// location slug was wrong - so the refusal left half its work behind
+			// and the recovery was a second call with replace_items=true to undo
+			// the duplicates it had just created. A refusal must leave the site
+			// as it found it.
+			$registered = array_keys( get_registered_nav_menus() );
+
+			foreach ( $locations as $slug ) {
+				$slug = sanitize_key( (string) $slug );
+
+				if ( in_array( $slug, $registered, true ) ) {
+					continue;
+				}
+
+				return new \WP_Error(
+					'uich_unknown_menu_location',
+					$registered
+						? sprintf(
+							'Unknown menu location "%s", so NOTHING was changed - not the name, not the items, nothing. This theme registers: %s.',
+							$slug,
+							implode( ', ', $registered )
+						)
+						: sprintf(
+							'Unknown menu location "%s", so NOTHING was changed. This theme registers NO menu locations at all - it is most likely a block theme, where navigation is a block in the Site Editor rather than a registered location. Build the header with uichemy-composer/template instead, and use <uichemy-nav-menu> in its markup.',
+							$slug
+						)
+				);
+			}
+
+			foreach ( $add_pages as $page_id ) {
+				$page_id = absint( $page_id );
+
+				if ( ! $page_id || ! get_post( $page_id ) ) {
+					return new \WP_Error(
+						'uich_invalid_post_id',
+						sprintf( 'No post with id %d to add to the menu, so NOTHING was changed. Find real ids with uichemy-composer/page (action="list").', $page_id )
+					);
+				}
+			}
+
 			$changed = array();
 
 			if ( '' !== $rename && $rename !== $menu->name ) {
@@ -4269,13 +4441,37 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				$changed[] = 'cleared existing items';
 			}
 
-			$added = array();
+			// What the menu already holds, so a repeated call is idempotent
+			// instead of doubling the nav. A build that retries - or that adds
+			// one page at a time across several calls - used to end up with every
+			// item twice, and the only cure was replace_items=true.
+			$existing_pages = array();
+			$existing_urls  = array();
+
+			foreach ( (array) wp_get_nav_menu_items( $menu_id ) as $item ) {
+				if ( 'post_type' === $item->type ) {
+					$existing_pages[ (int) $item->object_id ] = (int) $item->ID;
+				} elseif ( 'custom' === $item->type ) {
+					$existing_urls[ untrailingslashit( (string) $item->url ) ] = (int) $item->ID;
+				}
+			}
+
+			$added   = array();
+			$skipped = array();
+
 			foreach ( $add_pages as $page_id ) {
 				$page_id = absint( $page_id );
-				$post    = $page_id ? get_post( $page_id ) : null;
-				if ( ! $post ) {
-					return new \WP_Error( 'uich_invalid_post_id', "No post with id {$page_id} to add to the menu." );
+				$post    = get_post( $page_id );
+
+				if ( isset( $existing_pages[ $page_id ] ) ) {
+					$skipped[] = array(
+						'post_id' => $page_id,
+						'title'   => get_the_title( $page_id ),
+						'reason'  => 'already in this menu as item ' . $existing_pages[ $page_id ],
+					);
+					continue;
 				}
+
 				$item_id = wp_update_nav_menu_item(
 					$menu_id,
 					0,
@@ -4288,7 +4484,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					)
 				);
 				if ( ! is_wp_error( $item_id ) ) {
-					$added[] = array( 'item_id' => (int) $item_id, 'post_id' => $page_id, 'title' => get_the_title( $page_id ) );
+					$existing_pages[ $page_id ] = (int) $item_id;
+					$added[]                    = array( 'item_id' => (int) $item_id, 'post_id' => $page_id, 'title' => get_the_title( $page_id ) );
 				}
 			}
 
@@ -4296,6 +4493,17 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				if ( ! is_array( $link ) || empty( $link['url'] ) ) {
 					continue;
 				}
+
+				$url = untrailingslashit( esc_url_raw( (string) $link['url'] ) );
+
+				if ( isset( $existing_urls[ $url ] ) ) {
+					$skipped[] = array(
+						'url'    => $url,
+						'reason' => 'already in this menu as item ' . $existing_urls[ $url ],
+					);
+					continue;
+				}
+
 				$item_id = wp_update_nav_menu_item(
 					$menu_id,
 					0,
@@ -4307,25 +4515,23 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					)
 				);
 				if ( ! is_wp_error( $item_id ) ) {
-					$added[] = array( 'item_id' => (int) $item_id, 'url' => (string) $link['url'] );
+					$existing_urls[ $url ] = (int) $item_id;
+					$added[]               = array( 'item_id' => (int) $item_id, 'url' => (string) $link['url'] );
 				}
 			}
 			if ( $added ) {
 				$changed[] = count( $added ) . ' item(s) added';
 			}
+			if ( $skipped ) {
+				$changed[] = count( $skipped ) . ' item(s) already present, skipped';
+			}
 
 			if ( $locations ) {
-				$registered = array_keys( get_registered_nav_menus() );
-				$assigned   = get_nav_menu_locations();
-				$applied    = array();
+				// Already validated above - every slug here is registered.
+				$assigned = get_nav_menu_locations();
+				$applied  = array();
 				foreach ( $locations as $slug ) {
-					$slug = sanitize_key( (string) $slug );
-					if ( ! in_array( $slug, $registered, true ) ) {
-						return new \WP_Error(
-							'uich_unknown_menu_location',
-							sprintf( 'Unknown menu location "%s". This theme registers: %s.', $slug, implode( ', ', $registered ) )
-						);
-					}
+					$slug              = sanitize_key( (string) $slug );
 					$assigned[ $slug ] = $menu_id;
 					$applied[]         = $slug;
 				}
@@ -4335,7 +4541,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			$state = self::mcp_menu_get( array( 'menu_id' => $menu_id ) );
 
-			return array(
+			$out = array(
 				'menu_id' => $menu_id,
 				'changed' => $changed,
 				'added'   => $added,
@@ -4344,6 +4550,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					? 'Menu ' . $menu_id . ': ' . implode( '; ', $changed ) . '.'
 					: 'Nothing changed on menu ' . $menu_id . '.',
 			);
+
+			if ( $skipped ) {
+				$out['skipped'] = $skipped;
+				$out['note']    = 'The skipped items were already in this menu, so they were not added a second time. Pass replace_items=true if you meant to rebuild the menu from scratch.';
+			}
+
+			return $out;
 		}
 
 		/**
@@ -4767,7 +4980,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 						continue;
 					}
 					$conditions  = get_post_meta( $tid, UiChemy_Template_CPT::META_CONDITIONS, true );
-					$templates[] = array(
+					$row         = array(
 						'id'           => $tid,
 						'title'        => get_the_title( $tid ),
 						'type'         => $type,
@@ -4778,9 +4991,39 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 						'edit_link'    => add_query_arg( array( 'post' => $tid, 'action' => 'elementor' ), admin_url( 'post.php' ) ),
 						'preview_link' => get_permalink( $tid ),
 					);
+
+					// "active" is a stored flag. Whether it reaches a visitor
+					// depends on the theme's slot and on any competing builder,
+					// and a list that reports the flag alone kept saying active
+					// for templates that had never once appeared on the site.
+					if ( 'active' === $status ) {
+						$check                = self::mcp_template_render_verification( $tid, $type );
+						$row['will_render']   = ! empty( $check['will_render'] );
+						$row['render_check']  = $check;
+					}
+
+					$templates[] = $row;
 				}
 			}
-			return array( 'total' => count( $templates ), 'templates' => $templates );
+
+			$dark = array();
+
+			foreach ( $templates as $row ) {
+				if ( isset( $row['will_render'] ) && ! $row['will_render'] ) {
+					$dark[] = $row['type'];
+				}
+			}
+
+			$out = array( 'total' => count( $templates ), 'templates' => $templates );
+
+			if ( $dark ) {
+				$out['warning'] = sprintf(
+					'%s: flagged ACTIVE but NOT rendering on this site. Read render_check on those rows before reporting the build complete - "active" is a database flag, not a promise that anything appears.',
+					implode( ', ', array_unique( $dark ) )
+				);
+			}
+
+			return $out;
 		}
 
 		/**
@@ -6215,11 +6458,32 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 				$count          = 0;
 				$code[ $field ] = str_replace( $find, $replace, $code[ $field ], $count );
-				$applied[]      = array(
+				$row            = array(
 					'field' => $field,
 					'find'  => $find,
 					'count' => (int) $count,
 				);
+
+				// STORAGE RE-SERIALISES CSS. What comes back from
+				// get-section-code is not byte-identical to what was sent -
+				// declarations are re-indented and whitespace is normalised - so
+				// a `find` copied from the original payload misses, returns
+				// count:0, and looks like the section does not contain the text
+				// it plainly does. Retry once with whitespace treated as elastic,
+				// and only when that resolves to exactly one place, so the
+				// tolerance can never silently hit the wrong rule.
+				if ( 0 === $count ) {
+					$loose = self::mcp_whitespace_tolerant_replace( $code[ $field ], $find, $replace );
+
+					if ( null !== $loose ) {
+						$code[ $field ]  = $loose;
+						$row['count']    = 1;
+						$row['matched']  = 'whitespace-normalised';
+						$row['note']     = 'The exact bytes were not present - storage re-indents CSS - but exactly one whitespace-insensitive match was, and it was replaced.';
+					}
+				}
+
+				$applied[] = $row;
 			}
 
 			$total = 0;
@@ -6234,7 +6498,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					'section_index' => (int) $target['widget_index'],
 					'replacements'  => $applied,
 					'changed'       => false,
-					'message'       => 'No edit matched nothing was written. Read the section with action=get-section-code and make each "find" match its field exactly.',
+					'message'       => 'No edit matched, so nothing was written. The usual cause is that "find" was copied from the code you SENT: storage re-serialises CSS (re-indenting declarations and normalising whitespace), so the stored bytes differ from the submitted ones. Read the section back with action="get-section-code" and copy "find" from THAT. Whitespace differences alone are already tolerated when they resolve to exactly one match, so a miss here means the text itself differs.',
 				);
 			}
 
@@ -6264,6 +6528,341 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'replacements'  => $applied,
 				'changed'       => true,
 				'message'       => "Applied {$total} replacement(s) to section \"{$target['widget_id']}\" on page {$post_id}.",
+			);
+		}
+
+		/**
+		 * Replace $find in $haystack treating runs of whitespace as elastic.
+		 *
+		 * Returns null unless there is EXACTLY ONE match - a tolerance that can
+		 * land on the wrong rule is worse than a clean miss.
+		 *
+		 * @param string $haystack Text to search.
+		 * @param string $find     Needle, whitespace-insensitive.
+		 * @param string $replace  Replacement.
+		 * @return string|null
+		 */
+		private static function mcp_whitespace_tolerant_replace( $haystack, $find, $replace ) {
+			$trimmed = trim( (string) $find );
+
+			if ( '' === $trimmed || ! preg_match( '/\s/', $trimmed ) ) {
+				// Nothing elastic about a needle with no whitespace in it.
+				return null;
+			}
+
+			$parts   = preg_split( '/\s+/', $trimmed );
+			$pattern = '/' . implode( '\s+', array_map( 'preg_quote', $parts, array_fill( 0, count( $parts ), '/' ) ) ) . '/';
+
+			$matches = preg_match_all( $pattern, (string) $haystack );
+
+			if ( 1 !== $matches ) {
+				return null;
+			}
+
+			// preg_replace_callback, not preg_replace: the replacement is caller
+			// text and may legitimately contain $ or a backslash, which
+			// preg_replace would read as back-references.
+			$out = preg_replace_callback(
+				$pattern,
+				static function () use ( $replace ) {
+					return (string) $replace;
+				},
+				(string) $haystack,
+				1
+			);
+
+			return is_string( $out ) ? $out : null;
+		}
+
+		// ============================================================
+		// POST ATTRIBUTES
+		// ============================================================
+
+		/**
+		 * MCP — change a post's own attributes: status, date, title, slug,
+		 * excerpt, featured image, parent, menu order.
+		 *
+		 * This exists because its absence made whole builds unverifiable. Content
+		 * created as a draft could never be published from here, get_posts()
+		 * defaults to post_status=publish, so every loop, listing and archive
+		 * built on top of it returned zero rows and every single-post URL 404ed.
+		 * The build looked finished and nothing on it could be looked at.
+		 *
+		 * `date` is here for the same reason: five posts created in one run share
+		 * one timestamp to the second, which makes "recent articles" and any
+		 * date-ordered loop untestable.
+		 *
+		 * The featured image is here because `_thumbnail_id` is protected meta -
+		 * correctly refused by the field layer - and set-images only ever covered
+		 * WooCommerce products, so a plain post had no route to one at all and
+		 * every `{% if post.thumbnail %}` branch was dead.
+		 *
+		 * @param array $payload { post_id, status?, date?, title?, slug?, excerpt?, featured_image?, parent?, menu_order? }.
+		 * @return array|\WP_Error
+		 */
+		public static function mcp_update_post_attributes( $payload ) {
+			$payload = is_array( $payload ) ? $payload : array();
+			$post_id = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
+
+			if ( ! $post_id ) {
+				return new \WP_Error( 'uich_mcp_error', '"post_id" is required. Find one with action="list".' );
+			}
+
+			$post = get_post( $post_id );
+
+			if ( ! $post ) {
+				return new \WP_Error( 'uich_mcp_error', sprintf( 'No post with ID %d.', $post_id ) );
+			}
+
+			if ( ! current_user_can( 'edit_post', $post_id ) ) {
+				return new \WP_Error( 'uich_mcp_error', sprintf( 'You cannot edit post %d.', $post_id ) );
+			}
+
+			$before = array(
+				'status'         => $post->post_status,
+				'date'           => $post->post_date,
+				'title'          => $post->post_title,
+				'slug'           => $post->post_name,
+				'excerpt'        => $post->post_excerpt,
+				'featured_image' => (int) get_post_thumbnail_id( $post_id ),
+				'parent'         => (int) $post->post_parent,
+				'menu_order'     => (int) $post->menu_order,
+			);
+
+			$update  = array( 'ID' => $post_id );
+			$changed = array();
+
+			// --- status -----------------------------------------------------
+			if ( isset( $payload['status'] ) && '' !== (string) $payload['status'] ) {
+				$status  = sanitize_key( (string) $payload['status'] );
+				$allowed = array( 'draft', 'publish', 'pending', 'private', 'future' );
+
+				if ( ! in_array( $status, $allowed, true ) ) {
+					return new \WP_Error(
+						'uich_mcp_error',
+						sprintf( 'Unknown status "%s". Valid: %s. "trash" is not offered here - deleting content is not an attribute change.', $status, implode( ', ', $allowed ) )
+					);
+				}
+
+				if ( 'publish' === $status && ! current_user_can( 'publish_posts' ) ) {
+					return new \WP_Error( 'uich_mcp_error', 'Your user cannot publish. The post is unchanged.' );
+				}
+
+				$update['post_status'] = $status;
+				$changed[]             = 'status';
+			}
+
+			// --- date -------------------------------------------------------
+			if ( isset( $payload['date'] ) && '' !== (string) $payload['date'] ) {
+				$raw = trim( (string) $payload['date'] );
+
+				// Parsed in the SITE's timezone, not PHP's. WordPress runs PHP in
+				// UTC and stores post_date as local wall-clock time, so parsing
+				// with strtotime() and formatting with gmdate() shifts every date
+				// by the site's offset - which reads as correct until a listing
+				// is ordered by it.
+				try {
+					$when = new \DateTimeImmutable( $raw, wp_timezone() );
+				} catch ( \Exception $e ) {
+					return new \WP_Error(
+						'uich_mcp_error',
+						sprintf( 'Could not read "%s" as a date. Use "2026-09-10 14:30:00" or "2026-09-10" - anything PHP understands, read in the SITE\'s timezone (%s).', $raw, wp_timezone_string() )
+					);
+				}
+
+				$update['post_date']     = $when->setTimezone( wp_timezone() )->format( 'Y-m-d H:i:s' );
+				$update['post_date_gmt'] = $when->setTimezone( new \DateTimeZone( 'UTC' ) )->format( 'Y-m-d H:i:s' );
+				// Without this wp_insert_post() ignores the dates entirely.
+				$update['edit_date']     = true;
+				$changed[]               = 'date';
+			}
+
+			// --- plain text fields --------------------------------------------
+			$text_map = array(
+				'title'   => 'post_title',
+				'excerpt' => 'post_excerpt',
+			);
+
+			foreach ( $text_map as $key => $column ) {
+				if ( isset( $payload[ $key ] ) ) {
+					$update[ $column ] = 'title' === $key
+						? sanitize_text_field( (string) $payload[ $key ] )
+						: wp_kses_post( (string) $payload[ $key ] );
+					$changed[]         = $key;
+				}
+			}
+
+			if ( isset( $payload['slug'] ) && '' !== (string) $payload['slug'] ) {
+				$update['post_name'] = sanitize_title( (string) $payload['slug'] );
+				$changed[]           = 'slug';
+			}
+
+			if ( isset( $payload['menu_order'] ) ) {
+				$update['menu_order'] = (int) $payload['menu_order'];
+				$changed[]            = 'menu_order';
+			}
+
+			if ( isset( $payload['parent'] ) ) {
+				$parent = (int) $payload['parent'];
+
+				if ( $parent === $post_id ) {
+					return new \WP_Error( 'uich_mcp_error', 'A post cannot be its own parent.' );
+				}
+
+				if ( $parent && ! get_post( $parent ) ) {
+					return new \WP_Error( 'uich_mcp_error', sprintf( 'No post with ID %d to be the parent.', $parent ) );
+				}
+
+				$update['post_parent'] = $parent;
+				$changed[]             = 'parent';
+			}
+
+			// --- featured image -------------------------------------------------
+			$thumbnail_result = null;
+
+			if ( array_key_exists( 'featured_image', $payload ) ) {
+				$thumbnail_result = self::mcp_apply_featured_image( $post_id, $payload['featured_image'] );
+
+				if ( is_wp_error( $thumbnail_result ) ) {
+					return $thumbnail_result;
+				}
+
+				$changed[] = 'featured_image';
+			}
+
+			if ( count( $update ) > 1 ) {
+				$saved = wp_update_post( $update, true );
+
+				if ( is_wp_error( $saved ) ) {
+					return $saved;
+				}
+			}
+
+			if ( ! $changed ) {
+				return new \WP_Error(
+					'uich_mcp_error',
+					'Nothing to change. Pass at least one of: status, date, title, slug, excerpt, featured_image, parent, menu_order.'
+				);
+			}
+
+			clean_post_cache( $post_id );
+
+			$fresh = get_post( $post_id );
+
+			$after = array(
+				'status'         => $fresh->post_status,
+				'date'           => $fresh->post_date,
+				'title'          => $fresh->post_title,
+				'slug'           => $fresh->post_name,
+				'excerpt'        => $fresh->post_excerpt,
+				'featured_image' => (int) get_post_thumbnail_id( $post_id ),
+				'parent'         => (int) $fresh->post_parent,
+				'menu_order'     => (int) $fresh->menu_order,
+			);
+
+			$out = array(
+				'success'   => true,
+				'post_id'   => $post_id,
+				'post_type' => $fresh->post_type,
+				'changed'   => array_values( array_unique( $changed ) ),
+				'before'    => $before,
+				'after'     => $after,
+				'permalink' => get_permalink( $post_id ),
+				'edit_url'  => get_edit_post_link( $post_id, 'raw' ),
+			);
+
+			if ( is_array( $thumbnail_result ) ) {
+				$out['featured_image'] = $thumbnail_result;
+			}
+
+			// The whole point of the action, said plainly: a draft is invisible
+			// to every loop on the site, because get_posts() defaults to
+			// post_status=publish.
+			if ( 'publish' !== $after['status'] ) {
+				$out['warning'] = sprintf(
+					'This %s is "%s", not published. Every loop, listing and archive built with get_posts() skips it and its URL 404s for logged-out visitors - so it cannot be verified in a browser. Publish it with { "post_id": %d, "status": "publish" }.',
+					$fresh->post_type,
+					$after['status'],
+					$post_id
+				);
+			}
+
+			return $out;
+		}
+
+		/**
+		 * Set or clear a post's featured image.
+		 *
+		 * Accepts an attachment ID, a media-library URL, or null / 0 / "" to
+		 * clear. A remote URL is refused rather than sideloaded: downloading from
+		 * a caller-supplied address would make this a request-forgery primitive,
+		 * and uichemy-composer/media already owns uploading.
+		 *
+		 * @param int   $post_id Post ID.
+		 * @param mixed $value   Attachment ID, URL, or an empty value to clear.
+		 * @return array|\WP_Error
+		 */
+		private static function mcp_apply_featured_image( $post_id, $value ) {
+			if ( null === $value || '' === $value || 0 === $value || '0' === $value || false === $value ) {
+				delete_post_thumbnail( $post_id );
+
+				return array(
+					'attachment_id' => 0,
+					'cleared'       => true,
+					'note'          => 'The featured image was removed. Any {% if post.thumbnail %} branch on this post now takes the else path.',
+				);
+			}
+
+			$attachment_id = 0;
+
+			if ( is_numeric( $value ) ) {
+				$attachment_id = (int) $value;
+			} elseif ( is_string( $value ) ) {
+				$url = trim( $value );
+
+				if ( ! preg_match( '#^https?://#i', $url ) ) {
+					return new \WP_Error( 'uich_mcp_error', sprintf( '"%s" is neither an attachment ID nor a URL.', $url ) );
+				}
+
+				$attachment_id = attachment_url_to_postid( $url );
+
+				if ( ! $attachment_id ) {
+					// Try the full-size original behind a resized URL.
+					$stripped = preg_replace( '#-\d+x\d+(\.[a-zA-Z0-9]+)$#', '$1', $url );
+
+					if ( $stripped && $stripped !== $url ) {
+						$attachment_id = attachment_url_to_postid( $stripped );
+					}
+				}
+
+				if ( ! $attachment_id ) {
+					return new \WP_Error(
+						'uich_mcp_error',
+						sprintf( '"%s" is not in this site\'s media library, so it cannot be a featured image. Nothing is downloaded from a URL here - upload it with uichemy-composer/media (action="request-upload") and pass the attachment id it returns, or find an existing one with action="find".', $url )
+					);
+				}
+			} else {
+				return new \WP_Error( 'uich_mcp_error', '"featured_image" must be an attachment ID, a media-library URL, or null to clear it.' );
+			}
+
+			if ( ! wp_attachment_is_image( $attachment_id ) ) {
+				return new \WP_Error(
+					'uich_mcp_error',
+					sprintf( 'Attachment %d is not an image, so it cannot be a featured image. WordPress would store the id and every theme would render nothing.', $attachment_id )
+				);
+			}
+
+			$set = set_post_thumbnail( $post_id, $attachment_id );
+
+			if ( ! $set ) {
+				return new \WP_Error( 'uich_mcp_error', sprintf( 'WordPress refused to set attachment %d as the featured image of post %d.', $attachment_id, $post_id ) );
+			}
+
+			return array(
+				'attachment_id' => $attachment_id,
+				'url'           => wp_get_attachment_image_url( $attachment_id, 'full' ),
+				'alt'           => (string) get_post_meta( $attachment_id, '_wp_attachment_image_alt', true ),
+				'token'         => '{{ post.thumbnail.src(\'large\') }}',
 			);
 		}
 
@@ -7104,12 +7703,30 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return array();
 			}
 
+			// The map is per-preset, not a flat true: only the properties the
+			// preset ACTUALLY DECLARES may be stripped from a rule it covers.
+			// Stripping the whole typography family was wrong in both directions.
+			// text-decoration is the clearest case - no `text-*` preset sets it,
+			// and browsers apply `text-decoration: underline` to every <a>, so
+			// removing an author's `text-decoration: none` does not delete a
+			// redundant declaration, it restores the UA default and puts an
+			// underline back on the link. The same reasoning covers font-weight
+			// on <strong>/<h1-6> and font-style on <em>/<i>.
 			$preset_lookup = array();
 			foreach ( (array) $typography_presets as $preset ) {
 				$cn = isset( $preset['class_name'] ) ? sanitize_html_class( (string) $preset['class_name'] ) : '';
-				if ( '' !== $cn ) {
-					$preset_lookup[ $cn ] = true;
+				if ( '' === $cn ) {
+					continue;
 				}
+				$declared = array();
+				$decls    = isset( $preset['decls'] ) && is_array( $preset['decls'] ) ? $preset['decls'] : array();
+				foreach ( array_keys( $decls ) as $prop ) {
+					$prop = self::mcp_normalize_css_property( (string) $prop );
+					if ( '' !== $prop ) {
+						$declared[ $prop ] = true;
+					}
+				}
+				$preset_lookup[ $cn ] = $declared;
 			}
 			if ( empty( $preset_lookup ) ) {
 				return array();
@@ -7143,21 +7760,22 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				if ( ! is_array( $parts ) ) {
 					continue;
 				}
-				$has_preset = false;
+				$covered = array();
 				foreach ( $parts as $p ) {
 					if ( isset( $preset_lookup[ $p ] ) ) {
-						$has_preset = true;
-						break;
+						$covered = array_merge( $covered, $preset_lookup[ $p ] );
 					}
 				}
-				if ( ! $has_preset ) {
+				if ( empty( $covered ) ) {
 					continue;
 				}
 				foreach ( $parts as $p ) {
 					if ( '' === $p || isset( $preset_lookup[ $p ] ) ) {
 						continue;
 					}
-					$strippable[ $p ] = true;
+					$strippable[ $p ] = isset( $strippable[ $p ] )
+						? array_merge( $strippable[ $p ], $covered )
+						: $covered;
 				}
 			}
 
@@ -7165,46 +7783,60 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		}
 
 		/**
-		 * Whether a selector's last compound contains a class that shares a node with a global typography class.
+		 * The properties a selector's rule may safely lose, because a global
+		 * typography preset on the same element already declares them.
+		 *
+		 * Empty means strip nothing - which is the answer for every property no
+		 * preset sets, text-decoration above all.
 		 *
 		 * @param string $selector       One comma-free selector fragment.
 		 * @param array  $strippable_map Map from mcp_build_strippable_typography_classes_from_html().
-		 * @return bool
+		 * @return array<string,bool> Property name => true.
 		 */
-		private static function mcp_css_selector_targets_strippable_typography_class( $selector, array $strippable_map ) {
+		private static function mcp_css_selector_strippable_props( $selector, array $strippable_map ) {
 			if ( empty( $strippable_map ) ) {
-				return false;
+				return array();
 			}
 			$selector = trim( (string) preg_replace( '/\s+/', ' ', (string) $selector ) );
 			if ( '' === $selector || false !== strpos( $selector, '@' ) ) {
-				return false;
+				return array();
 			}
 
 			$toks = preg_split( '/\s+/', $selector );
 			if ( ! is_array( $toks ) || empty( $toks ) ) {
-				return false;
+				return array();
 			}
-			$last = (string) end( $toks );
+			$props = array();
+			$last  = (string) end( $toks );
 			if ( preg_match_all( '/\.([a-zA-Z_][a-zA-Z0-9_-]*)/', $last, $mm ) ) {
 				foreach ( $mm[1] as $cn ) {
 					if ( isset( $strippable_map[ $cn ] ) ) {
-						return true;
+						$props = array_merge( $props, $strippable_map[ $cn ] );
 					}
 				}
 			}
 
-			return false;
+			return $props;
 		}
 
 		/**
 		 * Remove font-* / text-* declarations from rules targeting BEM classes that already use Elementor `text-*` on the same element.
 		 *
-		 * @param string $html                 HTML after global class application.
-		 * @param string $css                  Scoped widget CSS.
+		 * Only a property the matched preset ACTUALLY DECLARES is removed, and
+		 * every removal is recorded in $stripped so the caller's response can say
+		 * what happened to its payload. Both halves are the fix for the same bug:
+		 * a write that returned {"success":true} while quietly deleting
+		 * `text-decoration: none !important` from a button rule, and in one case
+		 * emptying a rule and dropping it entirely. It cost seven patch/verify
+		 * round-trips to find, and ended in inline style attributes.
+		 *
+		 * @param string $html               HTML after global class application.
+		 * @param string $css                Scoped widget CSS.
 		 * @param array  $typography_presets Presets from snapshot parse.
+		 * @param array  $stripped           OUT: one row per removed declaration.
 		 * @return string
 		 */
-		private static function mcp_strip_typography_decls_for_preset_global_classes_on_html( $html, $css, $typography_presets ) {
+		private static function mcp_strip_typography_decls_for_preset_global_classes_on_html( $html, $css, $typography_presets, &$stripped = array() ) {
 			$html = (string) $html;
 			$css  = (string) $css;
 			if ( '' === trim( $css ) || '' === trim( $html ) || empty( $typography_presets ) ) {
@@ -7216,20 +7848,11 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return $css;
 			}
 
-			$typography_props = array(
-				'font-family'     => true,
-				'font-size'       => true,
-				'font-weight'     => true,
-				'line-height'     => true,
-				'letter-spacing'  => true,
-				'text-transform'  => true,
-				'text-decoration' => true,
-				'font-style'      => true,
-			);
+			$removed = array();
 
 			$next = preg_replace_callback(
 				'/([^{]+)\{([^}]*)\}/s',
-				function ( $m ) use ( $strippable, $typography_props ) {
+				function ( $m ) use ( $strippable, &$removed ) {
 					$selector = isset( $m[1] ) ? trim( (string) $m[1] ) : '';
 					$body     = isset( $m[2] ) ? (string) $m[2] : '';
 					if ( '' === $selector || '' === trim( $body ) ) {
@@ -7242,12 +7865,15 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					$sel_parts = array_map( 'trim', explode( ',', $selector ) );
 					$strip_sel = array();
 					$keep_sel  = array();
+					$props     = array();
 					foreach ( $sel_parts as $p ) {
 						if ( '' === $p ) {
 							continue;
 						}
-						if ( self::mcp_css_selector_targets_strippable_typography_class( $p, $strippable ) ) {
+						$covered = self::mcp_css_selector_strippable_props( $p, $strippable );
+						if ( ! empty( $covered ) ) {
 							$strip_sel[] = $p;
+							$props       = array_merge( $props, $covered );
 						} else {
 							$keep_sel[] = $p;
 						}
@@ -7259,16 +7885,23 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					}
 
 					$out = array();
-					if ( ! empty( $strip_sel ) ) {
-						$filtered = array_values(
-							array_filter(
-								$decls,
-								function ( $row ) use ( $typography_props ) {
-									$prop = isset( $row['property'] ) ? self::mcp_normalize_css_property( (string) $row['property'] ) : '';
-									return '' === $prop || ! isset( $typography_props[ $prop ] );
-								}
-							)
-						);
+					if ( ! empty( $strip_sel ) && ! empty( $props ) ) {
+						$filtered = array();
+						foreach ( $decls as $row ) {
+							$prop = isset( $row['property'] ) ? self::mcp_normalize_css_property( (string) $row['property'] ) : '';
+
+							if ( '' !== $prop && isset( $props[ $prop ] ) ) {
+								$removed[] = array(
+									'selector' => implode( ', ', $strip_sel ),
+									'property' => $prop,
+									'value'    => isset( $row['value'] ) ? (string) $row['value'] : '',
+								);
+								continue;
+							}
+
+							$filtered[] = $row;
+						}
+
 						if ( ! empty( $filtered ) ) {
 							$nb = self::mcp_build_css_declarations( $filtered );
 							if ( '' !== trim( $nb ) ) {
@@ -7288,6 +7921,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				},
 				$css
 			);
+
+			$stripped = $removed;
 
 			return is_string( $next ) ? $next : $css;
 		}
@@ -7353,7 +7988,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				);
 			}
 
-			$result = self::mcp_apply_dynamic_globals_to_css( $css, $color_value_to_id, $typography_presets );
+			$stripped_by_match = array();
+			$result   = self::mcp_apply_dynamic_globals_to_css( $css, $color_value_to_id, $typography_presets, $stripped_by_match );
 			$next_css = isset( $result['css'] ) ? (string) $result['css'] : $css;
 			$typography_class_targets = isset( $result['typography_class_targets'] ) ? $result['typography_class_targets'] : array();
 
@@ -7365,22 +8001,120 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				$html_apply_count = isset( $apply_html['applied'] ) ? (int) $apply_html['applied'] : 0;
 			}
 
+			$stripped_by_html = array();
+
 			if ( '' !== trim( $next_css ) && '' !== trim( $next_html ) && ! empty( $typography_presets ) ) {
-				$next_css = self::mcp_strip_typography_decls_for_preset_global_classes_on_html( $next_html, $next_css, $typography_presets );
+				$next_css = self::mcp_strip_typography_decls_for_preset_global_classes_on_html( $next_html, $next_css, $typography_presets, $stripped_by_html );
 			}
 
-			return array(
+			// Both strip passes report into one list: from the caller's side there
+			// is one payload and one question - what did you take out of it.
+			$stripped = array_merge( $stripped_by_match, $stripped_by_html );
+
+			$out = array(
 				'html' => $next_html,
 				'css' => $next_css,
-				'matches' => array(
-					'color_replacements' => isset( $result['color_replacements'] ) ? (int) $result['color_replacements'] : 0,
-					'color_matches' => isset( $result['color_matches_detail'] ) ? $result['color_matches_detail'] : array(),
-					'typography_rules_matched' => isset( $result['typography_rules_matched'] ) ? (int) $result['typography_rules_matched'] : 0,
-					'html_elements_class_applied' => $html_apply_count,
+				'matches' => self::mcp_globals_match_report(
+					$result,
+					$html_apply_count,
+					$css,
+					$color_value_to_id,
+					$typography_presets
 				),
 				'unmatched' => isset( $result['unmatched'] ) ? $result['unmatched'] : array(),
 				'message' => 'Dynamic global matching applied.',
 			);
+
+			// WHEN A WRITE MODIFIES THE PAYLOAD, IT SAYS SO. Silence here is what
+			// turned a one-character CSS problem into a seven-call debugging
+			// session: the declaration was gone from storage, every response said
+			// success, and there was no way to tell whether anything else had
+			// been touched.
+			$out['stripped'] = $stripped;
+
+			if ( $stripped ) {
+				$out['stripped_note'] = sprintf(
+					'%d declaration(s) were REMOVED from the CSS you sent, because a global typography preset on the same element already declares them - the preset class is now the single source of truth for those properties. They are listed in "stripped". If one of them was load-bearing, put it on a selector that no preset class touches.',
+					count( $stripped )
+				);
+			}
+
+			return $out;
+		}
+
+		/**
+		 * The globals-match report, with enough context that a zero means something.
+		 *
+		 * The counters alone were useless: a section written entirely in
+		 * var(--navy-800) legitimately produces color_replacements=0, and so does
+		 * a section with no globals configured and a section whose colours simply
+		 * do not match - three very different situations reported identically. A
+		 * field shaped like a verification signal that never carries one is worse
+		 * than no field, so the report now says what was available to match
+		 * against and how much of the CSS was already using it.
+		 *
+		 * @param array  $result            Return of mcp_apply_dynamic_globals_to_css().
+		 * @param int    $html_apply_count  Elements that gained a preset class.
+		 * @param string $original_css      The CSS as it arrived.
+		 * @param array  $color_value_to_id Colour token map.
+		 * @param array  $typography_presets Typography presets.
+		 * @return array
+		 */
+		private static function mcp_globals_match_report( $result, $html_apply_count, $original_css, $color_value_to_id, $typography_presets ) {
+			$color_replacements = isset( $result['color_replacements'] ) ? (int) $result['color_replacements'] : 0;
+			$typography_matched = isset( $result['typography_rules_matched'] ) ? (int) $result['typography_rules_matched'] : 0;
+
+			// var() references already in the incoming CSS that name a real token.
+			$already = 0;
+			$names   = array();
+
+			if ( preg_match_all( '/var\(\s*--([a-zA-Z0-9_-]+)/', (string) $original_css, $vars ) ) {
+				$known = array_flip( array_map( 'strval', array_values( (array) $color_value_to_id ) ) );
+
+				foreach ( $vars[1] as $name ) {
+					if ( isset( $known[ $name ] ) ) {
+						$already++;
+						$names[ $name ] = true;
+					}
+				}
+			}
+
+			$out = array(
+				'color_replacements'          => $color_replacements,
+				'color_matches'               => isset( $result['color_matches_detail'] ) ? $result['color_matches_detail'] : array(),
+				'typography_rules_matched'    => $typography_matched,
+				'html_elements_class_applied' => (int) $html_apply_count,
+				// What there WAS to match against - the missing half of every
+				// zero above.
+				'color_tokens_available'      => count( (array) $color_value_to_id ),
+				'typography_presets_available' => count( (array) $typography_presets ),
+				'already_using_globals'       => $already,
+				'global_vars_in_css'          => array_keys( $names ),
+			);
+
+			if ( $color_replacements || $typography_matched || $html_apply_count ) {
+				$out['summary'] = sprintf(
+					'%d literal colour(s) converted to tokens, %d rule(s) matched a typography preset, %d element(s) given a preset class.',
+					$color_replacements,
+					$typography_matched,
+					$html_apply_count
+				);
+			} elseif ( ! $out['color_tokens_available'] && ! $out['typography_presets_available'] ) {
+				$out['summary'] = 'Nothing was converted because this site has NO design-system globals to convert to. Zero here is a fact about the site, not about your CSS.';
+			} elseif ( $already ) {
+				$out['summary'] = sprintf(
+					'Nothing was converted because the CSS is ALREADY using the design system - %d var(--token) reference(s). Zero here is the good outcome.',
+					$already
+				);
+			} else {
+				$out['summary'] = sprintf(
+					'Nothing matched. %d colour token(s) and %d typography preset(s) were available, and no literal value in this CSS equalled one of them. That is normal for bespoke values; it is worth a look if you meant to use the design system.',
+					$out['color_tokens_available'],
+					$out['typography_presets_available']
+				);
+			}
+
+			return $out;
 		}
 
 		/**
@@ -7440,13 +8174,14 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param array  $typography_presets Typography presets.
 		 * @return array<string, mixed>
 		 */
-		private static function mcp_apply_dynamic_globals_to_css( $css, $color_value_to_id, $typography_presets ) {
+		private static function mcp_apply_dynamic_globals_to_css( $css, $color_value_to_id, $typography_presets, &$stripped = array() ) {
 			$css = (string) $css;
 			$color_replacements = 0;
 			$color_matches_detail = array();
 			$typography_rules_matched = 0;
 			$unmatched_selectors = array();
 			$typography_class_targets = array();
+			$removed = array();
 
 			$typography_map = array(
 				'font-family' => 'font-family',
@@ -7472,7 +8207,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					&$color_matches_detail,
 					&$typography_rules_matched,
 					&$unmatched_selectors,
-					&$typography_class_targets
+					&$typography_class_targets,
+					&$removed
 				) {
 					$selector = isset( $rule_match[1] ) ? trim( (string) $rule_match[1] ) : '';
 					$body = isset( $rule_match[2] ) ? (string) $rule_match[2] : '';
@@ -7544,19 +8280,45 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 						$preset_id = isset( $matched_preset['preset_id'] ) ? sanitize_key( (string) $matched_preset['preset_id'] ) : '';
 						$class_name = isset( $matched_preset['class_name'] ) ? sanitize_html_class( (string) $matched_preset['class_name'] ) : '';
 						if ( '' !== $preset_id ) {
-							// Strip matched typography properties from this selector — the
-							// text-* Elementor global class added to the HTML element is the
-							// single source of truth for typography. Keeping var() duplicates
+							// Strip the typography properties THE PRESET DECLARES — the
+							// text-* global class added to the HTML element becomes the
+							// single source of truth for those, and keeping duplicates
 							// here would conflict with or override the global.
-							$decls = array_values(
-								array_filter(
-									$decls,
-									function ( $decl_row ) use ( $typography_map ) {
-										$prop_name = isset( $decl_row['property'] ) ? self::mcp_normalize_css_property( $decl_row['property'] ) : '';
-										return ! isset( $typography_map[ $prop_name ] );
-									}
-								)
-							);
+							//
+							// Only those. Stripping the whole typography family removed
+							// properties no preset sets, and for anything with a
+							// non-inherit UA default that is not a redundant removal
+							// but a behaviour change: no text-* preset declares
+							// text-decoration, browsers underline every <a>, so
+							// deleting an author's `text-decoration: none` puts the
+							// underline back. Same shape of bug for font-weight on
+							// <strong>/<h1-6> and font-style on <em>.
+							$preset_props = array();
+							foreach ( array_keys( $preset_decls ) as $preset_prop ) {
+								$preset_prop = self::mcp_normalize_css_property( (string) $preset_prop );
+								if ( '' !== $preset_prop && isset( $typography_map[ $preset_prop ] ) ) {
+									$preset_props[ $preset_prop ] = true;
+								}
+							}
+
+							$kept = array();
+							foreach ( $decls as $decl_row ) {
+								$prop_name = isset( $decl_row['property'] ) ? self::mcp_normalize_css_property( $decl_row['property'] ) : '';
+
+								if ( '' !== $prop_name && isset( $preset_props[ $prop_name ] ) ) {
+									$removed[] = array(
+										'selector' => $selector,
+										'property' => $prop_name,
+										'value'    => isset( $decl_row['value'] ) ? (string) $decl_row['value'] : '',
+										'reason'   => 'the .' . $class_name . ' typography preset applied to this element declares it',
+									);
+									continue;
+								}
+
+								$kept[] = $decl_row;
+							}
+
+							$decls = $kept;
 							$typography_rules_matched++;
 							if ( '' !== $class_name ) {
 								$replace_class = self::mcp_extract_typography_only_selector_class( $selector );
@@ -7626,6 +8388,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				$dedupe_seen[ $pair ] = true;
 				$dedupe_targets[] = $target;
 			}
+
+			$stripped = $removed;
 
 			return array(
 				'css' => $next_css,

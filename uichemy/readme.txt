@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.1.0
+Stable tag: 5.1.1
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -221,6 +221,12 @@ Yes. UiChemy supports multi-site connections directly from the plugin dashboard.
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.1.1 = 11 September 2026
+- Added : MCP can now set up custom post types and custom fields for you, using ACF or JetEngine.
+- Added : MCP abilities can now be used with different gateways.
+- Improved : More reliable AI website building, with clearer messages when a header or footer cannot be shown.
+- Fixed : Various bug fixes and improvements.
 
 = 5.1.0 = 1 September 2026
 - Added : New Composer, a visual editor to fine-tune your imported designs, no coding needed.

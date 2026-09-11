@@ -446,12 +446,12 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		 *
 		 * @return array<int,array{name:string,label:string,description:string,actions?:array<int,string>}>
 		 */
-		private static function list_abilities() {
+		private static function list_abilities( $apply_exclusions = true ) {
 			if ( ! function_exists( 'wp_get_abilities' ) ) {
 				return array();
 			}
 
-			$excluded = self::excluded_ability_names();
+			$excluded = $apply_exclusions ? self::excluded_ability_names() : array();
 			$found    = array();
 
 			foreach ( wp_get_abilities() as $ability ) {
@@ -499,12 +499,20 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		}
 
 		/**
-		 * Just the names from list_abilities(), for membership checks.
+		 * Every ability this endpoint will RESOLVE, which is a wider set than the
+		 * one it lists.
+		 *
+		 * Exclusions are a catalogue decision, not an access decision: an ability
+		 * we leave out of the list to avoid duplicating our own `instructions` key
+		 * still has to run when a model calls it by name — the briefing tells it to.
+		 * The namespace scope and the meta.mcp.public check are what actually keep
+		 * this gateway from becoming a site-wide ability runner, and both still
+		 * apply here.
 		 *
 		 * @return array<int,string>
 		 */
 		private static function served_ability_names() {
-			return wp_list_pluck( self::list_abilities(), 'name' );
+			return wp_list_pluck( self::list_abilities( false ), 'name' );
 		}
 
 		/**
@@ -585,12 +593,21 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		}
 
 		/**
-		 * The briefing, from the same source that feeds UiChemy's gateway.
+		 * The briefing.
 		 *
-		 * The block list runs through `uichemy_mcp_usage_guide` so a sibling plugin
-		 * that registers abilities into this namespace can brief the model on them
-		 * too. UiChemy's own block arrives through the same filter (see
-		 * UiChemy_Usage_Guide::init), so contributions simply append after it.
+		 * Assembly lives in UiChemy_Usage_Guide::instructions() because the same
+		 * text is also served as the `uichemy-composer/instructions` ability, which
+		 * is how every OTHER gateway on the site gets it. One assembler, so the
+		 * briefing PROSE is identical wherever it is read.
+		 *
+		 * The generated ability/action inventory is the one deliberate difference,
+		 * and it is switched off here: list_abilities() already carries every
+		 * ability's action names in this endpoint's own catalogue, so including the
+		 * inventory too would say the same thing twice in one response. Hosts that
+		 * drop `meta` from their discovery — some copy only name, label and
+		 * description — get it through the ability instead. Same reasoning as
+		 * hidden_from_own_gateway(): don't duplicate what the surface already
+		 * provides.
 		 *
 		 * @return string Markdown.
 		 */
@@ -599,29 +616,7 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 				return '';
 			}
 
-			/**
-			 * Filters the markdown blocks that make up the MCP discovery briefing.
-			 *
-			 * @since 5.0.2
-			 *
-			 * @param array<int,string> $blocks Markdown blocks, joined with a blank line.
-			 */
-			// Seeded EMPTY, not with add_guide(): UiChemy_Usage_Guide::init() has
-			// already hooked add_guide() onto this filter, so passing its output in
-			// as the seed would run it twice and emit the briefing twice over.
-			$blocks = apply_filters( 'uichemy_mcp_usage_guide', array() );
-			if ( ! is_array( $blocks ) ) {
-				return '';
-			}
-
-			$blocks = array_filter(
-				array_map( 'trim', array_filter( $blocks, 'is_string' ) ),
-				static function ( $block ) {
-					return '' !== $block;
-				}
-			);
-
-			return implode( "\n\n", $blocks );
+			return UiChemy_Usage_Guide::instructions( false );
 		}
 
 		// ============================================================
