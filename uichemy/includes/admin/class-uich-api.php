@@ -446,6 +446,65 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		}
 
 		/**
+		 * Plugins the one-click installer is allowed to install.
+		 *
+		 * `install_tpgb` takes its slug from the request, so without this
+		 * allowlist ANY wordpress.org plugin could be installed and activated
+		 * through it — including a build with a known RCE.
+		 *
+		 * Deliberately just the one plugin the handler exists for. Elementor has
+		 * its own handler (`uich_install_elementor()`) and the AI flow installs
+		 * Elementor/UiChemy/Nexter through `uich_install_plugin()`, which resolves
+		 * its slug from `uich_resolve_plugin_slug()` — neither comes through here.
+		 * Spectra/Kadence/GenerateBlocks are only ever *reported* as installed or
+		 * not (`is_spectra_installed` and friends); nothing installs them.
+		 *
+		 * Mapping the slug to its real plugin file also means activation never has
+		 * to guess `{$slug}/{$slug}.php`.
+		 *
+		 * @since 5.1.2
+		 *
+		 * @return array<string,string> wordpress.org slug => plugin basename.
+		 */
+		private function uich_installable_plugins() {
+			$map = array(
+				'the-plus-addons-for-block-editor' => $this->tpgb_plugin_path,
+			);
+
+			/**
+			 * Filter the one-click-installable plugins.
+			 *
+			 * Must stay a slug => plugin-file map. Adding a slug here grants anyone
+			 * who can reach the installer the ability to install that plugin.
+			 *
+			 * @since 5.1.2
+			 *
+			 * @param array<string,string> $map wordpress.org slug => plugin basename.
+			 */
+			$map = (array) apply_filters( 'uich_installable_plugins', $map );
+
+			return array_filter( $map, 'is_string' );
+		}
+
+		/**
+		 * Whether the current user may install AND activate plugins.
+		 *
+		 * `manage_options` is NOT enough on its own. On multisite a site admin has
+		 * `manage_options` while core maps `install_plugins` to `do_not_allow` for
+		 * every non-super-admin, and `DISALLOW_FILE_MODS` is enforced the same way
+		 * — by removing the capability, since `Plugin_Upgrader` never consults
+		 * `wp_is_file_mod_allowed()` itself. Checking the real capabilities is what
+		 * makes both of those restrictions hold here.
+		 *
+		 * @since 5.1.2
+		 *
+		 * @return bool
+		 */
+		private function uich_can_install_plugins() {
+			return current_user_can( 'install_plugins' ) && current_user_can( 'activate_plugins' );
+		}
+
+		/**
 		 * Build a status struct for one plugin: installed/active/version plus
 		 * update info. Uses WP's own `update_plugins` transient — this is the
 		 * SAME source the Plugins screen uses to decide whether an update is
@@ -808,6 +867,15 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * Activate an already-installed plugin (Elementor / UiChemy).
 		 */
 		public function uich_handle_plugin_activate( WP_REST_Request $request ) {
+			// The route only guarantees `manage_options`. On multisite core maps
+			// `activate_plugins` to additionally require `manage_network_plugins`
+			// whenever the network admin has left the Plugins menu disabled
+			// (`menu_items['plugins']`, wp-includes/capabilities.php:654-665), so a
+			// site admin must not be able to activate through here either.
+			if ( ! current_user_can( 'activate_plugins' ) ) {
+				return new WP_Error( 'forbidden', 'You do not have permission to activate plugins.', array( 'status' => 403 ) );
+			}
+
 			$slug              = sanitize_key( (string) $request->get_param( 'slug' ) );
 			$resolved          = $this->uich_resolve_plugin_slug( $slug );
 			$with_nexter_theme = $request->get_param( 'with_nexter_theme' ) !== false;
@@ -890,7 +958,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				return new WP_Error( 'invalid_slug', 'Unknown plugin slug.', array( 'status' => 400 ) );
 			}
 
-			if ( ! current_user_can( 'install_plugins' ) ) {
+			if ( ! current_user_can( 'install_plugins' ) || ! current_user_can( 'activate_plugins' ) ) {
 				return new WP_Error( 'forbidden', 'You do not have permission to install plugins.', array( 'status' => 403 ) );
 			}
 
@@ -980,8 +1048,12 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * @return void
 		 */
 		private function uich_setup_nexter_companion() {
+			// Installing a theme and switching the active theme are theme
+			// capabilities — the callers only established the plugin ones. Each
+			// step is skipped rather than fataling, since the whole companion is
+			// best-effort and must never fail the plugin install.
 			// 1. Install the Nexter theme if it isn't already present.
-			if ( ! wp_get_theme( 'nexter' )->exists() ) {
+			if ( ! wp_get_theme( 'nexter' )->exists() && current_user_can( 'install_themes' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/file.php';
 				require_once ABSPATH . 'wp-admin/includes/misc.php';
 				require_once ABSPATH . 'wp-admin/includes/theme.php';
@@ -1003,7 +1075,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			}
 
 			// 1b. Activate the Nexter theme so its optimization controls take effect.
-			if ( wp_get_theme( 'nexter' )->exists() && 'nexter' !== get_stylesheet() ) {
+			if ( wp_get_theme( 'nexter' )->exists() && 'nexter' !== get_stylesheet() && current_user_can( 'switch_themes' ) ) {
 				switch_theme( 'nexter' );
 			}
 
@@ -2284,6 +2356,10 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * @since 1.0.0
 		 * */
 		public function uich_install_elementor() {
+			if ( ! $this->uich_can_install_plugins() ) {
+				return $this->uich_response( 'Not Allowed', 'You do not have permission to install plugins.', false, '' );
+			}
+
 			include_once ABSPATH . 'wp-admin/includes/file.php';
 			include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 			include_once ABSPATH . 'wp-admin/includes/class-automatic-upgrader-skin.php';
@@ -2459,16 +2535,32 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * @since 2.3.2
 		 * */
 		public function uich_install_tpgb() {
+			if ( ! $this->uich_can_install_plugins() ) {
+				return $this->uich_response( 'Not Allowed', 'You do not have permission to install plugins.', false, '' );
+			}
+
+			$raw_slug = isset( $_POST['pluginName'] ) ? wp_unslash( $_POST['pluginName'] ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce verified in uich_api_call().
+
+			// `pluginName[]=x` would reach sanitize_key() as an array and fatal on
+			// its strtolower(). Non-scalars just fail the allowlist instead.
+			$pluginName = is_scalar( $raw_slug ) ? sanitize_key( (string) $raw_slug ) : '';
+
+			$allowed = $this->uich_installable_plugins();
+
+			if ( ! isset( $allowed[ $pluginName ] ) ) {
+				return $this->uich_response( 'Not Allowed', 'This plugin cannot be installed.', false, '' );
+			}
+
+			$plugin_file = $allowed[ $pluginName ];
+
 			include_once ABSPATH . 'wp-admin/includes/file.php';
 			include_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 			include_once ABSPATH . 'wp-admin/includes/class-automatic-upgrader-skin.php';
 
-			$pluginName = isset( $_POST['pluginName'] ) ? strtolower( sanitize_text_field( wp_unslash( $_POST['pluginName'] ) ) ) : false;  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
-
 			// Resolve the package from wordpress.org via WP's native plugins_api()
 			// (HTTPS + JSON) instead of unserialize()-ing a raw remote HTTP body,
 			// which is a PHP object-injection sink on a tampered/MITM'd response.
-			$wporg = $pluginName ? $this->uich_lookup_wporg_info( $pluginName ) : null;
+			$wporg = $this->uich_lookup_wporg_info( $pluginName );
 			if ( ! $wporg || empty( $wporg['download_link'] ) ) {
 				return $this->uich_response( 'Something Went Wrong', 'get body', false, '' );
 			}
@@ -2493,9 +2585,9 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 
 				return $this->uich_response( 'Successfully Activated!', 'The Plus Blocks for Block Editor Installed and Activated Successfully.', $success, '' );
 			} else {
-				activate_plugin( $pluginName . '/' . $pluginName . '.php' );
+				activate_plugin( $plugin_file );
 
-				if ( is_plugin_active( $pluginName . '/' . $pluginName . '.php' ) ) {
+				if ( is_plugin_active( $plugin_file ) ) {
 					return $this->uich_response( 'Successfully Activated!', 'The Plus Blocks for Block Editor Installed and Activated Successfully.', true, '' );
 				} else {
 					return $this->uich_response( 'Something Went Wrong', 'Not Activate Plugin', false, '' );
