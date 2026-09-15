@@ -298,6 +298,9 @@ if ( ! class_exists( 'UiChemy_Gutenberg_Composer' ) ) {
 				// inside the JS from closing the tag early.
 				if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
 					$raw_js = UiChemy_Composer_Renderer::decode_code_entities( $raw_js );
+					// Motion variables -> values preamble + property reads. Runs after
+					// the decode above so the declaration block's JSON is intact.
+					$raw_js = UiChemy_Composer_Renderer::compile_motion( $raw_js );
 				}
 				$safe_js = preg_replace( '#</(script)#i', '<\\\\/$1', $raw_js );
 				// data-cfasync="false" => skip Cloudflare Rocket Loader.

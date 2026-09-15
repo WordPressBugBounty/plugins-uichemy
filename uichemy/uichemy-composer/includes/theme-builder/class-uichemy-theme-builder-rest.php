@@ -76,7 +76,7 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_REST' ) ) {
 							'type'   => array(
 								'required'    => false,
 								'type'        => 'string',
-								'description' => 'Limit to one location type (header, footer, single, archive, single_product, product_archive, search, error_404).',
+								'description' => 'Limit to one location type (header, footer, single, archive, single_product, product_archive, order_received, search, error_404).',
 							),
 							'render' => array(
 								'required'    => false,

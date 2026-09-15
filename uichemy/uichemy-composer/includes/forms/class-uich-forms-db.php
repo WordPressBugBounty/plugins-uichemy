@@ -59,7 +59,7 @@ if ( ! class_exists( 'Uich_Forms_DB' ) ) {
 				KEY created_at_index (created_at)
 			) {$charset_collate};";
 
-			$sql_vals = "CREATE TABLE `{$vals}` (
+			$sql_vals = "CREATE TABLE IF NOT EXISTS `{$vals}` (
 				id bigint(20) unsigned auto_increment primary key,
 				submission_id bigint(20) unsigned not null default 0,
 				`key` varchar(190) null,
@@ -70,7 +70,39 @@ if ( ! class_exists( 'Uich_Forms_DB' ) ) {
 
 			require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 			dbDelta( $sql_subs );
-			dbDelta( $sql_vals );
+
+			/*
+			 * NOT dbDelta(), because this table has a column named `key`.
+			 *
+			 * dbDelta strips backticks BEFORE it checks a field name against
+			 * its reserved list - wp-admin/includes/upgrade.php does
+			 * `$fieldname = trim( $fvals[1], '`' )` and then `case 'key':
+			 * $validfield = false;` - so `key` varchar(190) is read as an
+			 * index definition no matter how it is quoted. The index regex
+			 * that follows then matches nothing, and type, name and columns
+			 * all come back empty.
+			 *
+			 * On a fresh install that is invisible: no table exists, so
+			 * dbDelta just runs the CREATE and the column is made correctly.
+			 * On every RE-activation, where the table exists and dbDelta
+			 * diffs instead, it emits `ALTER TABLE ... ADD  `` (``)`, which
+			 * fails and writes a "WordPress database error" into the site's
+			 * debug log attributed to UiChemy's activation hook.
+			 *
+			 * Nothing is ever actually missing - dbDelta does not treat the
+			 * column as a column, so it never tries to add or alter it - the
+			 * spurious error IS the whole problem. A plain CREATE TABLE IF
+			 * NOT EXISTS produces the same table and no error.
+			 *
+			 * What this gives up is dbDelta's schema upgrades for this table,
+			 * which it never actually had for the same reason. Column changes
+			 * here belong in ensure_columns(), next to the ones dbDelta misses
+			 * on the submissions table. Renaming `key` to `field_key` is the
+			 * real fix and needs a data migration, so it is not a patch-level
+			 * change.
+			 */
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Schema DDL; the table name is a trusted $wpdb->prefix constant and the statement carries no user input.
+			$wpdb->query( $sql_vals );
 
 			update_option( 'uich_forms_db_version', self::DB_VERSION );
 		}

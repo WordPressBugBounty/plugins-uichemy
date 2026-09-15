@@ -4527,6 +4527,17 @@ class Uich_Webpage_Import {
 					$label = $inner;
 				}
 				$key = $this->normalize_nav_menu_filterlabel( $label );
+
+				/*
+				 * The logo anchor carries no text to match on, so label matching
+				 * always skipped it and every imported header shipped a logo that
+				 * goes nowhere. Its destination is not a guess though — a site
+				 * logo links home, on every site — so resolve it by shape instead.
+				 */
+				if ( '' === $key && $this->composer_anchor_is_site_logo( $inner ) ) {
+					return '<a' . preg_replace( '/\bhref\s*=\s*("|\')#?\1/u', 'href="' . esc_url( home_url( '/' ) ) . '"', $attrs, 1 ) . '>' . $inner . '</a>';
+				}
+
 				$url = $this->match_composer_nav_label_to_url( $key, $label_to_url );
 				if ( '' === $url ) {
 					return $tag;
@@ -4551,6 +4562,28 @@ class Uich_Webpage_Import {
 	 * @param array  $label_to_url Map normalized page title => permalink.
 	 * @return string Permalink or '' when no unambiguous match.
 	 */
+	/**
+	 * Whether an anchor's contents are just the site logo.
+	 *
+	 * Matched on the marker the exporter stamps (`uichemy-logo`, or a
+	 * `data-icon="logo…"` on the svg/img) rather than on "there is an image and
+	 * no text" — a bare icon link (cart, search, account) also has no text, and
+	 * sending those home would be worse than leaving them alone.
+	 *
+	 * @param string $inner Anchor inner HTML.
+	 * @return bool
+	 */
+	protected function composer_anchor_is_site_logo( $inner ) {
+		$inner = (string) $inner;
+		if ( '' === $inner ) {
+			return false;
+		}
+		if ( false !== stripos( $inner, 'uichemy-logo' ) ) {
+			return true;
+		}
+		return (bool) preg_match( '/data-icon\s*=\s*("|\')\s*logo/i', $inner );
+	}
+
 	protected function match_composer_nav_label_to_url( $key, array $label_to_url ) {
 		if ( '' === $key ) {
 			return '';
@@ -4558,14 +4591,100 @@ class Uich_Webpage_Import {
 		if ( isset( $label_to_url[ $key ] ) ) {
 			return (string) $label_to_url[ $key ];
 		}
-		$prefix  = $key . ' ';
-		$matches = array();
-		foreach ( $label_to_url as $title_key => $url ) {
-			if ( 0 === strpos( $title_key, $prefix ) ) {
-				$matches[] = $url;
+
+		/*
+		 * Designed navigation rarely spells a page title back verbatim — a footer
+		 * ships "Our Story", "Reach Out", "Plans" for pages actually titled About,
+		 * Contact and Pricing. Title-prefix matching alone left whole menus on
+		 * href="#" (measured on a real import: navbar 4/5 resolved, footer 0/10).
+		 *
+		 * The two fallbacks below widen the net without ever guessing: each must
+		 * resolve to EXACTLY ONE page or it returns '' and the anchor is left
+		 * exactly as the design had it. A wrong link is worse than a dead one.
+		 */
+
+		// 1. Whole-word containment, either direction. Catches "Services" →
+		//    "Our Services" (which a prefix test misses) and "Pricing Plans" →
+		//    "Pricing", while "Cart" still cannot match "Shopping Cart Terms"
+		//    unless that is the only candidate.
+		$matches = $this->unique_nav_match( $key, $label_to_url );
+		if ( '' !== $matches ) {
+			return $matches;
+		}
+
+		// 2. Common editorial synonyms for the handful of pages every site has.
+		//    Only consulted when nothing above matched, and still required to be
+		//    unambiguous.
+		foreach ( $this->nav_label_aliases() as $alias => $canonical ) {
+			if ( $key !== $alias ) {
+				continue;
+			}
+			if ( isset( $label_to_url[ $canonical ] ) ) {
+				return (string) $label_to_url[ $canonical ];
+			}
+			$aliased = $this->unique_nav_match( $canonical, $label_to_url );
+			if ( '' !== $aliased ) {
+				return $aliased;
 			}
 		}
-		return 1 === count( $matches ) ? (string) $matches[0] : '';
+
+		return '';
+	}
+
+	/**
+	 * Resolve a label against page titles by whole-word containment, in either
+	 * direction, and only when exactly one page qualifies.
+	 *
+	 * Whole-word is what keeps this safe: a substring test would let "Art" match
+	 * "Start Here", and "Us" match every page with "Us" inside a word.
+	 *
+	 * @param string $key          Normalized label.
+	 * @param array  $label_to_url Map normalized page title => permalink.
+	 * @return string Permalink, or '' when zero or several pages qualify.
+	 */
+	protected function unique_nav_match( $key, array $label_to_url ) {
+		if ( '' === $key ) {
+			return '';
+		}
+		$quoted  = preg_quote( $key, '/' );
+		$matches = array();
+		foreach ( $label_to_url as $title_key => $url ) {
+			if ( preg_match( '/\b' . $quoted . '\b/u', $title_key )
+				|| preg_match( '/\b' . preg_quote( $title_key, '/' ) . '\b/u', $key )
+			) {
+				$matches[ $url ] = $url;
+			}
+		}
+		return 1 === count( $matches ) ? (string) reset( $matches ) : '';
+	}
+
+	/**
+	 * Editorial nav label => the page title it conventionally points at.
+	 *
+	 * Deliberately short. Every entry is a phrase that means one specific page on
+	 * essentially any site; anything more inventive (a label naming a product or
+	 * a section) is left alone rather than linked to a guess.
+	 *
+	 * @return array<string,string>
+	 */
+	protected function nav_label_aliases() {
+		return array(
+			'reach out'        => 'contact',
+			'get in touch'     => 'contact',
+			'say hello'        => 'contact',
+			'contact us'       => 'contact',
+			'our story'        => 'about',
+			'who we are'       => 'about',
+			'about us'         => 'about',
+			'join us'          => 'careers',
+			'work with us'     => 'careers',
+			'plans'            => 'pricing',
+			'our work'         => 'portfolio',
+			'case studies'     => 'portfolio',
+			'journal'          => 'blog',
+			'insights'         => 'blog',
+			'news'             => 'blog',
+		);
 	}
 
 	/**

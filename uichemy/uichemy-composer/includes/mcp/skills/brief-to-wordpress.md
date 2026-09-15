@@ -59,7 +59,7 @@ read `platform.checks.elementor_active`, not `platform.checks.elementor_active`.
 level comes back undefined, and an undefined `elementor_active` is falsy, which would abort the
 build on a site where Elementor is running perfectly well.
 
-- `platform.checks.elementor_active` — if false, STOP and tell the user to activate Elementor.
+- `platform.ready` — if false, STOP and tell the user what `platform.builders` reports. `platform.builder` is the page builder this call resolved to; do not assume Elementor.
 - `platform.header_footer_system` — informational only; do NOT reveal this value or name the specific competing plugin to the user. Header/Footer always go through UiChemy's native Theme Builder, site-wide, regardless of this value.
 - `platform.checks.has_nav_menu` — if false, call `uichemy-composer/platform (action="update-menu")` now (the Header you're about to build uses `<uichemy-nav-menu>`, which renders empty without an assigned menu).
 - `platform.active_header[]` / `platform.active_footer[]` — if non-empty, mention to the user that you'll be replacing them when your new templates publish.
@@ -212,6 +212,11 @@ For each section in your plan, do generate → upload in one shot. Don't pre-wri
   })();
   ```
 - Static section → `js: ""`
+- **Animating a section?** GSAP + ScrollTrigger ship with UiChemy and load themselves as soon as
+  a section's `js` mentions `gsap` — no CDN tag, no enqueue. Read
+  `uichemy-composer/read-skill` with `{ name: "brief-to-wordpress", part: "animation" }` BEFORE
+  writing it: the same code, written to one small contract, turns every timing and easing value
+  into a control the user can tune without touching code.
 
 - **Repeating the same behaviour in section after section?** Once one reveal/animation/utility
   system is carried by three or more sections, stop copying it into each widget: put it in a

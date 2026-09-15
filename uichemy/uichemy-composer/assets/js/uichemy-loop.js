@@ -178,7 +178,22 @@
 
 	/** Elementor's stable per-element class, used to find the same loop in the response. */
 	function widgetSelector( el ) {
-		var w = el.closest( '.elementor-widget, .elementor-element' );
+		// Gutenberg and Bricks both put a per-instance `uichemy-composer-<uid>`
+		// class on the wrapper, so they share one path. Elementor does not — it
+		// scopes by its own `elementor-element-<id>` — so it needs the second.
+		// Without this the page controls found no widget in Gutenberg/Bricks and
+		// silently fell back to a full page load.
+		var w = el.closest( '[class*="uichemy-composer-"]' );
+		if ( w ) {
+			// The trailing "-" in the pattern is what keeps this from matching the
+			// bare `wp-block-uichemy-composer` / `uichemy-bricks-composer` classes.
+			var u = String( w.className || '' ).match( /\buichemy-composer-([\w-]+)/ );
+			if ( u ) {
+				return { sel: '.uichemy-composer-' + u[ 1 ], node: w };
+			}
+		}
+
+		w = el.closest( '.elementor-widget, .elementor-element' );
 		if ( ! w ) {
 			return null;
 		}
@@ -386,5 +401,409 @@
 		} ).finally( done );
 	}
 
+
+	/* ── filters ───────────────────────────────────────────────────────────────
+	 *
+	 * Same principle as the page controls: a filter never invents a query. It
+	 * re-requests THIS page with different query args — a URL the visitor could
+	 * type — and lifts the re-rendered loop out of the response. So there is
+	 * still no endpoint, the query stays server-authored inside the template
+	 * (`get_products({ ... request.get('color') ... })`), and with JS off the
+	 * form submits and the links navigate exactly as before.
+	 *
+	 * The author opts in and says what to swap. Name EVERY region the filter
+	 * changes, not just the grid — the sidebar's active states and counts go
+	 * stale the moment the results change, and a page whose sidebar still says
+	 * "Red" over a list of blue shirts is worse than one that reloaded:
+	 *
+	 *   <aside id="filters">
+	 *     <form data-uich-filter="#products,#filters">…</form>
+	 *     <a href="?color=red" data-uich-filter="#products,#filters">Red</a>
+	 *     <a data-uich-filter="#products,#filters" data-uich-filter-reset="color">Reset</a>
+	 *   </aside>
+	 *   <div id="products"> {% for p in get_products({…}) %} … {% endfor %} </div>
+	 *
+	 * Builder-agnostic on purpose — it keys on the author's own selector rather
+	 * than an Elementor wrapper class, so it behaves the same in Gutenberg and
+	 * Bricks.
+	 */
+
+	/**
+	 * Every container a filter control refreshes.
+	 *
+	 * `data-uich-filter` takes a comma-separated list, because a filter UI is
+	 * almost never only the results: the swatches carry active states and counts
+	 * that are just as stale after a filter change as the product grid is. With
+	 * only the grid swapped, the sidebar keeps saying "Red" is selected and
+	 * "Blue (2)" while showing blue products — half the page lying about the
+	 * other half.
+	 *
+	 *   data-uich-filter="#results"            grid only
+	 *   data-uich-filter="#results,#filters"   grid + the sidebar that drives it
+	 *
+	 * The FIRST selector is the primary: it gets the loading skeleton and the
+	 * scroll-into-view. Returns [] if nothing resolves, which leaves the control
+	 * as the plain link or form it always was.
+	 *
+	 * @param {Element} el The filter control.
+	 * @return {Element[]}
+	 */
+	function filterTargets( el ) {
+		var raw = el.getAttribute( 'data-uich-filter' );
+		if ( ! raw ) {
+			return [];
+		}
+		var out = [];
+		raw.split( ',' ).forEach( function ( sel ) {
+			sel = sel.trim();
+			if ( ! sel ) {
+				return;
+			}
+			var node;
+			try {
+				node = document.querySelector( sel );
+			} catch ( e ) {
+				// A malformed selector is an authoring mistake, not a reason to
+				// break the control.
+				return;
+			}
+			if ( node && out.indexOf( node ) === -1 ) {
+				out.push( { sel: sel, node: node } );
+			}
+		} );
+		return out;
+	}
+
+	/**
+	 * The URL to request for a filter change.
+	 *
+	 * A form contributes every named field it has; a link contributes its own
+	 * href. Either way the result is this path plus query args, never another
+	 * origin — a filter must not become an open redirect.
+	 */
+	function filterUrl( el ) {
+		var url;
+		if ( 'FORM' === el.tagName ) {
+			// Start from the CURRENT query, not an empty one. A form owns only its
+			// own field names; anything else on the URL — a sort order, a category,
+			// a campaign tag, another filter form's params — belongs to someone
+			// else and must survive. Clearing the whole query dropped all of it.
+			url = new URL( el.getAttribute( 'action' ) || window.location.href, window.location.origin );
+			if ( ! el.getAttribute( 'action' ) ) {
+				url.search = window.location.search;
+			}
+			var owned = {};
+			Array.prototype.forEach.call( el.elements || [], function ( field ) {
+				if ( field.name ) {
+					owned[ field.name ] = true;
+				}
+			} );
+			Object.keys( owned ).forEach( function ( name ) {
+				url.searchParams.delete( name );
+			} );
+			new FormData( el ).forEach( function ( value, key ) {
+				if ( '' !== String( value ) ) {
+					url.searchParams.append( key, value );
+				}
+			} );
+		} else {
+			url = new URL( el.getAttribute( 'href' ), window.location.href );
+		}
+		if ( url.origin !== window.location.origin ) {
+			return null;
+		}
+		// A filter change starts a new result set, so drop any page cursor.
+		url.searchParams.delete( 'loop_page' );
+		url.searchParams.delete( 'paged' );
+		return url;
+	}
+
+	/**
+	 * Fetch `url` once and swap every target from that single response.
+	 *
+	 * @param {Element}   el      The filter control.
+	 * @param {Object[]}  targets From filterTargets(); [0] is the primary.
+	 * @param {URL}       url     Where to re-request.
+	 */
+	function applyFilter( el, targets, url ) {
+		var primary = targets[ 0 ].node;
+		if ( primary.classList.contains( BUSY ) ) {
+			return;
+		}
+
+		var existing = itemsIn( primary );
+		var sample = existing[ existing.length - 1 ] || existing[ 0 ];
+
+		primary.classList.add( BUSY );
+		primary.setAttribute( 'aria-busy', 'true' );
+
+		// A filter replaces the whole result set, so stand in for all of it —
+		// the same shape the numbered-page branch uses. Build the placeholders
+		// BEFORE hiding the originals, or the clone source is already
+		// display:none and every skeleton inherits it.
+		var skel = sample ? makeSkeletons( sample, existing.length || 3 ) : null;
+		for ( var i = 0; i < existing.length; i++ ) {
+			// Not the `hidden` attribute — see the note in onClick(): an author
+			// rule setting display on the item beats the UA's [hidden] rule.
+			existing[ i ].style.setProperty( 'display', 'none', 'important' );
+		}
+		if ( skel ) {
+			primary.appendChild( skel );
+		}
+
+		var restore = function () {
+			clearSkeletons( primary );
+			for ( var r = 0; r < existing.length; r++ ) {
+				existing[ r ].style.removeProperty( 'display' );
+			}
+		};
+
+		var done = function () {
+			primary.classList.remove( BUSY );
+			primary.removeAttribute( 'aria-busy' );
+		};
+
+		fetchDoc( url.href ).then( function ( doc ) {
+			// The primary must be present or we have not got the page we asked
+			// for. Secondary regions are allowed to be absent — a sidebar that
+			// only renders on some views should not fail the whole swap.
+			var primaryNext = doc.querySelector( targets[ 0 ].sel );
+			if ( ! primaryNext ) {
+				throw new Error( 'target missing in response' );
+			}
+
+			targets.forEach( function ( t ) {
+				var next = doc.querySelector( t.sel );
+				if ( ! next ) {
+					return;
+				}
+				// Unlike a page change, an empty result IS a valid answer here: a
+				// filter that matches nothing must be allowed to show the
+				// template's own empty state, or the visitor cannot tell "no red
+				// shirts" from a broken control.
+				var out = document.createDocumentFragment();
+				Array.prototype.forEach.call( next.childNodes, function ( n ) {
+					out.appendChild( document.importNode( n, true ) );
+				} );
+				hydrateLazyMedia( out );
+				t.node.replaceChildren( out );
+			} );
+
+			// Keep the address bar honest: the filtered view is a real URL, so it
+			// must be shareable and the back button must undo the filter.
+			if ( window.history && window.history.pushState ) {
+				window.history.pushState( { uichFilter: el.getAttribute( 'data-uich-filter' ) }, '', url.href );
+			}
+
+			// Document-wide, not just inside the swapped regions: the form that
+			// drives a filter usually sits OUTSIDE the results container, so
+			// scoping this to the target left it showing the previous filter.
+			syncFormsFromUrl( document );
+
+			primary.dispatchEvent( new CustomEvent( 'uichemy:loop-filter', {
+				bubbles: true,
+				detail: { url: url.href },
+			} ) );
+		} ).catch( function () {
+			restore();
+			window.location.href = url.href;
+		} ).finally( done );
+	}
+
+	/**
+	 * Put the URL's filter state back onto the controls.
+	 *
+	 * Without this a filtered page renders its results correctly and its form
+	 * blank — the select says "Any" next to a list of red shirts — so a shared or
+	 * bookmarked filter URL looks broken, and changing a second filter silently
+	 * discards the first because the form submits what it can see.
+	 *
+	 * Runs on load and again after every swap, since the form may itself sit
+	 * inside the replaced container.
+	 *
+	 * @param {ParentNode} root Where to look for filter forms.
+	 */
+	function syncFormsFromUrl( root ) {
+		var params = new URLSearchParams( window.location.search );
+		var forms = ( root || document ).querySelectorAll( 'form[data-uich-filter]' );
+
+		Array.prototype.forEach.call( forms, function ( form ) {
+			Array.prototype.forEach.call( form.elements || [], function ( field ) {
+				if ( ! field.name || field.disabled ) {
+					return;
+				}
+				var values = params.getAll( field.name );
+				var type = ( field.type || '' ).toLowerCase();
+
+				if ( 'checkbox' === type || 'radio' === type ) {
+					// A group shares one name, so match on the value, and only
+					// touch the group when the URL actually mentions it — leaving a
+					// server-rendered default checked otherwise.
+					if ( params.has( field.name ) ) {
+						field.checked = values.indexOf( field.value ) !== -1;
+					}
+					return;
+				}
+
+				if ( 'select-multiple' === type ) {
+					Array.prototype.forEach.call( field.options, function ( opt ) {
+						opt.selected = values.indexOf( opt.value ) !== -1;
+					} );
+					return;
+				}
+
+				if ( 'submit' === type || 'button' === type || 'reset' === type || 'file' === type || 'password' === type ) {
+					return;
+				}
+
+				// select-one, text, number, hidden, range, date…
+				field.value = values.length ? values[ 0 ] : '';
+			} );
+
+			form.dispatchEvent( new CustomEvent( 'uichemy:filter-synced', { bubbles: true } ) );
+		} );
+	}
+
+	/**
+	 * A reset control: `<a data-uich-filter="#results" data-uich-filter-reset>`.
+	 *
+	 * Clears every param the sibling filter forms own — not the whole query, so
+	 * an unrelated arg on the URL survives a reset the same way it survives a
+	 * filter change.
+	 *
+	 * @param {Element} el The reset control.
+	 * @return {URL|null}
+	 */
+	function resetUrl( el ) {
+		var url = new URL( window.location.href );
+		var sel = el.getAttribute( 'data-uich-filter' );
+		var scope = el.closest( 'form' ) ? el.closest( 'form' ).parentNode : document;
+
+		Array.prototype.forEach.call( scope.querySelectorAll( 'form[data-uich-filter="' + sel + '"]' ), function ( form ) {
+			Array.prototype.forEach.call( form.elements || [], function ( field ) {
+				if ( field.name ) {
+					url.searchParams.delete( field.name );
+				}
+			} );
+		} );
+
+		// Named params on the control itself, for a reset that also clears
+		// controls that are not form fields (a chip, a sort link).
+		var extra = el.getAttribute( 'data-uich-filter-reset' );
+		if ( extra ) {
+			extra.split( ',' ).forEach( function ( name ) {
+				name = name.trim();
+				if ( name ) {
+					url.searchParams.delete( name );
+				}
+			} );
+		}
+
+		url.searchParams.delete( 'loop_page' );
+		url.searchParams.delete( 'paged' );
+		return url;
+	}
+
+	function onFilterSubmit( ev ) {
+		var form = ev.target;
+		if ( ! form || 'FORM' !== form.tagName || ! form.hasAttribute( 'data-uich-filter' ) ) {
+			return;
+		}
+		var targets = filterTargets( form );
+		var url = targets.length ? filterUrl( form ) : null;
+		if ( ! targets.length || ! url ) {
+			return;
+		}
+		ev.preventDefault();
+		applyFilter( form, targets, url );
+	}
+
+	/** Auto-submit on change, so a select or checkbox needs no Apply button. */
+	function onFilterChange( ev ) {
+		var el = ev.target;
+		if ( ! el || typeof el.closest !== 'function' ) {
+			return;
+		}
+		var form = el.closest( 'form[data-uich-filter]' );
+		if ( ! form || form.hasAttribute( 'data-uich-manual' ) ) {
+			return;
+		}
+		form.dispatchEvent( new Event( 'submit', { bubbles: true, cancelable: true } ) );
+	}
+
+	function onFilterClick( ev ) {
+		var t = ev.target;
+		if ( ! t || typeof t.closest !== 'function' ) {
+			return;
+		}
+		if ( ev.defaultPrevented || ev.button !== 0 || ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.altKey ) {
+			return;
+		}
+		var link = t.closest( 'a[data-uich-filter], button[data-uich-filter]' );
+		if ( ! link ) {
+			return;
+		}
+		var targets = filterTargets( link );
+		var url = targets.length
+			? ( link.hasAttribute( 'data-uich-filter-reset' ) ? resetUrl( link ) : filterUrl( link ) )
+			: null;
+		if ( ! targets.length || ! url ) {
+			return;
+		}
+		ev.preventDefault();
+		applyFilter( link, targets, url );
+	}
+
+	document.addEventListener( 'submit', onFilterSubmit );
+	document.addEventListener( 'change', onFilterChange );
+	document.addEventListener( 'click', onFilterClick );
+
+	// Back/forward across filter states: re-request the URL the browser restored
+	// rather than trusting a cached DOM, so the result always matches the address.
+	window.addEventListener( 'popstate', function ( ev ) {
+		var raw = ev.state && ev.state.uichFilter;
+		if ( ! raw ) {
+			return;
+		}
+		var sels = raw.split( ',' ).map( function ( x ) {
+			return x.trim();
+		} ).filter( Boolean );
+
+		fetchDoc( window.location.href ).then( function ( doc ) {
+			sels.forEach( function ( sel ) {
+				var here, next;
+				try {
+					here = document.querySelector( sel );
+					next = doc.querySelector( sel );
+				} catch ( e ) {
+					return;
+				}
+				if ( ! here || ! next ) {
+					return;
+				}
+				var out = document.createDocumentFragment();
+				Array.prototype.forEach.call( next.childNodes, function ( n ) {
+					out.appendChild( document.importNode( n, true ) );
+				} );
+				hydrateLazyMedia( out );
+				here.replaceChildren( out );
+			} );
+			syncFormsFromUrl( document );
+		} ).catch( function () {} );
+	} );
+
 	document.addEventListener( 'click', onClick );
+
+	// A filter URL must look filtered the moment it loads, however it was
+	// reached: a fresh navigation, a shared link, or the back button.
+	if ( 'loading' === document.readyState ) {
+		document.addEventListener( 'DOMContentLoaded', function () {
+			syncFormsFromUrl( document );
+		} );
+	} else {
+		syncFormsFromUrl( document );
+	}
+	window.addEventListener( 'popstate', function () {
+		syncFormsFromUrl( document );
+	} );
 }());

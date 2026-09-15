@@ -332,6 +332,10 @@ class UiChemy_Bricks_Composer extends \Bricks\Element {
 			add_action(
 				'wp_footer',
 				function () use ( $uid, $raw_js ) {
+					// Motion variables -> values preamble + property reads.
+					if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
+						$raw_js = UiChemy_Composer_Renderer::compile_motion( $raw_js );
+					}
 					$safe_js = preg_replace( '#</(script)#i', '<\\\\/$1', $raw_js );
 					echo "\n<script id=\"uichemy-composer-js-" . esc_attr( $uid ) . '" data-cfasync="false" data-no-optimize="1">';
 					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped

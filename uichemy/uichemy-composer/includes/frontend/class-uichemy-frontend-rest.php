@@ -268,45 +268,27 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 				return new WP_Error( 'uichemy_no_dep', 'Composer manager class missing.', array( 'status' => 500 ) );
 			}
 
-			if ( 'gutenberg' === $builder ) {
-				$result = UiChemy_Composer_Manager::mcp_insert_gutenberg_section(
-					$post_id,
-					array(
-						'html'  => $html,
-						'css'   => $css,
-						'js'    => $js,
-						'label' => $label,
-					)
-				);
-			} elseif ( 'bricks' === $builder ) {
-				$result = UiChemy_Composer_Manager::mcp_insert_bricks_section(
-					$post_id,
-					array(
-						'html'  => $html,
-						'css'   => $css,
-						'js'    => $js,
-						'label' => $label,
-					)
-				);
-			} else {
-				// Elementor (default) — reuse the existing server-side inserter.
-				$result = UiChemy_Composer_Manager::mcp_insert_section_at_index(
-					array(
-						'post_id'       => $post_id,
-						'insert_index'  => $insert_index,
-						'label'         => $label,
-						'source'        => 'frontend',
-						'html'          => $html,
-						'css'           => $css,
-						'js'            => $js,
-						'upload_images' => true,
-					)
-				);
-			}
+			// One path for every builder. insert_index is now HONOURED everywhere —
+			// the Bricks and Gutenberg branches this replaced appended to the end and
+			// silently discarded the position the editor had computed.
+			$result = UiChemy_Composer_Manager::mcp_insert_section_at_index(
+				array(
+					'post_id'       => $post_id,
+					'builder'       => $builder,
+					'insert_index'  => $insert_index,
+					'label'         => $label,
+					'source'        => 'frontend',
+					'html'          => $html,
+					'css'           => $css,
+					'js'            => $js,
+					'upload_images' => true,
+				)
+			);
 
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
+
 			return rest_ensure_response(
 				array(
 					'success' => true,
@@ -382,32 +364,14 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 				return $guard;
 			}
 
-			if ( 'gutenberg' === $builder ) {
-				if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
-					return new WP_Error( 'uichemy_no_dep', 'Composer manager class missing.', array( 'status' => 500 ) );
-				}
-				$result = UiChemy_Composer_Manager::mcp_get_gutenberg_section_code( $post_id, $uid );
-				if ( is_wp_error( $result ) ) {
-					return $result;
-				}
-				return rest_ensure_response( $result );
+			// The block and Bricks editors address a section by uid; Elementor by
+			// element id or position. They are the same handle to the driver layer.
+			if ( '' === $element_id && '' !== $uid ) {
+				$element_id = $uid;
 			}
 
-			if ( 'bricks' === $builder ) {
-				if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
-					return new WP_Error( 'uichemy_no_dep', 'Composer manager class missing.', array( 'status' => 500 ) );
-				}
-				$result = UiChemy_Composer_Manager::mcp_get_bricks_section_code( $post_id, $uid );
-				if ( is_wp_error( $result ) ) {
-					return $result;
-				}
-				return rest_ensure_response( $result );
-			}
-
-			// The composer's Page/Site Code panes need the site-wide code, so the
-			// last argument requests it explicitly.
-			$result = UiChemy_Composer_Manager::mcp_get_section_code( $post_id, $widget_index, $element_id, true );
-
+			// include_site_code = true: the composer's Page/Site Code panes need it.
+			$result = UiChemy_Composer_Manager::mcp_get_section_code( $post_id, $widget_index, $element_id, true, $builder );
 			if ( is_wp_error( $result ) ) {
 				return $result;
 			}
@@ -427,13 +391,18 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 		 */
 		public static function handle_get_all( $request ) {
 			$post_id = absint( $request->get_param( 'post_id' ) );
+			$builder = sanitize_key( (string) $request->get_param( 'builder' ) );
 
 			$guard = self::guard_post( $post_id );
 			if ( is_wp_error( $guard ) ) {
 				return $guard;
 			}
 
-			$result = UiChemy_Composer_Manager::mcp_get_all_section_code( $post_id, true );
+			// Builder-aware since the driver layer landed. Before that this called the
+			// Elementor-only bulk reader, which errored on Bricks and Gutenberg and got
+			// swallowed into total_widgets:0 below — so the editor's code cache was
+			// permanently empty there and every section switch refetched.
+			$result = UiChemy_Composer_Manager::mcp_get_all_section_code( $post_id, true, $builder );
 			if ( is_wp_error( $result ) ) {
 				// Nothing to cache for this post — hand back an empty set so the
 				// editor can carry on instead of logging a failure.
@@ -470,49 +439,15 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 				return $guard;
 			}
 
-			if ( 'gutenberg' === $builder ) {
-				if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
-					return new WP_Error( 'uichemy_no_dep', 'Composer manager class missing.', array( 'status' => 500 ) );
-				}
-				$result = UiChemy_Composer_Manager::mcp_set_gutenberg_section_code(
-					$post_id,
-					$uid,
-					array(
-						'html' => $html,
-						'css'  => $css,
-						'js'   => $js,
-					)
-				);
-				if ( is_wp_error( $result ) ) {
-					return $result;
-				}
-				return rest_ensure_response( $result );
+			if ( '' === $element_id && '' !== $uid ) {
+				$element_id = $uid;
 			}
 
-			if ( 'bricks' === $builder ) {
-				if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
-					return new WP_Error( 'uichemy_no_dep', 'Composer manager class missing.', array( 'status' => 500 ) );
-				}
-				$result = UiChemy_Composer_Manager::mcp_set_bricks_section_code(
-					$post_id,
-					$uid,
-					array(
-						'html' => $html,
-						'css'  => $css,
-						'js'   => $js,
-					)
-				);
-				if ( is_wp_error( $result ) ) {
-					return $result;
-				}
-				return rest_ensure_response( $result );
-			}
-
-			// Resolve the widget the GET side would have returned (element id preferred,
-			// positional index as the fallback) so the write lands on that same widget,
-			// then replace its html/css/js wholesale. Images are already uploaded by the
-			// editor, so the media pass is skipped here.
-			$target = UiChemy_Composer_Manager::mcp_get_section_code( $post_id, $widget_index, $element_id, false );
+			// Resolve the section the GET side would have returned (element id
+			// preferred, positional index as the fallback) so the write lands on that
+			// same section, then replace its html/css/js wholesale. Images are already
+			// uploaded by the editor, so the media pass is skipped here.
+			$target = UiChemy_Composer_Manager::mcp_get_section_code( $post_id, $widget_index, $element_id, false, $builder );
 			if ( is_wp_error( $target ) ) {
 				return $target;
 			}
@@ -521,6 +456,7 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 				$post_id,
 				array(
 					'mode'          => 'replace',
+					'builder'       => $builder,
 					'widget_id'     => isset( $target['widget_id'] ) ? (string) $target['widget_id'] : '',
 					'html'          => $html,
 					'css'           => $css,

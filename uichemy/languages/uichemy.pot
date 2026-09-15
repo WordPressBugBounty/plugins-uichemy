@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: UiChemy — Figma Converter for Elementor, Gutenberg and Bricks 5.1.1\n"
+"Project-Id-Version: UiChemy — Figma Converter for Elementor, Gutenberg and Bricks 5.2.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/uichemy\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-08-31T17:23:33+00:00\n"
+"POT-Creation-Date: 2026-09-15T10:01:52+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: uichemy\n"
@@ -39,41 +39,41 @@ msgstr ""
 msgid "https://posimyth.com"
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1338
-#: includes/admin/class-uich-api.php:1414
-#: includes/admin/class-uich-api.php:1823
+#: includes/admin/class-uich-api.php:1410
+#: includes/admin/class-uich-api.php:1486
+#: includes/admin/class-uich-api.php:1895
 msgid "No JSON data found."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1356
+#: includes/admin/class-uich-api.php:1428
 msgid "Elementor is required. Please install and activate it."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1506
-#: includes/admin/class-uich-api.php:1691
-#: includes/admin/class-uich-api.php:1893
+#: includes/admin/class-uich-api.php:1578
+#: includes/admin/class-uich-api.php:1763
+#: includes/admin/class-uich-api.php:1965
 msgid "Post ID not provided for Updating."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1515
-#: includes/admin/class-uich-api.php:1700
-#: includes/admin/class-uich-api.php:1902
+#: includes/admin/class-uich-api.php:1587
+#: includes/admin/class-uich-api.php:1772
+#: includes/admin/class-uich-api.php:1974
 msgid "Post does not exist with given ID & Type."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1565
+#: includes/admin/class-uich-api.php:1637
 msgid "This post doesn't have Elementor data."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1624
+#: includes/admin/class-uich-api.php:1696
 msgid "No data was provided to import."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1963
+#: includes/admin/class-uich-api.php:2035
 msgid "Could not update the data."
 msgstr ""
 
-#: includes/admin/class-uich-api.php:1981
+#: includes/admin/class-uich-api.php:2053
 msgid "All Good."
 msgstr ""
 
@@ -113,8 +113,8 @@ msgstr ""
 #: uichemy-composer/includes/admin/class-uichemy-admin-menu.php:114
 #: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:118
 #: uichemy-composer/includes/blocks/class-uichemy-gutenberg-composer.php:100
-#: uichemy-composer/includes/mcp/v2/class-uichemy-abilities.php:1254
-#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:86
+#: uichemy-composer/includes/mcp/v2/class-uichemy-abilities.php:1320
+#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:88
 msgid "UiChemy"
 msgstr ""
 
@@ -122,36 +122,36 @@ msgstr ""
 msgid "UiChemy now includes Composer, so the standalone Protuno (or Protuno Pro) plugin is being retired automatically. If this message keeps appearing, deactivate that plugin manually. Until then Composer stays disabled to avoid a conflict."
 msgstr ""
 
-#: includes/composer/class-uich-composer-migration.php:1060
+#: includes/composer/class-uich-composer-migration.php:1068
 msgid "UiChemy is updating content from your previous plugin."
 msgstr ""
 
 #. translators: %d: number of Elementor rows left to rewrite.
-#: includes/composer/class-uich-composer-migration.php:1064
+#: includes/composer/class-uich-composer-migration.php:1072
 #, php-format
 msgid "Widgets built with the previous plugin are being renamed to the Composer widget. %d items left."
 msgstr ""
 
-#: includes/composer/class-uich-composer-migration.php:1067
+#: includes/composer/class-uich-composer-migration.php:1075
 msgid "Finish now"
 msgstr ""
 
-#: includes/composer/class-uich-composer-migration.php:1105
+#: includes/composer/class-uich-composer-migration.php:1115
 msgid "You are not allowed to do that."
 msgstr ""
 
-#: includes/composer/class-uich-composer-takeover.php:398
+#: includes/composer/class-uich-composer-takeover.php:430
 msgid "UiChemy now includes Composer."
 msgstr ""
 
 #. translators: %s: plugin file(s) that were deactivated, e.g. protuno/protuno.php
-#: includes/composer/class-uich-composer-takeover.php:402
+#: includes/composer/class-uich-composer-takeover.php:434
 #, php-format
 msgid "The standalone plugin (%s) was deactivated because UiChemy now bundles Composer, and your existing sections are being migrated to the Composer widget. Your pages keep working. Nothing needs to be done."
 msgstr ""
 
 #. translators: %s: plugin file, e.g. uichemy/uichemy.php
-#: includes/composer/class-uich-composer-takeover.php:426
+#: includes/composer/class-uich-composer-takeover.php:458
 #, php-format
 msgid "UiChemy finished migrating your Protuno content but could not remove the old plugin files (%s), because this site does not allow direct file writes. You can safely delete it from the Plugins screen."
 msgstr ""
@@ -242,7 +242,7 @@ msgstr ""
 
 #: includes/new-dashboard/class-uich-nd-installer.php:296
 #: includes/new-dashboard/class-uich-nd-installer.php:336
-#: includes/new-dashboard/class-uich-nd-installer.php:756
+#: includes/new-dashboard/class-uich-nd-installer.php:763
 msgid "UiChemy download URL is not configured."
 msgstr ""
 
@@ -321,20 +321,20 @@ msgstr ""
 msgid "UiChemy installation failed."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:779
+#: includes/new-dashboard/class-uich-nd-installer.php:790
 #, php-format
 msgid "UiChemy download failed (HTTP %d)."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:786
+#: includes/new-dashboard/class-uich-nd-installer.php:797
 msgid "UiChemy download returned an empty package."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:791
+#: includes/new-dashboard/class-uich-nd-installer.php:802
 msgid "Could not create a temporary file for the download."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:796
+#: includes/new-dashboard/class-uich-nd-installer.php:807
 msgid "Could not write the downloaded package."
 msgstr ""
 
@@ -406,28 +406,28 @@ msgstr ""
 msgid "You do not have access to this job."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-auth.php:423
+#: includes/webpage/class-uich-webpage-auth.php:425
 msgid "You do not have permission to connect a UiChemy account."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-auth.php:450
+#: includes/webpage/class-uich-webpage-auth.php:463
 msgid "Your connection session expired. Please open UiChemy › Import and start the connection again."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-auth.php:471
-#: includes/webpage/class-uich-webpage-auth.php:1122
+#: includes/webpage/class-uich-webpage-auth.php:484
+#: includes/webpage/class-uich-webpage-auth.php:1151
 msgid "Failed to connect to the UiChemy app. Please try again."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-auth.php:500
+#: includes/webpage/class-uich-webpage-auth.php:513
 msgid "Invalid or expired identity token from the UiChemy app. Please try signing in again."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-auth.php:531
+#: includes/webpage/class-uich-webpage-auth.php:544
 msgid "Failed to authenticate with the UiChemy app. Please try again."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-auth.php:1139
+#: includes/webpage/class-uich-webpage-auth.php:1168
 msgid "Logged out successfully."
 msgstr ""
 
@@ -530,8 +530,8 @@ msgstr ""
 
 #: includes/webpage/class-uich-webpage-import.php:1689
 #: includes/webpage/class-uich-webpage-import.php:3490
-#: includes/webpage/class-uich-webpage-import.php:11350
-#: includes/webpage/class-uich-webpage-import.php:11397
+#: includes/webpage/class-uich-webpage-import.php:11469
+#: includes/webpage/class-uich-webpage-import.php:11516
 msgid "No replacement data found. Run fetch-replacement-json first."
 msgstr ""
 
@@ -594,189 +594,189 @@ msgid "No valid download URLs were found to fetch. downloadUrls must contain at 
 msgstr ""
 
 #. translators: 1: template title, 2: error message
-#: includes/webpage/class-uich-webpage-import.php:4938
-#: includes/webpage/class-uich-webpage-import.php:4967
+#: includes/webpage/class-uich-webpage-import.php:5057
+#: includes/webpage/class-uich-webpage-import.php:5086
 #, php-format
 msgid "%1$s skipped: %2$s"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5304
+#: includes/webpage/class-uich-webpage-import.php:5423
 msgid "Invalid page JSON structure."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5332
+#: includes/webpage/class-uich-webpage-import.php:5451
 msgid "Could not encode page data."
 msgstr ""
 
 #. translators: 1: section type, 2: elementor-style type
-#: includes/webpage/class-uich-webpage-import.php:5636
+#: includes/webpage/class-uich-webpage-import.php:5755
 #, php-format
 msgid "Could not map this template to a UiChemy type (section \"%1$s\", type \"%2$s\")."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5647
+#: includes/webpage/class-uich-webpage-import.php:5766
 msgid "UiChemy Theme Builder is not active. Install and activate the UiChemy plugin."
 msgstr ""
 
 #. translators: %s: template type, e.g. archive
-#: includes/webpage/class-uich-webpage-import.php:5673
+#: includes/webpage/class-uich-webpage-import.php:5792
 #, php-format
 msgid "Skipped \"%s\" templates. They need UiChemy Pro."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5713
-#: includes/webpage/class-uich-webpage-import.php:5827
+#: includes/webpage/class-uich-webpage-import.php:5832
+#: includes/webpage/class-uich-webpage-import.php:5946
 msgid "UiChemy Theme Builder did not handle the template creation request."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5721
+#: includes/webpage/class-uich-webpage-import.php:5840
 msgid "UiChemy Theme Builder returned no template id."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5727
-#: includes/webpage/class-uich-webpage-import.php:6093
-#: includes/webpage/class-uich-webpage-import.php:6188
-#: includes/webpage/class-uich-webpage-import.php:12145
-#: includes/webpage/class-uich-webpage-import.php:12268
+#: includes/webpage/class-uich-webpage-import.php:5846
+#: includes/webpage/class-uich-webpage-import.php:6212
+#: includes/webpage/class-uich-webpage-import.php:6307
+#: includes/webpage/class-uich-webpage-import.php:12264
+#: includes/webpage/class-uich-webpage-import.php:12387
 msgid "Invalid template JSON structure."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5841
+#: includes/webpage/class-uich-webpage-import.php:5960
 msgid "UiChemy Theme Builder returned no template ID."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:6149
-#: includes/webpage/class-uich-webpage-import.php:6236
-#: includes/webpage/class-uich-webpage-import.php:12238
-#: includes/webpage/class-uich-webpage-import.php:12318
+#: includes/webpage/class-uich-webpage-import.php:6268
+#: includes/webpage/class-uich-webpage-import.php:6355
+#: includes/webpage/class-uich-webpage-import.php:12357
+#: includes/webpage/class-uich-webpage-import.php:12437
 msgid "Could not encode template data."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:6173
-#: includes/webpage/class-uich-webpage-import.php:12118
+#: includes/webpage/class-uich-webpage-import.php:6292
+#: includes/webpage/class-uich-webpage-import.php:12237
 msgid "Nexter Extension is not active."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:7305
+#: includes/webpage/class-uich-webpage-import.php:7424
 msgid "UiChemy Import"
 msgstr ""
 
 #. translators: %d: gradient slot
-#: includes/webpage/class-uich-webpage-import.php:9029
+#: includes/webpage/class-uich-webpage-import.php:9148
 #, php-format
 msgid "Gradient %d"
 msgstr ""
 
 #. translators: %d: shadow slot
-#: includes/webpage/class-uich-webpage-import.php:9208
+#: includes/webpage/class-uich-webpage-import.php:9327
 #, php-format
 msgid "Shadow %d"
 msgstr ""
 
 #. translators: %d: spacing slot
-#: includes/webpage/class-uich-webpage-import.php:9272
+#: includes/webpage/class-uich-webpage-import.php:9391
 #, php-format
 msgid "Spacing %d"
 msgstr ""
 
 #. translators: %d: border slot
-#: includes/webpage/class-uich-webpage-import.php:9318
+#: includes/webpage/class-uich-webpage-import.php:9437
 #, php-format
 msgid "Border %d"
 msgstr ""
 
 #. translators: %d: radius slot
-#: includes/webpage/class-uich-webpage-import.php:9384
+#: includes/webpage/class-uich-webpage-import.php:9503
 #, php-format
 msgid "Radius %d"
 msgstr ""
 
 #. translators: %d: animation slot
-#: includes/webpage/class-uich-webpage-import.php:9450
+#: includes/webpage/class-uich-webpage-import.php:9569
 #, php-format
 msgid "Animation %d"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:10002
+#: includes/webpage/class-uich-webpage-import.php:10121
 msgid "Typography"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11199
+#: includes/webpage/class-uich-webpage-import.php:11318
 msgid "No widgets found."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11208
+#: includes/webpage/class-uich-webpage-import.php:11327
 msgid "The Plus Addons for Elementor is not active."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11225
+#: includes/webpage/class-uich-webpage-import.php:11344
 msgid "Widgets enabled successfully."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11238
+#: includes/webpage/class-uich-webpage-import.php:11357
 msgid "Failed to enable widgets."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11300
+#: includes/webpage/class-uich-webpage-import.php:11419
 msgid "Blocks enabled successfully."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11312
+#: includes/webpage/class-uich-webpage-import.php:11431
 msgid "Failed to enable blocks."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11345
-#: includes/webpage/class-uich-webpage-import.php:11390
+#: includes/webpage/class-uich-webpage-import.php:11464
+#: includes/webpage/class-uich-webpage-import.php:11509
 msgid "pageName is required."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11537
+#: includes/webpage/class-uich-webpage-import.php:11656
 msgid "Skipped Cookie Policy. It needs Nexter Extension, which this import no longer installs."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11571
+#: includes/webpage/class-uich-webpage-import.php:11690
 msgid "Invalid template JSON for Elementor."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11600
+#: includes/webpage/class-uich-webpage-import.php:11719
 msgid "Invalid theme template JSON for Elementor."
 msgstr ""
 
 #. translators: %s: page type identifier.
-#: includes/webpage/class-uich-webpage-import.php:11698
+#: includes/webpage/class-uich-webpage-import.php:11817
 #, php-format
 msgid "Unknown page type: %s"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:12263
+#: includes/webpage/class-uich-webpage-import.php:12382
 msgid "Elementor is not active."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:12526
+#: includes/webpage/class-uich-webpage-import.php:12645
 msgid "Could not create blog posts."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:12639
+#: includes/webpage/class-uich-webpage-import.php:12758
 msgid "Blog post title is required."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:13181
+#: includes/webpage/class-uich-webpage-import.php:13300
 msgid "No Gutenberg extras to enable"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:13404
+#: includes/webpage/class-uich-webpage-import.php:13523
 msgid "The Plus Addons for Elementor not active"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:13405
+#: includes/webpage/class-uich-webpage-import.php:13524
 msgid "TPAE plugin is required to enable widgets"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:13412
+#: includes/webpage/class-uich-webpage-import.php:13531
 msgid "No widgets to enable"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:13441
+#: includes/webpage/class-uich-webpage-import.php:13560
 msgid "No Nexter blocks to enable"
 msgstr ""
 
@@ -794,7 +794,7 @@ msgstr ""
 #: new-dashboard/build/index.js:5
 #: new-dashboard/build/index.js:20
 #: new-dashboard/src/dashboard/tabs.js:57
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:462
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:474
 #: new-dashboard/src/screens/wizard/ProScreen.jsx:30
 #: new-dashboard/src/uichemy-webpage/lib/project-pages.js:16
 msgid "Theme Builder"
@@ -839,11 +839,11 @@ msgstr ""
 msgid "%s Pro"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:9045
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:9811
 msgid "Edit Header"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:9046
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:9812
 msgid "Edit Footer"
 msgstr ""
 
@@ -865,11 +865,11 @@ msgstr ""
 msgid "There is a new version of %1$s available. %2$sView version %3$s details%4$s or %5$supdate now%6$s."
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-sl-plugin-updater.php:553
+#: uichemy-composer/includes/admin/class-uichemy-sl-plugin-updater.php:574
 msgid "You do not have permission to install plugin updates"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-sl-plugin-updater.php:553
+#: uichemy-composer/includes/admin/class-uichemy-sl-plugin-updater.php:574
 msgid "Error"
 msgstr ""
 
@@ -877,7 +877,7 @@ msgstr ""
 #: uichemy-composer/includes/admin/widgets/class-uichemy-composer-widget.php:701
 #: uichemy-composer/includes/bricks/class-uichemy-bricks-composer.php:98
 #: uichemy-composer/includes/bricks/class-uichemy-bricks-composer.php:108
-#: uichemy-composer/assets/blocks/uichemy-composer/index.js:871
+#: uichemy-composer/assets/blocks/uichemy-composer/index.js:902
 msgid "Composer"
 msgstr ""
 
@@ -944,15 +944,15 @@ msgstr ""
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:720
 #: new-dashboard/build/index.js:14
 #: new-dashboard/build/index.js:15
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:333
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:345
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:215
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:374
 msgid "Edit"
 msgstr ""
 
 #: uichemy-composer/includes/admin/widgets/class-uichemy-composer-widget.php:720
-#: uichemy-composer/assets/blocks/uichemy-composer/index.js:766
-#: uichemy-composer/assets/blocks/uichemy-composer/index.js:836
+#: uichemy-composer/assets/blocks/uichemy-composer/index.js:797
+#: uichemy-composer/assets/blocks/uichemy-composer/index.js:867
 msgid "Edit Code"
 msgstr ""
 
@@ -986,7 +986,7 @@ msgstr ""
 msgid "Open Composer"
 msgstr ""
 
-#: uichemy-composer/includes/dynamic/class-uich-filters.php:137
+#: uichemy-composer/includes/dynamic/class-uich-filters.php:153
 msgid "ago"
 msgstr ""
 
@@ -1023,7 +1023,7 @@ msgid "Page"
 msgstr ""
 
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:50
-#: uichemy-composer/includes/forms/class-uich-forms.php:424
+#: uichemy-composer/includes/forms/class-uich-forms.php:437
 msgid "Email"
 msgstr ""
 
@@ -1044,7 +1044,7 @@ msgstr ""
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:349
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:666
 #: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:294
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:306
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:375
 msgid "Delete"
 msgstr ""
@@ -1183,7 +1183,7 @@ msgid "Form:"
 msgstr ""
 
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:634
-#: uichemy-composer/includes/forms/class-uich-forms.php:510
+#: uichemy-composer/includes/forms/class-uich-forms.php:523
 msgid "Page:"
 msgstr ""
 
@@ -1227,7 +1227,7 @@ msgstr ""
 #: new-dashboard/build/index.js:14
 #: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:157
 #: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:281
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:74
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:86
 msgid "Cancel"
 msgstr ""
 
@@ -1265,144 +1265,152 @@ msgstr ""
 msgid "Thank you!"
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:346
+#: uichemy-composer/includes/forms/class-uich-forms.php:316
+msgid "Too many submissions. Please wait a moment and try again."
+msgstr ""
+
+#: uichemy-composer/includes/forms/class-uich-forms.php:359
 msgid "Please fill in the form."
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:394
+#: uichemy-composer/includes/forms/class-uich-forms.php:407
 msgid "Could not save submission."
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:406
+#: uichemy-composer/includes/forms/class-uich-forms.php:419
 msgid "Collect Submissions"
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:433
+#: uichemy-composer/includes/forms/class-uich-forms.php:446
 msgid "Email 2"
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:442
+#: uichemy-composer/includes/forms/class-uich-forms.php:455
 msgid "Webhook"
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:463
+#: uichemy-composer/includes/forms/class-uich-forms.php:476
 msgid "Thank you! Your submission has been received."
 msgstr ""
 
 #. translators: %s form name
-#: uichemy-composer/includes/forms/class-uich-forms.php:502
+#: uichemy-composer/includes/forms/class-uich-forms.php:515
 #, php-format
 msgid "New submission: %s"
 msgstr ""
 
-#: uichemy-composer/includes/mcp/v2/class-uichemy-abilities.php:1255
-msgid "UiChemy pipeline: Figma-to-HTML conversion, Elementor globals, and full WordPress site building."
+#: uichemy-composer/includes/mcp/v2/class-uichemy-abilities.php:1321
+msgid "UiChemy pipeline: Figma-to-HTML conversion, design-system globals, and full WordPress site building. Call uichemy-composer/instructions first for the build order."
 msgstr ""
 
 #. translators: %s: plugin name.
-#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:89
+#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:91
 #, php-format
 msgid "Edit Header (%s)"
 msgstr ""
 
 #. translators: %s: plugin name.
-#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:90
+#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:92
 #, php-format
 msgid "Edit Footer (%s)"
 msgstr ""
 
 #. translators: %s: plugin name.
-#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:93
+#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:95
 #, php-format
 msgid "Edit Single Template (%s)"
 msgstr ""
 
 #. translators: %s: plugin name.
-#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:96
+#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:98
 #, php-format
 msgid "Edit 404 Template (%s)"
 msgstr ""
 
 #. translators: %s: plugin name (white-labelled when configured).
-#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:120
+#: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:122
 #, php-format
 msgid "%s Templates"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:114
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:126
 msgctxt "post type general name"
 msgid "Templates"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:115
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:127
 msgctxt "post type singular name"
 msgid "Template"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:116
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:128
 msgctxt "admin menu"
 msgid "Theme Builder"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:117
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:129
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:487
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:499
 msgid "Add New"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:118
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:130
 msgid "Add New Template"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:119
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:131
 msgid "Edit Template"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:120
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:132
 msgid "New Template"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:121
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:133
 msgid "View Template"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:122
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-cpt.php:134
 msgid "Search Templates"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:598
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:639
 msgid "Header (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:600
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:641
 msgid "Footer (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:602
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:643
 msgid "Single Post or Page (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:604
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:645
 msgid "Archive (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:606
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:647
 msgid "Single Product (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:608
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:649
 msgid "Products Archive (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:610
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:651
+msgid "Order Received / Thank You (UiChemy)"
+msgstr ""
+
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:653
 msgid "Search Results (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:612
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:655
 msgid "404 Page (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:614
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:657
 msgid "Template (UiChemy)"
 msgstr ""
 
@@ -1564,7 +1572,7 @@ msgstr ""
 #: new-dashboard/build/index.js:20
 #: new-dashboard/src/components/DashShell.jsx:274
 #: new-dashboard/src/components/WebShell.jsx:222
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:507
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:519
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:213
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:338
 msgid "Upgrade to Pro"
@@ -1664,8 +1672,8 @@ msgstr ""
 #: new-dashboard/src/App.jsx:360
 #: new-dashboard/src/components/WizardShell.jsx:124
 #: new-dashboard/src/dashboard/use-builder-setup.js:76
-#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:333
-#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:335
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:336
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:338
 msgid "Continue"
 msgstr ""
 
@@ -1673,7 +1681,7 @@ msgstr ""
 #: new-dashboard/build/index.js:12
 #: new-dashboard/build/index.js:20
 #: new-dashboard/src/components/WizardShell.jsx:146
-#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:430
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:452
 #: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1978
 msgid "Back"
 msgstr ""
@@ -1953,7 +1961,7 @@ msgstr ""
 
 #: new-dashboard/build/index.js:1
 #: new-dashboard/build/index.js:15
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:312
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:324
 #: new-dashboard/src/screens/wizard/BuilderScreen.jsx:112
 #, js-format
 msgid "Activate %s"
@@ -2050,21 +2058,21 @@ msgstr ""
 
 #: new-dashboard/build/index.js:1
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/dashboard/modes.js:49
+#: new-dashboard/src/dashboard/modes.js:51
 #: new-dashboard/src/screens/dashboard/Welcome.jsx:28
 msgid "AI Website Creator"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/dashboard/modes.js:51
-#: new-dashboard/src/dashboard/modes.js:52
+#: new-dashboard/src/dashboard/modes.js:53
+#: new-dashboard/src/dashboard/modes.js:54
 #: new-dashboard/src/screens/dashboard/Welcome.jsx:28
 msgid "New"
 msgstr ""
 
 #: new-dashboard/build/index.js:1
-#: new-dashboard/src/dashboard/modes.js:53
+#: new-dashboard/src/dashboard/modes.js:55
 msgid "No design to start from? Bring in a website you generated with AI, fully built out."
 msgstr ""
 
@@ -2801,7 +2809,6 @@ msgstr ""
 #: new-dashboard/build/index.js:4
 #: new-dashboard/build/index.js:20
 #: new-dashboard/src/App.jsx:636
-#: new-dashboard/src/components/DashShell.jsx:256
 #: new-dashboard/src/dashboard/health.js:189
 msgid "Activate UiChemy"
 msgstr ""
@@ -2992,7 +2999,7 @@ msgstr ""
 #: new-dashboard/build/index.js:4
 #: new-dashboard/build/index.js:20
 #: new-dashboard/src/components/DashShell.jsx:119
-#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:324
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:327
 msgid "Finish setup"
 msgstr ""
 
@@ -3062,7 +3069,6 @@ msgstr ""
 
 #: new-dashboard/build/index.js:4
 #: new-dashboard/src/components/DashShell.jsx:245
-#: new-dashboard/src/components/DashShell.jsx:258
 msgid "Activate"
 msgstr ""
 
@@ -3077,8 +3083,20 @@ msgid "Upgrade Now"
 msgstr ""
 
 #: new-dashboard/build/index.js:4
+#: new-dashboard/src/components/DashShell.jsx:256
+msgid "UiChemy Pro Activation"
+msgstr ""
+
+#: new-dashboard/build/index.js:4
 #: new-dashboard/src/components/DashShell.jsx:257
-msgid "Sign in & Activate UiChemy to get the best out of it."
+msgid "Sign in & Activate UiChemy Pro to get the best out of it."
+msgstr ""
+
+#: new-dashboard/build/index.js:4
+#: new-dashboard/build/index.js:20
+#: new-dashboard/src/components/DashShell.jsx:258
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:59
+msgid "Sign in"
 msgstr ""
 
 #: new-dashboard/build/index.js:4
@@ -3755,23 +3773,28 @@ msgid "Close"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:69
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:81
 msgid "Choose Your Builder"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:70
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:82
 msgid "Select the builder you want to import this website into."
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:77
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:89
 msgid "Next"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:84
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:96
 msgid "Export builder"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:113
+msgid "Coming soon"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
@@ -4026,7 +4049,7 @@ msgstr ""
 #: new-dashboard/build/index.js:13
 #: new-dashboard/build/index.js:14
 #: new-dashboard/build/index.js:16
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:362
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:374
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:368
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:369
 #: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:246
@@ -4046,14 +4069,14 @@ msgstr ""
 
 #: new-dashboard/build/index.js:13
 #: new-dashboard/build/index.js:16
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:349
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:361
 #: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:264
 msgid "Include"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
 #: new-dashboard/build/index.js:16
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:349
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:361
 #: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:265
 msgid "Exclude"
 msgstr ""
@@ -4151,7 +4174,7 @@ msgstr ""
 
 #: new-dashboard/build/index.js:14
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:528
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:540
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:327
 msgid "No templates yet"
 msgstr ""
@@ -4179,7 +4202,7 @@ msgstr ""
 
 #: new-dashboard/build/index.js:14
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:487
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:499
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:349
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:384
 msgid "Creating…"
@@ -4192,7 +4215,7 @@ msgstr ""
 
 #: new-dashboard/build/index.js:14
 #: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:94
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:272
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:282
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:355
 msgid "(untitled)"
 msgstr ""
@@ -4264,7 +4287,7 @@ msgstr ""
 
 #: new-dashboard/build/index.js:14
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:421
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:443
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:688
 msgid "Exit"
 msgstr ""
@@ -4352,40 +4375,40 @@ msgid "No preview"
 msgstr ""
 
 #: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:276
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:286
 msgid "More actions"
 msgstr ""
 
 #: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:279
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:290
 msgid "Edit in Elementor"
 msgstr ""
 
 #: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:284
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:296
 msgid "Shortcode copied"
 msgstr ""
 
 #: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:284
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:296
 msgid "Copy shortcode"
 msgstr ""
 
 #: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:290
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:302
 msgid "Preview"
 msgstr ""
 
 #. translators: %s: template title
 #: new-dashboard/build/index.js:15
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:312
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:324
 #, js-format
 msgid "Deactivate %s"
 msgstr ""
 
 #. translators: %d: number of display conditions in force.
 #: new-dashboard/build/index.js:16
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:342
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:354
 #, js-format
 msgid "%d display condition"
 msgid_plural "%d display conditions"
@@ -4393,7 +4416,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: new-dashboard/build/index.js:16
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:364
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:376
 msgid "Conditions"
 msgstr ""
 
@@ -4676,11 +4699,6 @@ msgid "Pair this site with UiChemy to start converting."
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:59
-msgid "Sign in"
-msgstr ""
-
-#: new-dashboard/build/index.js:20
 #: new-dashboard/src/screens/dashboard/SetupFlow.jsx:60
 msgid "Sign in to UiChemy"
 msgstr ""
@@ -4735,17 +4753,18 @@ msgid "Could not finish setup. Please try again."
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:331
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:334
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:460
 msgid "Skip for now"
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:341
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:363
 msgid "This option"
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:411
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:433
 #, js-format
 msgid "%s isn’t available for this builder. Pick one it supports."
 msgstr ""
@@ -4753,7 +4772,7 @@ msgstr ""
 #: new-dashboard/build/index.js:20
 #: new-dashboard/build/index.js:22
 #: new-dashboard/src/App.jsx:751
-#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:424
+#: new-dashboard/src/screens/dashboard/SetupFlow.jsx:446
 msgid "Get Started"
 msgstr ""
 
@@ -4969,81 +4988,81 @@ msgid "Save changes"
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:390
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:402
 msgid "Failed to load templates."
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:448
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:460
 msgid "Grid"
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:449
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:461
 msgid "Canvas"
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:463
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:475
 msgid "Build and manage your site’s templates with UiChemy."
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:471
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:483
 msgid "Heads up:"
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:471
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:483
 msgid "your active theme doesn’t expose header/footer locations, so Header and Footer templates may not appear on the front end. Single and 404 templates work on any theme."
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:476
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:488
 msgid "Another theme builder is active"
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:476
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:488
 msgid "Avoid activating a UiChemy header/footer at the same time to prevent a duplicate."
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:416
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:428
 msgid "Could not create template."
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:504
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:516
 #, js-format
 msgid "Unlock %s templates"
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:505
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:517
 #, js-format
 msgid "%s templates are part of UiChemy Pro, upgrade to design and use them on your site."
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:512
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:524
 msgid "Renders only when WooCommerce is active. You can design it now."
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:528
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:540
 #, js-format
 msgid "No %s templates yet"
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:529
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:541
 #, js-format
 msgid "Use Add New above to create your first %s."
 msgstr ""
 
 #: new-dashboard/build/index.js:20
-#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:529
+#: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:541
 msgid "template"
 msgstr ""
 
@@ -5335,20 +5354,20 @@ msgstr ""
 msgid "Content"
 msgstr ""
 
-#: uichemy-composer/assets/blocks/uichemy-composer/index.js:761
+#: uichemy-composer/assets/blocks/uichemy-composer/index.js:792
 msgid "Edit Layers"
 msgstr ""
 
-#: uichemy-composer/assets/blocks/uichemy-composer/index.js:771
-#: uichemy-composer/assets/blocks/uichemy-composer/index.js:831
+#: uichemy-composer/assets/blocks/uichemy-composer/index.js:802
+#: uichemy-composer/assets/blocks/uichemy-composer/index.js:862
 msgid "Edit with AI"
 msgstr ""
 
-#: uichemy-composer/assets/blocks/uichemy-composer/index.js:877
+#: uichemy-composer/assets/blocks/uichemy-composer/index.js:908
 msgid "Describe a change and let AI build it, or drop in your own HTML, CSS and JS."
 msgstr ""
 
-#: uichemy-composer/assets/blocks/uichemy-composer/index.js:882
+#: uichemy-composer/assets/blocks/uichemy-composer/index.js:913
 msgid "Render and edit Figma-generated HTML/CSS/JS with editable slots."
 msgstr ""
 

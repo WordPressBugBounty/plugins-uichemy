@@ -156,6 +156,24 @@ class UiChemy {
 		// site-code option by class constant at include time, so an earlier
 		// position silently drops that cache-flush hook.
 		require_once UICHEMY_PATH . 'includes/admin/globals/class-uichemy-theme-globals.php';
+		// Page-builder drivers: one storage adapter per builder (Elementor,
+		// Gutenberg, Bricks) behind UiChemy_Builder_Driver, plus the shared
+		// section-operation layer every builder inherits. Loaded BEFORE the MCP
+		// loader because abilities resolve a builder context while registering on
+		// `init`, and before the frontend REST bridge, which dispatches on it.
+		//
+		// Dependency-light on purpose — the drivers only touch \Elementor\* or
+		// \Bricks\* inside is_available()-gated calls, so this is safe to require
+		// unconditionally on a site running any builder, or none.
+		require_once UICHEMY_PATH . 'includes/builders/interface-uichemy-builder-driver.php';
+		require_once UICHEMY_PATH . 'includes/builders/class-uichemy-section.php';
+		require_once UICHEMY_PATH . 'includes/builders/class-uichemy-builder-driver-base.php';
+		require_once UICHEMY_PATH . 'includes/builders/class-uichemy-elementor-driver.php';
+		require_once UICHEMY_PATH . 'includes/builders/class-uichemy-gutenberg-driver.php';
+		require_once UICHEMY_PATH . 'includes/builders/class-uichemy-bricks-driver.php';
+		require_once UICHEMY_PATH . 'includes/builders/class-uichemy-builder-registry.php';
+		require_once UICHEMY_PATH . 'includes/builders/class-uichemy-builder-context.php';
+		require_once UICHEMY_PATH . 'includes/builders/class-uichemy-section-ops.php';
 		require_once UICHEMY_PATH . 'includes/mcp/class-uichemy-mcp-loader.php';
 		require_once UICHEMY_PATH . 'includes/frontend/class-uichemy-frontend-rest.php';
 
@@ -167,6 +185,7 @@ class UiChemy {
 
 		// Shared HTML renderer + the Gutenberg Composer block (uichemy/composer).
 		// The block class self-instantiates on include and registers on `init`.
+		require_once UICHEMY_PATH . 'includes/admin/widgets/class-uichemy-woo-tags.php';
 		require_once UICHEMY_PATH . 'includes/admin/widgets/class-uichemy-composer-renderer.php';
 		require_once UICHEMY_PATH . 'includes/blocks/class-uichemy-gutenberg-composer.php';
 
@@ -176,6 +195,11 @@ class UiChemy {
 		// touches a \Bricks\* symbol outside an `init`-hooked, class_exists()-
 		// gated callback, since Bricks (a theme) loads after plugins do.
 		require_once UICHEMY_PATH . 'includes/bricks/class-uichemy-bricks-loader.php';
+
+		// Motion variables: reads a section's `uichemy_controller_bridge` declaration and
+		// compiles its `{{m.name}}` tokens into value reads. Pure functions, no
+		// hooks — every builder's JS path calls it on the way out.
+		require_once UICHEMY_PATH . 'includes/motion/class-uichemy-motion.php';
 
 		// Dynamic-data engine (Twig: values, loops, conditions, filters),
 		// dynamic tags, and the Atom forms subsystem.

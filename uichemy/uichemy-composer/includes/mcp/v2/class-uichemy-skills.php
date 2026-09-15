@@ -125,6 +125,14 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 							'description' => 'Decide whether a link, style, script or meta tag belongs at site level or page level. Read before emitting any of those tags.',
 							'files'       => array( 'skills/shared/scope-decision.md' ),
 						),
+						'animation'       => array(
+							'description' => 'Write a section\'s GSAP animation so its values become designer-editable controls, via the `uichemy_controller_bridge` block in section-level js. Read before writing ANY animation.',
+							'files'       => array( 'skills/motion-and-animation.md' ),
+						),
+						'webgl'           => array(
+							'description' => 'Build a WebGL / three.js section: mounting through the context owner, post-processing, and driving a shader from GSAP. Read before writing ANY 3D or shader code.',
+							'files'       => array( 'skills/webgl-and-3d.md' ),
+						),
 						'appendix'        => array(
 							'description' => 'Reference appendix for the conversion pipeline.',
 							'files'       => array( 'skills/figma-to-wordpress/appendix.md' ),
@@ -140,6 +148,14 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 							'description' => 'Decide whether a link, style, script or meta tag belongs at site level or page level.',
 							'files'       => array( 'skills/shared/scope-decision.md' ),
 						),
+						'animation'      => array(
+							'description' => 'Write a section\'s GSAP animation so its values become designer-editable controls, via the `uichemy_controller_bridge` block in section-level js. Read before writing ANY animation.',
+							'files'       => array( 'skills/motion-and-animation.md' ),
+						),
+						'webgl'          => array(
+							'description' => 'Build a WebGL / three.js section: mounting through the context owner, post-processing, and driving a shader from GSAP. Read before writing ANY 3D or shader code.',
+							'files'       => array( 'skills/webgl-and-3d.md' ),
+						),
 					),
 				),
 				'brief-to-wordpress'      => array(
@@ -150,6 +166,32 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 						'scope-decision' => array(
 							'description' => 'Decide whether a link, style, script or meta tag belongs at site level or page level.',
 							'files'       => array( 'skills/shared/scope-decision.md' ),
+						),
+						'animation'      => array(
+							'description' => 'Write a section\'s GSAP animation so its values become designer-editable controls, via the `uichemy_controller_bridge` block in section-level js. Read before writing ANY animation.',
+							'files'       => array( 'skills/motion-and-animation.md' ),
+						),
+						'webgl'          => array(
+							'description' => 'Build a WebGL / three.js section: mounting through the context owner, post-processing, and driving a shader from GSAP. Read before writing ANY 3D or shader code.',
+							'files'       => array( 'skills/webgl-and-3d.md' ),
+						),
+					),
+				),
+				'motion-and-animation'    => array(
+					'description' => 'Write a section\'s animation as GSAP whose values become editable controls in the Composer\'s Animation panel (the `uichemy_controller_bridge` block, in section-level js). Read this before writing ANY animation - on its own, or as the `animation` part of a build skill.',
+					'keywords'    => array( 'animation', 'animate', 'gsap', 'scroll', 'scrolltrigger', 'motion', 'parallax', 'stagger', 'reveal', 'fade in', 'transition', 'ease',
+						'controller bridge', 'controllers bridge', 'uichemy_controller_bridge' ),
+					'files'       => array( 'skills/motion-and-animation.md' ),
+					'additional_parts' => array(),
+				),
+				'webgl-and-3d'            => array(
+					'description' => 'Build a section with WebGL / three.js: a shader background, a 3D object, a scroll-driven scene or a loaded model. three.js ships with UiChemy and loads on demand. Read this before writing ANY 3D or shader code - on its own, or as the `webgl` part of a build skill.',
+					'keywords'    => array( 'webgl', 'three', 'threejs', 'three.js', '3d', 'shader', 'glsl', 'canvas', 'bloom', 'postprocessing', 'gltf', 'glb', 'mesh', 'particles' ),
+					'files'       => array( 'skills/webgl-and-3d.md' ),
+					'additional_parts' => array(
+						'animation' => array(
+							'description' => 'The `uichemy_controller_bridge` contract, which a WebGL section follows unchanged in its section-level js - a uniform is declared like any other value.',
+							'files'       => array( 'skills/motion-and-animation.md' ),
 						),
 					),
 				),

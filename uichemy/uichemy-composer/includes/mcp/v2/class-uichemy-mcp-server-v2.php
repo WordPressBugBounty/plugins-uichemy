@@ -99,6 +99,15 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 				return $result;
 			}
 
+			// Read the builder pin (?builder= or X-UiChemy-Builder) for THIS request.
+			// It is done here rather than lazily because the resolved value is
+			// memoized, and a php-fpm worker is reused across requests — a lazy
+			// static would leak one client's pinned builder into the next client's
+			// call. This hook is per-request and already scoped to this route.
+			if ( class_exists( 'UiChemy_Builder_Context' ) ) {
+				UiChemy_Builder_Context::prime_from_request( $request );
+			}
+
 			// A real MCP client already supplied a session — leave it alone.
 			if ( $request->get_header( 'Mcp-Session-Id' ) ) {
 				return $result;

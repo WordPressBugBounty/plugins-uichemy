@@ -13,8 +13,8 @@
  *
  *     [
  *       'editor' => [
- *         'access'        => 'full',   // 'full' | 'content' | 'none'
- *         'theme_builder' => 1,        // UiChemy feature toggles (0|1)
+ *         'access'        => 'full',   // 'full' | 'custom' | 'content' | 'none'
+ *         'theme_builder' => 1,        // feature toggles (0|1) — 'custom' only
  *         'design_system' => 1,        // Globals CSS / Variables / Classes
  *         'ai_chat'       => 0,        // MCP / AI chat tab
  *       ],
@@ -52,16 +52,42 @@ if ( ! class_exists( 'UiChemy_Roles' ) ) {
 		 * Valid access levels, ordered least → most permissive. The array index
 		 * doubles as the comparison rank used when a user has several roles.
 		 *
+		 * 'custom' ranks just below 'full': both open the whole editor, but 'custom'
+		 * grants only the feature surfaces the admin opted into, so 'full' is the
+		 * more permissive of the two when a multi-role user has both.
+		 *
 		 * @var string[]
 		 */
-		const ACCESS_LEVELS = array( 'none', 'content', 'full' );
+		const ACCESS_LEVELS = array( 'none', 'content', 'custom', 'full' );
 
 		/**
-		 * Recognised per-role feature toggles.
+		 * Recognised per-role feature-surface toggles (Custom access only).
+		 * These are the surfaces can_use() gates.
 		 *
 		 * @var string[]
 		 */
 		const FEATURES = array( 'theme_builder', 'design_system', 'ai_chat' );
+
+		/**
+		 * Per-role editor-mode toggles (Custom access only). These are NOT feature
+		 * surfaces — they narrow which composer tabs a Custom role gets, mirroring
+		 * the site-wide "Editor mode" setting (Design = Chat + Editor, Developer =
+		 * Chat + Editor + Code). Resolved by editor_mode_for_user(), never by
+		 * can_use(), so they can't be mistaken for a grantable surface.
+		 *
+		 * @var string[]
+		 */
+		const MODE_TOGGLES = array( 'mode_design', 'mode_developer' );
+
+		/**
+		 * Every per-role toggle key that is stored and round-tripped to the screen:
+		 * feature surfaces plus editor-mode toggles.
+		 *
+		 * @return string[]
+		 */
+		public static function toggle_keys() {
+			return array_merge( self::FEATURES, self::MODE_TOGGLES );
+		}
 
 		/* ── Public resolver API ──────────────────────────────────────────── */
 
@@ -74,7 +100,7 @@ if ( ! class_exists( 'UiChemy_Roles' ) ) {
 		 * lockouts for multi-role users.
 		 *
 		 * @param int|WP_User|null $user User or ID; defaults to the current user.
-		 * @return string One of 'full' | 'content' | 'none'.
+		 * @return string One of 'full' | 'custom' | 'content' | 'none'.
 		 */
 		public static function access_for_user( $user = null ) {
 			$user = self::resolve_user( $user );
@@ -119,9 +145,9 @@ if ( ! class_exists( 'UiChemy_Roles' ) ) {
 		/**
 		 * Whether the user may use a UiChemy feature surface.
 		 *
-		 * Administrators always may. Otherwise the flag is OR'd across the
-		 * user's roles. A feature is only meaningful when the user also has
-		 * editor access, so it is forced off for no-access users.
+		 * Administrators always may. Full Access grants every surface. Custom
+		 * Access grants only the surfaces whose toggle the admin turned on (OR'd
+		 * across the user's Custom roles). Content-only and no-access never do.
 		 *
 		 * @param string           $feature One of self::FEATURES.
 		 * @param int|WP_User|null $user    User or ID; defaults to current user.
@@ -138,20 +164,86 @@ if ( ! class_exists( 'UiChemy_Roles' ) ) {
 			if ( user_can( $user, 'manage_options' ) ) {
 				return true;
 			}
-			// Feature surfaces require FULL access — a content-only (or no-access)
-			// role never gets design system / theme builder / AI chat, matching the
-			// "no design, code or globals" contract shown in the Role Manager. This
-			// is the server-side guarantee even if a stale stored flag says otherwise.
-			if ( 'full' !== self::access_for_user( $user ) ) {
+
+			$level = self::access_for_user( $user );
+
+			// Full Access = every feature surface, unconditionally. The per-feature
+			// toggles are not consulted for a full role (they are a Custom-only
+			// concept), so full always grants theme builder / design system / AI chat.
+			if ( 'full' === $level ) {
+				return true;
+			}
+
+			// Anything below Custom (content-only / no-access) never reaches a feature
+			// surface — the "no design, code or globals" contract shown in the Role
+			// Manager. Guaranteed here even if a stale stored flag says otherwise.
+			if ( 'custom' !== $level ) {
 				return false;
 			}
 
+			// Custom Access = only the surfaces the admin opted into. Read the flag
+			// from the role(s) that are actually Custom, so a lower-access role's
+			// leftover flag can't leak a feature the user was not granted.
 			foreach ( (array) $user->roles as $role_slug ) {
-				if ( self::feature_for_role( $role_slug, $feature ) ) {
+				if ( 'custom' === self::access_for_role( $role_slug )
+					&& self::feature_for_role( $role_slug, $feature ) ) {
 					return true;
 				}
 			}
 			return false;
+		}
+
+		/**
+		 * Resolve the effective composer editor mode for a user.
+		 *
+		 * The site-wide "Editor mode" setting is the default for everyone. A CUSTOM
+		 * role can narrow it per role via the Design / Developer toggles:
+		 *
+		 *   both toggles on  → 'both'      (Design + Developer, with the switch)
+		 *   developer only   → 'developer' (Chat + Editor + Code)
+		 *   design only      → 'design'    (Chat + Editor)
+		 *   neither on       → the site setting (an untouched Custom role inherits it,
+		 *                       so it is never left with no editor surface at all)
+		 *
+		 * Admins, Full, content-only and no-access all follow the site setting —
+		 * the toggles exist only on Custom roles. Across several Custom roles the
+		 * toggles are OR'd, matching the additive capability model.
+		 *
+		 * @param string           $site_mode Site setting: 'both' | 'design' | 'developer'.
+		 * @param int|WP_User|null $user      User or ID; defaults to the current user.
+		 * @return string One of 'both' | 'design' | 'developer'.
+		 */
+		public static function editor_mode_for_user( $site_mode, $user = null ) {
+			$site_mode = in_array( $site_mode, array( 'both', 'design', 'developer' ), true ) ? $site_mode : 'both';
+
+			$user = self::resolve_user( $user );
+			if ( ! $user || ! $user->exists() || user_can( $user, 'manage_options' ) ) {
+				return $site_mode;
+			}
+			if ( 'custom' !== self::access_for_user( $user ) ) {
+				return $site_mode;
+			}
+
+			$design    = false;
+			$developer = false;
+			foreach ( (array) $user->roles as $role_slug ) {
+				if ( 'custom' !== self::access_for_role( $role_slug ) ) {
+					continue;
+				}
+				$design    = $design || self::feature_for_role( $role_slug, 'mode_design' );
+				$developer = $developer || self::feature_for_role( $role_slug, 'mode_developer' );
+			}
+
+			if ( $design && $developer ) {
+				return 'both';
+			}
+			if ( $developer ) {
+				return 'developer';
+			}
+			if ( $design ) {
+				return 'design';
+			}
+			return $site_mode;
 		}
 
 		/* ── Per-role resolution ──────────────────────────────────────────── */
@@ -160,7 +252,7 @@ if ( ! class_exists( 'UiChemy_Roles' ) ) {
 		 * The stored (or default) access level for a single role slug.
 		 *
 		 * @param string $role_slug Role slug (e.g. 'editor').
-		 * @return string One of 'full' | 'content' | 'none'.
+		 * @return string One of 'full' | 'custom' | 'content' | 'none'.
 		 */
 		public static function access_for_role( $role_slug ) {
 			$settings = self::get_settings();
@@ -282,8 +374,8 @@ if ( ! class_exists( 'UiChemy_Roles' ) ) {
 			$out = array();
 			foreach ( array_keys( self::editable_roles() ) as $role_slug ) {
 				$entry = array( 'access' => self::access_for_role( $role_slug ) );
-				foreach ( self::FEATURES as $feature ) {
-					$entry[ $feature ] = self::feature_for_role( $role_slug, $feature ) ? 1 : 0;
+				foreach ( self::toggle_keys() as $key ) {
+					$entry[ $key ] = self::feature_for_role( $role_slug, $key ) ? 1 : 0;
 				}
 				$out[ $role_slug ] = $entry;
 			}
@@ -331,12 +423,13 @@ if ( ! class_exists( 'UiChemy_Roles' ) ) {
 				}
 
 				$entry = array( 'access' => $access );
-				foreach ( self::FEATURES as $feature ) {
-					// Feature surfaces (design system, theme builder, AI chat) require
-					// FULL editor access. A "content only" role is explicitly limited to
-					// text/images — "no design, code or globals" — so features can never
-					// be stored for anything below full access.
-					$entry[ $feature ] = ( 'full' === $access && ! empty( $row[ $feature ] ) ) ? 1 : 0;
+				foreach ( self::toggle_keys() as $key ) {
+					// The per-role toggles (feature surfaces + editor-mode) are a
+					// CUSTOM-access concept: that is the only level where the admin picks
+					// them individually. Full Access grants the surfaces implicitly and
+					// follows the site editor mode; content-only / no-access are limited
+					// to text/images. So a flag is only ever stored for a custom role.
+					$entry[ $key ] = ( 'custom' === $access && ! empty( $row[ $key ] ) ) ? 1 : 0;
 				}
 				$out[ $role_slug ] = $entry;
 			}

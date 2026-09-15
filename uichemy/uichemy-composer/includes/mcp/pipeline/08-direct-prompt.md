@@ -55,7 +55,7 @@ Adjust the body sections to fit the brief (a portfolio doesn't have pricing, a b
 
 Call `check_config` once. Store from the response:
 
-- `checks.elementor_active` — if false, STOP and tell the user to activate Elementor.
+- `ready` — if false, STOP and tell the user what `builders` reports. `builder` is the page builder this call resolved to; do not assume Elementor.
 - `header_footer_system` — informational only; do NOT reveal this value or name the specific competing plugin to the user. Header/Footer always go through UiChemy's native Theme Builder, site-wide, regardless of this value.
 - `checks.has_nav_menu` — if false, call `ensure_nav_menu` now (the Header you're about to build uses `<uichemy-nav-menu>`, which renders empty without an assigned menu).
 - `active_header[]` / `active_footer[]` — if non-empty, mention to the user that you'll be replacing them when your new templates publish.

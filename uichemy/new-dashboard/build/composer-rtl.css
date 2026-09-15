@@ -554,6 +554,9 @@ video {
 .uich-tw .inset-0 {
   inset: 0px;
 }
+.uich-tw .inset-\[2px\] {
+  inset: 2px;
+}
 .uich-tw .inset-x-0 {
   right: 0px;
   left: 0px;
@@ -682,9 +685,9 @@ video {
   margin-right: -0.5rem;
   margin-left: -0.5rem;
 }
-.uich-tw .mx-4 {
-  margin-right: 1rem;
-  margin-left: 1rem;
+.uich-tw .mx-2\.5 {
+  margin-right: 0.625rem;
+  margin-left: 0.625rem;
 }
 .uich-tw .mx-auto {
   margin-right: auto;
@@ -707,6 +710,9 @@ video {
 }
 .uich-tw .-mb-px {
   margin-bottom: -1px;
+}
+.uich-tw .mb-1 {
+  margin-bottom: 0.25rem;
 }
 .uich-tw .mb-1\.5 {
   margin-bottom: 0.375rem;
@@ -734,6 +740,9 @@ video {
 }
 .uich-tw .mr-1 {
   margin-left: 0.25rem;
+}
+.uich-tw .mr-1\.5 {
+  margin-left: 0.375rem;
 }
 .uich-tw .mr-2 {
   margin-left: 0.5rem;
@@ -938,6 +947,9 @@ video {
 .uich-tw .h-\[70vh\] {
   height: 70vh;
 }
+.uich-tw .h-\[var\(--input-h\)\] {
+  height: var(--input-h);
+}
 .uich-tw .h-\[var\(--radix-select-trigger-height\)\] {
   height: var(--radix-select-trigger-height);
 }
@@ -970,6 +982,9 @@ video {
 }
 .uich-tw .max-h-\[300px\] {
   max-height: 300px;
+}
+.uich-tw .max-h-\[340px\] {
+  max-height: 340px;
 }
 .uich-tw .max-h-\[52vh\] {
   max-height: 52vh;
@@ -1099,6 +1114,9 @@ video {
 }
 .uich-tw .w-\[1px\] {
   width: 1px;
+}
+.uich-tw .w-\[300px\] {
+  width: 300px;
 }
 .uich-tw .w-\[320px\] {
   width: 320px;
@@ -1496,6 +1514,9 @@ video {
 .uich-tw .rounded-\[15px\] {
   border-radius: 15px;
 }
+.uich-tw .rounded-\[4px\] {
+  border-radius: 4px;
+}
 .uich-tw .rounded-\[6px\] {
   border-radius: 6px;
 }
@@ -1554,6 +1575,9 @@ video {
 .uich-tw .border-b {
   border-bottom-width: 1px;
 }
+.uich-tw .border-b-0 {
+  border-bottom-width: 0px;
+}
 .uich-tw .border-l {
   border-right-width: 1px;
 }
@@ -1581,6 +1605,12 @@ video {
 .uich-tw .border-\[\#b4603a\]\/20 {
   border-color: rgb(180 96 58 / 0.2);
 }
+.uich-tw .border-\[var\(--panel-line\)\] {
+  border-color: var(--panel-line);
+}
+.uich-tw .border-amber-500\/40 {
+  border-color: rgb(245 158 11 / 0.4);
+}
 .uich-tw .border-border {
   border-color: hsl(var(--border));
 }
@@ -1598,6 +1628,9 @@ video {
 }
 .uich-tw .border-destructive\/45 {
   border-color: hsl(var(--destructive) / 0.45);
+}
+.uich-tw .border-foreground {
+  border-color: hsl(var(--foreground));
 }
 .uich-tw .border-input {
   border-color: hsl(var(--input));
@@ -1648,8 +1681,26 @@ video {
 .uich-tw .bg-\[\#fbe0d0\]\/40 {
   background-color: rgb(251 224 208 / 0.4);
 }
+.uich-tw .bg-\[var\(--panel-bg\)\] {
+  background-color: var(--panel-bg);
+}
+.uich-tw .bg-\[var\(--panel-bg-2\)\] {
+  background-color: var(--panel-bg-2);
+}
+.uich-tw .bg-\[var\(--panel-bg-4\)\] {
+  background-color: var(--panel-bg-4);
+}
+.uich-tw .bg-\[var\(--panel-line\)\] {
+  background-color: var(--panel-line);
+}
+.uich-tw .bg-\[var\(--text-hi\)\] {
+  background-color: var(--text-hi);
+}
 .uich-tw .bg-accent {
   background-color: hsl(var(--accent));
+}
+.uich-tw .bg-amber-500\/10 {
+  background-color: rgb(245 158 11 / 0.1);
 }
 .uich-tw .bg-background {
   background-color: hsl(var(--background));
@@ -1861,6 +1912,10 @@ video {
   padding-right: 2rem;
   padding-left: 2rem;
 }
+.uich-tw .py-0 {
+  padding-top: 0px;
+  padding-bottom: 0px;
+}
 .uich-tw .py-0\.5 {
   padding-top: 0.125rem;
   padding-bottom: 0.125rem;
@@ -1909,6 +1964,9 @@ video {
   padding-top: 2rem;
   padding-bottom: 2rem;
 }
+.uich-tw .pb-0 {
+  padding-bottom: 0px;
+}
 .uich-tw .pb-0\.5 {
   padding-bottom: 0.125rem;
 }
@@ -1933,9 +1991,6 @@ video {
 .uich-tw .pb-8 {
   padding-bottom: 2rem;
 }
-.uich-tw .pl-12 {
-  padding-right: 3rem;
-}
 .uich-tw .pl-2 {
   padding-right: 0.5rem;
 }
@@ -1948,14 +2003,26 @@ video {
 .uich-tw .pl-6 {
   padding-right: 1.5rem;
 }
+.uich-tw .pl-7 {
+  padding-right: 1.75rem;
+}
 .uich-tw .pl-8 {
   padding-right: 2rem;
+}
+.uich-tw .pl-\[26px\] {
+  padding-right: 26px;
+}
+.uich-tw .pr-0 {
+  padding-left: 0px;
 }
 .uich-tw .pr-1 {
   padding-left: 0.25rem;
 }
 .uich-tw .pr-2 {
   padding-left: 0.5rem;
+}
+.uich-tw .pr-2\.5 {
+  padding-left: 0.625rem;
 }
 .uich-tw .pr-4 {
   padding-left: 1rem;
@@ -1980,6 +2047,9 @@ video {
 }
 .uich-tw .pt-1 {
   padding-top: 0.25rem;
+}
+.uich-tw .pt-1\.5 {
+  padding-top: 0.375rem;
 }
 .uich-tw .pt-2 {
   padding-top: 0.5rem;
@@ -2118,6 +2188,9 @@ video {
 .uich-tw .tracking-\[-0\.4px\] {
   letter-spacing: -0.4px;
 }
+.uich-tw .tracking-\[0\.09em\] {
+  letter-spacing: 0.09em;
+}
 .uich-tw .tracking-tight {
   letter-spacing: -0.025em;
 }
@@ -2149,8 +2222,21 @@ video {
   --tw-text-opacity: 1;
   color: rgb(180 96 58 / var(--tw-text-opacity, 1));
 }
+.uich-tw .text-\[var\(--panel-bg\)\] {
+  color: var(--panel-bg);
+}
+.uich-tw .text-\[var\(--text-hi\)\] {
+  color: var(--text-hi);
+}
+.uich-tw .text-\[var\(--text-mid\)\] {
+  color: var(--text-mid);
+}
 .uich-tw .text-accent-foreground {
   color: hsl(var(--accent-foreground));
+}
+.uich-tw .text-amber-600 {
+  --tw-text-opacity: 1;
+  color: rgb(217 119 6 / var(--tw-text-opacity, 1));
 }
 .uich-tw .text-background {
   color: hsl(var(--background));
@@ -2184,9 +2270,6 @@ video {
 }
 .uich-tw .text-muted-foreground\/60 {
   color: hsl(var(--muted-foreground) / 0.6);
-}
-.uich-tw .text-muted-foreground\/70 {
-  color: hsl(var(--muted-foreground) / 0.7);
 }
 .uich-tw .text-popover-foreground {
   color: hsl(var(--popover-foreground));
@@ -2225,6 +2308,9 @@ video {
 .uich-tw .underline-offset-4 {
   text-underline-offset: 4px;
 }
+.uich-tw .accent-\[var\(--text-hi\)\] {
+  accent-color: var(--text-hi);
+}
 .uich-tw .opacity-0 {
   opacity: 0;
 }
@@ -2233,6 +2319,9 @@ video {
 }
 .uich-tw .opacity-40 {
   opacity: 0.4;
+}
+.uich-tw .opacity-45 {
+  opacity: 0.45;
 }
 .uich-tw .opacity-50 {
   opacity: 0.5;
@@ -2265,6 +2354,11 @@ video {
 .uich-tw .shadow-\[0_4px_16px_rgba\(0\2c 0\2c 0\2c 0\.06\)\] {
   --tw-shadow: 0 4px 16px rgba(0,0,0,0.06);
   --tw-shadow-colored: 0 4px 16px var(--tw-shadow-color);
+  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
+}
+.uich-tw .shadow-\[0_8px_24px_rgba\(12\2c 14\2c 20\2c 0\.10\)\] {
+  --tw-shadow: 0 8px 24px rgba(12,14,20,0.10);
+  --tw-shadow-colored: 0 8px 24px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 .uich-tw .shadow-lg {
@@ -2478,6 +2572,12 @@ video {
 .uich-tw .file\:text-foreground::file-selector-button {
   color: hsl(var(--foreground));
 }
+.uich-tw .placeholder\:text-\[var\(--text-mid\)\]::-moz-placeholder {
+  color: var(--text-mid);
+}
+.uich-tw .placeholder\:text-\[var\(--text-mid\)\]::placeholder {
+  color: var(--text-mid);
+}
 .uich-tw .placeholder\:text-muted-foreground::-moz-placeholder {
   color: hsl(var(--muted-foreground));
 }
@@ -2510,6 +2610,9 @@ video {
 }
 .uich-tw .hover\:border-ring:hover {
   border-color: hsl(var(--ring));
+}
+.uich-tw .hover\:bg-\[var\(--panel-bg-3\)\]:hover {
+  background-color: var(--panel-bg-3);
 }
 .uich-tw .hover\:bg-accent:hover {
   background-color: hsl(var(--accent));
@@ -2556,6 +2659,9 @@ video {
 .uich-tw .hover\:text-\[\#171717\]:hover {
   --tw-text-opacity: 1;
   color: rgb(23 23 23 / var(--tw-text-opacity, 1));
+}
+.uich-tw .hover\:text-\[var\(--text-hi\)\]:hover {
+  color: var(--text-hi);
 }
 .uich-tw .hover\:text-accent-foreground:hover {
   color: hsl(var(--accent-foreground));
@@ -2626,6 +2732,9 @@ video {
 }
 .uich-tw .focus\:ring-offset-2:focus {
   --tw-ring-offset-width: 2px;
+}
+.uich-tw .focus-visible\:border-\[var\(--panel-line-2\)\]:focus-visible {
+  border-color: var(--panel-line-2);
 }
 .uich-tw .focus-visible\:outline-none:focus-visible {
   outline: 2px solid transparent;
@@ -2849,7 +2958,14 @@ video {
 .uich-tw .data-\[state\=open\]\:slide-in-from-top-\[48\%\][data-state="open"] {
   --tw-enter-translate-y: -48%;
 }
+.uich-tw .dark\:text-amber-500:is(.dark *) {
+  --tw-text-opacity: 1;
+  color: rgb(245 158 11 / var(--tw-text-opacity, 1));
+}
 @media (min-width: 640px) {
+  .uich-tw .sm\:ml-12 {
+    margin-right: 3rem;
+  }
   .uich-tw .sm\:max-w-2xl {
     max-width: 42rem;
   }
@@ -2859,11 +2975,20 @@ video {
   .uich-tw .sm\:shrink-0 {
     flex-shrink: 0;
   }
+  .uich-tw .sm\:auto-cols-fr {
+    grid-auto-columns: minmax(0, 1fr);
+  }
+  .uich-tw .sm\:grid-flow-col {
+    grid-auto-flow: column;
+  }
   .uich-tw .sm\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .uich-tw .sm\:grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .uich-tw .sm\:grid-cols-\[128px_1fr\] {
+    grid-template-columns: 128px 1fr;
   }
   .uich-tw .sm\:flex-row {
     flex-direction: row;
@@ -2882,8 +3007,21 @@ video {
     margin-left: calc(0.5rem * var(--tw-space-x-reverse));
     margin-right: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));
   }
+  .uich-tw :is(.sm\:divide-x > :not([hidden]) ~ :not([hidden])) {
+    --tw-divide-x-reverse: 0;
+    border-left-width: calc(1px * var(--tw-divide-x-reverse));
+    border-right-width: calc(1px * calc(1 - var(--tw-divide-x-reverse)));
+  }
+  .uich-tw :is(.sm\:divide-y-0 > :not([hidden]) ~ :not([hidden])) {
+    --tw-divide-y-reverse: 0;
+    border-top-width: calc(0px * calc(1 - var(--tw-divide-y-reverse)));
+    border-bottom-width: calc(0px * var(--tw-divide-y-reverse));
+  }
   .uich-tw .sm\:rounded-lg {
     border-radius: var(--radius);
+  }
+  .uich-tw .sm\:border-r {
+    border-left-width: 1px;
   }
   .uich-tw .sm\:p-6 {
     padding: 1.5rem;
@@ -2910,6 +3048,9 @@ video {
 @media (min-width: 1024px) {
   .uich-tw .lg\:w-\[38\%\] {
     width: 38%;
+  }
+  .uich-tw .lg\:grid-cols-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
   .uich-tw .lg\:flex-row {
     flex-direction: row;
@@ -2953,6 +3094,12 @@ video {
 .uich-tw :is(.\[\&\>svg\]\:size-4>svg) {
   width: 1rem;
   height: 1rem;
+}
+.uich-tw :is(.\[\&\>svg\]\:h-3>svg) {
+  height: 0.75rem;
+}
+.uich-tw :is(.\[\&\>svg\]\:w-3>svg) {
+  width: 0.75rem;
 }
 .uich-tw :is(.\[\&\>svg\]\:shrink-0>svg) {
   flex-shrink: 0;
@@ -4889,6 +5036,28 @@ body[data-panel-only] {
 .layers-history-row.is-viewonly.is-current .lh-label { font-weight: 400; }
 .layers-history-row.is-viewonly .lh-scope { background: rgba(120,120,140,0.14); }
 
+/* "Clear history" bar pinned under the rows. */
+.layers-history-clearbar {
+  display: flex; align-items: center; justify-content: flex-end; gap: 8px; flex-wrap: wrap;
+  margin-top: 4px; padding: 8px 14px 6px;
+  border-top: 1px solid var(--border, rgba(128,128,140,0.18));
+}
+.layers-history-clearbar .lh-clear-ask {
+  flex: 1; min-width: 0; font-size: 12px; color: var(--text-lo, rgba(150,150,160,0.9));
+}
+.layers-history-clearbar .lh-clear-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 9px; border-radius: 6px; cursor: pointer;
+  font-size: 12px; font-weight: 500; line-height: 1;
+  border: 1px solid var(--border, rgba(128,128,140,0.22));
+  background: transparent; color: var(--text-hi);
+}
+.layers-history-clearbar .lh-clear-btn:hover { background: var(--surface-2, rgba(128,128,128,0.12)); }
+.layers-history-clearbar .lh-clear-btn.is-danger {
+  border-color: rgba(236,8,104,0.45); color: #EC0868;
+}
+.layers-history-clearbar .lh-clear-btn.is-danger:hover { background: rgba(236,8,104,0.12); }
+
 .layers-search {
   /* Breathing room between the "Layers" head and the search field. */
   padding: 8px 14px 10px;
@@ -5791,6 +5960,33 @@ body[data-panel-only] {
   background: linear-gradient(to left, var(--panel-line), transparent);
 }
 
+/* Animation section headings are centred between two rules, so a scope heading
+   ("Whole section") reads as a divider across the panel rather than as a label
+   sitting on top of the fields that follow it.
+
+   The shared `.subsec-rule` gradient fades left-to-right, which is right for the
+   rule AFTER the title. The one before it is mirrored, so both fade away from
+   the title instead of one pointing into it. */
+.subsec.uich-motion-subsec {
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.uich-motion-subsec .subsec-rule:first-child {
+  background: linear-gradient(to right, var(--panel-line), transparent);
+}
+
+/* A motion variable's `help` line. Sits under its control, always readable,
+   because the one-liner explains what the value MEANS and a reader who has to
+   discover it by hovering mostly never does. */
+.uich-motion-help {
+  display: block;
+  margin-top: 4px;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--text-dim);
+}
+
 /* ---- Inspector footer ---- */
 .inspector-foot {
   height: 36px;
@@ -5937,24 +6133,9 @@ body[data-panel-only] {
   letter-spacing: 0.01em;
 }
 
-.uich-tw .uich-construct-pill.loop {
-  background: hsl(var(--status-loop) / 0.16);
-  color: hsl(var(--status-loop));
-}
-
-.uich-tw .uich-construct-pill.condition {
-  background: hsl(var(--status-condition) / 0.16);
-  color: hsl(var(--status-condition));
-}
-
 .uich-tw .uich-construct-pill.form {
   background: hsl(var(--status-form) / 0.16);
   color: hsl(var(--status-form));
-}
-
-.uich-tw .uich-construct-pill.data {
-  background: hsl(var(--status-data) / 0.16);
-  color: hsl(var(--status-data));
 }
 
 /* Fields keep the shared `.field.pf` label-above-control chrome so labels and
@@ -5974,6 +6155,14 @@ body[data-panel-only] {
 
 .uich-tw .uich-construct-grid .field.pf {
   margin: 0;
+}
+
+/* Label sits ABOVE its control on the stacked surfaces (bottom dock, Gutenberg
+   inspector), so it keeps the 4px it used to carry as an inline style. The right
+   dock lays the same field out as a centre-aligned label-left row and drops this
+   again — see the construct-panel block at the end of composer-dock.css. */
+.uich-tw .uich-construct-body .field.pf > .pf-label {
+  padding: 0 0 4px;
 }
 
 /* Section dividers (Filtering / Published date / …), tie tightly to the fields
@@ -6093,19 +6282,231 @@ body[data-panel-only] {
 
 
 
-/* Custom-query editor (Loop panel, "Custom query" mode). Monospace and full
-   width, the expressions this holds are long, and wrapping them mid-argument
-   is what makes a hand-written query hard to read. */
-.uich-tw .uich-loop-custom {
+/* ── Loop query builder ──────────────────────────────────────────────────────
+   Normal / Advanced tabs, the rule cards Advanced adds, and the raw query
+   editor. Everything here is drawn from the same tokens as the rest of the
+   panel — no second palette, no second control chrome. */
+
+/* Two tabs, one track. A segmented pair rather than a select: there are exactly
+   two, and which one is active changes what the whole panel shows. */
+.uich-tw .uich-loop-tabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 3px;
+  padding: 3px;
+  border-radius: 8px;
+  background: hsl(var(--muted) / 0.5);
+}
+
+.uich-tw .uich-loop-tab {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  border: 0;
+  border-radius: 6px;
+  padding: 6px 8px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.uich-tw .uich-loop-tab:hover:not(:disabled) {
+  color: hsl(var(--foreground));
+}
+
+.uich-tw .uich-loop-tab.on {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+/* Disabled means "this query is too complex for Normal", not "broken" — dim it,
+   but keep it readable so the label still explains where the fields went. */
+.uich-tw .uich-loop-tab:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Why a tab is unavailable, or why the fields are frozen. */
+.uich-tw .uich-loop-note {
+  margin: 0;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: hsl(var(--muted) / 0.4);
+  font-size: 11.5px;
+  line-height: 1.5;
+  color: hsl(var(--muted-foreground));
+}
+
+/* One-line note under a control. Deliberately rare — it is on the dozen or so
+   options whose label cannot carry their meaning (a comma-separated list, an ID
+   field, AND vs OR), not on every field, so the notes stay short enough to
+   actually be read instead of becoming a second wall of text.
+
+   It sits in the CONTROL's column, not the label's: in the right dock a field is
+   a `96px | 1fr` grid and everything that is not `.pf-label` lands in column 2,
+   so the note lines up under the thing it describes. */
+.uich-tw .uich-field-desc {
+  margin: 2px 0 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: hsl(var(--muted-foreground));
+}
+
+/* The same note for a whole group, pulled up under its divider so it reads as
+   part of the heading rather than as a floating first row. */
+.uich-tw .uich-sec-desc {
+  margin: -8px 0 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: hsl(var(--muted-foreground));
+}
+
+/* AND / OR across a rule list. */
+.uich-tw .uich-rel {
+  display: inline-grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+  padding: 2px;
+  border-radius: 7px;
+  background: hsl(var(--muted) / 0.5);
+}
+
+.uich-tw .uich-rel-btn {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  border: 0;
+  border-radius: 5px;
+  padding: 4px 14px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+}
+
+.uich-tw .uich-rel-btn.on {
+  background: hsl(var(--background));
+  color: hsl(var(--foreground));
+}
+
+.uich-tw .uich-rel-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* One clause. A hairline card so a list of rules reads as a list of things
+   rather than one long run of fields. */
+.uich-tw .uich-rule {
+  border: 1px solid hsl(var(--border) / 0.8);
+  border-radius: 8px;
+  padding: 10px;
+  background: hsl(var(--muted) / 0.22);
+}
+
+.uich-tw .uich-rule-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.uich-tw .uich-rule-n {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: hsl(var(--muted-foreground));
+}
+
+/* Labelled remove control. Sized by its own content like .uich-rule-add rather
+   than pinned to a 22px square: at a fixed square the glyph was the only thing
+   in the button, and when it failed to paint the control read as an empty pink
+   chip. The svg is given explicit dimensions here too — several icon buttons in
+   this panel do the same through Tailwind's [&_svg]:size-3, because the icon
+   inherits no intrinsic size it can be trusted to keep inside a flex parent. */
+.uich-tw .uich-rule-del {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 11.5px;
+  line-height: 1;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: background-color 120ms ease, color 120ms ease;
+}
+
+.uich-tw .uich-rule-del svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+.uich-tw .uich-rule-del:hover:not(:disabled) {
+  background: hsl(var(--destructive) / 0.12);
+  color: hsl(var(--destructive));
+}
+
+.uich-tw .uich-rule-del:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.uich-tw .uich-rule-add {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  align-self: flex-start;
+  padding: 6px 10px;
+  border: 1px dashed hsl(var(--border));
+  border-radius: 7px;
+  background: transparent;
+  font-family: inherit;
+  font-size: 11.5px;
+  color: hsl(var(--muted-foreground));
+  cursor: pointer;
+  transition: border-color 120ms ease, color 120ms ease;
+}
+
+.uich-tw .uich-rule-add svg {
+  width: 13px;
+  height: 13px;
+  flex: none;
+}
+
+.uich-tw .uich-rule-add:hover:not(:disabled) {
+  border-color: hsl(var(--ring));
+  color: hsl(var(--foreground));
+}
+
+.uich-tw .uich-rule-add:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* The raw query. Monospace and full width — the expressions this holds are
+   long, and wrapping them mid-argument is what makes a query hard to read. */
+.uich-tw .uich-loop-raw {
   display: block;
   width: 100%;
-  margin: 0 0 10px;
+  margin: 0;
   padding: 9px 10px;
   resize: vertical;
-  min-height: 92px;
-  border: 1px solid hsl(var(--input));
-  border-radius: 6px;
-  background: hsl(var(--muted) / 0.35);
+  min-height: 88px;
+  border: 1px solid transparent;
+  border-radius: 8px;
+  background: hsl(var(--muted) / 0.45);
   color: hsl(var(--foreground));
   font-family: ui-monospace, Menlo, monospace;
   font-size: 11.5px;
@@ -6117,32 +6518,27 @@ body[data-panel-only] {
   word-break: break-word;
 }
 
-.uich-tw .uich-loop-custom:focus-visible {
+.uich-tw .uich-loop-raw:focus-visible {
   outline: none;
   border-color: hsl(var(--ring));
-  box-shadow: 0 0 0 1px hsl(var(--ring));
 }
 
-.uich-tw .uich-loop-custom::-moz-placeholder {
-  color: hsl(var(--muted-foreground) / 0.7);
+/* Incomplete, not wrong: nothing has been written to the template yet. */
+.uich-tw .uich-loop-raw.invalid {
+  border-color: hsl(var(--warning, var(--muted-foreground)) / 0.7);
 }
 
-.uich-tw .uich-loop-custom::placeholder {
-  color: hsl(var(--muted-foreground) / 0.7);
+.uich-tw .uich-loop-rawbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-top: -4px;
 }
 
-/* Read-only: a query the build can show but not edit (Custom query is Pro).
-   Dimmed and not-allowed so it reads as locked, not broken. */
-.uich-tw .uich-loop-custom[readonly] {
-  opacity: 0.7;
-  cursor: not-allowed;
-  background: hsl(var(--muted) / 0.55);
-}
-
-/* Incomplete expression: a warning, not an error, nothing was written yet. */
-.uich-tw .uich-loop-custom-warn {
-  margin: -6px 0 8px !important;
-  color: hsl(var(--warning, var(--muted-foreground)));
+.uich-tw .uich-loop-rawstate {
+  font-size: 11px;
+  color: hsl(var(--muted-foreground));
 }
 
 /* Helper text: quiet notes, with inline code chips that match the code editor. */
@@ -6160,11 +6556,6 @@ body[data-panel-only] {
   border-radius: 4px;
   background: hsl(var(--muted) / 0.6);
   color: hsl(var(--foreground));
-}
-
-/* Remove button already carries destructive styling from JSX; give it room. */
-.uich-tw .uich-construct-remove {
-  margin-bottom: 2px;
 }
 
 /* ── Construct panel: collapsible sub-sections + progressive disclosure ───────
@@ -18812,9 +19203,13 @@ body[data-theme="light"] .ed-pane-body-live .CodeMirror-linenumber,
      pill already makes (see .canvas-toolbar-wrap); falls back to 0 when the
      panel is closed, and eases with the drawer so the two stay in step. */
   right: calc(50% - var(--uich-dock-w, 0px) / 2);
-  bottom: 24px;
+  /* Lifted clear of the scroll timeline, which docks along the bottom edge at
+     exactly this spot. `--uich-mtl-h` is the dock's live height (0 when it is
+     closed), published on <body> by MotionTimelinePanel — the vertical twin of
+     `--uich-dock-w` above. */
+  bottom: calc(24px + var(--uich-mtl-h, 0px));
   transform: translateX(50%);
-  transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.2s ease;
   z-index: 2147483602;
   pointer-events: auto;
   display: flex;
@@ -20133,6 +20528,1626 @@ body[data-theme="light"] .ed-pane-body-live .CodeMirror-linenumber,
 .chat2-body .process-steps { overflow-x: clip; }
 
 
+/* Scroll timeline
+   ==============
+   A floating panel on the LIVE page. It carries the composer's own skin and
+   theme attributes (see useComposerSkin), so it reads the SAME tokens the
+   drawer, the dock and the canvas toolbar read — a colour changed in
+   composer-skin-tokens.css changes this panel too, and it cannot drift into a
+   private palette the way a hand-copied set of literals does.
+
+   What IS stated literally here is box-model and isolation: the host theme's CSS
+   is unknown and often aggressive, so nothing inside is left to inherit. */
+/* ───────────────────────────────────────────────────────────────────────────
+   Scroll timeline — a bottom-docked strip, shaped after Figma's motion timeline.
+
+   Docked rather than floating: a timeline is read WHILE scrolling the page, and
+   a floating box has to be dragged out of the way of the very thing it measures.
+   Pinned to the bottom edge it behaves like the page's own transport — always in
+   the same place, never over the content being watched.
+
+   Greyscale on purpose. Every bar here is the same kind of object, so colour
+   would carry no information; what distinguishes a bar is where it starts, how
+   long it runs, and whether the page is inside it right now — position, width
+   and contrast. The playhead is the strongest ink on the panel rather than a
+   second hue, so the panel never competes with the design being previewed.
+
+   Two custom properties drive the geometry:
+     --uich-n  the name column's width, shared by the strip, the grid and the rows
+     --uich-z  the ruler's zoom, set inline from React
+   ─────────────────────────────────────────────────────────────────────────── */
+
+.uich-mtl,
+.uich-mtl-launch {
+  position: fixed;
+  /* Above the previewed page, below every composer overlay — including
+     `.uich-canvas-toolbar-host` (2147482500), because a text toolbar is a
+     transient control the user has just aimed at and the dock is ambient
+     chrome. It was 2147483000, which both buried that toolbar and TIED with
+     the history panel's own 2147483000, leaving DOM order to decide which of
+     the two won. */
+  z-index: 2147482400;
+  font-family: var(--uich-font, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);
+  isolation: isolate;
+  box-sizing: border-box;
+}
+
+.uich-mtl *,
+.uich-mtl *::before,
+.uich-mtl *::after { box-sizing: border-box; }
+
+/* ---- collapsed launcher ---- */
+.uich-mtl-launch {
+  left: calc(16px + var(--uich-dock-w, 0px));
+  bottom: 16px;
+  transition: left 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  padding: 8px 13px;
+  border: 1px solid var(--panel-line, #2a2d33);
+  border-radius: var(--radius-sm, 6px);
+  background: var(--panel-bg, #1f2124);
+  color: var(--text-mid, #b6bcc6);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+}
+
+.uich-mtl-launch:hover {
+  border-color: var(--panel-line-2, #3a3d44);
+  background: var(--panel-bg-2, #313336);
+  color: var(--text-hi, #f5f6f8);
+}
+
+/* An outlined pill rather than a filled one: this greyscale dock has no accent
+   to spend, and a solid chip here would read as the button's primary action
+   instead of a note about it. Sits on its own inherited colour, so it lifts
+   with the label on hover rather than staying behind. */
+.uich-mtl-beta {
+  margin-right: 1px;
+  padding: 2px 5px;
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  opacity: 0.55;
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.uich-mtl-launch:hover .uich-mtl-beta { opacity: 0.75; }
+
+/* ---- the dock ----
+   Full-bleed along the bottom: the ruler spans a whole page's scroll, and every
+   pixel of width is a pixel of resolution. Only the top edge is drawn, because
+   the other three sit against the viewport. */
+.uich-mtl {
+  /* 224, not 208: the column now carries a twist, a kind icon and a name, and
+     at 208 the longest real name still lost its last characters — which is the
+     one thing the column exists to show. */
+  --uich-n: 224px;
+  /* Air between the name column and where the ruler begins. Zero read as the
+     scale being welded to the panel edge, with 0px sitting on the divider
+     itself. A fixed number rather than a share of the ruler, so it stays the
+     same gap at every zoom. */
+  --uich-pad: 14px;
+  --uich-z: 1;
+  right: 0;
+  /* Stop at the drawer's edge instead of sliding under it. The right dock is
+     `right: 0; bottom: 0`, so a full-bleed dock covered the bottom third of the
+     panel — including its own scrolling content — and `body { margin-right }`
+     does not help, because a fixed element is laid out against the viewport,
+     not the body box. `--uich-dock-w` is set on <body> while the drawer is open
+     and removed when it closes; the same correction `.canvas-toolbar-wrap` and
+     `.annotate-bar` already make, eased on the drawer's own curve so the two
+     move as one. */
+  left: var(--uich-dock-w, 0px);
+  bottom: 0;
+  transition: left 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  width: auto;
+  height: min(38vh, 360px);
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  border: 0;
+  border-top: 1px solid var(--panel-line, #2a2d33);
+  border-radius: 0;
+  background: var(--panel-bg, #1f2124);
+  color: var(--text-hi, #f5f6f8);
+  /* No lift shadow. A 30px spread of black at 30% read as a grey wash bleeding
+     up over the page — worst on a light page, where it dirtied the footer above
+     the dock. The dock is docked, not floating: the 1px top border is the whole
+     edge it needs. */
+  box-shadow: none;
+}
+
+/* Collapsed is the strip alone. Set here rather than by clearing the inline
+   height, so the height the user dragged to survives and returns on expand. */
+.uich-mtl.is-collapsed { height: 44px; }
+.uich-mtl.is-collapsed .uich-mtl-body { margin-left: var(--uich-tools-w, 0px); }
+
+/* ---- while a bar editor is open ----
+   The dock deliberately sits BELOW `.uich-canvas-toolbar-host` (2147482500), so
+   a text toolbar the user just aimed at is never buried by ambient chrome. But
+   the bar editor is itself a transient control the user just opened, and it
+   cannot win on its own: it lives inside this element's stacking context, so its
+   `z-index: 5` is relative to the dock, not to the page. The toolbar therefore
+   drew straight over the popover.
+
+   Raising the whole dock for as long as an editor is open is what fixes it
+   without giving up the ordering the rest of the time — closed, the toolbar
+   wins again. Above the toolbar, still below every composer overlay
+   (dep floats 2147483200, annotate 2147483600+, menus and modals 2147483645+). */
+.uich-mtl.has-editor { z-index: 2147482600; }
+
+/* ---- page push ----
+   The dock is fixed over the previewed page, so the page's last section ended
+   up sliced off behind it and the only way to read it was to collapse the dock.
+   Reserving the dock's height at the foot of the document lets the page scroll
+   clear of it instead — the vertical twin of the right dock's
+   `body { margin-right }` push, and it eases on the same kind of curve so the
+   page and the dock move as one.
+
+   `padding-bottom` rather than `margin-bottom`: it extends the body's own
+   background, so a page with a dark or coloured body does not show a strip of
+   canvas under the last section while the dock is open.
+
+   The class is added by MotionTimelinePanel only while the dock is on screen,
+   and `--uich-mtl-h` is its live height — so a collapse shrinks the reservation
+   to the 44px strip rather than dropping it entirely. */
+body.uich-mtl-open {
+  padding-bottom: var(--uich-mtl-h, 0px);
+  transition: padding-bottom 0.25s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  body.uich-mtl-open { transition-duration: 0.01ms; }
+}
+
+/* ---- resize grip ----
+   One edge, because one edge is all that is exposed. It overhangs the border by
+   a couple of pixels, which is what makes a 1px line realistically grabbable,
+   and `touch-action: none` is what lets the drag work on a touch screen at all —
+   without it the browser claims the gesture for scrolling. */
+.uich-mtl-grip {
+  position: absolute;
+  top: -3px;
+  right: 0;
+  left: 0;
+  z-index: 7;
+  height: 7px;
+  cursor: ns-resize;
+  touch-action: none;
+}
+
+.uich-mtl-grip::after {
+  content: '';
+  position: absolute;
+  top: 3px;
+  right: 50%;
+  width: 44px;
+  height: 2px;
+  margin-right: -22px;
+  border-radius: 999px;
+  background: var(--text-dim, #7c8290);
+  opacity: 0;
+  transition: opacity 0.15s ease;
+}
+
+.uich-mtl-grip:hover::after { opacity: 0.6; }
+
+/* ---- fixed tools, over the strip's right end ----
+   Absolute rather than in the strip's flow: the strip scrolls sideways when the
+   ruler is zoomed, and Close must not scroll away with it. The opaque backing is
+   what lets the ruler pass underneath instead of colliding with it. */
+/* The dock's control row.
+   The cluster used to be pinned over the strip's right edge, and the scroll
+   viewport was pulled in by its width so the ruler could not slide underneath —
+   a gutter reserved down the WHOLE dock to protect one 44px band of it, which
+   cost a fifth of every row. Expanded, it now has a line of its own and the
+   rows run full width. */
+.uich-mtl-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex: none;
+  height: 30px;
+  border-bottom: 1px solid var(--panel-line, #2a2d33);
+  background: var(--panel-bg, #1f2124);
+}
+
+/* Collapsed there are no rows to pay for a gutter, and a second line would
+   double the height of the one state whose whole point is to be one line — so
+   here it goes back over the strip, exactly as it always did. */
+.uich-mtl.is-collapsed .uich-mtl-head {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 6;
+  height: 44px;
+  border-bottom: 0;
+  border-right: 1px solid var(--panel-line, #2a2d33);
+}
+
+.uich-mtl-tools {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: 100%;
+  padding: 0 11px 0 12px;
+  background: var(--panel-bg, #1f2124);
+}
+
+.uich-mtl-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm, 4px);
+  background: none;
+  color: var(--text-dim, #7c8290);
+  cursor: pointer;
+}
+
+.uich-mtl-icon:hover {
+  background: var(--panel-bg-2, #313336);
+  color: var(--text-hi, #f5f6f8);
+}
+
+.uich-mtl-icon:disabled {
+  opacity: 0.4;
+  cursor: default;
+  background: none;
+}
+
+.uich-mtl-i { width: 13px; height: 13px; display: block; }
+
+/* ---- body: the single scroll container ----
+   The strip and the rows scroll together, vertically and horizontally, which is
+   what keeps a tick and the bar it labels on the same pixel at every zoom. Two
+   scrollers would need syncing, and any drift between them is a timeline that
+   lies. */
+.uich-mtl-body {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  /* A column, so `.uich-mtl-rows` can take the height left over below the
+     strip. Without it the rows box is only as tall as its own content, and the
+     grid lines and playhead — absolutely positioned INSIDE it — stop dead at
+     the last row. Drag the dock taller and the lines no longer reach the
+     bottom, which is the one thing a timeline's guides have to do. */
+  display: flex;
+  flex-direction: column;
+  /* Stop the scroll viewport before the tools cluster — WHILE COLLAPSED ONLY.
+     Collapsed, the cluster is pinned over the dock's right edge, so without
+     this the ruler and the playhead scroll underneath it and the end of the
+     timeline is unreachable. Reserving the gutter on the SCROLLER rather than
+     on the ruler alone is what keeps ticks aligned with the bars they label:
+     one shared viewport, just narrower. Expanded, the cluster has its own row,
+     overlaps nothing, and the rows keep the full width — which is a fifth of
+     the dock that used to be permanently blank. */
+  margin-left: 0;
+  background: var(--panel-bg, #1f2124);
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel-line-2, #3a3d44) transparent;
+}
+
+.uich-mtl-body::-webkit-scrollbar { width: 8px; height: 8px; }
+.uich-mtl-body::-webkit-scrollbar-track { background: none; }
+
+.uich-mtl-body::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+  background-color: var(--panel-line-2, #3a3d44);
+}
+
+.uich-mtl-body::-webkit-scrollbar-thumb:hover { background-color: var(--text-dim, #7c8290); }
+.uich-mtl-body::-webkit-scrollbar-corner { background: none; }
+
+/* Both the strip and the row field stretch with the zoom. `min-width: 100%`
+   keeps 1x exactly as wide as the dock rather than a hair narrower. */
+.uich-mtl-strip,
+.uich-mtl-rows {
+  width: calc(var(--uich-n) + (100% - var(--uich-n)) * var(--uich-z));
+  min-width: 100%;
+}
+
+.uich-mtl-strip {
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  display: flex;
+  align-items: stretch;
+  height: 44px;
+  border-bottom: 1px solid var(--panel-line, #2a2d33);
+  background: var(--panel-bg, #1f2124);
+}
+
+/* Sticky at the left for the same reason the tools are pinned at the right:
+   transport and time readout stay put while the ruler slides under them. */
+.uich-mtl-lead {
+  position: sticky;
+  right: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  flex: 0 0 var(--uich-n);
+  width: var(--uich-n);
+  padding: 0 9px 0 12px;
+  border-left: 1px solid var(--panel-line, #2a2d33);
+  background: var(--panel-bg, #1f2124);
+}
+
+/* The strip's half of the same mask. The lead is already sticky, so a child
+   pinned just past its edge rides along and keeps the ruler from showing
+   through the gap when it scrolls underneath. */
+.uich-mtl-lead::after {
+  content: '';
+  position: absolute;
+  right: 100%;
+  top: 0;
+  bottom: 0;
+  width: var(--uich-pad);
+  background: var(--panel-bg, #1f2124);
+}
+
+.uich-mtl-time {
+  display: inline-flex;
+  align-items: baseline;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.01em;
+}
+
+.uich-mtl-now { color: var(--text-hi, #f5f6f8); }
+
+/* The total is context for the live figure, not a peer of it — stated after a
+   divider and in the quieter ink, the way Figma reads current-of-duration. */
+.uich-mtl-total {
+  margin-right: 5px;
+  color: var(--text-dim, #7c8290);
+  font-weight: 500;
+}
+
+.uich-mtl-total::before {
+  content: '/';
+  margin-left: 5px;
+  opacity: 0.55;
+}
+
+.uich-mtl-unit {
+  color: var(--text-dim, #7c8290);
+  font-size: 10px;
+  font-weight: 500;
+}
+
+/* The tally doubles as the place a failed drag reports itself: it is the one
+   line of text already in the strip, and a toast over a timeline would cover
+   the bars the message is about. */
+.uich-mtl-tally.is-warn {
+  color: var(--text-hi, #f5f6f8);
+  font-size: 9px;
+  letter-spacing: 0;
+  text-transform: none;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.uich-mtl-tally {
+  margin-right: auto;
+  color: var(--text-dim, #7c8290);
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* ---- ruler ---- */
+.uich-mtl-scale {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-right: var(--uich-pad);
+}
+
+.uich-mtl-tick {
+  position: absolute;
+  bottom: 6px;
+  padding-top: 9px;
+  color: var(--text-dim, #7c8290);
+  font-size: 10px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  --uich-stem: 50%;
+}
+
+/* Centred label → stem under its middle; a label pinned to an edge → stem at
+   that edge, which is where the value actually is. */
+.uich-mtl-tick::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  right: var(--uich-stem);
+  width: 1px;
+  height: 6px;
+  background: var(--panel-line-2, #3a3d44);
+}
+
+/* ---- playhead ----
+   The panel's strongest ink, not a second hue: it is the one thing on the strip
+   that has to be findable in a glance, and contrast does that without adding a
+   colour the design under it has to compete with. */
+.uich-mtl-cap {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  margin-right: -0.5px;
+  background: var(--text-hi, #f5f6f8);
+  pointer-events: none;
+  /* Above the readout block, which is `z-index: 2` and opaque.
+     At scroll 0 the playhead sits exactly on the ruler's origin — the same x
+     where that block ends — so its dot straddled the boundary and the left half
+     was painted over, leaving a half-circle that read as a clipping bug. The
+     playhead is the one thing in a timeline that belongs on top of everything;
+     the `pointer-events: none` above keeps it from swallowing clicks meant for
+     what it now covers. */
+  z-index: 3;
+}
+
+.uich-mtl-cap::before {
+  content: '';
+  position: absolute;
+  /* Clear of the dock's own top edge.
+     At `top: 0` the knob starts exactly where the strip does, which is the
+     dock's boundary — so its top few pixels were sliced off and it read as a
+     half-drawn stub rather than a playhead handle. */
+  top: 3px;
+  /* A round dot, centred on the line.
+     It was a 9x8 box with 2-3px corners, which at this size reads as a clipped
+     stub rather than a deliberate handle — square enough to look like a
+     rendering fault. A circle is unambiguous: `left` is half the width negative
+     so it centres on the 1px line whatever the ruler's zoom. */
+  right: -4.5px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--text-hi, #f5f6f8);
+}
+
+
+.uich-mtl-head-line {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  margin-right: -0.5px;
+  background: var(--text-hi, #f5f6f8);
+  opacity: 0.55;
+  pointer-events: none;
+}
+
+.uich-mtl-empty {
+  margin: 0;
+  padding: 30px 20px;
+  color: var(--text-dim, #7c8290);
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+/* ---- rows ---- */
+.uich-mtl-rows {
+  position: relative;
+  padding: 6px 0 12px;
+  /* Claim the space under the last row so the guides run the full depth. */
+  flex: 1 0 auto;
+}
+
+/* The ruler's ticks, continued down through the rows. Without them a bar's
+   position has to be judged against a tick several rows away, which is the
+   difference between reading a timeline and estimating one. */
+.uich-mtl-gridfield,
+.uich-mtl-playfield {
+  position: absolute;
+  right: calc(var(--uich-n) + var(--uich-pad));
+  left: 0;
+  top: 0;
+  bottom: 0;
+  pointer-events: none;
+}
+
+.uich-mtl-gridfield { z-index: 0; }
+.uich-mtl-playfield { z-index: 3; }
+
+/* The name column's curtain. Absolute for its height — top/bottom span the
+   padding box, the same ground the two fields cover — and translated by the
+   dock's own scrollLeft for its stickiness, which is what the fields lack and
+   the names have. Sits above both fields and below the names. */
+.uich-mtl-gutter {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  right: 0;
+  width: calc(var(--uich-n) + var(--uich-pad));
+  z-index: 4;
+  background: var(--panel-bg, #1f2124);
+  transform: translateX(var(--uich-sx, 0px));
+  pointer-events: none;
+}
+
+.uich-mtl-grid {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--panel-line, #2a2d33);
+  opacity: 0.55;
+}
+
+.uich-mtl-row {
+  position: relative;
+  display: flex;
+  align-items: center;
+  height: 30px;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.25;
+}
+
+/* The section row and its own name share the hover, because the name column is
+   sticky and paints its own background over the row's. */
+.uich-mtl-row:hover { background: var(--panel-bg-2, #313336); }
+.uich-mtl-row:hover .uich-mtl-name { background: var(--panel-bg-2, #313336); }
+
+/* A little air above each section, so groups read as blocks. */
+.uich-mtl-row.is-group { margin-top: 5px; }
+
+/* ---- name column ----
+   A real column, sticky at the left edge so it survives a horizontal zoom. It
+   was absolutely positioned once, and the day the row became `position:
+   relative` its containing block changed underneath it: `left: 0` stopped
+   meaning the panel's left edge and started meaning the row's, past the name
+   gutter — so every name landed on top of its own bar. A sticky flex column
+   cannot drift like that. */
+.uich-mtl-name {
+  position: sticky;
+  right: 0;
+  /* Above the curtain, which is above the grid and the playhead. The row
+     deliberately sets no z-index of its own: a stacking context there would
+     trap this number inside it and no value could clear the curtain. */
+  z-index: 5;
+  flex: 0 0 var(--uich-n);
+  width: var(--uich-n);
+  height: 100%;
+  padding: 0 12px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1px;
+  overflow: hidden;
+  background: var(--panel-bg, #1f2124);
+}
+
+/* The tree elbow Figma draws from a layer to its properties. Purely a rule and
+   a corner, so it costs no markup. */
+/* 26px, not 32: the indent is the last thing between a name and its column, and
+   at 32 the longest real name still lost its final characters. The connector
+   below moves with it. */
+.uich-mtl-row.is-child .uich-mtl-name { padding-right: 26px; }
+
+.uich-mtl-row.is-child .uich-mtl-name::before {
+  content: '';
+  position: absolute;
+  right: 12px;
+  top: -1px;
+  bottom: 50%;
+  width: 8px;
+  border-right: 1px solid var(--panel-line-2, #3a3d44);
+  border-bottom: 1px solid var(--panel-line-2, #3a3d44);
+  border-bottom-right-radius: 3px;
+}
+
+.uich-mtl-name-main,
+.uich-mtl-name-sub {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uich-mtl-name-main {
+  color: var(--text-mid, #b6bcc6);
+  font-size: 11.5px;
+  line-height: 1.25;
+}
+
+/* The section names itself once, above the rows it owns, so it earns the
+   stronger ink; the rows below only have to say WHICH element. */
+.uich-mtl-name-main.is-group {
+  color: var(--text-hi, #f5f6f8);
+  font-weight: 600;
+}
+
+.uich-mtl-name-sub {
+  color: var(--text-dim, #7c8290);
+  font-size: 10px;
+  line-height: 1.2;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+/* Under a section heading the selector IS the row's name, so it reads at the
+   weight a name deserves rather than as a footnote. */
+.uich-mtl-name-sub.is-lead {
+  color: var(--text-mid, #b6bcc6);
+  font-size: 10.5px;
+}
+
+/* While a drag is live the cursor belongs to the dock, not to whatever the
+   pointer happens to be over. Pointer capture keeps the EVENTS coming here, but
+   not the cursor: without this it flickers to a text caret over the bar's own
+   label and to the default arrow the moment the drag leaves the bar, which
+   reads as the grip having been lost. `user-select` is the same story for the
+   row labels the pointer sweeps across. */
+.uich-mtl.is-sizing,
+.uich-mtl.is-sizing * {
+  cursor: ew-resize !important;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+/* ---- bars ----
+   The lane is left open: the grid lines behind it are what give a bar its
+   position, and a filled lane would bury them. */
+.uich-mtl-track {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 22px;
+  /* Matched to .uich-mtl-scale exactly. These two are what keep a tick and the
+     bar it labels on the same pixel; an inset applied to one and not the other
+     is a ruler that lies. */
+  margin-right: var(--uich-pad);
+}
+
+/* An outlined capsule with a tick at each end — Figma's keyframe span. The
+   outline is what makes the bar's EDGES the precise thing about it: a solid
+   block reads as a mass, and the two moments that matter are where it begins
+   and where it stops. */
+.uich-mtl-bar {
+  position: absolute;
+  top: 0;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 11px;
+  overflow: hidden;
+  border: 1px solid var(--panel-line-2, #3a3d44);
+  border-radius: 5px;
+  background: var(--panel-bg-2, #313336);
+  color: var(--text-mid, #b6bcc6);
+  cursor: pointer;
+  transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+}
+
+/* The end ticks. They used to sit on every bar as decoration; now they are the
+   resize handles, and so they appear ONLY where a resize can actually be
+   written back to the code. A tick on a bar whose timing is a literal would
+   promise an edit that cannot happen. */
+.uich-mtl-grab {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* The grab area, not the mark. The mark stays a 1px tick 4px in; this is how
+     far either side of it counts as "the edge", and it is deliberately much
+     wider than it looks — an edge you have to hunt for reads as an edge that
+     does not work. Kept to a third of the bar in JS so a short bar still has a
+     middle. */
+  width: 60px;
+  max-width: 40%;
+  z-index: 1;
+}
+
+/* Only the end this bar can actually rewrite is a handle. The other is drawn
+   for the shape and does nothing, which the cursor is left to say. */
+.uich-mtl-grab.is-live { cursor: ew-resize; }
+
+.uich-mtl-grab.is-l { right: 0; }
+.uich-mtl-grab.is-r { left: 0; }
+
+.uich-mtl-grab::after {
+  content: '';
+  position: absolute;
+  top: 5px;
+  bottom: 5px;
+  width: 1px;
+  background: var(--text-dim, #7c8290);
+  opacity: 0.7;
+  transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.uich-mtl-grab.is-l::after { right: 4px; }
+.uich-mtl-grab.is-r::after { left: 4px; }
+
+
+/* Brighter under the pointer that is about to take hold of it. The tick widens
+   as well as lights up, so the hover answers "am I on the handle or on the
+   body?" before the drag rather than after it. */
+.uich-mtl-grab.is-live:hover::after,
+.uich-mtl-bar.is-dragging .uich-mtl-grab.is-live::after {
+  width: 2px;
+  background: var(--text-hi, #f5f6f8);
+  opacity: 1;
+}
+
+.uich-mtl-bar.is-dragging {
+  border-color: var(--text-mid, #b6bcc6);
+  background: var(--panel-bg-3, #3a3d44);
+  color: var(--text-hi, #f5f6f8);
+  /* The inline left/width ARE the drag; a transition on them would put the bar
+     a frame and a half behind the cursor. */
+  transition: none;
+}
+
+/* An instant trigger has no length to cap. The two marks are 8px apart at rest
+   and the bar is drawn at its 0.6% minimum, so they met in the middle and the
+   bar read as a solid blob rather than as a moment. */
+.uich-mtl-bar.is-instant::before,
+.uich-mtl-bar.is-instant::after { content: none; }
+
+.uich-mtl-bar:hover {
+  border-color: var(--text-dim, #7c8290);
+  background: var(--panel-bg-3, #3a3d44);
+  color: var(--text-hi, #f5f6f8);
+}
+
+/* Running right now. Stated as contrast rather than a tint, so it stays legible
+   in both themes and stays out of the design's way. */
+.uich-mtl-bar.is-active {
+  border-color: var(--text-mid, #b6bcc6);
+  background: var(--panel-bg-3, #3a3d44);
+  color: var(--text-hi, #f5f6f8);
+}
+
+/* The section's envelope — the union of its rows. Quieter than a real bar, and
+   not clickable, because there is nothing to edit at the section level. */
+.uich-mtl-bar.is-envelope {
+  height: 20px;
+  top: 1px;
+  border-style: dashed;
+  background: none;
+  cursor: default;
+}
+
+.uich-mtl-bar.is-envelope:hover {
+  border-color: var(--panel-line-2, #3a3d44);
+  background: none;
+}
+
+/* A trigger with no scroll length is a single moment, not a span. Drawn as a
+   solid marker so it can never be mistaken for a very short scrub. */
+.uich-mtl-bar.is-instant {
+  min-width: 5px;
+  padding: 0;
+  border-radius: 2px;
+  border-color: var(--text-mid, #b6bcc6);
+  background: var(--text-mid, #b6bcc6);
+}
+
+.uich-mtl-bar.is-instant .uich-mtl-grab { display: none; }
+
+.uich-mtl-bar.is-instant:hover {
+  border-color: var(--text-hi, #f5f6f8);
+  background: var(--text-hi, #f5f6f8);
+}
+
+/* Plain text inside the bar, the way Figma names a property track — chips with
+   their own fills would put a third surface inside a 22px box. */
+.uich-mtl-barlabel {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  min-width: 0;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.uich-mtl-chip {
+  padding: 0;
+  background: none;
+  color: inherit;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+
+/* The length is the bar's own measurement, not a property of it — stated plainly
+   rather than competing with pin and scrub. */
+.uich-mtl-chip.is-quiet {
+  font-weight: 500;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 767px) {
+  .uich-mtl { --uich-n: 136px; --uich-pad: 10px; height: min(50vh, 320px); }
+  .uich-mtl-lead { gap: 6px; padding: 0 5px 0 8px; }
+  .uich-mtl-tally { display: none; }
+  .uich-mtl-row.is-child .uich-mtl-name { padding-right: 26px; }
+  .uich-mtl-row.is-child .uich-mtl-name::before { right: 12px; }
+}
+
+/* ---- bar editor popover ────────────────────────────────────────────────────
+   Shaped after Figma Motion's animation popover: a titled card, then one field
+   per row with the LABEL ON THE LEFT and the control on the right.
+
+   The controls are not bespoke. They reuse the composer's own recipe — the
+   `.input` / `.select` / `.linput` fill, `--radius`, `--input-h` height, 12px
+   type, and the minimal skin's transparent border + `hsl(var(--ring))` focus —
+   so a field here is the same object as a field in the right-dock inspector.
+   Restated against `.uich-mtl-pop` rather than inherited, because those rules
+   are scoped to `.panel.dock-right` and this popover lives outside it.
+
+   Header and footer are fixed; only the field list scrolls, so a section with
+   fifteen values is as usable as one with three. */
+.uich-mtl-pop {
+  position: absolute;
+  z-index: 5;
+  /* 340, not 260: a label-left row needs a real label column, and at 260 the
+     labels truncated to nothing. Matches the proportions of Figma's own card. */
+  width: 340px;
+  max-width: calc(100vw - 24px);
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--panel-line, #e0e0e0);
+  border-radius: 10px;
+  background: var(--panel-bg, #fff);
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+/* Flush with the card, no tinted bar: the title is the only thing in it, and a
+   second surface behind it just adds an edge to look at. */
+.uich-mtl-pop-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex: 0 0 auto;
+  padding: 10px 13px 10px 8px;
+  border-bottom: 1px solid var(--panel-line, #e0e0e0);
+  background: var(--panel-bg, #fff);
+}
+
+/* Sentence case, not UPPERCASE + letterspacing — the same call the composer's
+   own `.subsec-title` already made in the minimal skin. */
+.uich-mtl-pop-title {
+  overflow: hidden;
+  color: var(--text-hi, #0c0d0e);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uich-mtl-pop-x {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm, 4px);
+  background: none;
+  color: var(--text-dim, #9da5ae);
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.uich-mtl-pop-x:hover { background: var(--panel-bg-2, #f7f7fa); color: var(--text-hi, #0c0d0e); }
+
+.uich-mtl-pop-body {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 9px 13px 11px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel-line-2, #cdcfd8) transparent;
+}
+
+.uich-mtl-pop-body::-webkit-scrollbar { width: 8px; }
+.uich-mtl-pop-body::-webkit-scrollbar-track { background: none; }
+
+.uich-mtl-pop-body::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+  background-color: var(--panel-line-2, #cdcfd8);
+}
+
+/* Label left, control right — the composer's `.field.pf` grid, at the width
+   this card can afford. */
+.uich-mtl-pop-row {
+  display: grid;
+  grid-template-columns: 104px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-height: 34px;
+}
+
+.uich-mtl-pop-label {
+  overflow: hidden;
+  color: var(--text-mid, #6a6c76);
+  font-size: 12px;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ---- controls: the composer's own ---- */
+.uich-mtl-pop-field {
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: var(--input-h, 30px);
+  border: 1px solid transparent;
+  border-radius: var(--radius, 6px);
+  background: var(--panel-bg-2, #f7f7fa);
+  color: var(--uich-text, #2a2b33);
+  font-family: inherit;
+  font-size: 12px;
+  transition: border-color 0.12s, box-shadow 0.12s, background-color 0.12s;
+}
+
+.uich-mtl-pop-field:hover { background: var(--panel-bg-3, #eeeef3); }
+
+/* Ink, NOT `hsl(var(--ring))`.
+   Every `--ring` in shadcn-tokens.css is scoped to `.uich-tw`, and this panel
+   deliberately does not carry that class (it would redefine --accent and friends
+   as bare HSL triplets and repaint the whole dock) — so `var(--ring)` resolves
+   to nothing here and `hsl()` would be invalid, giving a focused field NO ring
+   at all, silently. And where it does resolve, `.uich-tw.skin-elementor` sets it
+   to `291 93% 83%` — the pink accent this panel exists to be free of. */
+.uich-mtl-pop-field:focus-within {
+  border-color: var(--text-mid, #6a6c76);
+  box-shadow: 0 0 0 1px var(--text-mid, #6a6c76);
+  background: var(--panel-bg-2, #f7f7fa);
+  outline: none;
+}
+
+.uich-mtl-pop-field input {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0 9px 0 2px;
+  border: 0;
+  background: none;
+  color: inherit;
+  font-family: inherit;
+  font-size: 12px;
+  outline: none;
+}
+
+/* The unit is the field's own annotation, not a value competing with it. */
+.uich-mtl-pop-unit {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  padding: 0 3px 0 9px;
+  color: var(--text-dim, #9da5ae);
+  font-size: 10.5px;
+}
+
+/* ---- dropdown ----
+   Replaces the native `<select>` and `<datalist>` popups. Those are drawn by
+   the OS: they arrive in the system font with a blue system highlight, ignore
+   every token here, and cannot be styled at all — so in a greyscale panel they
+   were the one surface that refused to join in.
+
+   Built to the composer's OWN menu recipe: `.suggest` for the card (that fill,
+   that border, that radius, that shadow) and `.upill-row` for the rows.
+
+   The card is positioned `fixed` from the trigger's rect, NOT absolutely: this
+   popover is `overflow: hidden` and its field list scrolls, so an absolute menu
+   would be clipped by whichever of the two it grew past. */
+.uich-mtl-dd {
+  position: relative;
+  display: flex;
+  width: 100%;
+  min-width: 0;
+}
+
+/* The closed trigger is the same object as a text field — same fill, height and
+   radius — so a row with a dropdown and a row with an input read as one form. */
+.uich-mtl-dd-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-width: 0;
+  height: var(--input-h, 30px);
+  margin: 0;
+  padding: 0 9px 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--radius, 6px);
+  background: var(--panel-bg-2, #f7f7fa);
+  color: var(--uich-text, #2a2b33);
+  font: inherit;
+  font-size: 12px;
+  text-align: right;
+  cursor: pointer;
+  transition: border-color 0.12s, box-shadow 0.12s, background-color 0.12s;
+}
+
+.uich-mtl-dd-btn:hover { background: var(--panel-bg-3, #eeeef3); }
+
+.uich-mtl-dd-btn:focus-visible,
+.uich-mtl-dd-btn[aria-expanded="true"] {
+  border-color: var(--text-mid, #6a6c76);
+  box-shadow: 0 0 0 1px var(--text-mid, #6a6c76);
+  outline: none;
+}
+
+.uich-mtl-dd-val {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* One caret, drawn as a rotated corner so it needs no glyph and no SVG, and
+   inherits its weight from the ink around it. */
+.uich-mtl-dd-caret {
+  flex: 0 0 auto;
+  width: 7px;
+  height: 7px;
+  margin: -3px 0 0 2px;
+  border: 0;
+  border-left: 1.3px solid var(--text-dim, #9da5ae);
+  border-bottom: 1.3px solid var(--text-dim, #9da5ae);
+  background: none;
+  transform: rotate(-45deg);
+  pointer-events: none;
+}
+
+/* In the ease combo the caret needs a real hit area, so the BUTTON is its own
+   element and the caret sits inside it. Padding the caret itself does not work:
+   its shape is two borders on a 7px box, and content-box padding grows the box
+   the borders are drawn on — the corner scales up with the hit area and lands
+   as a chevron three times the intended size, hanging off the field. */
+.uich-mtl-dd-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  width: 24px;
+  align-self: stretch;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius, 6px) 0 0 var(--radius, 6px);
+  background: none;
+  cursor: pointer;
+}
+
+.uich-mtl-dd-more .uich-mtl-dd-caret { margin: -3px 0 0 0; }
+
+.uich-mtl-dd-btn:hover .uich-mtl-dd-caret,
+.uich-mtl-dd-more:hover .uich-mtl-dd-caret {
+  border-left-color: var(--text-hi, #0f0f15);
+  border-bottom-color: var(--text-hi, #0f0f15);
+}
+
+.uich-mtl-dd-menu {
+  position: fixed;
+  z-index: 6;
+  padding: 4px;
+  border: 1px solid var(--panel-line-2, #cdcfd8);
+  border-radius: var(--radius, 6px);
+  background: var(--panel-bg-3, #eeeef3);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--panel-line-2, #cdcfd8) transparent;
+}
+
+.uich-mtl-dd-menu::-webkit-scrollbar { width: 8px; }
+.uich-mtl-dd-menu::-webkit-scrollbar-track { background: none; }
+
+.uich-mtl-dd-menu::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background-clip: content-box;
+  background-color: var(--panel-line-2, #cdcfd8);
+}
+
+.uich-mtl-dd-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  margin: 0;
+  padding: 5px 8px;
+  border: 0;
+  border-radius: var(--radius-sm, 4px);
+  background: none;
+  color: var(--uich-text, #2a2b33);
+  font: inherit;
+  font-size: 12px;
+  text-align: right;
+  cursor: pointer;
+}
+
+.uich-mtl-dd-row:hover { background: var(--panel-bg-4, #e3e3eb); }
+
+/* The current choice, as a wash plus a tick.
+   NOT `.upill-row.on`'s recipe: that uses `hsl(var(--primary))`, which is
+   `.uich-tw`-scoped and would not resolve in this panel at all, over
+   `rgba(var(--accent-rgb), .16)` — and --accent-rgb is re-pointed per platform
+   skin, so it would put the host builder's pink or blue back into a panel that
+   exists to be without it. */
+.uich-mtl-dd-row.is-on {
+  background: var(--panel-bg-4, #e3e3eb);
+  color: var(--text-hi, #0f0f15);
+  font-weight: 600;
+}
+
+.uich-mtl-dd-txt {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uich-mtl-dd-tick {
+  flex: 0 0 auto;
+  color: var(--text-hi, #0f0f15);
+  font-size: 11px;
+  line-height: 1;
+}
+
+/* A boolean is the one control that should not stretch: a full-width switch
+   reads as a field waiting for input. Greyscale via `accent-color` — the native
+   checkbox was the only saturated blue left in the panel. */
+.uich-mtl-pop-check {
+  justify-self: start;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  accent-color: var(--text-hi, #0f0f15);
+  cursor: pointer;
+}
+
+/* Colour: a swatch that opens the picker, with the literal value beside it so
+   the field still says what it will write into the code. */
+/* Selector carries the field, so the swatch outranks the rule that stretches
+   every OTHER input in the row.
+   `.uich-mtl-pop-field input` sets `flex: 1 1 auto` and beats a lone
+   `.uich-mtl-pop-swatch` on specificity, so the swatch took whatever width was
+   left rather than its own 22 — growing past square when the row had slack, and
+   shrinking under it when a long hex like #C87941 left none, which is where the
+   tall thin sliver came from. `aspect-ratio` then holds it square whatever the
+   row does. */
+.uich-mtl-pop-field input.uich-mtl-pop-swatch {
+  flex: 0 0 22px;
+  width: 22px;
+  height: 22px;
+  aspect-ratio: 1;
+  align-self: center;
+  margin: 0 4px 0 4px;
+  padding: 0;
+  border: 1px solid var(--panel-line-2, #cdcfd8);
+  border-radius: var(--radius-sm, 4px);
+  background: none;
+  cursor: pointer;
+}
+
+.uich-mtl-pop-swatch::-webkit-color-swatch-wrapper { padding: 0; }
+.uich-mtl-pop-swatch::-webkit-color-swatch { border: 0; border-radius: 2px; }
+
+.uich-mtl-pop-note,
+.uich-mtl-pop-err {
+  margin: 0;
+  padding: 12px 13px;
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.uich-mtl-pop-note { color: var(--text-mid, #69727d); }
+
+.uich-mtl-pop-err {
+  padding-top: 0;
+  color: var(--uich-danger, #d44a4a);
+}
+
+.uich-mtl-pop-foot {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  flex: 0 0 auto;
+  padding: 9px 11px;
+  border-top: 1px solid var(--panel-line, #e0e0e0);
+  background: var(--panel-bg, #fff);
+}
+
+.uich-mtl-pop-count {
+  margin-left: auto;
+  color: var(--text-dim, #9da5ae);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The footer pair. The base rule lived in the old floating box's header (which
+   had a "Hide" button); the dock's header is icons now, so it lives here with
+   the only buttons left in the component. */
+.uich-mtl-btn {
+  margin: 0;
+  padding: 5px 12px;
+  border: 1px solid var(--panel-line-2, #3a3d44);
+  border-radius: var(--radius-sm, 4px);
+  background: var(--panel-bg-2, #313336);
+  color: var(--text-hi, #f5f6f8);
+  font: inherit;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.3;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+}
+
+.uich-mtl-btn:hover { background: var(--panel-bg-3, #3a3d44); }
+
+/* Cancel is the ghost of the pair, and quiet. Bordered and inked it competed
+   with Save for the eye — and it was picking up the skin's pink, which made
+   "Cancel" the most saturated thing in a greyscale panel and read as the
+   destructive option rather than the way out. */
+.uich-mtl-pop-foot .uich-mtl-btn:not(.is-primary) {
+  border-color: transparent;
+  background: none;
+  color: var(--text-mid, #b6bcc6);
+}
+
+.uich-mtl-pop-foot .uich-mtl-btn:not(.is-primary):hover {
+  background: var(--panel-bg-2, #313336);
+  color: var(--text-hi, #f5f6f8);
+}
+
+.uich-mtl-pop-foot .uich-mtl-btn:disabled { opacity: 0.45; cursor: default; }
+
+/* The popup's confirm button, in the panel's own two tones. */
+.uich-mtl-btn.is-primary {
+  border-color: var(--text-hi, #f5f6f8);
+  background: var(--text-hi, #f5f6f8);
+  color: var(--panel-bg, #1f2124);
+}
+
+.uich-mtl-btn.is-primary:hover { filter: none; opacity: 0.86; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Scroll timeline — UX pass
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* Bars were outlined in a grey that survives a dark dock and disappears on a
+   light one — pale capsules on white. At a glance the track area read as empty,
+   which is how a working timeline gets reported as broken. */
+.uich-mtl-bar {
+  border-color: var(--text-mid, #9a9ca6);
+  background: color-mix(in srgb, var(--text-mid, #9a9ca6) 8%, transparent);
+}
+
+.uich-mtl-bar.is-envelope {
+  background: none;
+  border-color: var(--panel-line-2, #34363f);
+}
+
+/* The zoom control: a bigger target and a visible value.
+   68x12px for a 1–6x range in 0.25 steps is 21 stops on a slider narrower than
+   a word, with its value only in a tooltip. */
+.uich-mtl-zoom { gap: 6px; }
+.uich-mtl-zoom input[type="range"] { width: 104px; height: 16px; }
+
+.uich-mtl-zoom-val {
+  min-width: 30px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 10px;
+  color: var(--text-mid, #9a9ca6);
+  text-align: left;
+}
+
+/* Group heading inside the bar editor. Same small wide-tracked label the
+   picker's groups use, so the two popovers read as one family. */
+.uich-mtl-pop-group {
+  margin: 10px 0 4px;
+  padding: 0 2px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--text-mid, #9a9ca6);
+}
+
+.uich-mtl-pop-body > .uich-mtl-pop-group:first-child { margin-top: 2px; }
+
+/* The ruler is a scrub track: click anywhere to jump, drag to scrub.
+   `col-resize` rather than `pointer` says "this moves horizontally", which is
+   what the gesture actually is. `touch-action: none` is what lets the drag work
+   on a trackpad/touch screen at all — without it the browser claims the gesture
+   for panning before the pointer handlers ever see it. */
+.uich-mtl-scale.is-scrubbable {
+  cursor: col-resize;
+  touch-action: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+/* The dot grows a little under the pointer, so the ruler reads as grabbable
+   before you try it. The playhead ignores pointer events itself — the ruler
+   beneath handles the drag — so this keys off the ruler's own hover. */
+.uich-mtl-scale.is-scrubbable:hover .uich-mtl-cap::before {
+  transform: scale(1.25);
+}
+
+.uich-mtl-cap::before { transition: transform 0.12s ease; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   Timeline rows — the layers column
+   ───────────────────────────────────────────────────────────────────────
+   A row is a NAME and nothing else until you are on it. The twist, the kind
+   icon and the name are always there; the actions fade in on hover or focus,
+   which is what keeps a dense column quiet. Modelled on Lottie Creator, where
+   a layer collapses to a triangle, an icon and a name, and reveals its
+   controls only on the row you are working in.
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.uich-mtl-twist {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-lo, #5b5f6b);
+  cursor: pointer;
+  transition: transform 0.14s ease, color 0.14s ease;
+}
+
+.uich-mtl-row.is-open .uich-mtl-twist { transform: rotate(-90deg); color: var(--text-mid, #9a9ca6); }
+.uich-mtl-row:hover .uich-mtl-twist { color: var(--text-mid, #9a9ca6); }
+
+.uich-mtl-kind {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  color: var(--text-mid, #9a9ca6);
+}
+
+/* The one state that must never be mistaken for a name. */
+.uich-mtl-name-main.is-unnamed { color: var(--text-mid, #9a9ca6); font-style: italic; }
+
+/* The kind is carried by the ICON alone, named in its tooltip.
+   It was also spelled out as a word, which cost ~60px of a 208px column and
+   truncated every name to "Four da…" — the one thing the column exists to
+   show. An icon plus a tooltip says the same thing for 14px. */
+
+/* Over the name's tail, not beside it.
+   Laid out in flow, these two 20px buttons plus their gaps took ~45px off every
+   name — invisibly, since they sit at opacity 0 until you are on the row. A
+   224px column became 89px of usable name and "Four days, three decisions"
+   truncated to "Four days, thr…", which is exactly the cost that got the kind
+   WORD removed a round earlier. Taking them out of flow gives the name the
+   whole column at rest; on hover they cover its last few characters, which is
+   the row you are already looking at. */
+.uich-mtl-rowacts {
+  position: absolute;
+  left: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  gap: 2px;
+  flex: none;
+  opacity: 0;
+  pointer-events: none;
+  padding-right: 10px;
+  transition: opacity 0.12s ease;
+  /* So the covered characters fade out rather than being chopped. */
+  background: linear-gradient(to left, transparent, var(--panel-bg, #1f2124) 10px);
+}
+
+.uich-mtl-row.is-active .uich-mtl-rowacts,
+.uich-mtl-row:hover .uich-mtl-rowacts { background: linear-gradient(to left, transparent, var(--panel-bg-2, #1c1d22) 10px); }
+
+/* The actions are positioned against the NAME column, not the row: pinned to
+   the row they would sit at the far end of the ruler. */
+.uich-mtl-row > .uich-mtl-name { position: relative; }
+
+.uich-mtl-row:hover .uich-mtl-rowacts,
+.uich-mtl-row:focus-within .uich-mtl-rowacts { opacity: 1; pointer-events: auto; }
+
+.uich-mtl-rowact {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm, 4px);
+  background: none;
+  color: var(--text-mid, #9a9ca6);
+  cursor: pointer;
+}
+
+.uich-mtl-rowact:hover { background: var(--panel-bg-3, #24262c); color: var(--text-hi, #f4f5f7); }
+.uich-mtl-rowact:focus-visible { outline: 1px solid var(--panel-line-2, #34363f); outline-offset: -1px; }
+
+/* The open track is marked by an edge, not a fill: a fill is the loudest way
+   to say something this quiet. */
+.uich-mtl-row.is-open { box-shadow: inset -2px 0 0 var(--text-hi, #f4f5f7); }
+
+/* ---- value rows ---- */
+
+.uich-mtl-vrow {
+  display: flex;
+  align-items: center;
+  height: 26px;
+  position: relative;
+}
+
+/* Banding, not lines. Across a wide ruler the eye needs help staying on one
+   row; a hairline per row would be six more borders in a borderless panel. */
+.uich-mtl-vrow.is-band { background: var(--panel-bg-2, #1c1d22); }
+
+/* A value row reads LEFT TO RIGHT — label, then value.
+   `.uich-mtl-name` is a column (a track row stacks its name over its selector),
+   so inheriting it stacked the label above the value and overflowed a 26px row
+   into the one beneath it. */
+.uich-mtl-vrow .uich-mtl-name {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 0 46px 0 12px;
+}
+
+/* A track row is left-to-right too: twist, kind, name, actions.
+   `justify-content` has to be restated, not inherited: the base sets `center`
+   to centre a COLUMN vertically, and in row direction that same value centres
+   the name horizontally — so each row's name began at a different x depending
+   on how long it was. It went unnoticed while the actions held `margin-left:
+   auto` and absorbed the slack. */
+.uich-mtl-row:not(.is-group) > .uich-mtl-name {
+  flex-direction: row;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 7px;
+}
+
+.uich-mtl-row:not(.is-group) > .uich-mtl-name > .uich-mtl-name-main {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.uich-mtl-vlabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--text-mid, #9a9ca6);
+}
+
+.uich-mtl-vval {
+  margin-right: auto;
+  flex: none;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 11px;
+  color: var(--text-hi, #f4f5f7);
+}
+
+.uich-mtl-vval em { margin-right: 2px; font-style: normal; color: var(--text-mid, #9a9ca6); }
+.uich-mtl-vnote { font-size: 11px; color: var(--text-mid, #9a9ca6); font-style: italic; }
+
+/* The value's reach: a hairline across the range it governs, with a mark where
+   it takes effect. */
+/* Centred on the row's own middle line.
+   With no `top` it resolved to the top of the track box, so the hairline hugged
+   the row above and every value appeared to belong to the row before it. */
+.uich-mtl-vspan {
+  position: absolute;
+  top: 50%;
+  height: 2px;
+  border-radius: 2px;
+  transform: translateY(-50%);
+  background: var(--panel-line-2, #34363f);
+}
+
+
+/* ---- bar kinds ---- */
+
+/* A pinned scrub holds the page still while it runs — a longer, heavier thing
+   than a reveal, and weighted to say so. */
+.uich-mtl-bar.is-pinned {
+  background: color-mix(in srgb, var(--text-mid, #9a9ca6) 18%, transparent);
+  border-color: var(--text-mid, #9a9ca6);
+}
+
+/* Runs past the furthest the page can scroll, so it never finishes. Faded at
+   the end rather than cut, which would read as a bar that simply stops. */
+.uich-mtl-bar.is-overrun {
+  border-left-color: transparent;
+  -webkit-mask-image: linear-gradient(90deg, #000 76%, transparent);
+  mask-image: linear-gradient(90deg, #000 76%, transparent);
+}
+
+/* ---- detecting ---- */
+
+.uich-mtl-skel { padding: 12px 14px; display: flex; flex-direction: column; gap: 8px; }
+
+.uich-mtl-skel span {
+  height: 9px;
+  border-radius: 3px;
+  background: var(--panel-bg-3, #24262c);
+  animation: uich-mtl-pulse 1.4s ease-in-out infinite;
+}
+
+.uich-mtl-skel span:nth-child(2) { width: 46%; animation-delay: 0.15s; }
+.uich-mtl-skel span:nth-child(1) { width: 72%; }
+.uich-mtl-skel span:nth-child(3) { width: 58%; animation-delay: 0.3s; }
+
+@keyframes uich-mtl-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .uich-mtl-skel span { animation: none; }
+}
+
+/* ---- light theme ----
+   The dark dock draws bars as outlines on a dark ground, which is nearly
+   invisible on white. On light they need a fill carrying the weight, and the
+   banding has to drop to a whisper or it reads as stripes. */
+.uich-mtl[data-uich-composer-theme="light"] .uich-mtl-bar,
+[data-uich-composer-theme="light"] .uich-mtl .uich-mtl-bar {
+  background: color-mix(in srgb, var(--text-mid, #6a6c76) 16%, transparent);
+}
+
+[data-uich-composer-theme="light"] .uich-mtl .uich-mtl-bar.is-pinned {
+  background: color-mix(in srgb, var(--text-mid, #6a6c76) 30%, transparent);
+}
+
+[data-uich-composer-theme="light"] .uich-mtl .uich-mtl-vrow.is-band {
+  background: color-mix(in srgb, var(--text-hi, #0f0f15) 3%, transparent);
+}
+
 /* ── Right-dock mode ─────────────────────────────────────────────────────────
    The composer can dock to the RIGHT side of the preview as a vertical panel
    (Elementor-panel-like) instead of the default bottom sheet. The outer shell
@@ -20832,9 +22847,13 @@ body.elementor-editor-active .MuiModal-root {
      open on the right it reserves `--uich-dock-w`, so shift left by half that to
      stay visually centred over the canvas (falls back to 0 when closed). */
   right: calc(50% - var(--uich-dock-w, 0px) / 2);
-  bottom: 24px;
+  /* Lifted clear of the scroll timeline, which docks along the bottom edge at
+     exactly this spot — the pill sat squarely inside its band. `--uich-mtl-h`
+     is the dock's live height (0 when closed), published on <body> by
+     MotionTimelinePanel; the vertical twin of `--uich-dock-w` above. */
+  bottom: calc(24px + var(--uich-mtl-h, 0px));
   transform: translateX(50%);
-  transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+  transition: right 0.4s cubic-bezier(0.22, 1, 0.36, 1), bottom 0.2s ease;
   pointer-events: none;
   display: inline-flex;
   align-items: center;
@@ -20848,7 +22867,12 @@ body.elementor-editor-active .MuiModal-root {
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  padding: 6px;
+  /* NO vertical padding: the pill is border-box, so `padding: 6px` left a
+     content box only 34px tall (48 - 12 padding - 2 border) and a magnified
+     button had nowhere to grow but straight through the pill's own border.
+     The end caps still want their 6px, hence the horizontal value; the buttons
+     are centred by align-items, so at rest this looks identical. */
+  padding: 0 6px;
   border-radius: 999px;
   background: var(--panel-bg-2);
   border: 1px solid var(--panel-line);
@@ -21010,8 +23034,11 @@ body.elementor-editor-active .MuiModal-root {
 }
 
 /* The pill's own height is pinned so it cannot grow and shove itself up the
-   canvas while you sweep along it — only the width moves. A button at its
-   48px peak exactly fills the 48px inner height, so nothing spills. */
+   canvas while you sweep along it — only the width moves.
+   That leaves a fixed budget for magnification, and it is smaller than it
+   looks: 48px of border-box height, less the 1px border top and bottom, is a
+   46px content box. DOCK_PEAK is set against THAT (40px, so a grown button
+   clears the border by 3px on each side) — not against the 48. */
 .canvas-toolbar {
   height: 48px;
   overflow: visible;
@@ -21073,13 +23100,42 @@ body.elementor-editor-active .MuiModal-root {
   color: #ffffff;
 }
 
-/* Disabled Undo/Redo — dimmed and non-interactive (no hover lift). */
+/* The save button's quiet state — "all changes saved". It is the only button
+   that passes `disabled` (Undo/Redo became keyboard-only), so this rule is
+   effectively its own.
+
+   Nothing-to-save is a RESTING state, not a broken control. At 0.35 opacity the
+   glyph sat at roughly 1.9:1 against the pill and read as the button having
+   been removed from the row. Full opacity on --text-dim keeps it clearly
+   quieter than its neighbours while staying legible, and since --text-dim and
+   --text-mid swap with the theme this holds in light and dark alike. */
 .canvas-toolbar .ct-btn-disabled,
 .canvas-toolbar .ct-btn-disabled:hover {
-  opacity: 0.35;
+  opacity: 1;
+  color: var(--text-dim);
   cursor: default;
   background: transparent;
   transform: none;
+}
+
+/* A save IN FLIGHT is both `active` (edits are still pending — they are cleared
+   one at a time as each request lands) and `disabled` (the press is locked out
+   until it finishes). Both class rules therefore hit the same button, and the
+   one above — later in the file at equal specificity — stripped the lit fill
+   back to transparent. The button appeared to vanish the instant it was
+   clicked, which is the opposite of the feedback a save needs. Hold the fill,
+   and let the cursor say "working". */
+.canvas-toolbar .ct-btn-on.ct-btn-disabled,
+.canvas-toolbar .ct-btn-on.ct-btn-disabled:hover {
+  opacity: 1;
+  background: #ffffff;
+  color: #101014;
+  cursor: progress;
+}
+.uich-canvas-toolbar-host[data-theme="light"] .canvas-toolbar .ct-btn-on.ct-btn-disabled,
+.uich-canvas-toolbar-host[data-theme="light"] .canvas-toolbar .ct-btn-on.ct-btn-disabled:hover {
+  background: #101014;
+  color: #ffffff;
 }
 
 .canvas-toolbar .ct-sep {
@@ -23497,5 +25553,183 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
 #uichemy-composer-floating-panel .panel.dock-right .panel-tabs-strip {
   height: auto;
   min-height: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   CONSTRUCT PANEL  ·  right dock only
+   ───────────────────────────────────────────────────────────────────────────
+   The Loop / Form panel is the one part of the inspector that was still drawn
+   in a second design system. It is built from the shadcn recipes
+   (`border border-input`, `h-8`, `rounded-md`, `hsl(var(--muted))`) while every
+   other section in this dock is drawn from the panel's own `--ctl-*` / `--pf-*`
+   tokens. Side by side in one scroll that reads as two panels stitched together:
+
+     · the accordion head sat at 13px against the section heads' 14px, in
+       --text-mid against their --text-hi, and kept a divider the sections
+       dropped in the MINIMAL pass;
+     · the body used its own 4/16/16 padding and 14px gap instead of the
+       section rhythm (14/16/18, 12px);
+     · selects painted a shadcn box while text inputs painted nothing, so a
+       column of controls read as ragged even though the grid had them on one
+       axis;
+     · every label carried 4px of bottom padding — correct when the label is
+       ABOVE its control (bottom dock), 4px off-axis when it sits BESIDE it on
+       this dock's centre-aligned row.
+
+   Nothing new is introduced here: every value below is the token or the literal
+   the equivalent native rule already uses. Keep them in sync with
+   `.acc-head` / `.section` / `.field.pf .border-input` above.
+
+   Self-contained: delete from this banner to the end of the file to revert.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── 1 · accordion head: identical to a section head ───────────────────────── */
+/* `.acc` loses its divider in the MINIMAL block; this must lose it too, or Loop
+   is the only row in the scroll still drawing a line. */
+.panel.dock-right .construct-accordion {
+  border-bottom: 0;
+}
+
+/* Mirrors `.acc-head`: 18px above the label (space between this section and the
+   one closing above it), 12px below, and the same type scale and full-contrast
+   ink whether the section is open or closed. */
+.panel.dock-right .construct-accordion-head {
+  padding: 18px var(--pf-sec-pad-x) 12px;
+  font-size: var(--pf-sec-fs);
+  font-weight: var(--pf-sec-fw);
+  color: var(--text-hi);
+}
+
+/* `.acc-head` keeps its background transparent in both states — the caret and
+   the body carry the open/closed signal, a filled bar would make this row the
+   only highlighted section in the list. */
+.panel.dock-right .construct-accordion-head:hover,
+.panel.dock-right .construct-accordion.is-open > .construct-accordion-head {
+  color: var(--text-hi);
+  background: transparent;
+}
+
+/* ── 2 · body rhythm: identical to `.section` ──────────────────────────────── */
+.panel.dock-right .uich-construct-body {
+  padding: var(--pf-sec-head-gap) var(--pf-sec-pad-x) var(--pf-sec-pad-b);
+  gap: var(--pf-row-gap);
+}
+
+.panel.dock-right .construct-accordion-body {
+  padding-bottom: 0;
+}
+
+/* One column of full-width rows, at the section row-gap. The 1fr 1fr grid is a
+   bottom-dock layout; the reset to a single column already exists above, this
+   only brings the gap onto the shared scale. */
+.panel.dock-right .uich-construct-grid {
+  gap: var(--pf-row-gap) 12px;
+}
+
+/* Sub-heads (Filtering / Published date / …) sit flush in the gutter the body
+   already provides, on the same left edge as the labels below them. */
+.panel.dock-right .uich-construct-body .subsection.uich-construct-sub,
+.panel.dock-right .uich-construct-body .uich-construct-section-head {
+  margin-right: 0;
+  margin-left: 0;
+  padding-right: 0;
+  padding-left: 0;
+}
+
+/* ── 3 · rows: label beside its control, on one axis ───────────────────────── */
+/* The dock lays `.field.pf` out as `96px | 1fr`, centre-aligned. A label with
+   bottom padding is no longer centred against its control, which is what tilted
+   every row. */
+.panel.dock-right .uich-construct-body .field.pf > .pf-label {
+  padding: 0;
+}
+
+/* ── 4 · controls ──────────────────────────────────────────────────────────
+   Deliberately empty. The panel's controls are styled by
+   `.panel.dock-right .field.pf .border-input` above, and the construct tab now
+   builds its fields the same way every other field in the panel is built —
+   frame on a wrapper <div class="… border-input …">, transparent control
+   inside (see FRAME_CLS in composer-construct-tab.jsx). So it inherits the
+   fill, height, radius, hover and focus states with no rules of its own; a
+   second definition here would be one more place to drift out of sync. */
+
+/* Checkbox rows and switches line up on the same left edge as the fields. */
+.panel.dock-right .uich-construct-body .uich-construct-check,
+.panel.dock-right .uich-construct-body .uich-construct-switchrow {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Animation panel — the stepper inside the field                     [ui-ux]
+
+   The two-box layout above is right for a length row, where the value is one of
+   forty and the stepper is a shared affordance. It is wrong for the Animation
+   panel: there the value loses width to a box beside it, and Ease — which has no
+   stepper — ends up WIDER than every field above it, so the column of controls
+   runs down the panel with a ragged right edge.
+
+   `inset` (composer-inputs.jsx) puts the value, the unit pill and the stepper in
+   ONE box, so every row in the panel ends on the same edge, Ease included. These
+   rules just undo the standalone box's own chrome — it is a divider now, not a
+   container.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.panel.dock-right .lin-step.is-inset {
+  height: auto;
+  align-self: stretch;
+  padding: 0;
+  border: 0;
+  border-right: 1px solid var(--panel-line);
+  border-radius: 0;
+  background: none;
+  /* Hidden at rest so a panel of eight values reads as eight values, not as
+     sixteen buttons — but it still occupies its width, so nothing shifts when
+     it appears. Revealed on hover AND focus-within, so it is reachable by
+     keyboard and not only by mouse. */
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.12s ease;
+}
+
+.panel.dock-right .lin-ig:hover .lin-step.is-inset,
+.panel.dock-right .lin-ig:focus-within .lin-step.is-inset {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.panel.dock-right .lin-step.is-inset .lin-step-btn {
+  width: 20px;
+  height: 100%;
+  border-radius: 0;
+}
+
+.panel.dock-right .lin-step.is-inset .lin-step-btn + .lin-step-btn {
+  border-right: 1px solid var(--panel-line);
+}
+
+/* ---- group heading: left-aligned, not centred ----
+   Centred small caps between two tinted rules reads as SELECTED text — in the
+   panel it genuinely looked like a highlighted word. Dropping the leading rule
+   turns the same parts into a heading, with the trailing rule fading out to the
+   right the way `.subsec` already draws it elsewhere. */
+.panel.dock-right .subsec.uich-motion-subsec {
+  justify-content: flex-start;
+  margin-top: 16px;
+}
+
+.panel.dock-right .uich-motion-subsec .subsec-rule:first-child { display: none; }
+
+/* ---- values in the UI sans ----
+   Mono is right in the code view; in a property panel it makes every number
+   look like a token rather than something you can change. The same call the
+   minimal skin already made for `.prop-input-stack .linput input`, which does
+   not reach these because the motion fields render LengthInput's own markup.
+
+   Matched on the `pf-motion-` prefix that MotionField puts on every one of its
+   fields (`pf-motion-${v.name}`), so no other length row is touched. */
+.panel.dock-right .field.pf[class*="pf-motion-"] .lin-ig input {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
 }
 

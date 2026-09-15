@@ -216,7 +216,7 @@ No `<script>` tags in HTML. Bare JS only.
 | Sticky header | scroll listener · `is-sticky` class · `will-change: transform` |
 | Modal | open/close · backdrop click · Esc · focus-trap · `aria-modal="true"` |
 | Dropdown | hover desktop · click mobile · close on outside click |
-| Scroll animations | `IntersectionObserver` → `is-visible` · `threshold: 0.15` |
+| Scroll animations | **GSAP + ScrollTrigger** — bundled, auto-loaded. Read `read-skill { name: "figma-to-wordpress", part: "animation" }` first, so the values become panel controls |
 
 **Quality:** `data-bound="1"` guard · null-checks before every `addEventListener` · no jQuery · no `console.log` · Enter/Space for buttons · Esc for overlays · no external dependencies.
 

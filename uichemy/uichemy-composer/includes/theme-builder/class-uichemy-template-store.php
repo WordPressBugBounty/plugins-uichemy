@@ -73,7 +73,8 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 
 			$status     = ( isset( $args['status'] ) && 'active' === $args['status'] ) ? 'active' : 'inactive';
 			$conditions = isset( $args['conditions'] ) ? self::sanitize_conditions( $args['conditions'] ) : array();
-			$editor     = ( isset( $args['editor'] ) && 'gutenberg' === $args['editor'] ) ? 'gutenberg' : 'elementor';
+			$editor     = isset( $args['editor'] ) ? sanitize_key( (string) $args['editor'] ) : '';
+			$editor     = in_array( $editor, array( 'gutenberg', 'bricks' ), true ) ? $editor : 'elementor';
 			$target     = self::sanitize_target( isset( $args['target'] ) ? $args['target'] : 'any' );
 
 			$postarr = array(
@@ -128,6 +129,46 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 				// Elementor expects this meta as an array; a JSON string can fatal
 				// on strict type checks (see UiChemy_Composer_Manager normalisation).
 				update_post_meta( $post_id, '_elementor_page_settings', array() );
+			}
+
+			// Bricks and Gutenberg are seeded through their own driver, from the
+			// html/css/js the caller supplied. Before this, a non-Elementor
+			// template only got content when the caller passed pre-built `content`
+			// — which the MCP path never did — so it was created EMPTY and
+			// rendered an empty header or footer.
+			//
+			// Rendering a Bricks template does NOT go through Bricks: a
+			// uichemy_template is rendered by UiChemy's own theme builder, outside
+			// any Bricks page render, so UiChemy_Section_Ops::render_html_for()
+			// serves it through the same shared renderer the Bricks element calls.
+			if ( in_array( $editor, array( 'bricks', 'gutenberg' ), true ) && ! isset( $args['content'] ) ) {
+				if ( 'bricks' === $editor ) {
+					update_post_meta( $post_id, '_bricks_editor_mode', 'bricks' );
+				}
+
+				$driver = class_exists( 'UiChemy_Builder_Registry' ) ? UiChemy_Builder_Registry::get( $editor ) : null;
+				$code   = array(
+					'raw_html' => isset( $args['html'] ) ? (string) $args['html'] : '',
+					'raw_css'  => isset( $args['css'] ) ? (string) $args['css'] : '',
+					'raw_js'   => isset( $args['js'] ) ? (string) $args['js'] : '',
+				);
+
+				if ( $driver && '' !== trim( $code['raw_html'] . $code['raw_css'] . $code['raw_js'] ) ) {
+					$section = $driver->new_section(
+						array_merge(
+							array( '_title' => isset( $args['label'] ) ? sanitize_text_field( (string) $args['label'] ) : $title ),
+							$code
+						)
+					);
+					$saved = $driver->save_sections( $post_id, array( $section ) );
+					if ( is_wp_error( $saved ) ) {
+						// A template that exists but holds nothing renders an empty
+						// header or footer, which reads as "UiChemy broke the site".
+						wp_delete_post( $post_id, true );
+						return $saved;
+					}
+					$driver->after_write( $post_id );
+				}
 			}
 
 			self::flush_elementor_cache();
@@ -331,7 +372,7 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 
 		/**
 		 * The "slot" a template occupies — the unit within which only one template
-		 * may be active. header/footer/search/404/single_product/product_archive
+		 * may be active. header/footer/search/404/single_product/product_archive/order_received
 		 * are one slot per type; single/archive split further by their target so a
 		 * "Single Post" and a "Single Page" template can both be active at once.
 		 *
@@ -606,6 +647,8 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 					return __( 'Single Product (UiChemy)', 'uichemy' );
 				case 'product_archive':
 					return __( 'Products Archive (UiChemy)', 'uichemy' );
+				case 'order_received':
+					return __( 'Order Received / Thank You (UiChemy)', 'uichemy' );
 				case 'search':
 					return __( 'Search Results (UiChemy)', 'uichemy' );
 				case 'error_404':

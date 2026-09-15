@@ -64,15 +64,27 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 		 * Supported template location types.
 		 *
 		 * Full-page types (single, archive, single_product, product_archive,
-		 * search, error_404) swap the whole page via template_include; header /
-		 * footer are injected at the theme's header/footer locations. The two
-		 * `*_product` / `product_*` types only render when WooCommerce is active.
+		 * order_received, search, error_404) swap the whole page via
+		 * template_include; header / footer are injected at the theme's
+		 * header/footer locations. The `*_product` / `product_*` /
+		 * `order_received` types only render when WooCommerce is active.
+		 *
+		 * order_received is the thank-you view, and it is the one WooCommerce
+		 * endpoint UiChemy will take over. Cart, checkout and my-account stay
+		 * off-limits (see UiChemy_Template_Render::is_protected_singular()) because
+		 * the purchase flow lives there; by the time the customer reaches
+		 * order-received the order exists and the money is taken, so there is no
+		 * flow left to break. What DOES still live there is the `woocommerce_thankyou`
+		 * hook - bank-transfer instructions, conversion pixels, some gateways'
+		 * finalisation - so a template for this type should include the
+		 * <uichemy-woo-thankyou /> tag, which fires it.
 		 */
-		const TYPES = array( 'header', 'footer', 'single', 'archive', 'single_product', 'product_archive', 'search', 'error_404' );
+		const TYPES = array( 'header', 'footer', 'single', 'archive', 'single_product', 'product_archive', 'order_received', 'search', 'error_404' );
 
 		/**
-		 * The subset of TYPES available in the Free build. The remaining four
-		 * (archive, single_product, product_archive, search) are UiChemy Pro.
+		 * The subset of TYPES available in the Free build. The remaining five
+		 * (archive, single_product, product_archive, order_received, search) are
+		 * UiChemy Pro.
 		 *
 		 * Note this gates CREATION and LISTING only — a template already stored for
 		 * a Pro type keeps its post and meta untouched when Pro goes away, it simply
@@ -243,7 +255,7 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 		 * flag and was authored in Elementor, so that is the back-compat default.
 		 *
 		 * @param int $post_id Template post ID.
-		 * @return string 'gutenberg' | 'elementor'
+		 * @return string 'gutenberg' | 'elementor' | 'bricks'
 		 */
 		public static function editor_for( $post_id ) {
 			// Elementor builder data is authoritative when present. A template
@@ -260,7 +272,20 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 					return 'elementor';
 				}
 			}
-			return 'gutenberg' === get_post_meta( $post_id, self::META_EDITOR, true ) ? 'gutenberg' : 'elementor';
+
+			// Same reasoning as the Elementor branch above, for Bricks: real
+			// stored content beats a stale META_EDITOR, because a rebuild in
+			// another builder never updates UiChemy's own meta.
+			if ( class_exists( 'UiChemy_Builder_Registry' ) ) {
+				$detected = UiChemy_Builder_Registry::detect_post_builder( $post_id );
+				if ( 'bricks' === $detected ) {
+					return 'bricks';
+				}
+			}
+
+			$stored = (string) get_post_meta( $post_id, self::META_EDITOR, true );
+
+			return in_array( $stored, array( 'gutenberg', 'bricks' ), true ) ? $stored : 'elementor';
 		}
 
 		/**

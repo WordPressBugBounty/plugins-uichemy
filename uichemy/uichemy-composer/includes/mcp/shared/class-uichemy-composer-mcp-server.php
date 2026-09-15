@@ -258,10 +258,73 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 				&& method_exists( $experiments, 'is_feature_active' )
 				&& (bool) $experiments->is_feature_active( 'e_atomic_elements' );
 
-			$is_ready = $has_globals_class && $has_elementor && $kit_available;
+			// Readiness follows the RESOLVED builder, not Elementor. Tying it to
+			// Elementor told an agent to stop on a perfectly buildable Bricks or
+			// Gutenberg site — and because this is data rather than prose, the
+			// agent believed it over anything the usage guide said.
+			$builder   = '';
+			$builders  = array();
+			$notes     = array();
+			$has_kit   = $has_globals_class;
+
+			$builder_reason = '';
+			if ( class_exists( 'UiChemy_Builder_Registry' ) && class_exists( 'UiChemy_Builder_Context' ) ) {
+				$builder = UiChemy_Builder_Context::resolve();
+
+				$chosen = class_exists( 'Uich_ND_Settings' ) ? (string) Uich_ND_Settings::get_builder() : '';
+				$builder_reason = ( '' !== $chosen && $chosen === $builder )
+					? 'Chosen page builder during onboarding.'
+					: 'No onboarding choice stored, so the first available builder was used.';
+
+				foreach ( UiChemy_Builder_Registry::all() as $slug => $driver ) {
+					// The block editor is present on EVERY WordPress site, so listing
+					// it beside a deliberately installed builder reads as a choice
+					// the site has not actually offered — and an agent then treats
+					// two builders as interchangeable when one of them is simply
+					// core. It is reported only when it IS the builder in use.
+					// A cross-builder write still names both sides in its error, so
+					// nothing is hidden at the moment it matters.
+					if ( 'gutenberg' === $slug && 'gutenberg' !== $builder ) {
+						continue;
+					}
+
+					$readiness         = $driver->readiness();
+					$builders[ $slug ] = array(
+						'label'     => $driver->label(),
+						'available' => $driver->is_available(),
+						'enabled'   => ! function_exists( 'uichemy_composer_enabled' ) || uichemy_composer_enabled( $slug ),
+						'ready'     => ! empty( $readiness['ready'] ),
+						'checks'    => isset( $readiness['checks'] ) ? $readiness['checks'] : array(),
+						'notes'     => isset( $readiness['notes'] ) ? $readiness['notes'] : array(),
+					);
+				}
+
+				$resolved_driver = '' !== $builder ? UiChemy_Builder_Registry::get( $builder ) : null;
+				if ( $resolved_driver ) {
+					$resolved_readiness = $resolved_driver->readiness();
+					$has_kit            = $has_globals_class && ! empty( $resolved_readiness['ready'] );
+					$notes              = isset( $resolved_readiness['notes'] ) ? $resolved_readiness['notes'] : array();
+				} else {
+					$has_kit = false;
+					$notes[] = 'No page builder is available on this site. Install Elementor or Bricks, or use the block editor.';
+				}
+			} else {
+				// Driver layer absent (shouldn't happen) — fall back to the old gate.
+				$has_kit = $has_globals_class && $has_elementor && $kit_available;
+			}
+
+			$is_ready = $has_kit;
 
 			return array(
 				'ready'                => $is_ready,
+				'builder'              => $builder,
+				'builder_reason'       => $builder_reason,
+				// Diagnostics, not a menu: every write lands in `builder` unless the
+				// caller passes one explicitly or targets a post another builder owns.
+				'builders'             => $builders,
+				// Kept for compatibility: Uich_Dynamic and the pipeline docs read
+				// these by name. They describe ELEMENTOR specifically and are
+				// meaningless on another builder — route on `builder` instead.
 				'header_footer_system' => $header_footer_system,
 				'atomic_enabled'       => $atomic_enabled,
 				'checks'               => array(
@@ -293,8 +356,8 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 					'server_version' => self::SERVER_VERSION,
 				),
 				'message'              => $is_ready
-					? 'Configuration looks good. Sync tools are ready.'
-					: 'Configuration issue detected. Check failed flags in "checks" before running sync.',
+					? sprintf( 'Configuration looks good. Building with %s.', '' !== $builder && isset( $builders[ $builder ] ) ? $builders[ $builder ]['label'] : 'the active page builder' )
+					: trim( 'Configuration issue detected. ' . implode( ' ', $notes ) ),
 			);
 		}
 
@@ -511,6 +574,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 
 			$arguments = is_array( $arguments ) ? $arguments : array();
 			$payload   = array(
+				'builder'       => isset( $arguments['builder'] ) ? sanitize_key( (string) $arguments['builder'] ) : '',
 				'title'         => isset( $arguments['title'] ) ? sanitize_text_field( (string) $arguments['title'] ) : 'UiChemy AI Landing Page',
 				'status'        => isset( $arguments['status'] ) ? sanitize_key( (string) $arguments['status'] ) : 'draft',
 				'source'        => isset( $arguments['source'] ) ? sanitize_text_field( (string) $arguments['source'] ) : 'mcp',
@@ -551,6 +615,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			}
 
 			$payload = array(
+				'builder'       => isset( $arguments['builder'] ) ? sanitize_key( (string) $arguments['builder'] ) : '',
 				'post_id'       => $post_id,
 				'label'         => isset( $arguments['label'] ) ? sanitize_text_field( (string) $arguments['label'] ) : 'Section',
 				'source'        => isset( $arguments['source'] ) ? sanitize_text_field( (string) $arguments['source'] ) : 'mcp',
@@ -584,6 +649,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			}
 
 			$payload = array(
+				'builder'       => isset( $arguments['builder'] ) ? sanitize_key( (string) $arguments['builder'] ) : '',
 				'type'          => $type,
 				'title'         => isset( $arguments['title'] ) ? sanitize_text_field( (string) $arguments['title'] ) : ( ucfirst( $type ) . ' UiChemy' ),
 				'label'         => isset( $arguments['label'] ) ? sanitize_text_field( (string) $arguments['label'] ) : ucfirst( $type ),
@@ -618,6 +684,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 
 			$arguments = is_array( $arguments ) ? $arguments : array();
 			$payload   = array(
+				'builder'       => isset( $arguments['builder'] ) ? sanitize_key( (string) $arguments['builder'] ) : '',
 				'post_type'           => isset( $arguments['post_type'] ) ? sanitize_key( (string) $arguments['post_type'] ) : 'post',
 				'title'               => isset( $arguments['title'] ) ? sanitize_text_field( (string) $arguments['title'] ) : 'Single Post UiChemy',
 				'label'               => isset( $arguments['label'] ) ? sanitize_text_field( (string) $arguments['label'] ) : 'Single Post',
@@ -656,7 +723,10 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			// Only forward the scopes the caller actually supplied. The manager treats
 			// a present key as "replace this scope", so passing all four unconditionally
 			// would clear the three the caller never mentioned.
-			$payload = array( 'post_id' => $post_id );
+			$payload = array(
+				'post_id' => $post_id,
+				'builder' => isset( $arguments['builder'] ) ? sanitize_key( (string) $arguments['builder'] ) : '',
+			);
 			$map     = array(
 				'site_before_head' => 'site_css',
 				'site_before_body' => 'site_js',
@@ -698,18 +768,28 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 
 			$items = array();
 			foreach ( $posts as $post ) {
-				$items[] = array(
-					'id'             => $post->ID,
-					'title'          => $post->post_title,
-					'status'         => $post->post_status,
-					'type'           => $post->post_type,
-					'modified'       => $post->post_modified,
-					'url'            => get_permalink( $post->ID ),
-					'edit_link'      => get_edit_post_link( $post->ID, 'internal' ),
-					'elementor_link' => add_query_arg(
-						array( 'post' => $post->ID, 'action' => 'elementor' ),
-						admin_url( 'post.php' )
+				// The builder link has to come from whichever builder OWNS this post,
+				// not from a hardcoded ?action=elementor. Every row used to carry an
+				// Elementor edit link even on a site with no Elementor — a dead link
+				// an agent could follow. A post no builder claims simply gets none.
+				$row_builder = class_exists( 'UiChemy_Builder_Registry' )
+					? UiChemy_Builder_Registry::detect_post_builder( $post->ID )
+					: '';
+				$row_driver  = '' !== $row_builder ? UiChemy_Builder_Registry::get( $row_builder ) : null;
+
+				$items[] = array_merge(
+					array(
+						'id'       => $post->ID,
+						'title'    => $post->post_title,
+						'status'   => $post->post_status,
+						'type'     => $post->post_type,
+						'builder'  => $row_builder,
+						'modified' => $post->post_modified,
+						'url'      => get_permalink( $post->ID ),
 					),
+					$row_driver
+						? $row_driver->edit_links( $post->ID )
+						: array( 'edit_link' => (string) get_edit_post_link( $post->ID, 'internal' ) )
 				);
 			}
 
@@ -787,6 +867,102 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 				}
 			}
 
+			// UiChemy's OWN theme-builder templates. These were missing entirely,
+			// which meant the tool a model uses to see what already exists never
+			// showed the templates UiChemy itself creates — so it would happily
+			// create a second header over the top of one it had just made.
+			if ( class_exists( 'UiChemy_Template_CPT' ) ) {
+				$uich_posts = get_posts(
+					array(
+						'post_type'      => UiChemy_Template_CPT::POST_TYPE,
+						'post_status'    => 'any',
+						'posts_per_page' => $per_page,
+						'no_found_rows'  => true,
+					)
+				);
+				foreach ( $uich_posts as $post ) {
+					$tpl_type = (string) get_post_meta( $post->ID, UiChemy_Template_CPT::META_TYPE, true );
+					if ( 'all' !== $type_filter && $tpl_type !== $type_filter ) {
+						continue;
+					}
+					$editor      = method_exists( 'UiChemy_Template_CPT', 'editor_for' ) ? UiChemy_Template_CPT::editor_for( $post->ID ) : '';
+					$templates[] = array(
+						'id'            => $post->ID,
+						'title'         => $post->post_title,
+						'system'        => 'uichemy',
+						'builder'       => $editor,
+						'template_type' => '' !== $tpl_type ? $tpl_type : 'unknown',
+						'status'        => $post->post_status,
+						'active'        => 'active' === (string) get_post_meta( $post->ID, UiChemy_Template_CPT::META_STATUS, true ),
+						'conditions'    => (array) get_post_meta( $post->ID, UiChemy_Template_CPT::META_CONDITIONS, true ),
+						'edit_link'     => get_edit_post_link( $post->ID, 'internal' ),
+					);
+				}
+			}
+
+			// Bricks' own template library.
+			if ( post_type_exists( 'bricks_template' ) ) {
+				$bricks_posts = get_posts(
+					array(
+						'post_type'      => 'bricks_template',
+						'post_status'    => 'any',
+						'posts_per_page' => $per_page,
+						'no_found_rows'  => true,
+					)
+				);
+				foreach ( $bricks_posts as $post ) {
+					$b_type = (string) get_post_meta( $post->ID, '_bricks_template_type', true );
+					if ( 'all' !== $type_filter && $b_type !== $type_filter ) {
+						continue;
+					}
+					$templates[] = array(
+						'id'            => $post->ID,
+						'title'         => $post->post_title,
+						'system'        => 'bricks',
+						'builder'       => 'bricks',
+						'template_type' => '' !== $b_type ? $b_type : 'unknown',
+						'status'        => $post->post_status,
+						// Bricks decides placement from its own template conditions,
+						// which live in meta rather than a boolean flag.
+						'active'        => ! empty( get_post_meta( $post->ID, '_bricks_template_conditions', true ) ),
+						'conditions'    => (array) get_post_meta( $post->ID, '_bricks_template_conditions', true ),
+						'edit_link'     => get_edit_post_link( $post->ID, 'internal' ),
+						'bricks_link'   => add_query_arg( array( 'bricks' => 'run' ), get_permalink( $post->ID ) ),
+					);
+				}
+			}
+
+			// Block-theme templates. Unlike every other system these resolve from
+			// theme FILES as well as the database, so get_block_templates() is the
+			// only correct source — a wp_template post query misses everything the
+			// theme ships and never had customised.
+			if ( function_exists( 'get_block_templates' ) && wp_is_block_theme() ) {
+				foreach ( array( 'wp_template', 'wp_template_part' ) as $block_type ) {
+					foreach ( (array) get_block_templates( array(), $block_type ) as $bt ) {
+						$slug = isset( $bt->slug ) ? (string) $bt->slug : '';
+						if ( 'all' !== $type_filter && $slug !== $type_filter ) {
+							continue;
+						}
+						$templates[] = array(
+							'id'            => isset( $bt->wp_id ) && $bt->wp_id ? (int) $bt->wp_id : 0,
+							'title'         => isset( $bt->title ) && '' !== $bt->title ? (string) $bt->title : $slug,
+							'system'        => 'block_theme',
+							'builder'       => 'gutenberg',
+							'template_type' => $slug,
+							// 'custom' means it has been saved into the database;
+							// 'theme' means it is still the file the theme ships.
+							'status'        => isset( $bt->source ) ? (string) $bt->source : 'theme',
+							'active'        => true,
+							'conditions'    => array(),
+							'edit_link'     => admin_url( 'site-editor.php?postType=' . $block_type . '&postId=' . rawurlencode( (string) ( $bt->id ?? '' ) ) ),
+						);
+					}
+					if ( count( $templates ) >= $per_page * 4 ) {
+						break;
+					}
+				}
+			}
+
 			return array(
 				'type_filter' => $type_filter,
 				'total'       => count( $templates ),
@@ -797,6 +973,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 		public static function execute_get_post_structure( $arguments ) {
 			$arguments = is_array( $arguments ) ? $arguments : array();
 			$post_id   = isset( $arguments['post_id'] ) ? absint( $arguments['post_id'] ) : 0;
+			$builder   = isset( $arguments['builder'] ) ? (string) $arguments['builder'] : '';
 			if ( ! $post_id ) {
 				return new WP_Error( 'uich_mcp_error', 'Missing required parameter: post_id' );
 			}
@@ -806,75 +983,28 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 				return new WP_Error( 'uich_mcp_error', "Post ID {$post_id} not found." );
 			}
 
-			$raw       = get_post_meta( $post_id, '_elementor_data', true );
-			$edit_mode = get_post_meta( $post_id, '_elementor_edit_mode', true );
-
-			if ( ! is_string( $raw ) || '' === $raw ) {
+			// A post no builder claims is not an error — it is an empty answer, and
+			// the caller needs to be able to tell those apart.
+			if ( class_exists( 'UiChemy_Builder_Registry' )
+				&& '' === UiChemy_Builder_Registry::detect_post_builder( $post_id ) ) {
 				return array(
-					'post_id'           => $post_id,
-					'post_title'        => $post->post_title,
-					'post_type'         => $post->post_type,
-					'elementor_enabled' => false,
-					'message'           => 'This post has no Elementor data (_elementor_data is empty).',
+					'post_id'               => $post_id,
+					'post_title'            => $post->post_title,
+					'post_type'             => $post->post_type,
+					'builder'               => '',
+					'elementor_enabled'     => false,
+					'total_uichemy_widgets' => 0,
+					'structure'             => array(),
+					'message'               => 'No page builder has written content to this post yet, so it has no structure to report.',
 				);
 			}
 
-			$elements = json_decode( $raw, true );
-			if ( ! is_array( $elements ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Elementor data for this post is not valid JSON.' );
+			$driver = UiChemy_Composer_Manager::mcp_driver_for_post( $post_id, $builder, false );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
 			}
 
-			$uichemy_widget_counter = 0;
-			$sections_summary       = self::summarize_elementor_tree( $elements, $uichemy_widget_counter );
-
-			return array(
-				'post_id'               => $post_id,
-				'post_title'            => $post->post_title,
-				'post_type'             => $post->post_type,
-				'post_status'           => $post->post_status,
-				'elementor_edit_mode'   => $edit_mode ?: 'builder',
-				'top_level_count'       => count( $elements ),
-				'total_uichemy_widgets' => $uichemy_widget_counter,
-				'structure'             => $sections_summary,
-				'edit_link'             => get_edit_post_link( $post_id, 'internal' ),
-				'elementor_link'        => add_query_arg( array( 'post' => $post_id, 'action' => 'elementor' ), admin_url( 'post.php' ) ),
-				'preview_link'          => get_permalink( $post_id ),
-			);
-		}
-
-		private static function summarize_elementor_tree( array $elements, &$uichemy_widget_counter ) {
-			$summary = array();
-			foreach ( $elements as $index => $el ) {
-				if ( ! is_array( $el ) ) {
-					continue;
-				}
-				$el_type    = isset( $el['elType'] ) ? $el['elType'] : 'unknown';
-				$widget_type = isset( $el['widgetType'] ) ? $el['widgetType'] : null;
-				$el_id      = isset( $el['id'] ) ? $el['id'] : '';
-				$settings   = isset( $el['settings'] ) && is_array( $el['settings'] ) ? $el['settings'] : array();
-
-				$node = array( 'index' => $index, 'id' => $el_id, 'elType' => $el_type );
-
-				if ( $widget_type ) {
-					$node['widgetType'] = $widget_type;
-				}
-				if ( uichemy_is_composer_widget_type( $widget_type ) ) {
-					$node['uichemy_widget_index'] = $uichemy_widget_counter++;
-					$node['label']    = isset( $settings['_title'] ) ? $settings['_title'] : '';
-					$node['has_html'] = isset( $settings['raw_html'] ) && '' !== trim( $settings['raw_html'] );
-					$node['has_css']  = isset( $settings['raw_css'] ) && '' !== trim( $settings['raw_css'] );
-					$node['has_js']   = isset( $settings['raw_js'] ) && '' !== trim( $settings['raw_js'] );
-				} elseif ( isset( $settings['_title'] ) && '' !== $settings['_title'] ) {
-					$node['label'] = $settings['_title'];
-				}
-
-				if ( ! empty( $el['elements'] ) && is_array( $el['elements'] ) ) {
-					$node['children'] = self::summarize_elementor_tree( $el['elements'], $uichemy_widget_counter );
-				}
-
-				$summary[] = $node;
-			}
-			return $summary;
+			return $driver->describe_structure( $post_id );
 		}
 
 		public static function execute_find_and_update_section_code( $arguments ) {
@@ -884,6 +1014,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 
 			$arguments    = is_array( $arguments ) ? $arguments : array();
 			$post_id      = isset( $arguments['post_id'] ) ? absint( $arguments['post_id'] ) : 0;
+			$builder      = isset( $arguments['builder'] ) ? sanitize_key( (string) $arguments['builder'] ) : '';
 			$action       = isset( $arguments['action'] ) ? sanitize_key( (string) $arguments['action'] ) : 'get';
 			$widget_index = isset( $arguments['widget_index'] ) ? (int) $arguments['widget_index'] : 0;
 			$element_id   = isset( $arguments['element_id'] ) ? sanitize_text_field( (string) $arguments['element_id'] ) : '';
@@ -922,6 +1053,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			$set_result = UiChemy_Composer_Manager::mcp_sync_generated_code_to_widget(
 				$post_id,
 				array(
+					'builder'       => $builder,
 					'mode'          => 'replace',
 					'widget_id'     => $widget_id,
 					'html'          => $html,
@@ -984,6 +1116,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 
 			$arguments   = is_array( $arguments ) ? $arguments : array();
 			$new_element = isset( $arguments['html'] ) ? trim( (string) $arguments['html'] ) : '';
+			$builder      = isset( $arguments['builder'] ) ? sanitize_key( (string) $arguments['builder'] ) : '';
 			$extra_css   = isset( $arguments['css'] ) ? (string) $arguments['css'] : '';
 
 			if ( '' === $new_element ) {
@@ -1027,6 +1160,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			$set_result = UiChemy_Composer_Manager::mcp_sync_generated_code_to_widget(
 				$post_id,
 				array(
+					'builder'       => $builder,
 					'mode'          => 'replace',
 					'widget_id'     => $widget_id,
 					'html'          => $new_widget_html,
@@ -1060,6 +1194,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			}
 
 			$payload = array(
+				'builder'       => isset( $arguments['builder'] ) ? sanitize_key( (string) $arguments['builder'] ) : '',
 				'post_id'       => $post_id,
 				'insert_index'  => isset( $arguments['insert_index'] ) ? (int) $arguments['insert_index'] : 0,
 				'label'         => isset( $arguments['label'] ) ? sanitize_text_field( (string) $arguments['label'] ) : 'Section',

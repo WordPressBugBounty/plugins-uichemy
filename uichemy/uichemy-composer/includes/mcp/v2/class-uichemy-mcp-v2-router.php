@@ -93,7 +93,7 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 		 * Distinct from uichemy-composer/template: that one drives Elementor Pro's
 		 * elementor_library and Nexter's nxt_builder, while this stores templates in
 		 * UiChemy's own CPT — which is what lets it run on free Elementor and cover
-		 * archive / single_product / product_archive / search / error_404, types
+		 * archive / single_product / product_archive / order_received / search / error_404, types
 		 * neither of those exposes here.
 		 *
 		 * The storage engine (UiChemy_Template_Store / _CPT / _Resolver) is not in the

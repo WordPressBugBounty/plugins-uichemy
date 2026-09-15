@@ -73,7 +73,7 @@ If the source is genuinely one component (a single card, one hero), it's fine to
 
 Call `uichemy-composer/describe-site` once. Store from the response:
 
-- `platform.checks.elementor_active` — if false, STOP and tell the user to activate Elementor.
+- `platform.ready` — if false, STOP and tell the user what `platform.builders` reports. `platform.builder` is the page builder this call resolved to; do not assume Elementor.
 - `platform.checks.elementor_pro_active` + `platform.checks.nexter_extension` — informational only; UiChemy's native Theme Builder works site-wide on ANY Elementor without either of these, so they no longer gate Step 2.5's question. If one IS active, mention the coexistence note in Step 2.5.
 - `platform.header_footer_system` — informational detection only (`elementor_pro` / `nexter` / `elementor`); NOT a routing switch, do not branch on it.
 - `platform.checks.has_nav_menu` — relevant only if Step 2.5 ends up `hf_placement = "site"`: if the source Header has a real navigation and this is false, call `uichemy-composer/platform (action="update-menu")` now (the `<uichemy-nav-menu>` you'll swap in renders empty without an assigned menu). Not needed for `hf_placement = "page"` — that path keeps the source's literal `<li>` items, no WP menu involved.
@@ -244,7 +244,8 @@ site-wide vs page-level, and when shared CSS/JS should become a real file rather
   })();
   ```
 - Rewrite global `document.querySelector` calls that target this section to go through `root` so multiple widgets don't collide.
-- If the source depends on a **heavy** external JS library (Swiper, Lottie, full GSAP timelines, jQuery), tell the user it needs to be enqueued separately. Do NOT paste a CDN `<script>` into the widget. But a **small** effect (fade-in-on-scroll, parallax, count-up, marquee) is a few lines of vanilla — reimplement it, don't drop it (see "Page-global visuals" below for effects that span the whole page).
+- **Animation is a first-class feature, not a dependency to hand back.** GSAP, ScrollTrigger, MotionPathPlugin and DrawSVGPlugin ship with UiChemy and load automatically the moment a section's `js` mentions `gsap` — so reproduce the source's animation with them rather than reimplementing it as hand-rolled vanilla. There is one contract that makes its values editable from the Composer's Animation panel: **read `uichemy-composer/read-skill` with `{ name: "code-to-wordpress", part: "animation" }` BEFORE writing any animation.** Skipping it still animates, but ships a section nobody can tune.
+- If the source depends on some OTHER heavy external library (Swiper, Lottie, jQuery), tell the user it needs to be enqueued separately. Do NOT paste a CDN `<script>` into the widget. A small non-animation effect (count-up, marquee) is a few lines of vanilla — reimplement it, don't drop it (see "Page-global visuals" below for effects that span the whole page).
  - **That heavy library is not a dead end.** Upload the vendor `.js` from the project folder as a code file and reference it with a `<script src>`, loaded BEFORE the section JS that depends on it; the `scope-decision` part carries the rubric and the upload flow. If `uichemy-composer/code-file` is not in your ability list, fall back to asking the user to enqueue it.
 - Section with no JS → `js: ""`.
 

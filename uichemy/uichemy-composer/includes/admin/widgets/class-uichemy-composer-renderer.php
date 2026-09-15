@@ -28,7 +28,61 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 		 */
 		public static function render_html( $settings, $scope_selector, $uid, $is_editor = false, $scope_css = true, $obfuscate_scripts = false ) {
 			$renderer = new self();
-			return $renderer->render( $settings, $scope_selector, $uid, $is_editor, $scope_css, $obfuscate_scripts );
+			$html     = $renderer->render( $settings, $scope_selector, $uid, $is_editor, $scope_css, $obfuscate_scripts );
+
+			// Every builder that goes through render_html() — the Gutenberg block
+			// and the Bricks element — gets the loop runtime from here. It used to
+			// be enqueued only by the Elementor widget, which has its own render
+			// pipeline, so a paginated or filterable loop in Gutenberg or Bricks
+			// shipped the controls and none of the script: the markup was there and
+			// every click was a full page load.
+			if ( ! $is_editor ) {
+				self::maybe_enqueue_loop_runtime( $html );
+			}
+
+			return $html;
+		}
+
+		/**
+		 * Ship assets/js/uichemy-loop.js only when this markup actually needs it.
+		 *
+		 * Three triggers, matching what the runtime handles: either page control,
+		 * or an author-declared filter control. Both page controls stop rendering
+		 * once there is nothing left to load, so the last page of a loop costs
+		 * nothing.
+		 *
+		 * @param string $html Rendered markup.
+		 * @return void
+		 */
+		public static function maybe_enqueue_loop_runtime( $html ) {
+			$html = (string) $html;
+			if ( false === strpos( $html, 'uich-loop-more"' )
+				&& false === strpos( $html, 'uich-loop-pagination"' )
+				&& false === strpos( $html, 'data-uich-filter' ) ) {
+				return;
+			}
+			self::enqueue_loop_runtime();
+		}
+
+		/**
+		 * Register + enqueue the loop runtime.
+		 *
+		 * Versioned by the file's own mtime rather than UICHEMY_VERSION: it is a
+		 * hand-maintained asset that changes independently of the plugin version,
+		 * so a fix would otherwise sit behind a browser cache until the next bump.
+		 *
+		 * Idempotent — wp_enqueue_script de-dupes by handle, so several composer
+		 * instances on one page enqueue it once.
+		 *
+		 * @return void
+		 */
+		public static function enqueue_loop_runtime() {
+			if ( ! defined( 'UICHEMY_URL' ) || ! defined( 'UICHEMY_PATH' ) ) {
+				return;
+			}
+			$path = UICHEMY_PATH . 'assets/js/uichemy-loop.js';
+			$ver  = file_exists( $path ) ? filemtime( $path ) : ( defined( 'UICHEMY_VERSION' ) ? UICHEMY_VERSION : false );
+			wp_enqueue_script( 'uichemy-loop', UICHEMY_URL . 'assets/js/uichemy-loop.js', array(), $ver, true );
 		}
 
 		/**
@@ -40,6 +94,25 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 		 * @param string $code Raw code.
 		 * @return string
 		 */
+		/**
+		 * Compile a section's motion variables — the `uichemy_controller_bridge` declaration
+		 * block becomes a values preamble and `{{m.name}}` tokens become value reads.
+		 *
+		 * Always run this AFTER decode_code_entities(): kses can rewrite `&` inside
+		 * the declaration block as `&#038;`, which would leave its JSON unparseable.
+		 *
+		 * JS with no motion block is returned unchanged.
+		 *
+		 * @param string $code Author JavaScript, entities already decoded.
+		 * @return string
+		 */
+		public static function compile_motion( $code ) {
+			if ( ! class_exists( 'UiChemy_Motion' ) ) {
+				return (string) $code;
+			}
+			return UiChemy_Motion::compile( (string) $code );
+		}
+
 		public static function decode_code_entities( $code ) {
 			$code = (string) $code;
 			if ( false === strpos( $code, '&' ) ) {
@@ -258,9 +331,9 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 					// decodes it, and creates a genuine <script> element with that content
 					// AFTER the surrounding raw_html markup has actually mounted, in the
 					// same relative order 3rd-party "before" dependencies already use.
-					$out .= '<div class="uichemy-deferred-js" style="display:none" data-uichemy-js="' . esc_attr( self::decode_code_entities( (string) $settings['raw_js'] ) ) . '"></div>';
+					$out .= '<div class="uichemy-deferred-js" style="display:none" data-uichemy-js="' . esc_attr( self::compile_motion( self::decode_code_entities( (string) $settings['raw_js'] ) ) ) . '"></div>';
 				} else {
-					$out .= '<script>' . self::decode_code_entities( (string) $settings['raw_js'] ) . '</script>';
+					$out .= '<script>' . self::compile_motion( self::decode_code_entities( (string) $settings['raw_js'] ) ) . '</script>';
 				}
 			}
 
@@ -1887,105 +1960,16 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			}
 
 			// ── woo-* ─────────────────────────────────────────────────────────────
-			// WooCommerce's own cart, checkout, my-account, order-tracking and
-			// notice output, dropped inside a UiChemy layout.
-			//
-			//   <uichemy-woo-cart />
-			//   <uichemy-woo-checkout class="checkout-wrap" />
-			//
-			// These exist so a store's functional pages can be STYLED rather than
-			// REPLACED. UiChemy deliberately refuses to swap a theme-builder
-			// template over cart, checkout and my-account — see
-			// UiChemy_Template_Render::is_protected_singular() — because those pages
-			// carry the purchase flow, and a template that replaces them produces a
-			// site that looks finished and cannot take money. A tag is the way in:
-			// the surrounding markup is yours, the flow stays WooCommerce's.
-			if ( 0 === strpos( $type, 'woo-' ) ) {
-				return $this->render_woo_tag( $type, $attrs_str, $is_editor );
+			// WooCommerce's cart, checkout, account and thank-you output, its
+			// add-to-cart form, its reviews and its mini cart — all in
+			// UiChemy_Woo_Tags, which the Elementor widget's own copy of this
+			// pipeline delegates to as well. See that class for why the tags exist
+			// and why none of them render live in a builder preview.
+			if ( class_exists( 'UiChemy_Woo_Tags' ) && UiChemy_Woo_Tags::handles( $type ) ) {
+				return UiChemy_Woo_Tags::render( $type, $attrs_str, $is_editor );
 			}
 
 			return '';
-		}
-
-		/**
-		 * WooCommerce shortcode tags: <uichemy-woo-cart />, -checkout, -my-account,
-		 * -order-tracking, -notices.
-		 *
-		 * Never renders the real thing in the editor. Woo's cart and checkout read
-		 * `WC()->cart` and the customer session, neither of which exists on an admin
-		 * request — calling them there is a fatal, not a blank. The editor gets a
-		 * labelled placeholder of roughly the right shape instead, which is also
-		 * what a designer wants: a live checkout form is not something to lay out
-		 * against.
-		 *
-		 * @param string $type      Full tag type, e.g. 'woo-cart'.
-		 * @param string $attrs_str Raw attribute string from the tag.
-		 * @param bool   $is_editor Whether rendering inside the Elementor editor.
-		 * @return string
-		 */
-		private function render_woo_tag( $type, $attrs_str, $is_editor ) {
-			$map = array(
-				'woo-cart'           => array( 'woocommerce_cart', 'Cart' ),
-				'woo-checkout'       => array( 'woocommerce_checkout', 'Checkout' ),
-				'woo-my-account'     => array( 'woocommerce_my_account', 'My Account' ),
-				'woo-order-tracking' => array( 'woocommerce_order_tracking', 'Order Tracking' ),
-				'woo-notices'        => array( 'woocommerce_messages', 'Store Notices' ),
-			);
-
-			if ( ! isset( $map[ $type ] ) ) {
-				return '';
-			}
-
-			list( $shortcode, $label ) = $map[ $type ];
-
-			$attr_open = $attrs_str ? ' ' . $attrs_str : '';
-
-			if ( ! class_exists( 'WooCommerce' ) || ! shortcode_exists( $shortcode ) ) {
-				// Rendering nothing on the front end is right — an empty wrapper is
-				// better than a PHP notice on a site that simply has no store. The
-				// editor still says why, so the tag does not look broken.
-				return $is_editor
-					? $this->render_woo_placeholder( $label, $attr_open, 'WooCommerce is not active on this site, so this tag renders nothing.' )
-					: '';
-			}
-
-			if ( $is_editor ) {
-				return $this->render_woo_placeholder(
-					$label,
-					$attr_open,
-					sprintf( 'WooCommerce renders %s here on the front end.', strtolower( $label ) )
-				);
-			}
-
-			$html = do_shortcode( '[' . $shortcode . ']' );
-
-			if ( '' === trim( (string) $html ) ) {
-				return '';
-			}
-
-			return $attrs_str ? '<div' . $attr_open . '>' . $html . '</div>' : $html;
-		}
-
-		/**
-		 * The editor stand-in for a WooCommerce tag.
-		 *
-		 * Styled inline rather than through a stylesheet: this markup only ever
-		 * exists inside the editor preview, so a class would need a rule shipped to
-		 * the front end that nothing there would use.
-		 *
-		 * @param string $label     Human label, e.g. 'Checkout'.
-		 * @param string $attr_open Leading-space attribute string, or ''.
-		 * @param string $note      One line explaining what happens on the front end.
-		 * @return string
-		 */
-		private function render_woo_placeholder( $label, $attr_open, $note ) {
-			return sprintf(
-				'<div%s><div style="border:1px dashed currentColor;border-radius:6px;padding:24px;text-align:center;opacity:.65;font:500 14px/1.5 system-ui,sans-serif">'
-					. '<div style="font-weight:600;margin-bottom:4px">WooCommerce: %s</div><div style="font-size:12px">%s</div></div></div>',
-				$attr_open,
-				esc_html( $label ),
-				esc_html( $note )
-			);
 		}
 	}
 }

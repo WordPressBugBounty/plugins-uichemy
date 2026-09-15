@@ -171,7 +171,7 @@ if ( ! function_exists( 'uichemy_editor_pro_features' ) ) {
 		 *
 		 * @param string[] $features Feature slugs.
 		 */
-		return (array) apply_filters( 'uichemy/editor/pro_features', array( 'ai_chat', 'loop_pagination', 'loop_custom_query' ) );
+		return (array) apply_filters( 'uichemy/editor/pro_features', array( 'ai_chat', 'loop_pagination' ) );
 	}
 }
 

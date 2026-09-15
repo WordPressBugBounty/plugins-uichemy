@@ -46,7 +46,7 @@ Call **`check_config`** and store:
 
 | Field | Action |
 |---|---|
-| `checks.elementor_active` | If `false` → STOP: "Elementor not active. Install and activate before running." |
+| `ready` | If `false` → STOP and read `builders` for the reason. `builder` names the page builder this call resolved to (elementor / bricks / gutenberg); everything you build lands in that one. |
 | `atomic_enabled` | Informational only — no longer affects globals tools (see Step 2b) |
 | `header_footer_system` | Informational only. Header/Footer always go through UiChemy's native Theme Builder (site-wide, any Elementor) — never print this value or name the specific competing plugin to the user. |
 | `checks.has_nav_menu` | If `false` AND Header in sectionPlan[] → call `ensure_nav_menu` now |

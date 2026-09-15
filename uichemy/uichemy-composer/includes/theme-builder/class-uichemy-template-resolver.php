@@ -12,7 +12,7 @@
  *  - single/archive: resolved by TARGET (the queried post type / taxonomy /
  *    author / date / front / blog), most specific first, then page conditions
  *    within the matching target; a targeted template beats the "any" fallback.
- *  - error_404 / single_product / product_archive / search: whole request-
+ *  - error_404 / single_product / product_archive / order_received / search: whole request-
  *    context locations not narrowed; newest active wins.
  *
  * @package UiChemy
@@ -67,14 +67,26 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 				// targeting the exact post type / taxonomy beats the "any" fallback.
 				//
 				// The remaining whole-context types (404, single_product,
-				// product_archive, search) are not narrowed — newest active wins.
+				// product_archive, order_received, search) are not narrowed —
+				// newest active wins.
 				if ( in_array( $type, array( 'header', 'footer' ), true ) ) {
 					$id = self::best_match( $active );
-					// Coexistence: if another theme-builder system (Elementor Pro's
-					// elementor_library, or Nexter's nxt_builder) already has an ACTIVE
-					// template for this exact slot, defer to it and don't render ours —
-					// only take the slot when the other system has none active for it.
-					if ( $id && self::has_competing_active_template( $type ) ) {
+					// UiChemy WINS the slot. If another theme-builder system
+					// (Elementor Pro's elementor_library, Nexter's nxt_builder, or
+					// the Bricks theme) also has an active template here, ours is the
+					// one that renders and theirs is displaced — see
+					// UiChemy_Locations, which removes the incumbent's callback
+					// rather than rendering alongside it, so a slot never emits two
+					// headers.
+					//
+					// This used to defer to the other system, which meant a user who
+					// deliberately built a UiChemy header watched their old one keep
+					// rendering with no indication why.
+					//
+					// Filter back to the old deferential behaviour per slot:
+					//     add_filter( 'uichemy/theme_builder/defer_to_competing', '__return_true' );
+					if ( $id && self::has_competing_active_template( $type )
+						&& apply_filters( 'uichemy/theme_builder/defer_to_competing', false, $type, $id ) ) {
 						$id = 0;
 					}
 				} elseif ( 'single' === $type ) {

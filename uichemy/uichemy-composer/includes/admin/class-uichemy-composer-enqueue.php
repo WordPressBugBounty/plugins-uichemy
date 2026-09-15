@@ -53,11 +53,11 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			add_action( 'wp_footer', array( $this, 'render_frontend_panel_root' ), 100 );
 			add_filter( 'body_class', array( $this, 'frontend_body_class' ) );
 
-			// GSAP animation (Phase 1): load GSAP + runtime inside the Elementor
-			// preview iframe so `data-tp-gsap` animations preview while editing. The
-			// runtime re-runs per widget on Elementor's element_ready (see
-			// uichemy-gsap.js). Front-end pages load it on demand from the widget.
+			// GSAP: load the GSAP libraries inside the Elementor preview iframe so a
+			// section whose own JS animates previews while editing. Front-end pages
+			// load them on demand from the widget.
 			add_action( 'elementor/preview/enqueue_scripts', array( $this, 'enqueue_preview_gsap' ) );
+			add_action( 'elementor/preview/enqueue_scripts', array( $this, 'enqueue_preview_three' ) );
 			// The design system for the on-canvas toolbar, which renders in THIS
 			// document while the panel (and composer.css) lives in the editor window.
 			add_action( 'elementor/preview/enqueue_scripts', array( $this, 'enqueue_preview_canvas_css' ) );
@@ -706,17 +706,27 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 		}
 
 		/**
-		 * Which editor mode the composer should expose, from the dashboard setting:
-		 * 'both' (default, show the Design/Developer switch), 'design' (lock to
-		 * Design), or 'developer' (lock to Developer). Read into every
-		 * uichComposerEditorCfg so composer-app.jsx can gate the switch + Code tab.
+		 * Which editor mode the composer should expose: 'both' (show the
+		 * Design/Developer switch), 'design' (lock to Design), or 'developer' (lock
+		 * to Developer). Read into every uichComposerEditorCfg so composer-app.jsx
+		 * can gate the switch + Code tab.
+		 *
+		 * The dashboard "Editor mode" setting is the site-wide default. A Custom
+		 * role can narrow it per role via its Design / Developer toggles; every
+		 * other user follows the site setting. Resolving here — the single place the
+		 * mode is computed — means all call sites get the per-role value for free.
 		 *
 		 * @return string
 		 */
 		public function editor_mode() {
 			$opts = get_option( 'uichemy_settings', array() );
 			$mode = ( is_array( $opts ) && isset( $opts['editor_mode'] ) ) ? (string) $opts['editor_mode'] : 'both';
-			return in_array( $mode, array( 'both', 'design', 'developer' ), true ) ? $mode : 'both';
+			$mode = in_array( $mode, array( 'both', 'design', 'developer' ), true ) ? $mode : 'both';
+
+			if ( class_exists( 'UiChemy_Roles' ) ) {
+				$mode = UiChemy_Roles::editor_mode_for_user( $mode );
+			}
+			return $mode;
 		}
 
 		/**
@@ -955,14 +965,30 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					$fe_builder = 'bricks';
 				}
 
+				// Front-end save mode: 'manual' (default) or 'autosave'. Read from the
+				// composer settings so the dashboard toggle drives the live page.
+				$uich_fe_settings = (array) get_option( 'uichemy_settings', array() );
+				$fe_save_mode     = ( isset( $uich_fe_settings['frontend_save_mode'] ) && 'autosave' === $uich_fe_settings['frontend_save_mode'] )
+					? 'autosave'
+					: 'manual';
+
+				// The scroll-timeline dock. Absent from the option (a site that has not
+				// saved settings since this shipped) means ON, matching the default in
+				// UiChemy_Admin_Menu::settings_defaults() — an unsaved option must not
+				// read as "the user turned this off".
+				$fe_gsap_timeline = ! isset( $uich_fe_settings['enable_gsap_timeline'] )
+					|| ! empty( $uich_fe_settings['enable_gsap_timeline'] );
+
 				wp_localize_script(
 					'uichemy-frontend-bridge',
 					'uichUiChemyFrontend',
 					array(
-						'postId'  => $fe_post_id,
-						'restUrl' => rest_url( 'uichemy/v1/' ),
-						'nonce'   => wp_create_nonce( 'wp_rest' ),
-						'builder' => $fe_builder,
+						'postId'       => $fe_post_id,
+						'restUrl'      => rest_url( 'uichemy/v1/' ),
+						'nonce'        => wp_create_nonce( 'wp_rest' ),
+						'builder'      => $fe_builder,
+						'saveMode'     => $fe_save_mode,
+						'gsapTimeline' => $fe_gsap_timeline,
 					)
 				);
 			}
@@ -986,14 +1012,30 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 		 * @return void
 		 */
 		/**
-		 * Enqueue GSAP + the UiChemy GSAP runtime inside the Elementor preview iframe
-		 * so `data-tp-gsap` animations preview while editing.
+		 * Enqueue the GSAP libraries inside the Elementor preview iframe so a section
+		 * whose own JS animates previews while editing.
 		 *
 		 * @return void
 		 */
 		public function enqueue_preview_gsap() {
 			if ( class_exists( 'UiChemy_Composer_Widget' ) ) {
 				\UiChemy_Composer_Widget::enqueue_gsap_runtime();
+			}
+		}
+
+		/**
+		 * Enqueue three.js inside the Elementor preview iframe so a section that
+		 * renders WebGL shows it while editing.
+		 *
+		 * Loaded for the preview as a whole rather than per section: the preview
+		 * re-renders one widget at a time over the existing document, so there is
+		 * no single render pass that could decide, the way the front end does.
+		 *
+		 * @return void
+		 */
+		public function enqueue_preview_three() {
+			if ( class_exists( 'UiChemy_Composer_Widget' ) ) {
+				\UiChemy_Composer_Widget::enqueue_three_runtime();
 			}
 		}
 

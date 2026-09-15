@@ -459,7 +459,7 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				'proLocked'   => uichemy_pro_feature_map(),
 				'proTypes'    => class_exists( 'UiChemy_Template_CPT' )
 					? array_values( array_diff( UiChemy_Template_CPT::TYPES, UiChemy_Template_CPT::FREE_TYPES ) )
-					: array( 'archive', 'single_product', 'product_archive', 'search' ),
+					: array( 'archive', 'single_product', 'product_archive', 'order_received', 'search' ),
 				'siteName'    => get_bloginfo( 'name' ),
 				// First name for a friendly greeting; fall back to the display
 				// name (always set) so the dashboard can say "Welcome back, …".
@@ -671,12 +671,21 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				'enable_mcp'             => 1,
 				'store_forms'            => 1,
 				'enable_frontend_editor' => 1,
+				// The scroll-timeline dock on the live page. Off here means it is never
+				// mounted at all — not hidden, not collapsed. When on, the dock still
+				// only appears on pages that actually have scroll animation, so this is
+				// a site-wide "offer the feature" switch rather than a per-page one.
+				'enable_gsap_timeline'   => 1,
 				'delete_on_uninstall'    => 0,
 				// Which editor mode the composer exposes: 'both' shows the
 				// Design/Developer switch; 'design' locks to Design (Chat + Editor);
 				// 'developer' locks to Developer (Chat + Editor + Code). String value,
 				// special-cased in sanitize_settings().
 				'editor_mode'            => 'both',
+				// How front-end edits persist: 'manual' (default) holds edits until the
+				// user presses Save in the page toolbar; 'autosave' writes them ~800ms
+				// after each change. String value, special-cased in sanitize_settings().
+				'frontend_save_mode'     => 'manual',
 			);
 		}
 
@@ -693,6 +702,12 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				if ( 'editor_mode' === $key ) {
 					$v           = isset( $input[ $key ] ) ? sanitize_key( (string) $input[ $key ] ) : 'both';
 					$out[ $key ] = in_array( $v, array( 'both', 'design', 'developer' ), true ) ? $v : 'both';
+					continue;
+				}
+				// frontend_save_mode is a 2-way string choice — whitelist it too.
+				if ( 'frontend_save_mode' === $key ) {
+					$v           = isset( $input[ $key ] ) ? sanitize_key( (string) $input[ $key ] ) : 'manual';
+					$out[ $key ] = in_array( $v, array( 'manual', 'autosave' ), true ) ? $v : 'manual';
 					continue;
 				}
 				$out[ $key ] = empty( $input[ $key ] ) ? 0 : 1;

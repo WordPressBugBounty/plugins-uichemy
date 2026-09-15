@@ -72,7 +72,7 @@ If the source is genuinely one component (a single card, one hero), it's fine to
 
 Call `check_config` once. Store from the response:
 
-- `checks.elementor_active` — if false, STOP and tell the user to activate Elementor.
+- `ready` — if false, STOP and tell the user what `builders` reports. `builder` is the page builder this call resolved to; do not assume Elementor.
 - `checks.elementor_pro_active` + `checks.nexter_extension` — informational only; UiChemy's native Theme Builder works site-wide on ANY Elementor without either of these, so they no longer gate Step 2.5's question. If one IS active, mention the coexistence note in Step 2.5.
 - `header_footer_system` — informational detection only (`elementor_pro` / `nexter` / `elementor`); NOT a routing switch, do not branch on it.
 - `checks.has_nav_menu` — relevant only if Step 2.5 ends up `hf_placement = "site"`: if the source Header has a real navigation and this is false, call `ensure_nav_menu` now (the `<uichemy-nav-menu>` you'll swap in renders empty without an assigned menu). Not needed for `hf_placement = "page"` — that path keeps the source's literal `<li>` items, no WP menu involved.

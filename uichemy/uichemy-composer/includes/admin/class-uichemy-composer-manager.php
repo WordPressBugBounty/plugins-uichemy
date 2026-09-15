@@ -228,7 +228,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param string $css Raw CSS or already-wrapped block.
 		 * @return string
 		 */
-		private static function mcp_ensure_style_tag( $css ) {
+		public static function mcp_ensure_style_tag( $css ) {
 			$css = trim( (string) $css );
 			if ( '' === $css ) {
 				return '';
@@ -249,7 +249,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param string $js Raw JavaScript or already-wrapped block.
 		 * @return string
 		 */
-		private static function mcp_ensure_script_tag( $js ) {
+		public static function mcp_ensure_script_tag( $js ) {
 			$js = trim( (string) $js );
 			if ( '' === $js ) {
 				return '';
@@ -541,25 +541,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				}
 			}
 			unset( $element );
-		}
-
-		/**
-		 * After MCP builds/updates a multi-widget page, mirror page custom code to every Composer widget (editor UX + consistent JSON).
-		 *
-		 * @param array $elements Elementor elements tree (by reference).
-		 * @return void
-		 */
-		private static function mcp_sync_page_custom_code_across_widgets( array &$elements ) {
-			$head   = '';
-			$footer = '';
-			self::mcp_collect_first_page_custom_code_from_elements( $elements, $head, $footer );
-			if ( '' === $head && '' === $footer ) {
-				return;
-			}
-			self::mcp_apply_canonical_page_custom_code_to_all_widgets( $elements, $head, $footer );
-		}
-
-		/**
+		}		/**
 		 * Merge page-level head/footer custom code into the first Composer widget on the page (single copy per page).
 		 *
 		 * @param array  $elements Elementor elements tree (by reference).
@@ -619,7 +601,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param string $css  Section CSS.
 		 * @return array{ html: string, css: string, dynamic_globals: ?array }
 		 */
-		private static function mcp_prepare_import_html_css_with_globals( $html, $css ) {
+		public static function mcp_prepare_import_html_css_with_globals( $html, $css ) {
 			$html = (string) $html;
 			$css  = (string) $css;
 			if ( '' === trim( $css ) && '' === trim( $html ) ) {
@@ -694,83 +676,101 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$widget_id = isset( $payload['widget_id'] ) ? (string) $payload['widget_id'] : '';
 			$source    = isset( $payload['source'] ) ? sanitize_text_field( (string) $payload['source'] ) : 'mcp';
 			$label     = isset( $payload['label'] ) ? sanitize_text_field( (string) $payload['label'] ) : '';
+			$builder   = isset( $payload['builder'] ) ? (string) $payload['builder'] : '';
 
 			$raw_html      = isset( $payload['html'] ) ? (string) $payload['html'] : '';
 			$raw_css       = isset( $payload['css'] ) ? (string) $payload['css'] : '';
 			$raw_js        = isset( $payload['js'] ) ? (string) $payload['js'] : '';
 			$upload_images = isset( $payload['upload_images'] ) ? (bool) $payload['upload_images'] : true;
 
-			if ( $upload_images ) {
-				$html_media_result = self::mcp_upload_html_images_to_media_library( $raw_html, $raw_css );
-				$raw_html          = $html_media_result['html'];
-				if ( isset( $html_media_result['css'] ) ) {
-					$raw_css = (string) $html_media_result['css'];
-				}
-			} else {
-				$html_media_result = array( 'html' => $raw_html, 'uploaded' => array(), 'failed' => array() );
+			$driver = self::mcp_driver_for_post( $post_id, $builder, true );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
 			}
 
 			if ( '' === trim( $raw_html ) && '' === trim( $raw_css ) && '' === trim( $raw_js ) ) {
 				return new \WP_Error( 'uich_empty_generated_code', 'At least one of html, css, or js must be provided.' );
 			}
 
-			$globals_prepared = self::mcp_prepare_import_html_css_with_globals( $raw_html, $raw_css );
-			$raw_html         = $globals_prepared['html'];
-			$raw_css          = $globals_prepared['css'];
+			$prepared = UiChemy_Section_Ops::prepare_code( $raw_html, $raw_css, $upload_images );
+			$raw_html = $prepared['html'];
+			$raw_css  = $prepared['css'];
 
-			$elementor_data_raw = get_post_meta( $post_id, '_elementor_data', true );
-			if ( ! is_string( $elementor_data_raw ) || '' === $elementor_data_raw ) {
-				return new \WP_Error( 'uich_missing_elementor_data', 'No Elementor data found on the provided post.' );
+			$sections = $driver->load_sections( $post_id );
+			if ( is_wp_error( $sections ) ) {
+				return $sections;
+			}
+			if ( empty( $sections ) ) {
+				return new \WP_Error( 'uich_widget_not_found', 'No Composer widget found on this post.' );
 			}
 
-			$elements = json_decode( $elementor_data_raw, true );
-			if ( ! is_array( $elements ) ) {
-				return new \WP_Error( 'uich_invalid_elementor_data', 'Elementor data is not valid JSON.' );
+			// An explicit widget_id addresses one section; without one the FIRST
+			// section in document order is the target, which is what every caller
+			// that omits the id has always meant.
+			$at = '' !== $widget_id ? UiChemy_Section::locate( $sections, $widget_id ) : 0;
+			if ( null === $at ) {
+				return new \WP_Error( 'uich_widget_not_found', "No Composer widget with id \"{$widget_id}\" on this post." );
 			}
+			$matched_by = '' !== $widget_id ? 'widget_id' : 'first_widget';
 
-			$tagged_html = self::build_mcp_tagged_code_block( 'html', $raw_html, $source, $label );
-			$tagged_css  = self::build_mcp_tagged_code_block( 'css', $raw_css, $source, $label );
-			$tagged_js   = self::build_mcp_tagged_code_block( 'js', $raw_js, $source, $label );
-
-			$sync_result = self::apply_mcp_generated_code_to_elements(
-				$elements,
-				array(
-					'mode'      => $mode,
-					'widget_id' => $widget_id,
-					'html'      => $tagged_html,
-					'css'       => $tagged_css,
-					'js'        => $tagged_js,
-				)
+			$settings = $sections[ $at ]['settings'];
+			$fields   = array(
+				'raw_html' => self::build_mcp_tagged_code_block( 'html', $raw_html, $source, $label ),
+				'raw_css'  => self::build_mcp_tagged_code_block( 'css', $raw_css, $source, $label ),
+				'raw_js'   => self::build_mcp_tagged_code_block( 'js', $raw_js, $source, $label ),
 			);
 
-			if ( empty( $sync_result['updated'] ) ) {
-				$error_message = ! empty( $sync_result['message'] ) ? $sync_result['message'] : 'No matching Composer widget found.';
-				return new \WP_Error( 'uich_widget_not_found', $error_message );
+			$updated_fields = array();
+			foreach ( $fields as $field_key => $next_value ) {
+				// An empty field means "leave this one alone", not "blank it".
+				if ( '' === trim( $next_value ) ) {
+					continue;
+				}
+
+				$current = isset( $settings[ $field_key ] ) ? (string) $settings[ $field_key ] : '';
+				$settings[ $field_key ] = ( 'append' === $mode && '' !== trim( $current ) )
+					? rtrim( $current ) . "\n\n" . $next_value
+					: $next_value;
+				$updated_fields[]       = $field_key;
 			}
 
-			self::apply_dynamic_tag_bindings( $elements ); // opt-in: {{ tokens }} → bound dynamic tags
-			update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $elements ) ) );
-
-			// files_manager->clear_cache() only flushes CSS. Elementor also caches
-			// rendered element markup in the '_elementor_element_cache' post meta,
-			// which a direct data write does not invalidate — delete it so the new
-			// HTML actually renders on the front end.
-			delete_post_meta( $post_id, '_elementor_element_cache' );
-
-			if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->files_manager ) ) {
-				\Elementor\Plugin::$instance->files_manager->clear_cache();
+			// New markup invalidates the slot values captured from the OLD markup —
+			// leaving them behind re-injects text into elements that no longer exist.
+			if ( in_array( 'raw_html', $updated_fields, true ) ) {
+				foreach ( array_keys( $settings ) as $setting_key ) {
+					if ( 0 === strpos( (string) $setting_key, 'slot_' ) ) {
+						unset( $settings[ $setting_key ] );
+					}
+				}
 			}
+
+			// Opt-in {{ token }} → bound dynamic tag. Only builders whose render path
+			// resolves bound tags may do this; elsewhere the tokens are left as
+			// literal text for the Twig engine, rather than rewritten into bindings
+			// nothing will read.
+			if ( $driver->supports( 'dynamic_tags' ) && self::dynamic_tag_autobind_enabled() ) {
+				self::bind_dynamic_tags_in_settings( $settings );
+			}
+
+			$sections[ $at ]['settings'] = $settings;
+
+			$saved = $driver->save_sections( $post_id, $sections );
+			if ( is_wp_error( $saved ) ) {
+				return $saved;
+			}
+			$driver->after_write( $post_id );
 
 			return array(
-				'post_id'          => $post_id,
-				'widget_id'        => $sync_result['widget_id'],
-				'mode'             => $mode,
-				'updated_fields'   => $sync_result['updated_fields'],
-				'matched_by'       => $sync_result['matched_by'],
-				'image_uploads'    => $html_media_result['uploaded'],
-				'image_failures'   => $html_media_result['failed'],
-				'dynamic_globals_matches' => $globals_prepared['dynamic_globals'],
-				'message'          => 'Generated code synced to Composer widget successfully.',
+				'post_id'                 => $post_id,
+				'builder'                 => $driver->slug(),
+				'widget_id'               => (string) $sections[ $at ]['uid'],
+				'mode'                    => $mode,
+				'updated_fields'          => array_values( array_unique( $updated_fields ) ),
+				'matched_by'              => $matched_by,
+				'image_uploads'           => $prepared['uploaded'],
+				'image_failures'          => $prepared['failed'],
+				'dynamic_globals_matches' => $prepared['dynamic_globals'],
+				'message'                 => 'Generated code synced to Composer widget successfully.',
 			);
 		}
 
@@ -791,7 +791,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param array $extra Additional settings to merge in.
 		 * @return array
 		 */
-		private static function mcp_widget_container_default_settings( array $extra = array() ) {
+		public static function mcp_widget_container_default_settings( array $extra = array() ) {
 			$zero_box = array(
 				'unit'     => 'px',
 				'top'      => '0',
@@ -823,10 +823,6 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_create_page_with_generated_code( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
-
 			if ( ! is_array( $payload ) ) {
 				$payload = array();
 			}
@@ -845,122 +841,81 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$site_css      = isset( $payload['site_css'] ) ? (string) $payload['site_css'] : '';
 			$site_js       = isset( $payload['site_js'] ) ? (string) $payload['site_js'] : '';
 			$upload_images = isset( $payload['upload_images'] ) ? (bool) $payload['upload_images'] : true;
-
-			if ( $upload_images ) {
-				$html_media_result = self::mcp_upload_html_images_to_media_library( $raw_html, $raw_css );
-				$raw_html          = $html_media_result['html'];
-				if ( isset( $html_media_result['css'] ) ) {
-					$raw_css = (string) $html_media_result['css'];
-				}
-			} else {
-				$html_media_result = array( 'html' => $raw_html, 'uploaded' => array(), 'failed' => array() );
-			}
+			$builder       = isset( $payload['builder'] ) ? (string) $payload['builder'] : '';
 
 			if ( '' === trim( $raw_html ) && '' === trim( $raw_css ) && '' === trim( $raw_js ) ) {
 				return new \WP_Error( 'uich_empty_generated_code', 'At least one of html, css, or js must be provided.' );
 			}
 
-			$globals_prepared = self::mcp_prepare_import_html_css_with_globals( $raw_html, $raw_css );
-			$raw_html         = $globals_prepared['html'];
-			$raw_css          = $globals_prepared['css'];
+			// No post yet, so the builder comes from the request or the onboarding
+			// choice rather than from an existing post's storage.
+			$driver = self::mcp_driver_for_post( 0, $builder, true );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
+			}
 
-			$post_attributes = array(
-				'post_title'  => $title,
-				'post_type'   => self::mcp_resolve_post_type( $payload ),
-				'post_status' => $status,
+			$prepared = UiChemy_Section_Ops::prepare_code( $raw_html, $raw_css, $upload_images );
+			$raw_html = $prepared['html'];
+			$raw_css  = $prepared['css'];
+
+			$post_id = $driver->create_post(
+				array(
+					'post_title'  => $title,
+					'post_type'   => self::mcp_resolve_post_type( $payload ),
+					'post_status' => $status,
+				)
 			);
-
-			// Elementor's document type stays 'page' whatever the post type is: it
-			// selects the wp-page editing experience (no theme-builder conditions),
-			// which is what a Composer-built post wants too.
-			$document = \Elementor\Plugin::$instance->documents->create( 'page', $post_attributes );
-			if ( is_wp_error( $document ) ) {
-				return new \WP_Error( 'uich_page_create_failed', $document->get_error_message() );
+			if ( is_wp_error( $post_id ) ) {
+				return $post_id;
 			}
 
-			$post_id = $document->get_main_id();
-			if ( ! $post_id ) {
-				return new \WP_Error( 'uich_page_create_failed', 'Failed to create Elementor page document.' );
-			}
-
-			// Persist site-level CSS/JS to the global site option before saving the page.
+			// Site-level CSS/JS is a site-wide option, written before the page save.
 			self::mcp_append_site_custom_code( $site_css, $site_js );
 
-			$widget_id    = strtolower( wp_generate_password( 7, false, false ) );
-			$container_id = strtolower( wp_generate_password( 7, false, false ) );
-
-			$widget_settings = array(
-				'_title'               => $label,
-				'raw_html'             => self::build_mcp_tagged_code_block( 'html', $raw_html, $source, $label ),
-				'raw_css'              => self::build_mcp_tagged_code_block( 'css', $raw_css, $source, $label ),
-				'raw_js'              => self::build_mcp_tagged_code_block( 'js', $raw_js, $source, $label ),
+			$settings = array(
+				'_title'   => $label,
+				'raw_html' => self::build_mcp_tagged_code_block( 'html', $raw_html, $source, $label ),
+				'raw_css'  => self::build_mcp_tagged_code_block( 'css', $raw_css, $source, $label ),
+				'raw_js'   => self::build_mcp_tagged_code_block( 'js', $raw_js, $source, $label ),
 			);
 			if ( '' !== trim( $page_css ) ) {
-				$widget_settings['page_custom_code_head'] = self::mcp_ensure_style_tag( $page_css );
+				$settings['page_custom_code_head'] = self::mcp_ensure_style_tag( $page_css );
 			}
 			if ( '' !== trim( $page_js ) ) {
-				$widget_settings['page_custom_code_footer'] = self::mcp_ensure_script_tag( $page_js );
+				$settings['page_custom_code_footer'] = self::mcp_ensure_script_tag( $page_js );
 			}
 
-			// Keep widget directly under a container (no section/column wrappers).
-			$elements = array(
+			if ( $driver->supports( 'dynamic_tags' ) && self::dynamic_tag_autobind_enabled() ) {
+				self::bind_dynamic_tags_in_settings( $settings );
+			}
+
+			$section = $driver->new_section( $settings );
+
+			$saved = $driver->save_sections( $post_id, array( $section ) );
+			if ( is_wp_error( $saved ) ) {
+				// A page that exists but holds nothing is worse than no page at all:
+				// the caller reads success, and the user finds a blank draft.
+				wp_delete_post( $post_id, true );
+				return $saved;
+			}
+			$driver->after_write( $post_id );
+
+			return array_merge(
 				array(
-					'id'       => $container_id,
-					'elType'   => 'container',
-					'isInner'  => false,
-					'settings' => self::mcp_widget_container_default_settings( array( '_title' => $title ) ),
-					'elements' => array(
-						array(
-							'id'         => $widget_id,
-							'elType'     => 'widget',
-							'widgetType' => 'uichemy-composer',
-							'settings'   => $widget_settings,
-							'elements'   => array(),
-						),
-					),
+					'post_id'   => $post_id,
+					'builder'   => $driver->slug(),
+					'widget_id' => (string) $section['uid'],
+					'title'     => get_the_title( $post_id ),
+					'status'    => get_post_status( $post_id ),
 				),
-			);
-
-			$save_payload = array(
-				'elements' => $elements,
-				'settings' => array(),
-			);
-
-			try {
-				$document->save( $save_payload );
-			} catch ( \Throwable $e ) {
-				// Continue to explicit meta writes below.
-			}
-
-			// Ensure the newly created page always has persisted Elementor structure.
-			self::apply_dynamic_tag_bindings( $elements ); // opt-in: {{ tokens }} → bound dynamic tags
-			update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $elements ) ) );
-			// Elementor expects this meta as an array. A JSON string (e.g. "{}") can trigger a type error.
-			update_post_meta( $post_id, '_elementor_page_settings', array() );
-			update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
-
-			if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->files_manager ) ) {
-				\Elementor\Plugin::$instance->files_manager->clear_cache();
-			}
-
-			return array(
-				'post_id'       => $post_id,
-				'widget_id'     => $widget_id,
-				'title'         => get_the_title( $post_id ),
-				'status'        => get_post_status( $post_id ),
-				'edit_link'     => get_edit_post_link( $post_id, 'internal' ),
-				'elementor_link'=> add_query_arg(
-					array(
-						'post'   => $post_id,
-						'action' => 'elementor',
-					),
-					admin_url( 'post.php' )
-				),
-				'preview_link'  => get_permalink( $post_id ),
-				'image_uploads' => $html_media_result['uploaded'],
-				'image_failures'=> $html_media_result['failed'],
-				'dynamic_globals_matches' => $globals_prepared['dynamic_globals'],
-				'message'       => 'New page created with Composer widget content.',
+				$driver->edit_links( $post_id ),
+				array(
+					'image_uploads'           => $prepared['uploaded'],
+					'image_failures'          => $prepared['failed'],
+					'dynamic_globals_matches' => $prepared['dynamic_globals'],
+					'post_type'               => get_post_type( $post_id ),
+					'message'                 => sprintf( 'New %s created with Composer widget content.', self::mcp_post_noun( $post_id ) ),
+				)
 			);
 		}
 
@@ -978,10 +933,6 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_create_header_footer_template( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
-
 			if ( ! class_exists( 'UiChemy_Template_Store' ) || ! class_exists( 'UiChemy_Template_CPT' ) ) {
 				return new \WP_Error( 'uich_theme_builder_disabled', 'The UiChemy Theme Builder is disabled. Enable it in UiChemy → Settings.' );
 			}
@@ -994,6 +945,14 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			if ( ! UiChemy_Template_CPT::is_valid_type( $type ) ) {
 				$type = 'header';
 			}
+
+			// The template is a NEW post, so the builder comes from the request or
+			// the onboarding choice, never from existing storage.
+			$driver = self::mcp_driver_for_post( 0, isset( $payload['builder'] ) ? (string) $payload['builder'] : '', true );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
+			}
+			$editor = $driver->template_editor_slug();
 
 			$title         = isset( $payload['title'] ) ? sanitize_text_field( (string) $payload['title'] ) : ( ucfirst( $type ) . ' UiChemy' );
 			$label         = isset( $payload['label'] ) ? sanitize_text_field( (string) $payload['label'] ) : ucfirst( $type );
@@ -1038,7 +997,11 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// header → <header>, footer → <footer>, 404 → <div> on the container.
 			$container_html_tag = UiChemy_Template_CPT::container_tag_for_type( $type );
 
-			$elements = array(
+			// Elementor templates carry a pre-built element tree so the wrapper can
+			// take the semantic tag for the slot (<header> / <footer>). The other
+			// builders are seeded from the code itself inside Template_Store,
+			// through their own driver.
+			$elements = 'elementor' !== $editor ? array() : array(
 				array(
 					'id'       => $container_id,
 					'elType'   => 'container',
@@ -1077,7 +1040,12 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					'title'      => $title,
 					'status'     => 'active',
 					'conditions' => array( 'scope' => 'entire' ),
+					'editor'     => $editor,
 					'elements'   => $elements,
+					'label'      => $label,
+					'html'       => $widget_settings['raw_html'],
+					'css'        => $widget_settings['raw_css'],
+					'js'         => $widget_settings['raw_js'],
 				)
 			);
 
@@ -1199,13 +1167,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * Ability/MCP — create ANY native UiChemy Theme Builder template.
 		 *
 		 * Generalises mcp_create_header_footer_template() to every Theme Builder
-		 * type (header, footer, single, archive, single_product, product_archive,
+		 * type (header, footer, single, archive, single_product, product_archive, order_received,
 		 * search, error_404) with a TYPE-AWARE placement model:
 		 *
 		 *  - header / footer            → display conditions (entire | specific IDs)
 		 *  - single                     → target post type (pt:{type} | front | any)
 		 *  - archive                    → target archive   (blog | author | date | tax:{tax} | any)
-		 *  - single_product / product_archive / search / error_404 → whole context
+		 *  - single_product / product_archive / order_received / search / error_404 → whole context
 		 *
 		 * The friendly `placement` argument is normalised into the store's internal
 		 * conditions + target by self::normalize_theme_builder_placement(). Rendering
@@ -1216,10 +1184,6 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function create_theme_builder_template( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
-
 			if ( ! class_exists( 'UiChemy_Template_Store' ) || ! class_exists( 'UiChemy_Template_CPT' ) ) {
 				return new \WP_Error( 'uich_theme_builder_disabled', 'The UiChemy Theme Builder is not available.' );
 			}
@@ -1245,7 +1209,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			// WooCommerce types require WooCommerce so the location actually resolves.
-			if ( in_array( $type, array( 'single_product', 'product_archive' ), true ) && ! class_exists( 'WooCommerce' ) ) {
+			if ( in_array( $type, array( 'single_product', 'product_archive', 'order_received' ), true ) && ! class_exists( 'WooCommerce' ) ) {
 				return new \WP_Error( 'uich_woocommerce_missing', 'WooCommerce must be active to create a "' . $type . '" template.' );
 			}
 
@@ -1266,7 +1230,22 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$site_js       = isset( $payload['site_js'] ) ? (string) $payload['site_js'] : '';
 			$upload_images = isset( $payload['upload_images'] ) ? (bool) $payload['upload_images'] : true;
 			$status        = ( isset( $payload['status'] ) && 'inactive' === $payload['status'] ) ? 'inactive' : 'active';
-			$editor        = ( isset( $payload['editor'] ) && 'gutenberg' === $payload['editor'] ) ? 'gutenberg' : 'elementor';
+			// The editor follows the RESOLVED builder. Hardcoding elementor|gutenberg
+			// here is what made every header, footer and single template impossible
+			// on Bricks — and this is the path the uichemy-composer/theme-builder
+			// ability takes, which is not the one mcp_create_header_footer_template()
+			// serves, so fixing that one did not fix this one.
+			$tb_driver = self::mcp_driver_for_post( 0, isset( $payload['builder'] ) ? (string) $payload['builder'] : '', true );
+			if ( is_wp_error( $tb_driver ) ) {
+				return $tb_driver;
+			}
+			$editor = $tb_driver->template_editor_slug();
+			if ( isset( $payload['editor'] ) ) {
+				$asked = sanitize_key( (string) $payload['editor'] );
+				if ( in_array( $asked, array( 'elementor', 'gutenberg', 'bricks' ), true ) ) {
+					$editor = $asked;
+				}
+			}
 
 			/*
 			 * A Gutenberg template is block markup, not generated code: it goes into
@@ -1356,7 +1335,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			$container_html_tag = UiChemy_Template_CPT::container_tag_for_type( $type );
 
-			$elements = array(
+			$elements = 'elementor' !== $editor ? array() : array(
 				array(
 					'id'       => $container_id,
 					'elType'   => 'container',
@@ -1393,7 +1372,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					'editor'     => $editor,
 					'conditions' => $resolved['conditions'],
 					'target'     => $resolved['target'],
+					// Elementor consumes the pre-built tree; Bricks and Gutenberg are
+					// seeded from the code itself through their own driver, so both
+					// have to travel or a non-Elementor template is created EMPTY.
 					'elements'   => $elements,
+					'html'       => $widget_settings['raw_html'],
+					'css'        => $widget_settings['raw_css'],
+					'js'         => $widget_settings['raw_js'],
 				)
 			);
 
@@ -1540,6 +1525,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					$summaries = array(
 						'single_product'  => 'all products',
 						'product_archive' => 'the shop / product archives',
+						'order_received'  => 'the thank-you / order-received page',
 						'search'          => 'all search results',
 						'error_404'       => 'all 404 pages',
 					);
@@ -1874,10 +1860,6 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_create_page_with_sections( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
-
 			if ( ! is_array( $payload ) ) {
 				$payload = array();
 			}
@@ -1887,58 +1869,50 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$status = in_array( $status, array( 'draft', 'publish', 'private' ), true ) ? $status : 'draft';
 			$source = isset( $payload['source'] ) ? sanitize_text_field( (string) $payload['source'] ) : 'mcp';
 
-			$sections      = isset( $payload['sections'] ) && is_array( $payload['sections'] ) ? $payload['sections'] : array();
+			$incoming      = isset( $payload['sections'] ) && is_array( $payload['sections'] ) ? $payload['sections'] : array();
 			$upload_images = isset( $payload['upload_images'] ) ? (bool) $payload['upload_images'] : true;
 			$page_css      = isset( $payload['page_css'] ) ? (string) $payload['page_css'] : '';
 			$page_js       = isset( $payload['page_js'] ) ? (string) $payload['page_js'] : '';
 			$site_css      = isset( $payload['site_css'] ) ? (string) $payload['site_css'] : '';
 			$site_js       = isset( $payload['site_js'] ) ? (string) $payload['site_js'] : '';
+			$builder       = isset( $payload['builder'] ) ? (string) $payload['builder'] : '';
 
-			if ( empty( $sections ) ) {
+			if ( empty( $incoming ) ) {
 				return new \WP_Error( 'uich_no_sections', 'At least one section is required.' );
 			}
 
-			$post_attributes = array(
-				'post_title'  => $title,
-				'post_type'   => self::mcp_resolve_post_type( $payload ),
-				'post_status' => $status,
+			$driver = self::mcp_driver_for_post( 0, $builder, true );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
+			}
+
+			$post_id = $driver->create_post(
+				array(
+					'post_title'  => $title,
+					'post_type'   => self::mcp_resolve_post_type( $payload ),
+					'post_status' => $status,
+				)
 			);
-
-			// Elementor's document type stays 'page' whatever the post type is: it
-			// selects the wp-page editing experience (no theme-builder conditions),
-			// which is what a Composer-built post wants too.
-			$document = \Elementor\Plugin::$instance->documents->create( 'page', $post_attributes );
-			if ( is_wp_error( $document ) ) {
-				return new \WP_Error( 'uich_page_create_failed', $document->get_error_message() );
+			if ( is_wp_error( $post_id ) ) {
+				return $post_id;
 			}
 
-			$post_id = $document->get_main_id();
-			if ( ! $post_id ) {
-				return new \WP_Error( 'uich_page_create_failed', 'Failed to create Elementor page document.' );
-			}
-
-			// Persist site-level CSS/JS before creating page widgets.
 			self::mcp_append_site_custom_code( $site_css, $site_js );
 
-			$widget_elements  = array();
-			$widgets_meta     = array();
-			$image_uploads    = array();
-			$image_failures   = array();
-			$outer_container_id = strtolower( wp_generate_password( 7, false, false ) );
-			$first_widget_index = null;
+			$sections       = array();
+			$widgets_meta   = array();
+			$image_uploads  = array();
+			$image_failures = array();
 
-			foreach ( $sections as $index => $section ) {
-				if ( ! is_array( $section ) ) {
-					continue;
-				}
-
-				$section_label = isset( $section['label'] ) ? sanitize_text_field( (string) $section['label'] ) : ( 'Section ' . ( $index + 1 ) );
-				$section_html  = isset( $section['html'] ) ? (string) $section['html'] : '';
-				$section_css   = isset( $section['css'] ) ? (string) $section['css'] : '';
-				$section_js    = isset( $section['js'] ) ? (string) $section['js'] : '';
+			foreach ( $incoming as $index => $section_payload ) {
+				$section_payload = is_array( $section_payload ) ? $section_payload : array();
+				$section_label   = isset( $section_payload['label'] ) ? sanitize_text_field( (string) $section_payload['label'] ) : ( 'Section ' . ( $index + 1 ) );
+				$section_html    = isset( $section_payload['html'] ) ? (string) $section_payload['html'] : '';
+				$section_css     = isset( $section_payload['css'] ) ? (string) $section_payload['css'] : '';
+				$section_js      = isset( $section_payload['js'] ) ? (string) $section_payload['js'] : '';
 
 				if ( '' === trim( $section_html ) && '' === trim( $section_css ) && '' === trim( $section_js ) ) {
-					// Skip empty section, but record so caller knows.
+					// Skipped, but reported, so the caller can see which one vanished.
 					$widgets_meta[] = array(
 						'index'   => $index,
 						'label'   => $section_label,
@@ -1948,112 +1922,73 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					continue;
 				}
 
-				if ( $upload_images ) {
-					$media_result   = self::mcp_upload_html_images_to_media_library( $section_html, $section_css );
-					$section_html   = $media_result['html'];
-					if ( isset( $media_result['css'] ) ) {
-						$section_css = (string) $media_result['css'];
-					}
-					$image_uploads  = array_merge( $image_uploads, $media_result['uploaded'] );
-					$image_failures = array_merge( $image_failures, $media_result['failed'] );
-				}
+				$prepared       = UiChemy_Section_Ops::prepare_code( $section_html, $section_css, $upload_images );
+				$image_uploads  = array_merge( $image_uploads, $prepared['uploaded'] );
+				$image_failures = array_merge( $image_failures, $prepared['failed'] );
 
-				$globals_prepared = self::mcp_prepare_import_html_css_with_globals( $section_html, $section_css );
-				$section_html     = $globals_prepared['html'];
-				$section_css      = $globals_prepared['css'];
-
-				$widget_id       = strtolower( wp_generate_password( 7, false, false ) );
-				$widget_settings = array(
+				$settings = array(
 					'_title'   => $section_label,
-					'raw_html' => self::build_mcp_tagged_code_block( 'html', $section_html, $source, $section_label ),
-					'raw_css'  => self::build_mcp_tagged_code_block( 'css', $section_css, $source, $section_label ),
+					'raw_html' => self::build_mcp_tagged_code_block( 'html', $prepared['html'], $source, $section_label ),
+					'raw_css'  => self::build_mcp_tagged_code_block( 'css', $prepared['css'], $source, $section_label ),
 					'raw_js'   => self::build_mcp_tagged_code_block( 'js', $section_js, $source, $section_label ),
 				);
 
-				// Attach page-level CSS/JS to the first real widget only.
-				if ( null === $first_widget_index ) {
-					$first_widget_index = count( $widget_elements );
+				// Page code lives on the FIRST section that is actually kept.
+				if ( empty( $sections ) ) {
 					if ( '' !== trim( $page_css ) ) {
-						$widget_settings['page_custom_code_head'] = self::mcp_ensure_style_tag( $page_css );
+						$settings['page_custom_code_head'] = self::mcp_ensure_style_tag( $page_css );
 					}
 					if ( '' !== trim( $page_js ) ) {
-						$widget_settings['page_custom_code_footer'] = self::mcp_ensure_script_tag( $page_js );
+						$settings['page_custom_code_footer'] = self::mcp_ensure_script_tag( $page_js );
 					}
 				}
 
-				$widget_elements[] = array(
-					'id'         => $widget_id,
-					'elType'     => 'widget',
-					'widgetType' => 'uichemy-composer',
-					'settings'   => $widget_settings,
-					'elements'   => array(),
-				);
+				if ( $driver->supports( 'dynamic_tags' ) && self::dynamic_tag_autobind_enabled() ) {
+					self::bind_dynamic_tags_in_settings( $settings );
+				}
+
+				$section    = $driver->new_section( $settings );
+				$sections[] = $section;
 
 				$widgets_meta[] = array(
 					'index'                   => $index,
 					'label'                   => $section_label,
-					'widget_id'               => $widget_id,
-					'dynamic_globals_matches' => $globals_prepared['dynamic_globals'],
+					'widget_id'               => (string) $section['uid'],
+					'dynamic_globals_matches' => $prepared['dynamic_globals'],
 				);
 			}
 
-			if ( empty( $widget_elements ) ) {
+			if ( empty( $sections ) ) {
 				wp_delete_post( $post_id, true );
 				return new \WP_Error( 'uich_all_sections_empty', 'All sections were empty page not created.' );
 			}
 
-			// Wrap all section widgets inside a single outer container.
-			$elements = array(
+			UiChemy_Section_Ops::sync_page_code( $sections );
+
+			$saved = $driver->save_sections( $post_id, UiChemy_Section::reindex( $sections ) );
+			if ( is_wp_error( $saved ) ) {
+				wp_delete_post( $post_id, true );
+				return $saved;
+			}
+			$driver->after_write( $post_id );
+
+			return array_merge(
 				array(
-					'id'       => $outer_container_id,
-					'elType'   => 'container',
-					'isInner'  => false,
-					'settings' => self::mcp_widget_container_default_settings( array( '_title' => $title ) ),
-					'elements' => $widget_elements,
+					'post_id'        => $post_id,
+					'builder'        => $driver->slug(),
+					'title'          => get_the_title( $post_id ),
+					'status'         => get_post_status( $post_id ),
+					'container_id'   => self::mcp_container_of( $driver, $post_id, (string) $sections[0]['uid'] ),
+					'post_type'      => get_post_type( $post_id ),
+					'sections_count' => count( $sections ),
+					'widgets'        => $widgets_meta,
 				),
-			);
-
-			self::mcp_sync_page_custom_code_across_widgets( $elements );
-
-			$save_payload = array(
-				'elements' => $elements,
-				'settings' => array(),
-			);
-
-			try {
-				$document->save( $save_payload );
-			} catch ( \Throwable $e ) {
-				// Continue to explicit meta writes below.
-			}
-
-			self::apply_dynamic_tag_bindings( $elements ); // opt-in: {{ tokens }} → bound dynamic tags
-			update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $elements ) ) );
-			update_post_meta( $post_id, '_elementor_page_settings', array() );
-			update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
-
-			if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->files_manager ) ) {
-				\Elementor\Plugin::$instance->files_manager->clear_cache();
-			}
-
-			return array(
-				'post_id'        => $post_id,
-				'title'          => get_the_title( $post_id ),
-				'status'         => get_post_status( $post_id ),
-				'container_id'   => $outer_container_id,
-				'sections_count' => count( $widget_elements ),
-				'widgets'        => $widgets_meta,
-				'edit_link'      => get_edit_post_link( $post_id, 'internal' ),
-				'elementor_link' => add_query_arg(
-					array(
-						'post'   => $post_id,
-						'action' => 'elementor',
-					),
-					admin_url( 'post.php' )
-				),
-				'preview_link'   => get_permalink( $post_id ),
-				'image_uploads'  => $image_uploads,
-				'image_failures' => $image_failures,
-				'message'        => sprintf( 'New page created with 1 container holding %d Composer widget section(s).', count( $widget_elements ) ),
+				$driver->edit_links( $post_id ),
+				array(
+					'image_uploads'  => $image_uploads,
+					'image_failures' => $image_failures,
+					'message'        => sprintf( 'New page created with %d Composer widget section(s).', count( $sections ) ),
+				)
 			);
 		}
 
@@ -2121,10 +2056,6 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_add_section_to_page( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
-
 			if ( ! is_array( $payload ) ) {
 				$payload = array();
 			}
@@ -2143,128 +2074,86 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$page_js  = isset( $payload['page_js'] ) ? (string) $payload['page_js'] : '';
 			$site_css = isset( $payload['site_css'] ) ? (string) $payload['site_css'] : '';
 			$site_js  = isset( $payload['site_js'] ) ? (string) $payload['site_js'] : '';
+			$builder  = isset( $payload['builder'] ) ? (string) $payload['builder'] : '';
+			$upload   = isset( $payload['upload_images'] ) ? (bool) $payload['upload_images'] : true;
 
 			if ( '' === trim( $html ) && '' === trim( $css ) && '' === trim( $js ) ) {
 				return new \WP_Error( 'uich_empty_section', 'At least one of html, css, or js must be provided.' );
 			}
 
-			// Upload any external images embedded in the HTML (only when explicitly requested).
-			$upload_images = isset( $payload['upload_images'] ) ? (bool) $payload['upload_images'] : true;
-			if ( $upload_images ) {
-				$media_result = self::mcp_upload_html_images_to_media_library( $html, $css );
-				$html         = $media_result['html'];
-				if ( isset( $media_result['css'] ) ) {
-					$css = (string) $media_result['css'];
-				}
-			} else {
-				$media_result = array( 'html' => $html, 'uploaded' => array(), 'failed' => array() );
+			$driver = self::mcp_driver_for_post( $post_id, $builder, true );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
 			}
 
-			$globals_prepared = self::mcp_prepare_import_html_css_with_globals( $html, $css );
-			$html             = $globals_prepared['html'];
-			$css              = $globals_prepared['css'];
+			$prepared = UiChemy_Section_Ops::prepare_code( $html, $css, $upload );
+			$html     = $prepared['html'];
+			$css      = $prepared['css'];
 
-			// Persist site-level CSS/JS to global option.
+			// Site-level code is a single site-wide option, not per-section.
 			self::mcp_append_site_custom_code( $site_css, $site_js );
 
-			// Read the existing Elementor data.
-			$elementor_data_raw = get_post_meta( $post_id, '_elementor_data', true );
-			if ( ! is_string( $elementor_data_raw ) || '' === $elementor_data_raw ) {
-				return new \WP_Error( 'uich_missing_elementor_data', 'No Elementor data found on the provided post.' );
+			$sections = $driver->load_sections( $post_id );
+			if ( is_wp_error( $sections ) ) {
+				return $sections;
 			}
 
-			$elements = json_decode( $elementor_data_raw, true );
-			if ( ! is_array( $elements ) ) {
-				return new \WP_Error( 'uich_invalid_elementor_data', 'Elementor data is not valid JSON.' );
-			}
-
-			// Build the new widget element.
-			$widget_id       = strtolower( wp_generate_password( 7, false, false ) );
-			$widget_settings = array(
+			$settings = array(
 				'_title'   => $label,
 				'raw_html' => self::build_mcp_tagged_code_block( 'html', $html, $source, $label ),
 				'raw_css'  => self::build_mcp_tagged_code_block( 'css', $css, $source, $label ),
 				'raw_js'   => self::build_mcp_tagged_code_block( 'js', $js, $source, $label ),
 			);
+
+			// Page code belongs to ONE section per page. Prefer an existing section;
+			// only when the page has none does the new section carry it.
 			$page_css_trim = trim( (string) $page_css );
 			$page_js_trim  = trim( (string) $page_js );
-			if ( '' !== $page_css_trim || '' !== $page_js_trim ) {
-				$merged_into_first = self::mcp_merge_page_custom_code_into_first_widget( $elements, $page_css_trim, $page_js_trim );
-				if ( ! $merged_into_first ) {
-					if ( '' !== $page_css_trim ) {
-						$widget_settings['page_custom_code_head'] = self::mcp_ensure_style_tag( $page_css_trim );
-					}
-					if ( '' !== $page_js_trim ) {
-						$widget_settings['page_custom_code_footer'] = self::mcp_ensure_script_tag( $page_js_trim );
-					}
+			$merged        = UiChemy_Section_Ops::merge_page_code( $sections, $page_css_trim, $page_js_trim );
+			if ( ! $merged ) {
+				if ( '' !== $page_css_trim ) {
+					$settings['page_custom_code_head'] = self::mcp_ensure_style_tag( $page_css_trim );
 				}
-			}
-			$new_widget = array(
-				'id'         => $widget_id,
-				'elType'     => 'widget',
-				'widgetType' => 'uichemy-composer',
-				'settings'   => $widget_settings,
-				'elements'   => array(),
-			);
-
-			// Append into the same outer container that already holds Composer sections
-			// (depth-first: supports section/column wrappers from other Elementor layouts).
-			$container_id = '';
-			$appended     = self::mcp_append_widget_to_section_container( $elements, $new_widget, $container_id );
-
-			if ( ! $appended ) {
-				$container_id = strtolower( wp_generate_password( 7, false, false ) );
-				$elements[]   = array(
-					'id'       => $container_id,
-					'elType'   => 'container',
-					'isInner'  => false,
-					'settings' => self::mcp_widget_container_default_settings(),
-					'elements' => array( $new_widget ),
-				);
-			}
-
-			self::mcp_sync_page_custom_code_across_widgets( $elements );
-
-			$document = \Elementor\Plugin::$instance->documents->get_doc_or_auto_save( $post_id );
-			if ( $document ) {
-				try {
-					$document->save(
-						array(
-							'elements' => $elements,
-						)
-					);
-				} catch ( \Throwable $e ) {
-					// Meta write below still applies structure.
+				if ( '' !== $page_js_trim ) {
+					$settings['page_custom_code_footer'] = self::mcp_ensure_script_tag( $page_js_trim );
 				}
 			}
 
-			// Persist and clear cache.
-			self::apply_dynamic_tag_bindings( $elements ); // opt-in: {{ tokens }} → bound dynamic tags
-			update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $elements ) ) );
-
-			if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->files_manager ) ) {
-				\Elementor\Plugin::$instance->files_manager->clear_cache();
+			if ( $driver->supports( 'dynamic_tags' ) && self::dynamic_tag_autobind_enabled() ) {
+				self::bind_dynamic_tags_in_settings( $settings );
 			}
 
-			return array(
-				'post_id'        => $post_id,
-				'widget_id'      => $widget_id,
-				'container_id'   => $container_id,
-				'label'          => $label,
-				'appended'       => $appended,
-				'edit_link'      => get_edit_post_link( $post_id, 'internal' ),
-				'elementor_link' => add_query_arg(
-					array(
-						'post'   => $post_id,
-						'action' => 'elementor',
-					),
-					admin_url( 'post.php' )
+			$section = $driver->new_section( $settings );
+			$sections[] = $section;
+
+			UiChemy_Section_Ops::sync_page_code( $sections );
+
+			$saved = $driver->save_sections( $post_id, UiChemy_Section::reindex( $sections ) );
+			if ( is_wp_error( $saved ) ) {
+				return $saved;
+			}
+			$driver->after_write( $post_id );
+
+			// The container is assigned by the driver as it places the node, so it is
+			// only knowable after the save.
+			$container_id = self::mcp_container_of( $driver, $post_id, (string) $section['uid'] );
+
+			return array_merge(
+				array(
+					'post_id'      => $post_id,
+					'builder'      => $driver->slug(),
+					'widget_id'    => (string) $section['uid'],
+					'container_id' => $container_id,
+					'label'        => $label,
+					'appended'     => true,
 				),
-				'preview_link'   => get_permalink( $post_id ),
-				'image_uploads'  => $media_result['uploaded'],
-				'image_failures' => $media_result['failed'],
-				'dynamic_globals_matches' => $globals_prepared['dynamic_globals'],
-				'message'        => "Section \"{$label}\" appended to page {$post_id}.",
+				$driver->edit_links( $post_id ),
+				array(
+					'image_uploads'           => $prepared['uploaded'],
+					'image_failures'          => $prepared['failed'],
+					'dynamic_globals_matches' => $prepared['dynamic_globals'],
+					'message'                 => sprintf( 'Section "%1$s" appended to %2$s %3$d.', $label, self::mcp_post_noun( $post_id ), $post_id ),
+				)
 			);
 		}
 
@@ -2294,13 +2183,94 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		}
 
 		/**
+		 * What to call this post in a message.
+		 *
+		 * Every section message used to say "page", so creating a `movie` through
+		 * uichemy-composer/post reported "New page created" — which reads, in the
+		 * one place a caller would look, exactly like the silent wrong-post-type
+		 * bug this ability is most at risk of.
+		 *
+		 * @param int $post_id Post id, or 0 to name a type directly.
+		 * @param string $post_type Type to name when no id is available.
+		 * @return string
+		 */
+		private static function mcp_post_noun( $post_id, $post_type = '' ) {
+			$type = '' !== (string) $post_type ? (string) $post_type : (string) get_post_type( absint( $post_id ) );
+			if ( '' === $type ) {
+				return 'post';
+			}
+
+			$obj = get_post_type_object( $type );
+			if ( $obj && ! empty( $obj->labels->singular_name ) ) {
+				return strtolower( (string) $obj->labels->singular_name );
+			}
+
+			return $type;
+		}
+
+		/**
+		 * Which container a section ended up in, '' when the builder has none.
+		 *
+		 * Only meaningful after a save: the driver decides placement, so asking the
+		 * freshly minted section is asking before the decision was made.
+		 *
+		 * @param UiChemy_Builder_Driver $driver  Driver.
+		 * @param int                    $post_id Post id.
+		 * @param string                 $uid     Section uid.
+		 * @return string
+		 */
+		private static function mcp_container_of( $driver, $post_id, $uid ) {
+			$sections = $driver->load_sections( $post_id );
+			if ( is_wp_error( $sections ) ) {
+				return '';
+			}
+
+			$at = UiChemy_Section::locate( $sections, $uid );
+
+			return null === $at ? '' : (string) $sections[ $at ]['container'];
+		}
+
+		/**
+		 * The page-builder driver an MCP operation should run against.
+		 *
+		 * Every read and write below goes through this rather than assuming
+		 * Elementor. For an EXISTING post the post's own builder decides, and a
+		 * caller asking for a different one is refused instead of coerced — writing
+		 * Elementor data into a Bricks post returns success and renders nothing,
+		 * which is the single most expensive way for a tool-driven build to fail.
+		 *
+		 * @param int    $post_id   Target post, or 0 when the op creates one.
+		 * @param string $builder   Requested builder slug, or '' to resolve.
+		 * @param bool   $for_write Whether the caller intends to write.
+		 * @return UiChemy_Builder_Driver|\WP_Error
+		 */
+		public static function mcp_driver_for_post( $post_id, $builder = '', $for_write = true ) {
+			if ( ! class_exists( 'UiChemy_Builder_Context' ) ) {
+				return new \WP_Error( 'uich_no_builder_layer', 'The page-builder driver layer is unavailable.' );
+			}
+
+			$params  = '' !== (string) $builder ? array( 'builder' => (string) $builder ) : array();
+			$post_id = absint( $post_id );
+
+			$slug = $post_id
+				? UiChemy_Builder_Context::resolve_for_post( $params, $post_id, $for_write )
+				: UiChemy_Builder_Context::resolve( $params, 0 );
+
+			if ( is_wp_error( $slug ) ) {
+				return $slug;
+			}
+
+			return UiChemy_Builder_Context::driver( $slug );
+		}
+
+		/**
 		 * MCP — get the HTML/CSS/JS from a specific Composer widget by 0-based index.
 		 *
 		 * @param int $post_id      Post ID.
 		 * @param int $widget_index 0-based index among all composer widgets on the page.
 		 * @return array|\WP_Error
 		 */
-		public static function mcp_get_section_code( $post_id, $widget_index = 0, $element_id = '', $include_site_code = true ) {
+		public static function mcp_get_section_code( $post_id, $widget_index = 0, $element_id = '', $include_site_code = true, $builder = '' ) {
 			$post_id      = absint( $post_id );
 			$widget_index = (int) $widget_index;
 			$element_id   = (string) $element_id;
@@ -2308,39 +2278,29 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return new \WP_Error( 'uich_invalid_post_id', 'Invalid post_id.' );
 			}
 
-			$raw = get_post_meta( $post_id, '_elementor_data', true );
-			if ( ! is_string( $raw ) || '' === $raw ) {
-				return new \WP_Error( 'uich_missing_elementor_data', 'No Elementor data found for this post.' );
+			$driver = self::mcp_driver_for_post( $post_id, $builder, false );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
 			}
 
-			$elements = json_decode( $raw, true );
-			if ( ! is_array( $elements ) ) {
-				return new \WP_Error( 'uich_invalid_elementor_data', 'Elementor data is not valid JSON.' );
+			$sections = $driver->load_sections( $post_id );
+			if ( is_wp_error( $sections ) ) {
+				return $sections;
 			}
-
-			$widgets = array();
-			self::collect_uichemy_composer_widgets( $elements, $widgets );
-
-			if ( empty( $widgets ) ) {
+			if ( empty( $sections ) ) {
 				return new \WP_Error( 'uich_no_widgets', 'No Composer widgets found on this post.' );
 			}
 
-			$total = count( $widgets );
+			$total = count( $sections );
 
 			// Prefer an exact element-id match (robust against DOM-vs-data ordering);
 			// fall back to positional widget_index when no id is supplied.
 			if ( '' !== $element_id ) {
-				$widget = null;
-				foreach ( $widgets as $i => $w ) {
-					if ( isset( $w['id'] ) && (string) $w['id'] === $element_id ) {
-						$widget       = $w;
-						$widget_index = (int) $i;
-						break;
-					}
-				}
-				if ( null === $widget ) {
+				$at = UiChemy_Section::locate( $sections, $element_id );
+				if ( null === $at ) {
 					return new \WP_Error( 'uich_widget_not_found', "No Composer widget with id \"{$element_id}\" on this post." );
 				}
+				$widget_index = $at;
 			} else {
 				if ( $widget_index < 0 || $widget_index >= $total ) {
 					return new \WP_Error(
@@ -2348,19 +2308,21 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 						"widget_index {$widget_index} is out of range found {$total} widget(s) (indices 0–" . ( $total - 1 ) . ').'
 					);
 				}
-				$widget = $widgets[ $widget_index ];
+				$at = $widget_index;
 			}
-			$settings = isset( $widget['settings'] ) && is_array( $widget['settings'] ) ? $widget['settings'] : array();
+
+			$settings = $sections[ $at ]['settings'];
 
 			$response = array(
-				'post_id'                => $post_id,
-				'widget_id'              => isset( $widget['id'] ) ? (string) $widget['id'] : '',
-				'widget_index'           => $widget_index,
-				'total_widgets'          => $total,
-				'label'                  => isset( $settings['_title'] ) ? (string) $settings['_title'] : '',
-				'html'                   => isset( $settings['raw_html'] ) ? (string) $settings['raw_html'] : '',
-				'css'                    => isset( $settings['raw_css'] ) ? (string) $settings['raw_css'] : '',
-				'js'                     => isset( $settings['raw_js'] ) ? (string) $settings['raw_js'] : '',
+				'post_id'                 => $post_id,
+				'builder'                 => $driver->slug(),
+				'widget_id'               => (string) $sections[ $at ]['uid'],
+				'widget_index'            => $widget_index,
+				'total_widgets'           => $total,
+				'label'                   => isset( $settings['_title'] ) ? (string) $settings['_title'] : '',
+				'html'                    => isset( $settings['raw_html'] ) ? (string) $settings['raw_html'] : '',
+				'css'                     => isset( $settings['raw_css'] ) ? (string) $settings['raw_css'] : '',
+				'js'                      => isset( $settings['raw_js'] ) ? (string) $settings['raw_js'] : '',
 				// Page code is per-widget and small, so it is always returned.
 				'page_custom_code_head'   => isset( $settings['page_custom_code_head'] ) ? (string) $settings['page_custom_code_head'] : '',
 				'page_custom_code_footer' => isset( $settings['page_custom_code_footer'] ) ? (string) $settings['page_custom_code_footer'] : '',
@@ -2369,13 +2331,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// Site-wide custom code is the single site-wide <style>/<script> option and
 			// can be ~130 KB, so echoing it on every per-widget read blows automation
 			// token caps. It is included ONLY when the caller opts in ($include_site_code).
-			// The editor Page/Site Code panes (composer-code.jsx PagePanes/SitePanes) need
-			// it: the editor gets it from Elementor's Backbone model directly, and the
-			// frontend bridge (class-uichemy-frontend-rest.php handle_get) requests it
-			// explicitly with include_site_code=true, so those panes never render blank.
-			// The MCP tool (find_and_update_section_code) defaults to false to stay lean.
 			if ( $include_site_code ) {
-				$site_code = self::get_site_custom_code_option();
+				$site_code                           = self::get_site_custom_code_option();
 				$response['site_custom_code_head']   = $site_code['head'];
 				$response['site_custom_code_footer'] = $site_code['footer'];
 			}
@@ -2400,30 +2357,27 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param bool $include_site_code Include the site-wide custom code block.
 		 * @return array|\WP_Error
 		 */
-		public static function mcp_get_all_section_code( $post_id, $include_site_code = true ) {
+		public static function mcp_get_all_section_code( $post_id, $include_site_code = true, $builder = '' ) {
 			$post_id = absint( $post_id );
 			if ( ! $post_id ) {
 				return new \WP_Error( 'uich_invalid_post_id', 'Invalid post_id.' );
 			}
 
-			$raw = get_post_meta( $post_id, '_elementor_data', true );
-			if ( ! is_string( $raw ) || '' === $raw ) {
-				return new \WP_Error( 'uich_missing_elementor_data', 'No Elementor data found for this post.' );
+			$driver = self::mcp_driver_for_post( $post_id, $builder, false );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
 			}
 
-			$elements = json_decode( $raw, true );
-			if ( ! is_array( $elements ) ) {
-				return new \WP_Error( 'uich_invalid_elementor_data', 'Elementor data is not valid JSON.' );
+			$sections = $driver->load_sections( $post_id );
+			if ( is_wp_error( $sections ) ) {
+				return $sections;
 			}
-
-			$widgets = array();
-			self::collect_uichemy_composer_widgets( $elements, $widgets );
 
 			$out = array();
-			foreach ( $widgets as $i => $widget ) {
-				$settings = isset( $widget['settings'] ) && is_array( $widget['settings'] ) ? $widget['settings'] : array();
+			foreach ( $sections as $i => $section ) {
+				$settings = $section['settings'];
 				$out[]    = array(
-					'widget_id'               => isset( $widget['id'] ) ? (string) $widget['id'] : '',
+					'widget_id'               => (string) $section['uid'],
 					'widget_index'            => (int) $i,
 					'label'                   => isset( $settings['_title'] ) ? (string) $settings['_title'] : '',
 					'html'                    => isset( $settings['raw_html'] ) ? (string) $settings['raw_html'] : '',
@@ -2436,6 +2390,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			$response = array(
 				'post_id'       => $post_id,
+				'builder'       => $driver->slug(),
 				'total_widgets' => count( $out ),
 				'widgets'       => $out,
 			);
@@ -2506,130 +2461,106 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_insert_section_at_index( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
-
 			if ( ! is_array( $payload ) ) {
 				$payload = array();
 			}
 
-			$post_id       = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
-			$insert_index  = isset( $payload['insert_index'] ) ? (int) $payload['insert_index'] : 0;
-			$label         = isset( $payload['label'] ) ? sanitize_text_field( (string) $payload['label'] ) : 'Section';
-			$source        = isset( $payload['source'] ) ? sanitize_text_field( (string) $payload['source'] ) : 'mcp';
-			$html          = isset( $payload['html'] ) ? (string) $payload['html'] : '';
-			$css           = isset( $payload['css'] ) ? (string) $payload['css'] : '';
-			$js            = isset( $payload['js'] ) ? (string) $payload['js'] : '';
-			$upload_images = isset( $payload['upload_images'] ) ? (bool) $payload['upload_images'] : true;
-
+			$post_id      = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
+			$insert_index = isset( $payload['insert_index'] ) ? (int) $payload['insert_index'] : 0;
 			if ( ! $post_id ) {
-				return new \WP_Error( 'uich_invalid_post_id', 'Invalid post_id.' );
-			}
-			if ( '' === trim( $html ) && '' === trim( $css ) ) {
-				return new \WP_Error( 'uich_empty_generated_code', 'At least html or css must be provided.' );
+				return new \WP_Error( 'uich_invalid_post_id', 'A valid post_id is required.' );
 			}
 
-			// Document::save() publishes as a side effect; capture to restore after.
-			$status_before_save = get_post_status( $post_id );
+			$label    = isset( $payload['label'] ) ? sanitize_text_field( (string) $payload['label'] ) : 'Section';
+			$source   = isset( $payload['source'] ) ? sanitize_text_field( (string) $payload['source'] ) : 'mcp';
+			$html     = isset( $payload['html'] ) ? (string) $payload['html'] : '';
+			$css      = isset( $payload['css'] ) ? (string) $payload['css'] : '';
+			$js       = isset( $payload['js'] ) ? (string) $payload['js'] : '';
+			$page_css = isset( $payload['page_css'] ) ? (string) $payload['page_css'] : '';
+			$page_js  = isset( $payload['page_js'] ) ? (string) $payload['page_js'] : '';
+			$site_css = isset( $payload['site_css'] ) ? (string) $payload['site_css'] : '';
+			$site_js  = isset( $payload['site_js'] ) ? (string) $payload['site_js'] : '';
+			$builder  = isset( $payload['builder'] ) ? (string) $payload['builder'] : '';
+			$upload   = isset( $payload['upload_images'] ) ? (bool) $payload['upload_images'] : true;
 
-			// Upload images
-			if ( $upload_images && '' !== trim( $html ) ) {
-				$media_result = self::mcp_upload_html_images_to_media_library( $html, $css );
-				$html         = $media_result['html'];
-				if ( isset( $media_result['css'] ) ) {
-					$css = (string) $media_result['css'];
-				}
-			} else {
-				$media_result = array( 'uploaded' => array(), 'failed' => array() );
+			if ( '' === trim( $html ) && '' === trim( $css ) && '' === trim( $js ) ) {
+				return new \WP_Error( 'uich_empty_section', 'At least one of html, css, or js must be provided.' );
 			}
 
-			// Apply globals matching
-			$globals_prepared = self::mcp_prepare_import_html_css_with_globals( $html, $css );
-			$html = $globals_prepared['html'];
-			$css  = $globals_prepared['css'];
-
-			// Read existing Elementor data
-			$raw = get_post_meta( $post_id, '_elementor_data', true );
-			if ( ! is_string( $raw ) || '' === $raw ) {
-				return new \WP_Error( 'uich_missing_elementor_data', 'No Elementor data found for this post.' );
-			}
-			$elements = json_decode( $raw, true );
-			if ( ! is_array( $elements ) ) {
-				return new \WP_Error( 'uich_invalid_elementor_data', 'Elementor data is not valid JSON.' );
+			$driver = self::mcp_driver_for_post( $post_id, $builder, true );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
 			}
 
-			// Build new widget element
-			$widget_id  = strtolower( wp_generate_password( 7, false, false ) );
-			$new_widget = array(
-				'id'         => $widget_id,
-				'elType'     => 'widget',
-				'widgetType' => 'uichemy-composer',
-				'settings'   => array(
-					'_title'   => $label,
-					'raw_html' => self::build_mcp_tagged_code_block( 'html', $html, $source, $label ),
-					'raw_css'  => self::build_mcp_tagged_code_block( 'css', $css, $source, $label ),
-					'raw_js'   => self::build_mcp_tagged_code_block( 'js', $js, $source, $label ),
-				),
-				'elements'   => array(),
+			$prepared = UiChemy_Section_Ops::prepare_code( $html, $css, $upload );
+			$html     = $prepared['html'];
+			$css      = $prepared['css'];
+
+			// Site-level code is a single site-wide option, not per-section.
+			self::mcp_append_site_custom_code( $site_css, $site_js );
+
+			$sections = $driver->load_sections( $post_id );
+			if ( is_wp_error( $sections ) ) {
+				return $sections;
+			}
+
+			$settings = array(
+				'_title'   => $label,
+				'raw_html' => self::build_mcp_tagged_code_block( 'html', $html, $source, $label ),
+				'raw_css'  => self::build_mcp_tagged_code_block( 'css', $css, $source, $label ),
+				'raw_js'   => self::build_mcp_tagged_code_block( 'js', $js, $source, $label ),
 			);
 
-			// Insert into the existing composer container at the requested index
-			$inserted     = false;
-			$container_id = '';
-			self::insert_widget_at_index_in_container( $elements, $new_widget, $insert_index, $inserted, $container_id );
-
-			if ( ! $inserted ) {
-				// No suitable container found — create a new top-level container with the widget
-				$container_id  = strtolower( wp_generate_password( 7, false, false ) );
-				$new_container = array(
-					'id'       => $container_id,
-					'elType'   => 'container',
-					'isInner'  => false,
-					'settings' => self::mcp_widget_container_default_settings(),
-					'elements' => array( $new_widget ),
-				);
-				$clamped = max( 0, min( $insert_index, count( $elements ) ) );
-				array_splice( $elements, $clamped, 0, array( $new_container ) );
-			}
-
-			// Save via Elementor document API (with direct meta fallback)
-			$document = \Elementor\Plugin::$instance->documents->get_doc_or_auto_save( $post_id );
-			if ( $document ) {
-				try {
-					$document->save( array( 'elements' => $elements ) );
-				} catch ( \Throwable $e ) {
-					// Meta write below still applies structure.
+			// Page code belongs to ONE section per page. Prefer an existing section;
+			// only when the page has none does the new section carry it.
+			$page_css_trim = trim( (string) $page_css );
+			$page_js_trim  = trim( (string) $page_js );
+			$merged        = UiChemy_Section_Ops::merge_page_code( $sections, $page_css_trim, $page_js_trim );
+			if ( ! $merged ) {
+				if ( '' !== $page_css_trim ) {
+					$settings['page_custom_code_head'] = self::mcp_ensure_style_tag( $page_css_trim );
 				}
-				self::mcp_restore_post_status( $post_id, $status_before_save );
+				if ( '' !== $page_js_trim ) {
+					$settings['page_custom_code_footer'] = self::mcp_ensure_script_tag( $page_js_trim );
+				}
 			}
 
-			self::apply_dynamic_tag_bindings( $elements ); // opt-in: {{ tokens }} → bound dynamic tags
-			update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $elements ) ) );
-
-			if ( isset( \Elementor\Plugin::$instance->files_manager ) ) {
-				\Elementor\Plugin::$instance->files_manager->clear_cache();
+			if ( $driver->supports( 'dynamic_tags' ) && self::dynamic_tag_autobind_enabled() ) {
+				self::bind_dynamic_tags_in_settings( $settings );
 			}
 
-			return array(
-				'post_id'                 => $post_id,
-				'widget_id'               => $widget_id,
-				'container_id'            => $container_id,
-				'insert_index'            => $insert_index,
-				'label'                   => $label,
-				'edit_link'               => get_edit_post_link( $post_id, 'internal' ),
-				'elementor_link'          => add_query_arg(
-					array(
-						'post'   => $post_id,
-						'action' => 'elementor',
-					),
-					admin_url( 'post.php' )
+			$section = $driver->new_section( $settings );
+			$at = max( 0, min( $insert_index, count( $sections ) ) );
+			array_splice( $sections, $at, 0, array( $section ) );
+
+			UiChemy_Section_Ops::sync_page_code( $sections );
+
+			$saved = $driver->save_sections( $post_id, UiChemy_Section::reindex( $sections ) );
+			if ( is_wp_error( $saved ) ) {
+				return $saved;
+			}
+			$driver->after_write( $post_id );
+
+			// The container is assigned by the driver as it places the node, so it is
+			// only knowable after the save.
+			$container_id = self::mcp_container_of( $driver, $post_id, (string) $section['uid'] );
+
+			return array_merge(
+				array(
+					'post_id'      => $post_id,
+					'builder'      => $driver->slug(),
+					'widget_id'    => (string) $section['uid'],
+					'container_id' => $container_id,
+					'insert_index' => $at,
+					'label'        => $label,
 				),
-				'preview_link'            => get_permalink( $post_id ),
-				'image_uploads'           => $media_result['uploaded'],
-				'image_failures'          => $media_result['failed'],
-				'dynamic_globals_matches' => $globals_prepared['dynamic_globals'],
-				'message'                 => "Section \"{$label}\" inserted at index {$insert_index} on page {$post_id}.",
+				$driver->edit_links( $post_id ),
+				array(
+					'image_uploads'           => $prepared['uploaded'],
+					'image_failures'          => $prepared['failed'],
+					'dynamic_globals_matches' => $prepared['dynamic_globals'],
+					'message'                 => sprintf( 'Section "%1$s" inserted at index %2$d on %3$s %4$d.', $label, $at, self::mcp_post_noun( $post_id ), $post_id ),
+				)
 			);
 		}
 
@@ -2762,7 +2693,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param string|null $css  Optional widget CSS to rewrite; pass null to skip CSS (legacy callers).
 		 * @return array<string,mixed> Keys: html, uploaded, failed, and `css` when $css was a string.
 		 */
-		private static function mcp_upload_html_images_to_media_library( $html, $css = null ) {
+		public static function mcp_upload_html_images_to_media_library( $html, $css = null ) {
 			$html = (string) $html;
 			$process_css = null !== $css && is_string( $css );
 			$css_in      = $process_css ? (string) $css : '';
@@ -3543,19 +3474,10 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			if ( ! is_array( $elements ) ) {
 				return 0;
 			}
-			$enabled = apply_filters( 'uichemy_autobind_dynamic_tags', (bool) get_option( 'uichemy_autobind_dynamic_tags', false ) );
-			if ( ! $enabled ) {
+			if ( ! self::dynamic_tag_autobind_enabled() ) {
 				return 0;
 			}
-			if ( ! class_exists( 'UiChemy_Token_Binder' ) && defined( 'UICHEMY_PATH' ) ) {
-				$file = UICHEMY_PATH . 'includes/dynamic/class-uichemy-token-binder.php';
-				if ( is_readable( $file ) ) {
-					require_once $file;
-				}
-			}
-			if ( ! class_exists( 'UiChemy_Token_Binder' ) ) {
-				return 0;
-			}
+
 			return self::walk_bind_dynamic_tags( $elements );
 		}
 
@@ -3574,25 +3496,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				}
 				$is_composer = isset( $element['elType'], $element['widgetType'] )
 					&& uichemy_is_composer_widget_node( $element );
-				if ( $is_composer && ! empty( $element['settings']['raw_html'] ) ) {
-					$res = UiChemy_Token_Binder::bind( (string) $element['settings']['raw_html'] );
-					if ( ! empty( $res['bindings'] ) ) {
-						$element['settings']['raw_html'] = $res['html'];
-						$existing = ( isset( $element['settings']['__dynamic__'] ) && is_array( $element['settings']['__dynamic__'] ) )
-							? $element['settings']['__dynamic__'] : array();
-						// Existing bindings win over ours (never clobber a user's explicit tag).
-						$element['settings']['__dynamic__'] = array_merge( $res['dynamic'], $existing );
-						// Slot flags the render path needs for image bindings to apply.
-						// Only fill gaps — an explicit saved value always wins.
-						if ( ! empty( $res['settings'] ) && is_array( $res['settings'] ) ) {
-							foreach ( $res['settings'] as $flag_key => $flag_val ) {
-								if ( ! isset( $element['settings'][ $flag_key ] ) ) {
-									$element['settings'][ $flag_key ] = $flag_val;
-								}
-							}
-						}
-						$count++;
-					}
+				if ( $is_composer && is_array( $element['settings'] ) ) {
+					$count += self::bind_dynamic_tags_in_settings( $element['settings'] ) ? 1 : 0;
 				}
 				if ( ! empty( $element['elements'] ) && is_array( $element['elements'] ) ) {
 					$count += self::walk_bind_dynamic_tags( $element['elements'] );
@@ -3600,6 +3505,67 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 			unset( $element );
 			return $count;
+		}
+
+		/**
+		 * Bind {{ tokens }} in ONE Composer settings map.
+		 *
+		 * Split out of the Elementor tree walker so the builder-agnostic write path
+		 * can reuse it: the binding is a pure transform of the settings map, and
+		 * nothing about it is Elementor-shaped. The walker keeps recursing the tree
+		 * and calls this per node.
+		 *
+		 * @param array $settings Composer settings map, by reference.
+		 * @return bool Whether anything was bound.
+		 */
+		private static function bind_dynamic_tags_in_settings( array &$settings ) {
+			if ( empty( $settings['raw_html'] ) || ! class_exists( 'UiChemy_Token_Binder' ) ) {
+				return false;
+			}
+
+			$res = UiChemy_Token_Binder::bind( (string) $settings['raw_html'] );
+			if ( empty( $res['bindings'] ) ) {
+				return false;
+			}
+
+			$settings['raw_html'] = $res['html'];
+
+			$existing = ( isset( $settings['__dynamic__'] ) && is_array( $settings['__dynamic__'] ) )
+				? $settings['__dynamic__'] : array();
+			// Existing bindings win over ours (never clobber a user's explicit tag).
+			$settings['__dynamic__'] = array_merge( $res['dynamic'], $existing );
+
+			// Slot flags the render path needs for image bindings to apply.
+			// Only fill gaps — an explicit saved value always wins.
+			if ( ! empty( $res['settings'] ) && is_array( $res['settings'] ) ) {
+				foreach ( $res['settings'] as $flag_key => $flag_val ) {
+					if ( ! isset( $settings[ $flag_key ] ) ) {
+						$settings[ $flag_key ] = $flag_val;
+					}
+				}
+			}
+
+			return true;
+		}
+
+		/**
+		 * Whether auto-binding is switched on, and the binder is loadable.
+		 *
+		 * @return bool
+		 */
+		private static function dynamic_tag_autobind_enabled() {
+			$enabled = apply_filters( 'uichemy_autobind_dynamic_tags', (bool) get_option( 'uichemy_autobind_dynamic_tags', false ) );
+			if ( ! $enabled ) {
+				return false;
+			}
+			if ( ! class_exists( 'UiChemy_Token_Binder' ) && defined( 'UICHEMY_PATH' ) ) {
+				$file = UICHEMY_PATH . 'includes/dynamic/class-uichemy-token-binder.php';
+				if ( is_readable( $file ) ) {
+					require_once $file;
+				}
+			}
+
+			return class_exists( 'UiChemy_Token_Binder' );
 		}
 
 		/**
@@ -3788,8 +3754,16 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			};
 
 			// --- Platform -----------------------------------------------------
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				$add( 'blocker', 'elementor_active', 'Elementor is not active nothing UiChemy builds will render.', 'Activate Elementor.' );
+			// A blocker only when NO builder can be driven. Keyed on Elementor this
+			// fired on every Bricks and Gutenberg site, telling an agent that
+			// nothing it built would render — on a site where everything works.
+			if ( class_exists( 'UiChemy_Builder_Registry' ) ) {
+				$usable = UiChemy_Builder_Registry::available();
+				if ( empty( $usable ) ) {
+					$add( 'blocker', 'page_builder', 'No page builder is available, so nothing UiChemy builds will render.', 'Activate Elementor, switch to the Bricks theme, or enable the block editor in UiChemy settings.' );
+				}
+			} elseif ( ! class_exists( '\Elementor\Plugin' ) ) {
+				$add( 'blocker', 'page_builder', 'No page builder is available, so nothing UiChemy builds will render.', 'Activate Elementor.' );
 			}
 			if ( class_exists( 'UiChemy_Globals_CSS' ) && '' === trim( (string) self::get_globals_block_css() ) ) {
 				$add( 'warning', 'design_system', 'The #uichemy-globals block is empty, so sections have no tokens to reference.', 'uichemy-composer/design-system (action="set")' );
@@ -4025,7 +3999,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		public static function mcp_audit_list_checks() {
 			$checks = array(
 				'checks' => array(
-					array( 'check' => 'elementor_active', 'scope' => 'platform', 'severity' => 'blocker' ),
+					array( 'check' => 'page_builder', 'scope' => 'platform', 'severity' => 'blocker' ),
 					array( 'check' => 'design_system', 'scope' => 'platform', 'severity' => 'warning' ),
 					array( 'check' => 'tagline', 'scope' => 'site', 'severity' => 'notice' ),
 					array( 'check' => 'site_logo', 'scope' => 'site', 'severity' => 'warning' ),
@@ -5455,6 +5429,10 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'woo-my-account'     => 'WooCommerce\'s account area login, orders, addresses. Belongs on the assigned MY-ACCOUNT page.',
 				'woo-order-tracking' => 'The "track your order" form, for a page where customers look up an order by number and email.',
 				'woo-notices'        => 'WooCommerce\'s notices coupon applied, item added, checkout errors. A custom cart or checkout layout that omits this swallows every error message the customer needs to see.',
+				'woo-add-to-cart'    => 'WooCommerce\'s add-to-cart FORM for the product in scope quantity box, button, and for a variable product the variation form that turns the chosen attributes into a variation. REQUIRED in a custom Single Product template: every other part of a product page can be rebuilt from product.* tokens, but this form cannot, and a variable product without it cannot be added to a cart at all. Pass id="123" to target a named product instead of the one in scope (a loop card, a quick-view panel).',
+				'woo-reviews'        => 'The review list and review form for the product in scope. There is no token for reviews the comment thread is not exposed as data so this tag is the only way to put them on a custom Single Product template. Renders nothing when reviews are closed on the product.',
+				'woo-thankyou'       => 'WooCommerce\'s order-confirmation block, and the ONLY thing that fires the woocommerce_thankyou hook - bank-transfer payment instructions, a gateway\'s own confirmation, and every conversion pixel the site has attached to it. An order_received template that omits this looks finished and silently drops all of that. Renders nothing anywhere but the order-received endpoint. Design the visible page from order.* tokens and keep this tag on it.',
+				'woo-mini-cart'      => 'WooCommerce\'s mini-cart panel the item list, subtotal and the two buttons for a header dropdown or a slide-in drawer. Reads the cart session, so it needs no product in scope. For a custom-designed drawer, prefer building it from the cart.* tokens (uichemy-composer/dynamic, action="list-fields") and keep this for the quick route.',
 			);
 
 			if ( class_exists( 'WooCommerce' ) ) {
@@ -5480,9 +5458,17 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			$is_woo = isset( $woo_tags[ $tag ] );
 
+			// woo-add-to-cart is the one tag that can name its product, so it works
+			// inside a loop card or a quick-view panel rather than only on a Single
+			// Product template. Ignored for every other tag, which has no such idea.
+			$attrs = '';
+			if ( 'woo-add-to-cart' === $tag && ! empty( $payload['id'] ) ) {
+				$attrs = ' id="' . absint( $payload['id'] ) . '"';
+			}
+
 			return array(
 				'tag'   => $tag,
-				'html'  => '<uichemy-' . $tag . ' />',
+				'html'  => '<uichemy-' . $tag . $attrs . ' />',
 				'note'  => $tags[ $tag ],
 				'usage' => $is_woo
 					? 'Insert this element into the section HTML you pass to uichemy-composer/page. It renders WooCommerce\'s own output, so style AROUND it and with CSS do not rebuild the flow as markup. In the UiChemy editor it shows a labelled placeholder rather than a live cart, because the cart needs a customer session that does not exist there.'
@@ -5990,63 +5976,6 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		// ============================================================
 
 		/**
-		 * Persist a mutated Elementor element tree. Mirrors the save recipe used by
-		 * mcp_insert_section_at_index — document save (best effort) + authoritative
-		 * meta write + cache busting.
-		 *
-		 * @param int   $post_id  Post ID.
-		 * @param array $elements The full element tree to persist.
-		 * @return void
-		 */
-		private static function mcp_persist_elements( $post_id, array $elements ) {
-			// Document::save() publishes as a side effect; every structural op routes
-			// through here, so capture the status and put it back afterwards.
-			$status_before_save = get_post_status( $post_id );
-
-			$document = \Elementor\Plugin::$instance->documents->get_doc_or_auto_save( $post_id );
-			if ( $document ) {
-				try {
-					$document->save( array( 'elements' => $elements ) );
-				} catch ( \Throwable $e ) {
-					// Meta write below still applies the authoritative structure.
-					unset( $e );
-				}
-				self::mcp_restore_post_status( $post_id, $status_before_save );
-			}
-			update_post_meta( $post_id, '_elementor_data', wp_slash( wp_json_encode( $elements ) ) );
-			delete_post_meta( $post_id, '_elementor_element_cache' );
-			if ( isset( \Elementor\Plugin::$instance->files_manager ) ) {
-				\Elementor\Plugin::$instance->files_manager->clear_cache();
-			}
-		}
-
-		/**
-		 * Put a post's status back after an Elementor document save, which flips the
-		 * post to publish. Only restores when the status actually changed, and never
-		 * touches auto-drafts (which Elementor legitimately promotes on first save).
-		 *
-		 * @param int    $post_id Post ID.
-		 * @param string $before  Status captured before the save.
-		 * @return void
-		 */
-		private static function mcp_restore_post_status( $post_id, $before ) {
-			$before = (string) $before;
-			if ( '' === $before || 'auto-draft' === $before ) {
-				return;
-			}
-			$after = (string) get_post_status( $post_id );
-			if ( $after === $before || '' === $after ) {
-				return;
-			}
-			wp_update_post(
-				array(
-					'ID'          => (int) $post_id,
-					'post_status' => $before,
-				)
-			);
-		}
-
-		/**
 		 * Load + decode a post's _elementor_data for a structural op.
 		 *
 		 * @param int $post_id Post ID.
@@ -6224,13 +6153,11 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_move_section( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
 			$payload       = is_array( $payload ) ? $payload : array();
 			$post_id       = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
 			$section_index = isset( $payload['section_index'] ) ? (int) $payload['section_index'] : 0;
 			$element_id    = isset( $payload['element_id'] ) ? (string) $payload['element_id'] : '';
+			$builder       = isset( $payload['builder'] ) ? (string) $payload['builder'] : '';
 			if ( ! $post_id ) {
 				return new \WP_Error( 'uich_invalid_post_id', 'Invalid post_id.' );
 			}
@@ -6239,42 +6166,23 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 			$to_index = (int) $payload['to_index'];
 
-			$target = self::mcp_get_section_code( $post_id, $section_index, $element_id );
-			if ( is_wp_error( $target ) ) {
-				return $target;
-			}
-			$widget_id  = (string) $target['widget_id'];
-			$from_index = (int) $target['widget_index'];
-
-			$elements = self::mcp_load_elements_for_structural_op( $post_id );
-			if ( is_wp_error( $elements ) ) {
-				return $elements;
+			$driver = self::mcp_driver_for_post( $post_id, $builder, true );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
 			}
 
-			$removed      = null;
-			$container_id = '';
-			self::detach_composer_widget_by_id( $elements, $widget_id, $removed, $container_id );
-			if ( null === $removed ) {
-				return new \WP_Error( 'uich_widget_not_found', "Could not locate Composer widget \"{$widget_id}\" to move." );
+			$result = UiChemy_Section_Ops::move( $driver, $post_id, $element_id, $to_index, '' !== $element_id ? -1 : $section_index );
+			if ( is_wp_error( $result ) ) {
+				return $result;
 			}
-
-			$inserted = false;
-			if ( '' !== $container_id ) {
-				self::insert_widget_into_container_by_id( $elements, $removed, $container_id, $to_index, $inserted );
-			}
-			if ( ! $inserted ) {
-				$clamped = max( 0, min( $to_index, count( $elements ) ) );
-				array_splice( $elements, $clamped, 0, array( $removed ) );
-			}
-
-			self::mcp_persist_elements( $post_id, $elements );
 
 			return array(
 				'post_id'    => $post_id,
-				'widget_id'  => $widget_id,
-				'from_index' => $from_index,
+				'builder'    => $driver->slug(),
+				'widget_id'  => $result['widget_id'],
+				'from_index' => $result['from'],
 				'to_index'   => $to_index,
-				'message'    => "Moved section \"{$widget_id}\" from index {$from_index} toward index {$to_index} on page {$post_id}.",
+				'message'    => "Moved section \"{$result['widget_id']}\" from index {$result['from']} toward index {$to_index} on page {$post_id}.",
 			);
 		}
 
@@ -6286,45 +6194,36 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_duplicate_section( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
 			$payload       = is_array( $payload ) ? $payload : array();
 			$post_id       = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
 			$section_index = isset( $payload['section_index'] ) ? (int) $payload['section_index'] : 0;
 			$element_id    = isset( $payload['element_id'] ) ? (string) $payload['element_id'] : '';
 			$label         = isset( $payload['label'] ) ? sanitize_text_field( (string) $payload['label'] ) : '';
+			$builder       = isset( $payload['builder'] ) ? (string) $payload['builder'] : '';
 			if ( ! $post_id ) {
 				return new \WP_Error( 'uich_invalid_post_id', 'Invalid post_id.' );
 			}
 
-			$target = self::mcp_get_section_code( $post_id, $section_index, $element_id );
-			if ( is_wp_error( $target ) ) {
-				return $target;
-			}
-			$widget_id = (string) $target['widget_id'];
-
-			$elements = self::mcp_load_elements_for_structural_op( $post_id );
-			if ( is_wp_error( $elements ) ) {
-				return $elements;
+			$driver = self::mcp_driver_for_post( $post_id, $builder, true );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
 			}
 
-			$new_id = strtolower( wp_generate_password( 7, false, false ) );
-			$dup    = null;
-			self::duplicate_composer_widget_by_id( $elements, $widget_id, $new_id, $label, $dup );
-			if ( null === $dup ) {
-				return new \WP_Error( 'uich_widget_not_found', "Could not locate Composer widget \"{$widget_id}\" to duplicate." );
+			$result = UiChemy_Section_Ops::duplicate( $driver, $post_id, $element_id, '' !== $element_id ? -1 : $section_index, 'content', $label );
+			if ( is_wp_error( $result ) ) {
+				return $result;
 			}
 
-			self::mcp_persist_elements( $post_id, $elements );
+			$copy = UiChemy_Section_Ops::get_one( $driver, $post_id, $result['widget_id'] );
 
 			return array(
 				'post_id'          => $post_id,
-				'new_widget_id'    => $new_id,
-				'source_widget_id' => $widget_id,
-				'source_index'     => (int) $target['widget_index'],
-				'label'            => '' !== $label ? $label : (string) $target['label'],
-				'message'          => "Duplicated section \"{$widget_id}\" as \"{$new_id}\" on page {$post_id}.",
+				'builder'          => $driver->slug(),
+				'new_widget_id'    => $result['widget_id'],
+				'source_widget_id' => $result['source_id'],
+				'source_index'     => $result['section_index'] - 1,
+				'label'            => is_wp_error( $copy ) ? $label : (string) $copy['label'],
+				'message'          => "Duplicated section \"{$result['source_id']}\" as \"{$result['widget_id']}\" on page {$post_id}.",
 			);
 		}
 
@@ -6339,19 +6238,22 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_delete_section( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
 			$payload       = is_array( $payload ) ? $payload : array();
 			$post_id       = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
 			$section_index = isset( $payload['section_index'] ) ? (int) $payload['section_index'] : 0;
 			$element_id    = isset( $payload['element_id'] ) ? (string) $payload['element_id'] : '';
 			$supplied      = isset( $payload['confirm_token'] ) ? (string) $payload['confirm_token'] : '';
+			$builder       = isset( $payload['builder'] ) ? (string) $payload['builder'] : '';
 			if ( ! $post_id ) {
 				return new \WP_Error( 'uich_invalid_post_id', 'Invalid post_id.' );
 			}
 
-			$target = self::mcp_get_section_code( $post_id, $section_index, $element_id );
+			$driver = self::mcp_driver_for_post( $post_id, $builder, true );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
+			}
+
+			$target = self::mcp_get_section_code( $post_id, $section_index, $element_id, false, $driver->slug() );
 			if ( is_wp_error( $target ) ) {
 				return $target;
 			}
@@ -6359,6 +6261,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$raw_html  = (string) $target['html'];
 			$label     = (string) $target['label'];
 
+			// Stateless double-confirmation. The token is bound to the section's
+			// CURRENT html, so it self-invalidates the moment the section is edited —
+			// a stale confirmation can never delete something the caller has not seen.
 			$scope    = 'uichemy-del-section|' . $post_id . '|' . $widget_id . '|' . md5( $raw_html );
 			$expected = substr( wp_hash( $scope ), 0, 16 );
 
@@ -6367,6 +6272,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					'requires_confirmation' => true,
 					'confirm_token'         => $expected,
 					'post_id'               => $post_id,
+					'builder'               => $driver->slug(),
 					'section_index'         => (int) $target['widget_index'],
 					'widget_id'             => $widget_id,
 					'label'                 => $label,
@@ -6375,27 +6281,17 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				);
 			}
 
-			$elements = self::mcp_load_elements_for_structural_op( $post_id );
-			if ( is_wp_error( $elements ) ) {
-				return $elements;
+			$result = UiChemy_Section_Ops::delete( $driver, $post_id, $widget_id );
+			if ( is_wp_error( $result ) ) {
+				return $result;
 			}
-
-			$removed = null;
-			self::delete_composer_widget_by_id( $elements, $widget_id, $removed );
-			if ( null === $removed ) {
-				return new \WP_Error( 'uich_widget_not_found', "Could not locate Composer widget \"{$widget_id}\" to delete." );
-			}
-
-			self::mcp_persist_elements( $post_id, $elements );
-
-			$remaining = array();
-			self::collect_uichemy_composer_widgets( $elements, $remaining );
 
 			return array(
 				'post_id'           => $post_id,
+				'builder'           => $driver->slug(),
 				'deleted_widget_id' => $widget_id,
 				'label'             => $label,
-				'remaining_widgets' => count( $remaining ),
+				'remaining_widgets' => (int) $result['remaining'],
 				'message'           => "Deleted section \"{$widget_id}\" from page {$post_id}.",
 			);
 		}
@@ -6915,9 +6811,6 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_set_page_site_code( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
 			$payload = is_array( $payload ) ? $payload : array();
 			$post_id = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
 			if ( ! $post_id ) {
@@ -6940,15 +6833,20 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				}
 			}
 
-			// --- Page scope: written onto the first Composer widget.
+			// --- Page scope: written onto the first Composer section.
 			if ( isset( $payload['page_css'] ) || isset( $payload['page_js'] ) ) {
-				$elements = self::mcp_load_elements_for_structural_op( $post_id );
-				if ( is_wp_error( $elements ) ) {
-					return $elements;
+				$driver = self::mcp_driver_for_post( $post_id, isset( $payload['builder'] ) ? (string) $payload['builder'] : '', true );
+				if ( is_wp_error( $driver ) ) {
+					return $driver;
 				}
 
-				$written = self::mcp_replace_page_custom_code_on_first_widget(
-					$elements,
+				$sections = $driver->load_sections( $post_id );
+				if ( is_wp_error( $sections ) ) {
+					return $sections;
+				}
+
+				$written = UiChemy_Section_Ops::replace_page_code(
+					$sections,
 					isset( $payload['page_css'] ) ? self::mcp_ensure_style_tag( (string) $payload['page_css'] ) : null,
 					isset( $payload['page_js'] ) ? self::mcp_ensure_script_tag( (string) $payload['page_js'] ) : null
 				);
@@ -6956,17 +6854,11 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					return new \WP_Error( 'uich_no_widgets', 'No Composer widget found on this page to hold the page code. Create a section first.' );
 				}
 
-				// Re-mirror onto every Composer widget. The write above lands on the
-				// FIRST widget only, but the frontend printer
-				// (extract_widget_custom_code_from_elements) dedupes by md5 of the
-				// whole block - so on a page with two or more sections, a first-widget
-				// write leaves the others holding the PREVIOUS block, two different
-				// signatures survive the dedupe, and the page emits the code twice.
-				// A duplicated <link> is merely wasteful; a duplicated <script> runs
-				// twice. The section create/append paths already sync for this reason.
-				self::mcp_sync_page_custom_code_across_widgets( $elements );
-
-				self::mcp_persist_elements( $post_id, $elements );
+				$saved = $driver->save_sections( $post_id, $sections );
+				if ( is_wp_error( $saved ) ) {
+					return $saved;
+				}
+				$driver->after_write( $post_id );
 				if ( isset( $payload['page_css'] ) ) {
 					$touched[] = 'page_before_head';
 				}
@@ -6999,9 +6891,6 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_update_page_code( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
-			}
 			$payload  = is_array( $payload ) ? $payload : array();
 			$post_id  = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
 			$page_css = isset( $payload['page_css'] ) ? (string) $payload['page_css'] : '';
@@ -7020,20 +6909,29 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			self::mcp_append_site_custom_code( $site_css, $site_js );
 
 			if ( '' !== trim( $page_css ) || '' !== trim( $page_js ) ) {
-				$elements = self::mcp_load_elements_for_structural_op( $post_id );
-				if ( is_wp_error( $elements ) ) {
-					return $elements;
+				$driver = self::mcp_driver_for_post( $post_id, isset( $payload['builder'] ) ? (string) $payload['builder'] : '', true );
+				if ( is_wp_error( $driver ) ) {
+					return $driver;
 				}
-				if ( ! self::mcp_merge_page_custom_code_into_first_widget( $elements, $page_css, $page_js ) ) {
+
+				$sections = $driver->load_sections( $post_id );
+				if ( is_wp_error( $sections ) ) {
+					return $sections;
+				}
+				if ( ! UiChemy_Section_Ops::merge_page_code( $sections, $page_css, $page_js ) ) {
 					return new \WP_Error( 'uich_no_widgets', 'No Composer widget found on this page to hold the page code. Create a section first.' );
 				}
 
-				// Same reason as in mcp_set_page_code: the merge above touches the
-				// first widget only, and an un-mirrored page emits its page code once
-				// per distinct block.
-				self::mcp_sync_page_custom_code_across_widgets( $elements );
+				// Same reason as in mcp_set_page_site_code: the merge above touches
+				// the first section only, and an un-mirrored page emits its page code
+				// once per distinct block.
+				UiChemy_Section_Ops::sync_page_code( $sections );
 
-				self::mcp_persist_elements( $post_id, $elements );
+				$saved = $driver->save_sections( $post_id, $sections );
+				if ( is_wp_error( $saved ) ) {
+					return $saved;
+				}
+				$driver->after_write( $post_id );
 			}
 
 			$current = self::mcp_get_page_code( array( 'post_id' => $post_id ) );
@@ -7129,18 +7027,24 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			if ( $only_post ) {
 				$post_ids = array( $only_post );
 			} else {
-				$post_ids = get_posts(
-					array(
-						'post_type'        => $post_type ? $post_type : array( 'page', 'post', 'elementor_library', 'nxt_builder' ),
-						'post_status'      => array( 'publish', 'draft', 'private', 'pending' ),
-						'posts_per_page'   => 200,
-						'fields'           => 'ids',
-						'no_found_rows'    => true,
-						// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Only Elementor-built posts can hold Composer sections; scanning the rest would be wasted work.
-						'meta_query'       => array( array( 'key' => '_elementor_data', 'compare' => 'EXISTS' ) ),
-						'suppress_filters' => true, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters -- Intentional; VIP-only advisory.
-					)
+				// One narrowing query PER AVAILABLE BUILDER, unioned. A single
+				// meta_query on _elementor_data returns nothing on a Bricks or
+				// Gutenberg site, which made grep read as "no matches" rather than
+				// "not supported here" — indistinguishable, and wrong.
+				$base = array(
+					'post_type'        => $post_type ? $post_type : array( 'page', 'post', 'elementor_library', 'nxt_builder' ),
+					'post_status'      => array( 'publish', 'draft', 'private', 'pending' ),
+					'posts_per_page'   => 200,
+					'fields'           => 'ids',
+					'no_found_rows'    => true,
+					'suppress_filters' => true, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters -- Intentional; VIP-only advisory.
 				);
+
+				$post_ids = array();
+				foreach ( UiChemy_Builder_Registry::available() as $available ) {
+					$post_ids = array_merge( $post_ids, (array) get_posts( $available->grep_query_args( $base ) ) );
+				}
+				$post_ids = array_values( array_unique( array_map( 'absint', $post_ids ) ) );
 			}
 
 			$matches   = array();
@@ -7148,16 +7052,20 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$truncated = false;
 
 			foreach ( $post_ids as $pid ) {
-				$elements = self::mcp_load_elements_for_structural_op( $pid );
-				if ( is_wp_error( $elements ) ) {
+				// Each post is read through the driver that actually owns it, so a
+				// site holding pages from more than one builder greps all of them.
+				$pid_driver = self::mcp_driver_for_post( $pid, '', false );
+				if ( is_wp_error( $pid_driver ) ) {
 					continue;
 				}
-				$widgets = array();
-				self::collect_uichemy_composer_widgets( $elements, $widgets );
+				$widgets = $pid_driver->load_sections( $pid );
+				if ( is_wp_error( $widgets ) ) {
+					continue;
+				}
 
 				foreach ( $widgets as $index => $widget ) {
 					++$scanned;
-					$settings = isset( $widget['settings'] ) && is_array( $widget['settings'] ) ? $widget['settings'] : array();
+					$settings = $widget['settings'];
 					$source   = array(
 						'html' => isset( $settings['raw_html'] ) ? (string) $settings['raw_html'] : '',
 						'css'  => isset( $settings['raw_css'] ) ? (string) $settings['raw_css'] : '',
@@ -7185,7 +7093,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 								'post_id'       => (int) $pid,
 								'post_title'    => get_the_title( $pid ),
 								'section_index' => (int) $index,
-								'element_id'    => isset( $widget['id'] ) ? (string) $widget['id'] : '',
+								'element_id'    => (string) $widget['uid'],
+								'builder'       => $pid_driver->slug(),
 								'label'         => isset( $settings['_title'] ) ? (string) $settings['_title'] : '',
 								'field'         => $f,
 								'line'          => $line_no + 1,
@@ -9165,13 +9074,106 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param array $payload Tool payload.
 		 * @return array|\WP_Error
 		 */
-		public static function mcp_create_single_post_template( $payload ) {
-			if ( ! class_exists( '\Elementor\Plugin' ) ) {
-				return new \WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
+		/**
+		 * Create a "single" template through UiChemy's OWN theme builder.
+		 *
+		 * The Elementor-Pro / Nexter path below needs one of those two plugins and
+		 * writes their condition formats. UiChemy's native theme builder already
+		 * supports the "single" type on every builder, so this is the answer for
+		 * Bricks and Gutenberg rather than a port of Pro's condition system.
+		 *
+		 * @param array                  $payload Same payload as the Pro path.
+		 * @param UiChemy_Builder_Driver $driver  Resolved driver.
+		 * @return array|\WP_Error
+		 */
+		private static function mcp_create_single_via_native_theme_builder( array $payload, $driver ) {
+			if ( ! class_exists( 'UiChemy_Template_Store' ) || ! class_exists( 'UiChemy_Template_CPT' ) ) {
+				return new \WP_Error( 'uich_theme_builder_disabled', 'The UiChemy Theme Builder is disabled. Enable it in UiChemy → Settings.' );
+			}
+			if ( ! UiChemy_Template_CPT::is_valid_type( 'single' ) ) {
+				return new \WP_Error( 'uich_tb_pro_type', '"single" templates are not available in this build.' );
 			}
 
+			$post_type = isset( $payload['post_type'] ) ? sanitize_key( (string) $payload['post_type'] ) : 'post';
+			$post_type = '' !== $post_type ? $post_type : 'post';
+
+			$raw_html = isset( $payload['html'] ) ? (string) $payload['html'] : '';
+			$raw_css  = isset( $payload['css'] ) ? (string) $payload['css'] : '';
+			$raw_js   = isset( $payload['js'] ) ? (string) $payload['js'] : '';
+			if ( '' === trim( $raw_html ) && '' === trim( $raw_css ) ) {
+				return new \WP_Error( 'uich_empty_generated_code', 'At least html or css must be provided.' );
+			}
+
+			$upload   = isset( $payload['upload_images'] ) ? (bool) $payload['upload_images'] : true;
+			$prepared = UiChemy_Section_Ops::prepare_code( $raw_html, $raw_css, $upload );
+			$source   = isset( $payload['source'] ) ? sanitize_text_field( (string) $payload['source'] ) : 'mcp';
+			$label    = isset( $payload['label'] ) ? sanitize_text_field( (string) $payload['label'] ) : 'Single Post';
+
+			self::mcp_append_site_custom_code(
+				isset( $payload['site_css'] ) ? (string) $payload['site_css'] : '',
+				isset( $payload['site_js'] ) ? (string) $payload['site_js'] : ''
+			);
+
+			$post_id = UiChemy_Template_Store::create(
+				array(
+					'type'       => 'single',
+					'title'      => isset( $payload['title'] ) ? sanitize_text_field( (string) $payload['title'] ) : 'Single Post UiChemy',
+					'status'     => 'active',
+					'conditions' => array( 'scope' => 'entire' ),
+					'target'     => $post_type,
+					'editor'     => $driver->template_editor_slug(),
+					'label'      => $label,
+					'html'       => self::build_mcp_tagged_code_block( 'html', $prepared['html'], $source, $label ),
+					'css'        => self::build_mcp_tagged_code_block( 'css', $prepared['css'], $source, $label ),
+					'js'         => self::build_mcp_tagged_code_block( 'js', $raw_js, $source, $label ),
+				)
+			);
+			if ( is_wp_error( $post_id ) ) {
+				return $post_id;
+			}
+
+			$counts = wp_count_posts( $post_type );
+
+			return array_merge(
+				array(
+					'system'                => 'uichemy',
+					'builder'               => $driver->slug(),
+					'post_id'               => (int) $post_id,
+					'template_type'         => 'single',
+					'target_post_type'      => $post_type,
+					'active'                => true,
+					'published_posts_count' => isset( $counts->publish ) ? (int) $counts->publish : 0,
+				),
+				$driver->edit_links( (int) $post_id ),
+				array(
+					'image_uploads'  => $prepared['uploaded'],
+					'image_failures' => $prepared['failed'],
+					'message'        => sprintf(
+						'Created a native UiChemy "single" template for %s, built with %s. It renders through UiChemy\'s own theme builder, so no Elementor Pro or Nexter is needed.',
+						$post_type,
+						$driver->label()
+					),
+				)
+			);
+		}
+
+		public static function mcp_create_single_post_template( $payload ) {
 			if ( ! is_array( $payload ) ) {
 				$payload = array();
+			}
+
+			// This method drives ELEMENTOR PRO's and Nexter's theme builders, whose
+			// condition systems have no counterpart in Bricks or the block editor.
+			// Rather than reimplement them, a non-Elementor build routes to
+			// UiChemy's OWN theme builder, which supports "single" natively and now
+			// seeds through whichever driver owns the site. Same outcome, one
+			// implementation, no Pro requirement.
+			$resolved = self::mcp_driver_for_post( 0, isset( $payload['builder'] ) ? (string) $payload['builder'] : '', true );
+			if ( is_wp_error( $resolved ) ) {
+				return $resolved;
+			}
+			if ( 'elementor' !== $resolved->slug() ) {
+				return self::mcp_create_single_via_native_theme_builder( $payload, $resolved );
 			}
 
 			$post_type = isset( $payload['post_type'] ) ? sanitize_key( (string) $payload['post_type'] ) : 'post';
@@ -9907,408 +9909,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					}
 				}
 			}
-		}
-
-		/**
-		 * Gutenberg counterpart to mcp_get_section_code() — reads a UiChemy
-		 * Composer block's raw_html/raw_css/raw_js directly from post_content
-		 * (parse_blocks()), keyed by the block's `uid` attribute rather than
-		 * Elementor's `_elementor_data`/widget_index/data-id. No image upload
-		 * or globals-matching step — this backs only the frontend live-editor
-		 * bridge's read side.
-		 *
-		 * @param int    $post_id Post id.
-		 * @param string $uid     Composer block's `uid` attribute.
-		 * @return array|\WP_Error
-		 */
-		public static function mcp_get_gutenberg_section_code( $post_id, $uid ) {
-			$post_id = absint( $post_id );
-			$uid     = sanitize_text_field( (string) $uid );
-			if ( ! $post_id || '' === $uid ) {
-				return new \WP_Error( 'uich_invalid_args', 'post_id and uid are required.' );
-			}
-
-			$post = get_post( $post_id );
-			if ( ! $post ) {
-				return new \WP_Error( 'uich_post_not_found', 'Post not found.' );
-			}
-
-			$blocks = parse_blocks( (string) $post->post_content );
-			$block  = self::find_gutenberg_composer_block_by_uid( $blocks, $uid );
-			if ( ! $block ) {
-				return new \WP_Error( 'uich_widget_not_found', 'No UiChemy Composer block found with that uid.' );
-			}
-
-			$settings = isset( $block['attrs']['settings'] ) && is_array( $block['attrs']['settings'] ) ? $block['attrs']['settings'] : array();
-
-			return array(
-				'widget_id' => $uid,
-				'label'     => isset( $settings['_title'] ) ? (string) $settings['_title'] : '',
-				'html'      => isset( $settings['raw_html'] ) ? (string) $settings['raw_html'] : '',
-				'css'       => isset( $settings['raw_css'] ) ? (string) $settings['raw_css'] : '',
-				'js'        => isset( $settings['raw_js'] ) ? (string) $settings['raw_js'] : '',
-			);
-		}
-
-		/**
-		 * Bricks counterpart to mcp_get_gutenberg_section_code(). Bricks stores each
-		 * content area as a FLAT array of element arrays under its own post meta key,
-		 * and the composer element's code lives in a JSON blob at
-		 * settings['uichemy_settings']. The element's uid is its Bricks element id
-		 * (the renderer sanitizes it into the `uichemy-composer-<uid>` scope class).
-		 *
-		 * @param int    $post_id Post id.
-		 * @param string $uid     Composer element id / uid.
-		 * @return array|\WP_Error { widget_id, label, html, css, js } or error.
-		 */
-		public static function mcp_get_bricks_section_code( $post_id, $uid ) {
-			$post_id = absint( $post_id );
-			$uid     = sanitize_text_field( (string) $uid );
-			if ( ! $post_id || '' === $uid ) {
-				return new \WP_Error( 'uich_invalid_args', 'post_id and uid are required.' );
-			}
-
-			$element = self::find_bricks_composer_element_by_uid( $post_id, $uid );
-			if ( ! is_array( $element ) ) {
-				return new \WP_Error( 'uich_widget_not_found', 'No UiChemy Composer element found with that uid.' );
-			}
-
-			$raw      = isset( $element['settings']['uichemy_settings'] ) ? (string) $element['settings']['uichemy_settings'] : '{}';
-			$settings = json_decode( $raw, true );
-			if ( ! is_array( $settings ) ) {
-				$settings = array();
-			}
-
-			return array(
-				'widget_id' => $uid,
-				'label'     => isset( $settings['_title'] ) ? (string) $settings['_title'] : '',
-				'html'      => isset( $settings['raw_html'] ) ? (string) $settings['raw_html'] : '',
-				'css'       => isset( $settings['raw_css'] ) ? (string) $settings['raw_css'] : '',
-				'js'        => isset( $settings['raw_js'] ) ? (string) $settings['raw_js'] : '',
-			);
-		}
-
-		/**
-		 * Append a NEW UiChemy Composer block to a Gutenberg post from the front end.
-		 * The block is server-rendered (render_callback reads attrs.uid + attrs.settings),
-		 * so a self-closing block with those attrs is all that is needed. Mirrors the
-		 * Elementor inserter's globals + image passes. wp_update_post() unslashes, so
-		 * the serialized blocks are wp_slash()'d — same reason as the setter.
-		 *
-		 * @param int   $post_id Post id.
-		 * @param array $payload { html?, css?, js?, label? }.
-		 * @return array|\WP_Error
-		 */
-		public static function mcp_insert_gutenberg_section( $post_id, array $payload ) {
-			$post_id = absint( $post_id );
-			if ( ! $post_id ) {
-				return new \WP_Error( 'uich_invalid_post_id', 'Invalid post_id.' );
-			}
-			$post = get_post( $post_id );
-			if ( ! $post ) {
-				return new \WP_Error( 'uich_post_not_found', 'Post not found.' );
-			}
-
-			$html  = isset( $payload['html'] ) ? (string) $payload['html'] : '';
-			$css   = isset( $payload['css'] ) ? (string) $payload['css'] : '';
-			$js    = isset( $payload['js'] ) ? (string) $payload['js'] : '';
-			$label = isset( $payload['label'] ) ? sanitize_text_field( (string) $payload['label'] ) : 'New Section';
-
-			if ( '' !== trim( $html ) && method_exists( __CLASS__, 'mcp_upload_html_images_to_media_library' ) ) {
-				$media = self::mcp_upload_html_images_to_media_library( $html, $css );
-				$html  = $media['html'];
-				if ( isset( $media['css'] ) ) {
-					$css = (string) $media['css'];
-				}
-			}
-			if ( method_exists( __CLASS__, 'mcp_prepare_import_html_css_with_globals' ) ) {
-				$globals = self::mcp_prepare_import_html_css_with_globals( $html, $css );
-				$html    = $globals['html'];
-				$css     = $globals['css'];
-			}
-
-			$uid    = strtolower( wp_generate_password( 7, false, false ) );
-			$blocks = parse_blocks( (string) $post->post_content );
-			$blocks[] = array(
-				'blockName'    => 'uichemy/composer',
-				'attrs'        => array(
-					'uid'      => $uid,
-					'settings' => array(
-						'_title'   => $label,
-						'raw_html' => $html,
-						'raw_css'  => $css,
-						'raw_js'   => $js,
-					),
-				),
-				'innerBlocks'  => array(),
-				'innerHTML'    => '',
-				'innerContent' => array(),
-			);
-
-			$result = wp_update_post(
-				array(
-					'ID'           => $post_id,
-					'post_content' => wp_slash( serialize_blocks( $blocks ) ),
-				),
-				true
-			);
-			if ( is_wp_error( $result ) ) {
-				return $result;
-			}
-
-			return array(
-				'post_id'   => $post_id,
-				'widget_id' => $uid,
-				'label'     => $label,
-				'message'   => "Section \"{$label}\" added to page {$post_id}.",
-			);
-		}
-
-		/**
-		 * Append a NEW UiChemy Composer element to a Bricks page body from the front
-		 * end. Bricks stores each content area as a FLAT element array; a top-level
-		 * element has parent 0. Stored via update_post_meta (a PHP array), which
-		 * unslashes the whole value, so wp_slash() the array — same trap the Bricks
-		 * setter documents.
-		 *
-		 * @param int   $post_id Post id.
-		 * @param array $payload { html?, css?, js?, label? }.
-		 * @return array|\WP_Error
-		 */
-		public static function mcp_insert_bricks_section( $post_id, array $payload ) {
-			$post_id = absint( $post_id );
-			if ( ! $post_id ) {
-				return new \WP_Error( 'uich_invalid_post_id', 'Invalid post_id.' );
-			}
-
-			$html  = isset( $payload['html'] ) ? (string) $payload['html'] : '';
-			$css   = isset( $payload['css'] ) ? (string) $payload['css'] : '';
-			$js    = isset( $payload['js'] ) ? (string) $payload['js'] : '';
-			$label = isset( $payload['label'] ) ? sanitize_text_field( (string) $payload['label'] ) : 'New Section';
-
-			if ( '' !== trim( $html ) && method_exists( __CLASS__, 'mcp_upload_html_images_to_media_library' ) ) {
-				$media = self::mcp_upload_html_images_to_media_library( $html, $css );
-				$html  = $media['html'];
-				if ( isset( $media['css'] ) ) {
-					$css = (string) $media['css'];
-				}
-			}
-			if ( method_exists( __CLASS__, 'mcp_prepare_import_html_css_with_globals' ) ) {
-				$globals = self::mcp_prepare_import_html_css_with_globals( $html, $css );
-				$html    = $globals['html'];
-				$css     = $globals['css'];
-			}
-
-			$key      = '_bricks_page_content_2';
-			$elements = get_post_meta( $post_id, $key, true );
-			if ( ! is_array( $elements ) ) {
-				$elements = array();
-			}
-
-			$uid      = strtolower( wp_generate_password( 6, false, false ) );
-			$settings = wp_json_encode(
-				array(
-					'_title'   => $label,
-					'raw_html' => $html,
-					'raw_css'  => $css,
-					'raw_js'   => $js,
-				),
-				JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
-			);
-
-			$elements[] = array(
-				'id'       => $uid,
-				'name'     => 'uichemy-composer',
-				'parent'   => 0,
-				'children' => array(),
-				'settings' => array( 'uichemy_settings' => $settings ),
-			);
-
-			update_post_meta( $post_id, $key, wp_slash( $elements ) );
-
-			return array(
-				'post_id'   => $post_id,
-				'widget_id' => $uid,
-				'label'     => $label,
-				'message'   => "Section \"{$label}\" added to Bricks page {$post_id}.",
-			);
-		}
-
-		/**
-		 * Locate a UiChemy Composer Bricks element by uid across a post's Bricks
-		 * content areas (body / header / footer). Match is on the element id
-		 * (sanitized the same way the renderer does) AND the element name.
-		 *
-		 * @param int    $post_id Post id.
-		 * @param string $uid     Element id / uid.
-		 * @return array|null The matching element array, or null.
-		 */
-		private static function find_bricks_composer_element_by_uid( $post_id, $uid ) {
-			$keys = array( '_bricks_page_content_2', '_bricks_page_header_2', '_bricks_page_footer_2' );
-			foreach ( $keys as $key ) {
-				$elements = get_post_meta( $post_id, $key, true );
-				if ( ! is_array( $elements ) ) {
-					continue;
-				}
-				foreach ( $elements as $el ) {
-					if ( ! is_array( $el ) || ! isset( $el['id'], $el['name'] ) ) {
-						continue;
-					}
-					if ( 'uichemy-composer' === $el['name'] && sanitize_html_class( (string) $el['id'] ) === $uid ) {
-						return $el;
-					}
-				}
-			}
-			return null;
-		}
-
-		/**
-		 * Bricks counterpart to mcp_set_gutenberg_section_code() — merges html/css/js
-		 * into the matching element's settings['uichemy_settings'] JSON blob and
-		 * persists the content area's flat element array. Unlike the Gutenberg path
-		 * (which round-trips through wp_update_post/wp_unslash), this stores a PHP
-		 * array via update_post_meta, so NO wp_slash() is applied.
-		 *
-		 * @param int    $post_id Post id.
-		 * @param string $uid     Composer element id / uid.
-		 * @param array  $payload { html?, css?, js? } — at least one required.
-		 * @return array|\WP_Error
-		 */
-		public static function mcp_set_bricks_section_code( $post_id, $uid, array $payload ) {
-			$post_id = absint( $post_id );
-			$uid     = sanitize_text_field( (string) $uid );
-			if ( ! $post_id || '' === $uid ) {
-				return new \WP_Error( 'uich_invalid_args', 'post_id and uid are required.' );
-			}
-
-			$html = isset( $payload['html'] ) ? (string) $payload['html'] : null;
-			$css  = isset( $payload['css'] ) ? (string) $payload['css'] : null;
-			$js   = isset( $payload['js'] ) ? (string) $payload['js'] : null;
-			if ( null === $html && null === $css && null === $js ) {
-				return new \WP_Error( 'uich_empty_generated_code', 'At least one of html, css, or js must be provided.' );
-			}
-
-			$keys  = array( '_bricks_page_content_2', '_bricks_page_header_2', '_bricks_page_footer_2' );
-			$found = false;
-			foreach ( $keys as $key ) {
-				$elements = get_post_meta( $post_id, $key, true );
-				if ( ! is_array( $elements ) ) {
-					continue;
-				}
-				if ( self::update_bricks_composer_element_by_uid( $elements, $uid, $payload ) ) {
-					// update_post_meta() → update_metadata() runs wp_unslash() over the
-					// WHOLE value. We read $elements UNslashed from get_post_meta(), so
-					// without re-slashing, that unslash strips backslashes from every
-					// string in EVERY element on the page (CSS escapes, JS, JSON quotes),
-					// corrupting the entire Bricks content and blanking the page. wp_slash
-					// the array so the unslash returns it intact — same reason the
-					// Gutenberg path wp_slash()es before wp_update_post().
-					update_post_meta( $post_id, $key, wp_slash( $elements ) );
-					$found = true;
-					break;
-				}
-			}
-			if ( ! $found ) {
-				return new \WP_Error( 'uich_widget_not_found', 'No UiChemy Composer element found with that uid.' );
-			}
-
-			return self::mcp_get_bricks_section_code( $post_id, $uid );
-		}
-
-		/**
-		 * In-place merge of html/css/js into a Bricks composer element's
-		 * settings['uichemy_settings'] JSON blob, matched by uid (= element id).
-		 *
-		 * @param array  $elements Flat Bricks element array (by reference).
-		 * @param string $uid      Element id / uid.
-		 * @param array  $payload  { html?, css?, js? }.
-		 * @return bool True if the element was found and updated.
-		 */
-		private static function update_bricks_composer_element_by_uid( array &$elements, $uid, array $payload ) {
-			foreach ( $elements as &$el ) {
-				if ( ! is_array( $el ) || ! isset( $el['id'], $el['name'] ) ) {
-					continue;
-				}
-				if ( 'uichemy-composer' !== $el['name'] || sanitize_html_class( (string) $el['id'] ) !== $uid ) {
-					continue;
-				}
-				if ( ! isset( $el['settings'] ) || ! is_array( $el['settings'] ) ) {
-					$el['settings'] = array();
-				}
-				$raw      = isset( $el['settings']['uichemy_settings'] ) ? (string) $el['settings']['uichemy_settings'] : '{}';
-				$settings = json_decode( $raw, true );
-				if ( ! is_array( $settings ) ) {
-					$settings = array();
-				}
-				if ( isset( $payload['html'] ) ) {
-					$settings['raw_html'] = (string) $payload['html'];
-				}
-				if ( isset( $payload['css'] ) ) {
-					$settings['raw_css'] = (string) $payload['css'];
-				}
-				if ( isset( $payload['js'] ) ) {
-					$settings['raw_js'] = (string) $payload['js'];
-				}
-				$el['settings']['uichemy_settings'] = wp_json_encode( $settings, JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE );
-				unset( $el );
-				return true;
-			}
-			unset( $el );
-			return false;
-		}
-
-		/**
-		 * Gutenberg counterpart to mcp_sync_generated_code_to_widget() — writes
-		 * html/css/js back onto the matching block's `settings` attribute and
-		 * re-serializes post_content. wp_update_post() unconditionally runs
-		 * wp_unslash() on its input, so the serialized blocks must be wp_slash()'d
-		 * first or literal characters like `<` get corrupted (`<`).
-		 *
-		 * @param int    $post_id Post id.
-		 * @param string $uid     Composer block's `uid` attribute.
-		 * @param array  $payload { html?, css?, js? } — at least one required.
-		 * @return array|\WP_Error
-		 */
-		public static function mcp_set_gutenberg_section_code( $post_id, $uid, array $payload ) {
-			$post_id = absint( $post_id );
-			$uid     = sanitize_text_field( (string) $uid );
-			if ( ! $post_id || '' === $uid ) {
-				return new \WP_Error( 'uich_invalid_args', 'post_id and uid are required.' );
-			}
-
-			$html = isset( $payload['html'] ) ? (string) $payload['html'] : null;
-			$css  = isset( $payload['css'] ) ? (string) $payload['css'] : null;
-			$js   = isset( $payload['js'] ) ? (string) $payload['js'] : null;
-			if ( null === $html && null === $css && null === $js ) {
-				return new \WP_Error( 'uich_empty_generated_code', 'At least one of html, css, or js must be provided.' );
-			}
-
-			$post = get_post( $post_id );
-			if ( ! $post ) {
-				return new \WP_Error( 'uich_post_not_found', 'Post not found.' );
-			}
-
-			$blocks = parse_blocks( (string) $post->post_content );
-			$found  = self::update_gutenberg_composer_block_by_uid( $blocks, $uid, $payload );
-			if ( ! $found ) {
-				return new \WP_Error( 'uich_widget_not_found', 'No UiChemy Composer block found with that uid.' );
-			}
-
-			$result = wp_update_post(
-				array(
-					'ID'           => $post_id,
-					'post_content' => wp_slash( serialize_blocks( $blocks ) ),
-				),
-				true
-			);
-			if ( is_wp_error( $result ) ) {
-				return $result;
-			}
-
-			return self::mcp_get_gutenberg_section_code( $post_id, $uid );
-		}
-
-		/**
+		}		/**
 		 * Depth-first search for the UiChemy Composer block whose `uid` attr matches.
 		 *
 		 * @param array  $blocks parse_blocks() tree.

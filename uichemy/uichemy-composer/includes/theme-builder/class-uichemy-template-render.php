@@ -93,6 +93,7 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 		 *  - error_404: any not-found request.
 		 *  - single_product: a single WooCommerce product (Woo active).
 		 *  - single: a single post/page matching its display conditions.
+		 *  - order_received: the WooCommerce thank-you endpoint (Woo active).
 		 *  - search: the search-results request.
 		 *  - product_archive: the WooCommerce shop / product taxonomy (Woo active).
 		 *  - archive: any post/term archive or the blog posts index.
@@ -107,7 +108,13 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				return $template;
 			}
 
-			if ( ! class_exists( '\Elementor\Plugin' ) || ! class_exists( 'UiChemy_Template_Resolver' ) ) {
+			// Elementor is NOT required to swap a full page. A uichemy_template is
+			// rendered by UiChemy's own engine, and Composer sections come from
+			// whichever builder authored them — so gating the whole injector on
+			// \Elementor\Plugin meant that on Bricks and block-editor sites a
+			// single / 404 / archive template was created, stored and rendered
+			// correctly and then never reached a visitor.
+			if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 				return $template;
 			}
 
@@ -120,6 +127,14 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				$id = UiChemy_Template_Resolver::resolve( 'error_404' );
 			} elseif ( function_exists( 'is_product' ) && is_product() ) {
 				$id = UiChemy_Template_Resolver::resolve( 'single_product' );
+			} elseif ( self::is_order_received() ) {
+				// Checked BEFORE the singular branch, and deliberately not by
+				// relaxing is_protected_singular(): order-received is also
+				// is_checkout(), so leaving that guard alone keeps a generic
+				// "single" template out of the thank-you page while still allowing
+				// a template built for it. Only the order_received type resolves
+				// here — nothing else can claim the endpoint.
+				$id = UiChemy_Template_Resolver::resolve( 'order_received' );
 			} elseif ( is_singular() && ! self::is_protected_singular() ) {
 				// A single template applies to single post/page views whose
 				// display conditions match (entire = all singular views), EXCEPT
@@ -220,6 +235,19 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				return do_shortcode( do_blocks( (string) $post->post_content ) );
 			}
 
+			// Bricks renders its elements only inside its own page render, which a
+			// uichemy_template never goes through. The Composer element's own
+			// render is just the shared renderer, so call that directly and get
+			// identical markup without booting Bricks' frontend.
+			if ( 'bricks' === $editor ) {
+				if ( ! class_exists( 'UiChemy_Builder_Registry' ) || ! class_exists( 'UiChemy_Section_Ops' ) ) {
+					return '';
+				}
+				$driver = UiChemy_Builder_Registry::get( 'bricks' );
+
+				return $driver ? UiChemy_Section_Ops::render_html_for( $driver, $id ) : '';
+			}
+
 			if ( ! class_exists( '\Elementor\Plugin' ) ) {
 				return '';
 			}
@@ -243,6 +271,11 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 		 * breaking purchasing. Single *products* are intentionally NOT protected —
 		 * they are designed via the single_product location, checked earlier.
 		 *
+		 * The order-received endpoint is also is_checkout(), so it is protected
+		 * here too, and that is on purpose: it keeps a generic "single" template
+		 * off the thank-you page. A template written FOR it still applies, because
+		 * is_order_received() is checked before this guard is consulted.
+		 *
 		 * Always false when WooCommerce is inactive (the conditionals are absent),
 		 * so non-Woo sites are unaffected.
 		 *
@@ -259,6 +292,28 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				return true;
 			}
 			return false;
+		}
+
+		/**
+		 * Whether this request is the WooCommerce order-received (thank-you)
+		 * endpoint.
+		 *
+		 * This is the one point in the purchase flow UiChemy will take over: the
+		 * order already exists and payment has been handled, so replacing the view
+		 * cannot lose a sale. It can still lose the `woocommerce_thankyou` output —
+		 * bank-transfer instructions, conversion tracking, a gateway's own
+		 * confirmation — which is why a template for this type should carry
+		 * <uichemy-woo-thankyou />.
+		 *
+		 * Always false when WooCommerce is inactive.
+		 *
+		 * @return bool
+		 */
+		private static function is_order_received() {
+			if ( ! function_exists( 'is_order_received_page' ) ) {
+				return false;
+			}
+			return (bool) is_order_received_page();
 		}
 
 		/**

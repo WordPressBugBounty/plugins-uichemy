@@ -2730,6 +2730,14 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 			}
 
 			// ── nav-menu ──────────────────────────────────────────────────────────
+			// ── woo-* ─────────────────────────────────────────────────────────────
+			// Delegated to UiChemy_Woo_Tags, which the Gutenberg/Bricks renderer
+			// also uses. This branch was missing here entirely, so every woo tag
+			// rendered nothing in Elementor while working in the other builders.
+			if ( class_exists( 'UiChemy_Woo_Tags' ) && UiChemy_Woo_Tags::handles( $type ) ) {
+				return UiChemy_Woo_Tags::render( $type, $attrs_str, $is_editor );
+			}
+
 			if ( 'nav-menu' === $type ) {
 				$menu_data = $this->get_active_nav_menu_items();
 				if ( empty( $menu_data ) ) {
@@ -2915,6 +2923,12 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 				return '';
 			}
 
+			// Motion variables -> a values preamble plus plain property reads. A
+			// section with no motion block comes back byte-identical.
+			if ( class_exists( 'UiChemy_Motion' ) ) {
+				$raw_js = UiChemy_Motion::compile( $raw_js );
+			}
+
 			$wid_json   = wp_json_encode( 'w' . $this->get_id() );
 			$scope_json = wp_json_encode( '.elementor-element-' . $this->get_id() );
 			$body_json  = wp_json_encode( $raw_js, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT );
@@ -2935,6 +2949,18 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
     prev.rafs.forEach(function(i){cancelAnimationFrame(i);});
     prev.listeners.forEach(function(l){try{l.t.removeEventListener(l.e,l.h,l.o);}catch(e){}});
   }
+  // Elementor replaces a widget's DOM on every edit, but ScrollTriggers bound to
+  // the OLD node are not auto-removed — they pile up and fight the fresh ones. A
+  // trigger whose element has left the document is dead by definition, so drop it.
+  if(window.ScrollTrigger&&window.ScrollTrigger.getAll){
+    window.ScrollTrigger.getAll().forEach(function(st){
+      try{ if(st.trigger&&!document.contains(st.trigger)){ st.kill(); } }catch(e){}
+    });
+  }
+  // WebGL contexts orphaned by the same re-render. Browsers ration these and drop
+  // the oldest once the ceiling is reached, which reads as older sections going
+  // black rather than as an error.
+  try{ if(window.UiChemyThree&&window.UiChemyThree.sweep){ window.UiChemyThree.sweep(); } }catch(e){}
   var R=G[WID]={intervals:[],timeouts:[],rafs:[],listeners:[]};
   var tries=0;
   function fire(target,type,h){try{h.call(target,new Event(type));}catch(e){console.error('[Composer editor JS]',e);}}
@@ -2970,6 +2996,9 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
       window.setInterval=oSI;window.setTimeout=oST;window.requestAnimationFrame=oRAF;
       window.addEventListener=owA;document.addEventListener=odA;
       document.querySelector=oQS;document.querySelectorAll=oQSA;
+    }
+    if(window.ScrollTrigger&&window.ScrollTrigger.refresh){
+      oST(function(){ try{ window.ScrollTrigger.refresh(); }catch(e){} },150);
     }
   }
   window.setTimeout(run,0);
@@ -3013,6 +3042,12 @@ JS;
 			$raw_js = (string) $raw_js;
 			if ( '' === trim( $raw_js ) ) {
 				return '';
+			}
+
+			// Motion variables -> a values preamble plus plain property reads. A
+			// section with no motion block comes back byte-identical.
+			if ( class_exists( 'UiChemy_Motion' ) ) {
+				$raw_js = UiChemy_Motion::compile( $raw_js );
 			}
 
 			$scope_json = wp_json_encode( '.elementor-element-' . $this->get_id() );
@@ -3084,16 +3119,29 @@ JS;
 		 * wp_footer, after body rendering). This must only be called for content
 		 * whose author holds `unfiltered_html` (see content_allows_raw_code()).
 		 *
-		 * @param string $js Author JavaScript (no <script> wrapper).
+		 * A section that uses a bundled library must run AFTER it. The shared inline
+		 * handle carries no dependencies — it cannot, or every page with any section
+		 * JS would pull in every library — so a section is attached to a handle named
+		 * for the libraries it actually needs, and that handle declares them. Without
+		 * this the section's own code could run before `THREE` or `gsap` existed, and
+		 * whether it did depended on script order the section cannot see.
+		 *
+		 * @param string            $js   Author JavaScript (no <script> wrapper).
+		 * @param array<int,string> $deps Script handles this section's JS needs first.
 		 * @return void
 		 */
-		protected function enqueue_inline_widget_js( $js ) {
+		protected function enqueue_inline_widget_js( $js, $deps = array() ) {
 			$js = (string) $js;
 			if ( '' === trim( $js ) ) {
 				return;
 			}
 
-			$handle = 'uichemy-composer-widget-inline';
+			$deps   = array_values( array_unique( array_filter( (array) $deps ) ) );
+			sort( $deps );
+			// One handle per distinct dependency set, so sections needing nothing keep
+			// the plain handle and only the ones needing a library wait for it.
+			$handle = 'uichemy-composer-widget-inline'
+				. ( $deps ? '-' . substr( md5( implode( '|', $deps ) ), 0, 8 ) : '' );
 
 			// Fallback: if footer scripts have already been printed (widget rendered
 			// during/after wp_footer — theme-builder locations, loop items, an
@@ -3109,7 +3157,7 @@ JS;
 			if ( ! wp_script_is( $handle, 'registered' ) ) {
 				// src = false → a "dummy" handle that carries only inline scripts.
 				// in_footer = true so a render-time enqueue is still printed.
-				wp_register_script( $handle, false, array(), UICHEMY_VERSION, true );
+				wp_register_script( $handle, false, $deps, UICHEMY_VERSION, true );
 			}
 			if ( ! wp_script_is( $handle, 'enqueued' ) ) {
 				wp_enqueue_script( $handle );
@@ -3178,12 +3226,6 @@ JS;
 		}
 
 		/**
-		 * Enqueue GSAP + ScrollTrigger + the UiChemy GSAP runtime. Called only when
-		 * the rendered output uses a `data-tp-gsap` config, so the library never
-		 * loads on pages that don't animate. Idempotent (shared handles). Also used
-		 * by the editor-preview enqueue hook.
-		 */
-		/**
 		 * Enqueue the loop pagination runtime (AJAX paging + skeleton loading).
 		 * Called only when the rendered output actually contains a loop control, so a
 		 * page without one never loads it. Idempotent (shared handle). Versioned on
@@ -3192,29 +3234,54 @@ JS;
 		 * browser cache until the plugin version bumps.
 		 */
 		public static function enqueue_loop_runtime() {
-			if ( ! defined( 'UICHEMY_URL' ) || ! defined( 'UICHEMY_PATH' ) ) {
-				return;
+			// One definition, in the renderer the other builders already share, so
+			// the handle and cache-busting version cannot drift between builders.
+			if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
+				UiChemy_Composer_Renderer::enqueue_loop_runtime();
 			}
-			$path = UICHEMY_PATH . 'assets/js/uichemy-loop.js';
-			$ver  = file_exists( $path ) ? filemtime( $path ) : ( defined( 'UICHEMY_VERSION' ) ? UICHEMY_VERSION : false );
-			wp_enqueue_script( 'uichemy-loop', UICHEMY_URL . 'assets/js/uichemy-loop.js', array(), $ver, true );
 		}
 
+		/**
+		 * Enqueue the GSAP libraries (core + ScrollTrigger + MotionPath + DrawSVG).
+		 * Called only when a section's own JS actually uses GSAP, so the libraries
+		 * never load on pages that don't animate. Idempotent (shared handles). Also
+		 * used by the editor-preview enqueue hook so the preview animates too.
+		 *
+		 * These are the libraries only — UiChemy ships no fixed-schema animation
+		 * runtime of its own. Animation lives in the section's authored JS, which is
+		 * where the full GSAP API (timelines, plugins, custom eases) stays reachable.
+		 */
 		public static function enqueue_gsap_runtime() {
 			if ( ! defined( 'UICHEMY_URL' ) ) {
 				return;
 			}
 			$ver = defined( 'UICHEMY_VERSION' ) ? UICHEMY_VERSION : false;
-			// The runtime is a hand-maintained asset that changes independently of the
-			// plugin version, so cache-bust it on its own mtime — otherwise a fix to
-			// uichemy-gsap.js never reaches the browser until UICHEMY_VERSION bumps.
-			$runtime_path = UICHEMY_PATH . 'assets/js/uichemy-gsap.js';
-			$runtime_ver  = file_exists( $runtime_path ) ? filemtime( $runtime_path ) : $ver;
 			wp_enqueue_script( 'uichemy-gsap-core', UICHEMY_URL . 'assets/js/vendor/gsap/gsap.min.js', array(), $ver, true );
 			wp_enqueue_script( 'uichemy-gsap-scrolltrigger', UICHEMY_URL . 'assets/js/vendor/gsap/ScrollTrigger.min.js', array( 'uichemy-gsap-core' ), $ver, true );
 			wp_enqueue_script( 'uichemy-gsap-motionpath', UICHEMY_URL . 'assets/js/vendor/gsap/MotionPathPlugin.min.js', array( 'uichemy-gsap-core' ), $ver, true );
 			wp_enqueue_script( 'uichemy-gsap-drawsvg', UICHEMY_URL . 'assets/js/vendor/gsap/DrawSVGPlugin.min.js', array( 'uichemy-gsap-core' ), $ver, true );
-			wp_enqueue_script( 'uichemy-gsap-runtime', UICHEMY_URL . 'assets/js/uichemy-gsap.js', array( 'uichemy-gsap-core', 'uichemy-gsap-scrolltrigger', 'uichemy-gsap-motionpath', 'uichemy-gsap-drawsvg' ), $runtime_ver, true );
+		}
+
+		/**
+		 * Enqueue three.js (core plus OrbitControls, GLTFLoader and the
+		 * post-processing chain), bundled to one global by the `three` webpack
+		 * entry — see src/uichemy-three/index.js for why a bundle rather than the
+		 * published ESM files.
+		 *
+		 * Called only when a section's own JS mentions THREE, so a page with no 3D
+		 * never pays the ~800 KB. Idempotent (one shared handle). Also used by the
+		 * editor-preview enqueue hook so the preview renders too.
+		 */
+		public static function enqueue_three_runtime() {
+			if ( ! defined( 'UICHEMY_BUILD_URL' ) ) {
+				return;
+			}
+			$path = defined( 'UICHEMY_BUILD_PATH' ) ? UICHEMY_BUILD_PATH . 'three.js' : '';
+			$ver  = ( $path && file_exists( $path ) )
+				? filemtime( $path )
+				: ( defined( 'UICHEMY_VERSION' ) ? UICHEMY_VERSION : false );
+
+			wp_enqueue_script( 'uichemy-three', UICHEMY_BUILD_URL . 'three.js', array(), $ver, true );
 		}
 
 		protected function render() {
@@ -3351,21 +3418,32 @@ JS;
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			if ( '' !== $deps_before ) echo $deps_before;
 
-			// GSAP animation (Phase 1) — only load the library when the content
-			// actually uses it, i.e. a node carries a `data-tp-gsap` config from the
-			// composer's Animation panel. Front end only; the editor preview loads it
-			// via elementor/preview/enqueue_scripts (see the enqueue class).
-			if ( ! $is_editor && ( false !== strpos( $output, 'data-tp-gsap' )
-				|| preg_match( '/\bgsap\b|\bScrollTrigger\b/', (string) ( $settings['raw_js'] ?? '' ) ) ) ) {
-				self::enqueue_gsap_runtime();
+			// GSAP and three.js — only load a library when the section's own JS
+			// actually uses it, so a page pays for what it animates with and
+			// nothing else. Front end only; the editor preview loads them via
+			// elementor/preview/enqueue_scripts (see the enqueue class).
+			$section_js  = (string) ( $settings['raw_js'] ?? '' );
+			$script_deps = array();
+			if ( ! $is_editor ) {
+				if ( preg_match( '/\bgsap\b|\bScrollTrigger\b/', $section_js ) ) {
+					self::enqueue_gsap_runtime();
+					$script_deps[] = 'uichemy-gsap-core';
+					$script_deps[] = 'uichemy-gsap-scrolltrigger';
+				}
+				if ( preg_match( '/\bTHREE\b/', $section_js ) ) {
+					self::enqueue_three_runtime();
+					$script_deps[] = 'uichemy-three';
+				}
 			}
 
-			// Loop pagination runtime — same on-demand rule as GSAP: only ship the
-			// script when a loop actually rendered a control. Both controls emit
-			// nothing once there is nothing left to load, so the final page of a
-			// loop costs nothing either.
+			// Loop runtime — same on-demand rule as GSAP: only ship the script when
+			// the markup actually needs it. The two page controls emit nothing once
+			// there is nothing left to load, so the final page of a loop costs
+			// nothing either; data-uich-filter is the author opting a filter control
+			// in, and is the third thing the runtime handles.
 			if ( ! $is_editor && ( false !== strpos( $output, 'uich-loop-more"' )
-				|| false !== strpos( $output, 'uich-loop-pagination"' ) ) ) {
+				|| false !== strpos( $output, 'uich-loop-pagination"' )
+				|| false !== strpos( $output, 'data-uich-filter' ) ) ) {
 				self::enqueue_loop_runtime();
 			}
 
@@ -3432,7 +3510,7 @@ JS;
 					// otherwise a duplicated section of the same template type would
 					// re-target the first instance and never initialise its own
 					// nodes (see build_frontend_js_runtime()).
-					$this->enqueue_inline_widget_js( $this->build_frontend_js_runtime( $settings['raw_js'] ) );
+					$this->enqueue_inline_widget_js( $this->build_frontend_js_runtime( $settings['raw_js'] ), $script_deps );
 				}
 			}
 

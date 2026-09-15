@@ -17,7 +17,7 @@
  *            'uichemy/theme_builder/create_template',
  *            null,                       // default returned if TB is inactive
  *            array(
- *                'type'   => 'header',   // header|footer|single|archive|single_product|product_archive|search|error_404
+ *                'type'   => 'header',   // header|footer|single|archive|single_product|product_archive|order_received|search|error_404
  *                'title'  => 'Imported Header',
  *                'html'   => $html,      // at least html OR css is required
  *                'css'    => $css,

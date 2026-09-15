@@ -185,7 +185,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				'template' => array(
 					'slug'               => 'uichemy-composer/template',
 					'label'              => 'UiChemy Builder: Template',
-					'description'        => 'The same section toolkit as uichemy-composer/page, pointed at theme-builder templates (header, footer, single). "list" shows type, active status and conditions; "create" takes a type.',
+					'description'        => 'The same section toolkit as uichemy-composer/page, pointed at ELEMENTOR PRO and NEXTER theme-builder templates (header, footer, single). ELEMENTOR ONLY: these are those plugins\' own template post types and condition formats, which Bricks and the block editor have no counterpart for - on those builders use uichemy-composer/theme-builder instead, which is native to UiChemy and works everywhere. "list" shows type, active status and conditions; "create" takes a type.',
 					'schema_description' => $preamble . $shared . ' "create" needs a type (header | footer | single) and an optional system (elementor_pro | nexter | auto). THEME BUILDER: "set-conditions" decides where a template renders (a template with no conditions renders nowhere), "toggle" turns one on or off without losing its conditions, "delete" removes one (DESTRUCTIVE, two-step confirm_token). Plain Elementor produces an INACTIVE template on create - set-conditions fixes that, or build the header/footer as page sections instead. There is no create-with-sections: make the template, then append-section for the rest.',
 					'handler'            => 'execute_template',
 				),
@@ -230,7 +230,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 
 			// Section targeting: element_id is exact, section_index is positional.
 			$section_index = array( 'type' => 'integer', 'description' => '0-based section order from action="get-structure". Alternative to element_id.' );
-			$element_id    = array( 'type' => 'string', 'description' => 'Exact Elementor element id of the section. Preferred over section_index - it survives reordering.' );
+			$element_id    = array( 'type' => 'string', 'description' => 'Exact element id of the section - Elementor\'s element id, or the uid on Bricks and Gutenberg. Preferred over section_index: it survives reordering.' );
 
 			$actions = array(
 				// ---------- Discovery ----------
@@ -283,7 +283,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				),
 				array(
 					'name'                     => 'get-structure',
-					'description'              => 'Summarise this ' . $noun . '\'s Elementor widget tree and return the section_index / element_id values every other section action needs.',
+					'description'              => 'Summarise this ' . $noun . '\'s builder structure and return the section_index / element_id values every other section action needs. The tree is shaped by whichever builder owns the ' . $noun . ', and every node carries a "type"; "builder" on the response says which one.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => array( 'post_id' => $post_id ),
@@ -666,7 +666,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 			return array(
 				array(
 					'name'                     => 'schema',
-					'description'              => 'The whole site in one payload: build readiness (Elementor / Nexter, header_footer_system, active kit, atomic mode, active header and footer, branding) plus the content model - public post types, taxonomies, the ACF and registered-meta field map with each field\'s metaKey, nav menus with their locations, and WooCommerce presence.',
+					'description'              => 'The whole site in one payload: build readiness (which page builder is resolved and whether it is usable, active header and footer, branding) plus the content model - public post types, taxonomies, the ACF and registered-meta field map with each field\'s metaKey, nav menus with their locations, and WooCommerce presence.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => new stdClass(),
@@ -714,14 +714,14 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				),
 				array(
 					'name'                     => 'create',
-					'description'              => 'Create a NATIVE UiChemy theme-builder template from HTML/CSS/JS. Works on ANY Elementor including free - no Pro and no Nexter. Templates are ACTIVE by default, and activating one deactivates any other active UiChemy template in the same slot. READ "will_render" IN THE RESPONSE, NOT "active": active means the flag was written, and a header or footer can be active and still never appear - on a classic theme with no Elementor location support there is no slot to inject into; on a theme that renders through elementor_theme_do_location() Elementor Pro owns that function and only serves its own templates; and where another builder already has an active template for the slot UiChemy stands down rather than render a second one. When will_render is false the response says which of those it is and what to do instead; do not report the slot as done until it is true, and look at a real page even then.',
+					'description'              => 'Create a NATIVE UiChemy theme-builder template from HTML/CSS/JS. Works on ANY supported builder - Elementor (including free), Bricks or the block editor - and is seeded through whichever one describe-site resolved. No Elementor Pro and no Nexter. Templates are ACTIVE by default, and activating one deactivates any other active UiChemy template in the same slot. READ "will_render" IN THE RESPONSE, NOT "active": active means the flag was written, and a header or footer can be active and still never appear - on a classic theme with no Elementor location support there is no slot to inject into; on a theme that renders through elementor_theme_do_location() Elementor Pro owns that function and only serves its own templates; and where another builder already has an active template for the slot UiChemy stands down rather than render a second one. When will_render is false the response says which of those it is and what to do instead; do not report the slot as done until it is true, and look at a real page even then.',
 					'action_parameters_schema' => array(
 						'type'        => 'object',
-						'description' => 'Choose "type" strictly by the user\'s wording: "header" → header; "footer" → footer; "single post / blog post / article template" → single; "archive / blog listing / category / tag / author / date" → archive; "product page / single product" → single_product (WooCommerce); "shop / product listing" → product_archive (WooCommerce); "search results" → search; "404 / not found" → error_404. PLACEMENT is type-aware: header/footer → { scope: "entire" (default) | "specific", include: [ids], exclude: [ids] }; single → { post_type: "post" (default) | "page" | "{cpt}" | "all" | "front", include: [ids], exclude: [ids] }; archive → { archive: "blog" (default) | "author" | "date" | "tax:{taxonomy}" | "all" }; single_product / product_archive / search / error_404 → OMIT placement, they apply to their whole context automatically. A single/archive body should use dynamic bindings (uichemy-composer/dynamic) rather than hardcoded content.',
+						'description' => 'Choose "type" strictly by the user\'s wording: "header" → header; "footer" → footer; "single post / blog post / article template" → single; "archive / blog listing / category / tag / author / date" → archive; "product page / single product" → single_product (WooCommerce); "shop / product listing" → product_archive (WooCommerce); "thank you / order confirmation / order received" → order_received (WooCommerce); "search results" → search; "404 / not found" → error_404. PLACEMENT is type-aware: header/footer → { scope: "entire" (default) | "specific", include: [ids], exclude: [ids] }; single → { post_type: "post" (default) | "page" | "{cpt}" | "all" | "front", include: [ids], exclude: [ids] }; archive → { archive: "blog" (default) | "author" | "date" | "tax:{taxonomy}" | "all" }; single_product / product_archive / order_received / search / error_404 → OMIT placement, they apply to their whole context automatically. An order_received body MUST include the woo-thankyou tag (uichemy-composer/dynamic, action="add-tag"): it is the only thing that fires WooCommerce\'s thankyou hook, which carries bank-transfer instructions, gateway confirmations and every conversion pixel the site has attached. Build the visible layout from order.* tokens and keep that tag on the page. A single/archive body should use dynamic bindings (uichemy-composer/dynamic) rather than hardcoded content.',
 						'properties'  => array(
 							'type'      => array(
 								'type'        => 'string',
-								'enum'        => array( 'header', 'footer', 'single', 'archive', 'single_product', 'product_archive', 'search', 'error_404' ),
+								'enum'        => array( 'header', 'footer', 'single', 'archive', 'single_product', 'product_archive', 'order_received', 'search', 'error_404' ),
 								'description' => 'Which template slot to build.',
 							),
 							'title'     => array( 'type' => 'string', 'description' => 'Template title.' ),
@@ -1134,12 +1134,16 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 						'description'              => 'Get a UiChemy placeholder element. These resolve server-side at render time, so they are the only correct way to output a nav menu, the post body, the site logo or icon, a table of contents, or WooCommerce\'s cart / checkout / account area - hand-written markup would freeze whatever was true when the section was generated.',
 						'action_parameters_schema' => array(
 							'type'        => 'object',
-							'description' => 'The woo-* tags are how a store\'s FUNCTIONAL pages get styled. UiChemy deliberately refuses to put a theme-builder template over cart, checkout or my-account, because replacing those pages breaks the purchase flow - so build the page around the tag instead: your header, your layout, your CSS, with WooCommerce\'s own cart or checkout form inside it. Put each on the page WooCommerce has assigned for it (uichemy-composer/store, action="describe-store" reports the assignments), and include woo-notices in any custom cart or checkout layout or the customer never sees an error. They are only offered when WooCommerce is active.',
+							'description' => 'The woo-* tags are how a store\'s FUNCTIONAL pages get styled. UiChemy deliberately refuses to put a theme-builder template over cart, checkout or my-account, because replacing those pages breaks the purchase flow - so build the page around the tag instead: your header, your layout, your CSS, with WooCommerce\'s own cart or checkout form inside it. Put each on the page WooCommerce has assigned for it (uichemy-composer/store, action="describe-store" reports the assignments), and include woo-notices in any custom cart or checkout layout or the customer never sees an error. They are only offered when WooCommerce is active. Two of them are not about the functional pages at all: woo-add-to-cart and woo-reviews belong in a custom single_product template, which UiChemy DOES replace, and are the two pieces of a product page that have no token equivalent.',
 							'properties'  => array(
 								'tag' => array(
 									'type'        => 'string',
-									'enum'        => array( 'post-content', 'nav-menu', 'site-logo', 'site-icon', 'toc', 'woo-cart', 'woo-checkout', 'woo-my-account', 'woo-order-tracking', 'woo-notices' ),
-									'description' => 'Which placeholder to emit. woo-checkout also renders the thank-you view on the order-received endpoint, so it covers both.',
+									'enum'        => array( 'post-content', 'nav-menu', 'site-logo', 'site-icon', 'toc', 'woo-cart', 'woo-checkout', 'woo-my-account', 'woo-order-tracking', 'woo-notices', 'woo-add-to-cart', 'woo-reviews', 'woo-mini-cart', 'woo-thankyou' ),
+									'description' => 'Which placeholder to emit. woo-checkout also renders the thank-you view on the order-received endpoint, so it covers both. woo-add-to-cart is REQUIRED in any custom single_product template - the add-to-cart form is the one part of a product page that cannot be rebuilt from product.* tokens, and a variable product without it cannot be bought. woo-reviews is likewise the only way to output reviews, which are not exposed as data.',
+								),
+								'id'  => array(
+									'type'        => 'integer',
+									'description' => 'woo-add-to-cart only: the product to render the form for. Omit on a single_product template, where the product in scope is the right one; pass it when the tag sits inside a loop card or a quick-view panel.',
 								),
 							),
 							'required'    => array( 'tag' ),
@@ -1278,7 +1282,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'slug'               => 'uichemy-composer/audit',
 					'label'              => 'UiChemy Builder: Audit',
 					'description'        => 'Read-only site-readiness findings, each naming the ability that fixes it. Run this before calling a build finished.',
-					'schema_description' => $preamble . ' "run" checks the things a build commonly leaves broken: Elementor missing, an empty design system, no site logo or tagline, no nav menu or an unassigned theme location, theme-builder templates with no display conditions (they render nowhere), forms with no recipient, and images with no alt text. Pass post_id to also check one page for missing sections. Each finding carries a severity (blocker | warning | notice) and the ability that fixes it. "list-checks" shows what it looks at without running it. Reads only - nothing is changed.',
+					'schema_description' => $preamble . ' "run" checks the things a build commonly leaves broken: no usable page builder, an empty design system, no site logo or tagline, no nav menu or an unassigned theme location, theme-builder templates with no display conditions (they render nowhere), forms with no recipient, and images with no alt text. Pass post_id to also check one page for missing sections. Each finding carries a severity (blocker | warning | notice) and the ability that fixes it. "list-checks" shows what it looks at without running it. Reads only - nothing is changed.',
 					'handler'            => 'execute_audit',
 					'readonly'           => true,
 				),
@@ -1314,7 +1318,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				self::CATEGORY,
 				array(
 					'label'       => __( 'UiChemy', 'uichemy' ),
-					'description' => __( 'UiChemy pipeline: Figma-to-HTML conversion, Elementor globals, and full WordPress site building. Call uichemy-composer/instructions first for the build order.', 'uichemy' ),
+					'description' => __( 'UiChemy pipeline: Figma-to-HTML conversion, design-system globals, and full WordPress site building. Call uichemy-composer/instructions first for the build order.', 'uichemy' ),
 				)
 			);
 		}
@@ -1397,10 +1401,10 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				self::register_standalone_ability(
 					'uichemy-composer/describe-site',
 					'UiChemy Builder: Describe Site',
-					'Call uichemy-composer/instructions first, then this on any build: what this site can do (Elementor/Nexter, header_footer_system, kit, logo) and what content it has (post types, taxonomies, real field metaKeys, menus, Woo). Required before any data binding.',
+					'Call uichemy-composer/instructions first, then this on any build: what this site can do (which page builder, readiness, logo) and what content it has (post types, taxonomies, real field metaKeys, menus, Woo). Required before any data binding.',
 					array(
 						'type'        => 'object',
-						'description' => self::contract() . ' "schema" (the default) returns the whole site: "platform" is build readiness - Elementor / Elementor Pro / Nexter detection, active kit, header_footer_system ("elementor_pro" | "nexter" | "elementor" - route header/footer work by this), atomic_enabled, active_header / active_footer, branding; STOP the build if platform.checks.elementor_active is false. The rest is the content model: public post types, taxonomies, the ACF / registered-meta FIELD MAP (name, type and metaKey, grouped by post/product/user/term), registered meta keys, nav menus + locations, and WooCommerce presence + product count. Bind fields by the metaKey it returns, never by a guessed name. "entities" resolves concrete records to real IDs. Read-only either way.',
+						'description' => self::contract() . ' "schema" (the default) returns the whole site: "platform" is build readiness - "builder" is the page builder every write lands in (elementor | bricks | gutenberg), "builders" reports each one\'s availability and why, plus active_header / active_footer and branding; STOP the build if platform.ready is false and say what platform.builders gives as the reason. The Elementor-specific keys (checks.elementor_active, header_footer_system, atomic_enabled, active kit) describe ELEMENTOR only and are meaningless on another builder - never gate a build on them. The rest is the content model: public post types, taxonomies, the ACF / registered-meta FIELD MAP (name, type and metaKey, grouped by post/product/user/term), registered meta keys, nav menus + locations, and WooCommerce presence + product count. Bind fields by the metaKey it returns, never by a guessed name. "entities" resolves concrete records to real IDs. Read-only either way.',
 						'properties'  => array(
 							'action'            => array(
 								'type'        => 'string',
@@ -1463,7 +1467,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				self::register_standalone_ability(
 					'uichemy-composer/theme-builder',
 					'UiChemy Builder: Theme Builder',
-					'Native UiChemy theme-builder templates - header, footer, single, archive, product, search and 404 - on ANY Elementor including free. No Elementor Pro and no Nexter required.',
+					'Native UiChemy theme-builder templates - header, footer, single, archive, product, search and 404 - on ANY supported page builder: Elementor (including free), Bricks or the block editor. No Elementor Pro and no Nexter required. This is the theme builder to use unless the user specifically wants a template inside Elementor Pro\'s or Nexter\'s own system.',
 					array(
 						'type'        => 'object',
 						'description' => self::contract() . ' "architecture" maps every slot the site HAS and which ones still fall through to the theme, with a "gaps" list naming the call that fills each - start there when asked what a site is missing, because "list" only reports templates that already exist. "create" builds a template and places it (placement is type-aware; see the create action\'s schema), "set-conditions" moves an existing one, "toggle" activates or deactivates, "delete" removes it (DESTRUCTIVE, two-step confirm_token). Templates are ACTIVE by default and activating one deactivates any other in the same slot. This is the native engine, stored in UiChemy\'s own CPT; uichemy-composer/template is the separate path that drives Elementor Pro and Nexter, and it only covers header, footer and single.',
@@ -1687,10 +1691,57 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 								'idempotent'  => (bool) $ann['idempotent'],
 							),
 						),
-						is_array( $extra_meta ) ? $extra_meta : array()
+						self::with_builder_param( is_array( $extra_meta ) ? $extra_meta : array() )
 					),
 				)
 			);
+		}
+
+		/**
+		 * Advertise the per-call `builder` override on every action.
+		 *
+		 * Resolution already honours it (UiChemy_Builder_Context::resolve), but an
+		 * undeclared parameter is one a model cannot discover, so in practice the
+		 * only reachable overrides were the endpoint's ?builder= and the session
+		 * default. Injected centrally rather than written into each action's
+		 * schema, so an action added later carries it without anyone remembering.
+		 *
+		 * Purely additive: omitting it resolves exactly as before.
+		 *
+		 * @param array $meta Ability meta, possibly carrying `actions`.
+		 * @return array
+		 */
+		private static function with_builder_param( array $meta ) {
+			if ( empty( $meta['actions'] ) || ! is_array( $meta['actions'] ) ) {
+				return $meta;
+			}
+
+			$slugs = class_exists( 'UiChemy_Builder_Registry' )
+				? UiChemy_Builder_Registry::slugs()
+				: array( 'elementor', 'bricks', 'gutenberg' );
+
+			$param = array(
+				'type'        => 'string',
+				'enum'        => array_values( $slugs ),
+				'description' => 'Which page builder to act with. Omit it: the builder is resolved from the endpoint (?builder=), then the post being targeted, then the site\'s onboarding choice - and for an EXISTING post the post\'s own builder always wins, so naming a different one is refused rather than silently writing data that renders nothing. Pass it only to pin one builder on a site that has several.',
+			);
+
+			foreach ( $meta['actions'] as $i => $action ) {
+				if ( ! is_array( $action ) || ! isset( $action['action_parameters_schema'] ) ) {
+					continue;
+				}
+				$schema = $action['action_parameters_schema'];
+				if ( ! isset( $schema['properties'] ) || ! is_array( $schema['properties'] ) ) {
+					// An action with no parameters declares properties as an empty
+					// stdClass so it serialises as {} rather than [] — adding a key
+					// to that would need it to become an array first.
+					$schema['properties'] = array();
+				}
+				$schema['properties']['builder']        = $param;
+				$meta['actions'][ $i ]['action_parameters_schema'] = $schema;
+			}
+
+			return $meta;
 		}
 
 		/**

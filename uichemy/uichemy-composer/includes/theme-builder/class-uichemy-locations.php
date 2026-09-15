@@ -77,7 +77,9 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 			if ( is_admin() || ! is_admin_bar_showing() ) {
 				return;
 			}
-			if ( ! class_exists( '\Elementor\Plugin' ) || ! class_exists( 'UiChemy_Template_Resolver' ) ) {
+			// Same reasoning as the template_include gate: these links point at
+			// UiChemy's own templates, which exist on every builder.
+			if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 				return;
 			}
 
@@ -261,6 +263,11 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 			// flagged active, and never called. This is reported, not worked
 			// around: the alternative is monkey-patching another plugin's render
 			// pipeline.
+			// Elementor Pro owning elementor_theme_do_location() is the one case
+			// UiChemy genuinely cannot win from here: the function is another
+			// plugin's, it serves only Pro's own documents, and taking it would
+			// mean monkey-patching Pro's render pipeline. Still reported honestly
+			// rather than silently producing nothing.
 			if ( 'elementor' === $environment['type'] && ! self::owns_do_location() ) {
 				$out['will_render'] = false;
 				$out['blocked_by']  = 'elementor_pro_owns_location_api';
@@ -270,19 +277,17 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 				return $out;
 			}
 
+			// A competing system holding this slot is no longer a blocker: UiChemy
+			// takes it and displaces the incumbent. Reported so the caller can tell
+			// the user what was replaced, but will_render stays TRUE.
 			if ( class_exists( 'UiChemy_Template_Resolver' )
 				&& method_exists( 'UiChemy_Template_Resolver', 'competing_system_owns' )
 				&& UiChemy_Template_Resolver::competing_system_owns( $type )
 			) {
-				$out['will_render'] = false;
-				$out['blocked_by']  = 'competing_template';
-				$out['reason']      = sprintf(
-					'Another theme-builder system already has an ACTIVE %s template for this slot, and UiChemy stands down rather than render a second one. The UiChemy template is created and flagged active, and it will not appear while the other one is live.',
+				$out['replaces'] = sprintf(
+					'Another theme-builder system also has an active %1$s template. UiChemy takes the slot and that %1$s will stop appearing while this one is active.',
 					$type
 				);
-				$out['what_to_do'] = sprintf( 'Deactivate the other system\'s %s template, or use that system for the %s instead of this one. Ask the user which they want - do not disable their existing template on your own.', $type, $type );
-
-				return $out;
 			}
 
 			$out['reason'] = sprintf( 'The theme exposes a %s slot and no other builder is claiming it.', $type );
@@ -497,8 +502,23 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 						'action'           => 'nexter_header',
 						'default_callback' => 'nexter_header_template',
 					),
+					// Bricks theme. header.php fires `render_header`, and Bricks
+					// attaches an INSTANCE method to it, so there is no callable
+					// string to remove — the slot is taken by class instead. When
+					// both Bricks and UiChemy have a header, UiChemy wins.
+					array(
+						'action'         => 'render_header',
+						'default_class'  => '\\Bricks\\Frontend',
+						'default_method' => 'render_header',
+					),
 				),
 				'footer' => array(
+					// Bricks theme — see the header slot above.
+					array(
+						'action'         => 'render_footer',
+						'default_class'  => '\\Bricks\\Frontend',
+						'default_method' => 'render_footer',
+					),
 					array(
 						'action'           => 'nexter_footer',
 						'default_callback' => 'nexter_footer_template',
@@ -554,6 +574,20 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 						}
 					}
 
+					// A theme that hooks an instance method (Bricks) exposes no
+					// callable string to remove, so the slot is taken by class.
+					if ( ! empty( $slot['default_class'] ) ) {
+						$taken = self::detach_class_callbacks(
+							$action,
+							(string) $slot['default_class'],
+							isset( $slot['default_method'] ) ? (string) $slot['default_method'] : ''
+						);
+						if ( $taken ) {
+							$priority                         = (int) $taken['priority'];
+							self::$replaced_defaults[ $type ] = $taken['callback'];
+						}
+					}
+
 					add_action(
 						$action,
 						'header' === $type
@@ -563,6 +597,60 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 					);
 				}
 			}
+		}
+
+		/**
+		 * Remove every callback on an action that belongs to a given class, and
+		 * hand back the one we displaced so it can still be used as a fallback.
+		 *
+		 * WordPress can only remove a callback you can name, and an instance
+		 * method is only nameable if you hold the same object. Bricks keeps its
+		 * \Bricks\Frontend instance private, so the registry is walked instead
+		 * and matched on the object's class — which is also more robust than
+		 * holding a reference, since it keeps working if Bricks re-instantiates.
+		 *
+		 * @param string $action Hook name.
+		 * @param string $class  Fully-qualified class whose callbacks to remove.
+		 * @param string $method Optional method name to narrow the match.
+		 * @return array{priority:int,callback:callable}|null The displaced callback.
+		 */
+		private static function detach_class_callbacks( $action, $class, $method = '' ) {
+			global $wp_filter;
+
+			if ( empty( $wp_filter[ $action ] ) || ! isset( $wp_filter[ $action ]->callbacks ) ) {
+				return null;
+			}
+
+			$class    = ltrim( (string) $class, '\\' );
+			$displaced = null;
+
+			foreach ( $wp_filter[ $action ]->callbacks as $priority => $callbacks ) {
+				foreach ( $callbacks as $cb ) {
+					$fn = isset( $cb['function'] ) ? $cb['function'] : null;
+					if ( ! is_array( $fn ) || ! isset( $fn[0], $fn[1] ) || ! is_object( $fn[0] ) ) {
+						continue;
+					}
+					if ( ltrim( get_class( $fn[0] ), '\\' ) !== $class ) {
+						continue;
+					}
+					if ( '' !== $method && $fn[1] !== $method ) {
+						continue;
+					}
+
+					remove_action( $action, $fn, $priority );
+					// Keep the FIRST one displaced: that is the theme's own output,
+					// and the one render_theme_action_location() falls back to when
+					// UiChemy turns out to have nothing to render.
+					if ( null === $displaced ) {
+						$displaced = array(
+							'priority' => (int) $priority,
+							'callback' => $fn,
+						);
+					}
+				}
+			}
+
+			return $displaced;
 		}
 
 		/**
@@ -684,11 +772,13 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 		 * @return void
 		 */
 		public static function maybe_enqueue_styles() {
-			if ( is_admin() || ! class_exists( '\Elementor\Plugin' ) || ! class_exists( 'UiChemy_Template_Resolver' ) ) {
+			if ( is_admin() || ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 				return;
 			}
 			if ( UiChemy_Template_Resolver::has_active( 'header' ) || UiChemy_Template_Resolver::has_active( 'footer' ) ) {
-				if ( isset( \Elementor\Plugin::$instance->frontend ) ) {
+				// Elementor's base stylesheet only when Elementor is here; its
+				// absence must not stop the block styles below from loading.
+				if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->frontend ) ) {
 					\Elementor\Plugin::$instance->frontend->enqueue_styles();
 				}
 				// Header/footer may be Gutenberg-authored — ensure block styles too.

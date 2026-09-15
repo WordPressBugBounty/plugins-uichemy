@@ -282,6 +282,31 @@ body.elementor-editor-active .MuiPopover-root {
 	box-shadow: none !important;
 	min-height: unset;
 }
+
+/* Same exemption, for a <select> that sits INSIDE a bordered wrapper.
+   The React panel draws a field as a framed <div class="… border-input …"> with
+   a transparent control inside it (see FRAME_CLS in composer-construct-tab.jsx
+   and the wrapper in composer-inputs.jsx) — that shape exists precisely because
+   the rules above style bare `input, textarea, select` with !important, so a
+   frame drawn on the control itself is overwritten.
+
+   The exemption above covers `input` but was never extended to `select`, so a
+   framed select painted the shell's own box INSIDE the wrapper's box: in the
+   Loop panel that read as selects carrying a hard box while the text fields
+   beside them were flattened to invisible, and a column of controls that never
+   lined up.
+
+   Deliberately scoped to `.border-input select` and not to every select: a
+   select that carries its own frame (composer-deps.jsx's SELECT_CLS puts
+   `border border-input` on the element) is NOT a descendant of a .border-input
+   wrapper, so it keeps its border exactly as before. */
+.uichemy-composer-floating-panel .uich-composer-host .border-input select {
+	background-color: transparent !important;
+	border: 1px solid transparent !important;
+	outline: none !important;
+	box-shadow: none !important;
+	min-height: unset;
+}
 .uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
 .uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):hover,
 .uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus,

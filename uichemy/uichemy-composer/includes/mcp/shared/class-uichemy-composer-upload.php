@@ -61,6 +61,10 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 		 */
 		const MAX_FILE_BYTES  = 26214400;  // 25 MB for images, SVG and fonts.
 		const MAX_VIDEO_BYTES = 104857600; // 100 MB for video.
+		// 64 MB for 3D models. Real .glb exports routinely pass 25 MB, so the
+		// image ceiling would reject ordinary work; 100 MB is left to video
+		// because a model that large has no business on a web page.
+		const MAX_MODEL_BYTES = 67108864;
 
 		/**
 		 * Longest filename stem kept before the extension. Filesystems cap a
@@ -96,6 +100,8 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 				'video/webm'      => 'webm',
 				'video/ogg'       => 'ogv',
 				'video/quicktime' => 'mov',
+				'model/gltf-binary' => 'glb',
+				'model/gltf+json'   => 'gltf',
 				'font/woff2'      => 'woff2',
 				'font/woff'       => 'woff',
 				'font/ttf'        => 'ttf',
@@ -146,13 +152,77 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 		}
 
 		/**
+		 * Whether a MIME type is one of the accepted 3D model formats. Models are
+		 * loaded by GLTFLoader from section JavaScript; WordPress blocks their
+		 * types by default, so the sideload allows them explicitly.
+		 *
+		 * @param string $mime MIME type.
+		 * @return bool
+		 */
+		private static function is_model_mime( $mime ) {
+			return in_array(
+				strtolower( (string) $mime ),
+				array( 'model/gltf-binary', 'model/gltf+json' ),
+				true
+			);
+		}
+
+		/**
+		 * Whether the bytes on disk really are the glTF the extension claims.
+		 *
+		 * Fonts and video are let through on a silent or generic sniff, because
+		 * those families sniff badly and nothing else identifies them. glTF does
+		 * not need that latitude: a .glb opens with the four-byte magic `glTF`,
+		 * and a .gltf is JSON with a required top-level `asset` member. Checking
+		 * the content directly means an arbitrary binary renamed to .glb is
+		 * rejected here rather than stored and served.
+		 *
+		 * @param string $tmp_path Temp file path.
+		 * @param string $ext      Lower-case extension from the filename.
+		 * @return bool
+		 */
+		private static function looks_like_model( $tmp_path, $ext ) {
+			$fh = @fopen( $tmp_path, 'rb' ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fopen, WordPress.PHP.NoSilencedErrors.Discouraged -- local temp file; a failure is a rejection.
+			if ( ! $fh ) {
+				return false;
+			}
+
+			if ( 'glb' === $ext ) {
+				$magic = fread( $fh, 4 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+				fclose( $fh ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+				return 'glTF' === $magic;
+			}
+
+			// .gltf — JSON. Read a bounded prefix: a malformed multi-megabyte
+			// file must not be parsed in full just to be rejected.
+			$head = fread( $fh, 65536 ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fread
+			fclose( $fh ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_fclose
+			if ( ! is_string( $head ) || '' === trim( $head ) ) {
+				return false;
+			}
+			// A complete small file parses outright; a truncated prefix will not,
+			// so fall back to looking for the required member near the top.
+			$decoded = json_decode( $head, true );
+			if ( is_array( $decoded ) ) {
+				return isset( $decoded['asset'] );
+			}
+			return (bool) preg_match( '/^\s*\{/', $head ) && false !== strpos( $head, '"asset"' );
+		}
+
+		/**
 		 * Size ceiling for one file of this type.
 		 *
 		 * @param string $mime Resolved MIME type.
 		 * @return int
 		 */
 		private static function max_bytes_for_mime( $mime ) {
-			return self::is_video_mime( $mime ) ? self::MAX_VIDEO_BYTES : self::MAX_FILE_BYTES;
+			if ( self::is_video_mime( $mime ) ) {
+				return self::MAX_VIDEO_BYTES;
+			}
+			if ( self::is_model_mime( $mime ) ) {
+				return self::MAX_MODEL_BYTES;
+			}
+			return self::MAX_FILE_BYTES;
 		}
 
 		/**
@@ -182,6 +252,44 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 		public static function allow_svg_upload_mimes( $mimes ) {
 			$mimes['svg'] = 'image/svg+xml';
 			return $mimes;
+		}
+
+		/**
+		 * upload_mimes filter: allow glTF for the duration of one sideload.
+		 * The magic-header check in looks_like_model() has already run by this
+		 * point; this only stops WordPress rejecting an extension it does not
+		 * know. Registered per sideload and removed again, so the site never
+		 * accepts models through the ordinary media uploader.
+		 *
+		 * @param array $mimes Ext => mime map.
+		 * @return array
+		 */
+		public static function allow_model_upload_mimes( $mimes ) {
+			$mimes['glb']  = 'model/gltf-binary';
+			$mimes['gltf'] = 'model/gltf+json';
+			return $mimes;
+		}
+
+		/**
+		 * wp_check_filetype_and_ext filter: assert ext/type for glTF, which
+		 * finfo reports as octet-stream (.glb) or as JSON/plain text (.gltf).
+		 *
+		 * @param array  $data     { ext, type, proper_filename }.
+		 * @param string $file     Full path to the file.
+		 * @param string $filename Original filename.
+		 * @return array
+		 */
+		public static function fix_model_filetype_check( $data, $file, $filename ) {
+			$ext = strtolower( (string) pathinfo( (string) $filename, PATHINFO_EXTENSION ) );
+			$map = array(
+				'glb'  => 'model/gltf-binary',
+				'gltf' => 'model/gltf+json',
+			);
+			if ( isset( $map[ $ext ] ) ) {
+				$data['ext']  = $ext;
+				$data['type'] = $map[ $ext ];
+			}
+			return $data;
 		}
 
 		/**
@@ -659,6 +767,8 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 				$filters = array( 'allow_font_upload_mimes', 'fix_font_filetype_check' );
 			} elseif ( 'image/svg+xml' === $mime ) {
 				$filters = array( 'allow_svg_upload_mimes', 'fix_svg_filetype_check' );
+			} elseif ( self::is_model_mime( $mime ) ) {
+				$filters = array( 'allow_model_upload_mimes', 'fix_model_filetype_check' );
 			}
 
 			if ( $filters ) {
@@ -782,6 +892,11 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 				} elseif ( self::is_font_mime( $ext_mime )
 					&& ( '' === $sniffed || self::is_font_mime( $sniffed ) || 'application/octet-stream' === $sniffed )
 				) {
+					$mime = $ext_mime;
+				} elseif ( self::is_model_mime( $ext_mime ) && self::looks_like_model( $tmp_path, $ext ) ) {
+					// Unlike video and fonts, the extension is not taken on trust
+					// here: the file has to carry the glTF magic (.glb) or the
+					// required `asset` member (.gltf) before the type is accepted.
 					$mime = $ext_mime;
 				}
 			}
@@ -986,6 +1101,8 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 				'woff'  => 'font/woff',
 				'ttf'   => 'font/ttf',
 				'otf'   => 'font/otf',
+				'glb'   => 'model/gltf-binary',
+				'gltf'  => 'model/gltf+json',
 			);
 			return isset( $map[ $ext ] ) ? $map[ $ext ] : '';
 		}

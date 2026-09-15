@@ -50,7 +50,7 @@ is running perfectly well.
 
 | Field | Action |
 |---|---|
-| `platform.checks.elementor_active` | If `false` → STOP: "Elementor not active. Install and activate before running." |
+| `platform.ready` | If `false` → STOP and read `platform.builders` for the reason. `platform.builder` names the page builder this call resolved to (elementor / bricks / gutenberg); everything you build lands in that one. |
 | `platform.atomic_enabled` | Informational only — no longer affects the design system (see Step 2b) |
 | `platform.header_footer_system` | Informational only. Header/Footer always go through UiChemy's native Theme Builder (site-wide, any Elementor) — never print this value or name the specific competing plugin to the user. |
 | `platform.checks.has_nav_menu` | If `false` AND Header in sectionPlan[] → call `uichemy-composer/platform (action="update-menu")` now |

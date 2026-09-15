@@ -610,6 +610,9 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 					'product'  => $woo
 						? 'WooCommerce is active, so the "product" provider resolves on a product.'
 						: 'WooCommerce is NOT active the "product" provider resolves to nothing on this site.',
+					'cart'     => $woo
+						? 'The "cart" provider resolves on EVERY page, not just the cart page, so a header badge or a mini-cart panel can be built in a header template. Where there is no customer session (the editor, REST, cron) it reports an empty cart rather than failing, so cart.count prints 0 and cart.is_empty is true. It is read-only: use cart_item.remove_url or an add-to-cart URL to change the cart, and the woo-add-to-cart tag for a product form.'
+						: 'WooCommerce is NOT active the "cart" provider is absent on this site.',
 				),
 			);
 		}
@@ -643,7 +646,7 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 				'menus'           => self::describe_menus(),
 				'woocommerce'     => self::describe_woocommerce(),
 				'binding_hints'   => array(
-					'build'    => 'Route header/footer work by platform.header_footer_system, and STOP if platform.checks.elementor_active is false.',
+					'build'    => 'platform.builder names the page builder every write lands in (elementor | bricks | gutenberg). STOP if platform.ready is false and say what platform.builders gives as the reason. platform.header_footer_system and checks.elementor_active describe ELEMENTOR only - never gate a build on them.',
 					'field'    => "{{ post.meta('metaKey') }} use the metaKey from fields.post / fields.product / fields.user / fields.term / fields.options, never a guessed name. An unknown name renders EMPTY rather than failing, so a guess yields a page that looks built and is blank.",
 					'tokens'   => 'For the BUILT-IN accessors (post.title, product.price, product.sale_percentage, …) call uichemy-composer/dynamic (action="list-fields"). This payload only carries the custom fields.',
 					'image'    => "{{ post.meta('metaKey').src('large') }} for an image field - but ONLY when the field stores an attachment ID or array. Check the entry's returnFormat: on an ACF image field set to \"Image URL\" this token renders EMPTY, because there is no id to derive a size from.",

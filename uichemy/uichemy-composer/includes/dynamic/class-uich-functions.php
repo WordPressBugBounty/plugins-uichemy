@@ -183,6 +183,21 @@ if ( ! class_exists( 'Uich_Functions' ) ) {
 			// `avoid_duplicates` is ours, not a WP_Query key â€” pull it out before the query runs.
 			$avoid = ! empty( $args['avoid_duplicates'] );
 			unset( $args['avoid_duplicates'] );
+			// `sticky` is ours as well. WP core only floats sticky posts on the main home
+			// query -- WP_Query::get_posts() guards that behind `$this->is_home` -- so a
+			// widget loop never inherits it. We resolve the IDs and do the float ourselves.
+			$sticky_mode = '';
+			if ( isset( $args['sticky'] ) ) {
+				$sticky_mode = ( true === $args['sticky'] ) ? 'first' : strtolower( trim( (string) $args['sticky'] ) );
+				if ( in_array( $sticky_mode, array( '1', 'true', 'yes' ), true ) ) {
+					$sticky_mode = 'first';
+				}
+			}
+			unset( $args['sticky'] );
+			$sticky_ids = array();
+			if ( in_array( $sticky_mode, array( 'first', 'only', 'exclude' ), true ) ) {
+				$sticky_ids = array_values( array_filter( array_map( 'intval', (array) get_option( 'sticky_posts' ) ) ) );
+			}
 
 			$args = wp_parse_args( $args, $defaults );
 			if ( $force_type ) {
@@ -223,31 +238,158 @@ if ( ! class_exists( 'Uich_Functions' ) ) {
 			}
 			$args = apply_filters( 'uich_dynamic_get_posts_args', $args );
 
-			$q     = new WP_Query( $args );
-			$items = array();
-			foreach ( $q->posts as $post ) {
-				if ( $avoid ) {
-					self::$seen_posts[] = (int) $post->ID;
+			// Sticky handling. `only` and `exclude` are plain arg tweaks. `first` needs a
+			// second query, because a single query cannot both float the sticky posts and
+			// leave everything else in the caller's own order.
+			$sticky_items = array();
+			$sticky_shown = 0;
+			$sticky_total = 0;
+			$eff_ppp      = (int) $args['posts_per_page'];
+			$run_main     = true;
+			if ( 'only' === $sticky_mode ) {
+				$args['post__in'] = self::sticky_in( $args, $sticky_ids );
+				if ( empty( $args['post__in'] ) ) {
+					return array();
 				}
-				// One factory decides which provider this build wraps a post in — Free's
-				// four-field one, or Pro's full/Product provider. Choosing the Product
-				// class here would mean naming a class Free does not ship.
-				$items[] = Uich_Dynamic::post_provider( $post );
+			} elseif ( 'exclude' === $sticky_mode && $sticky_ids ) {
+				$args['post__not_in'] = self::sticky_not_in( $args, $sticky_ids ); // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- Intentional; VIP-only advisory, acceptable for this query.
+			} elseif ( 'first' === $sticky_mode && $sticky_ids ) {
+				$first_batch = ( $paged <= 1 && ! $offset );
+				$s_in        = self::sticky_in( $args, $sticky_ids );
+				if ( $s_in ) {
+					// Cloned from $args on purpose: post_type, taxonomies, author and date
+					// filters must apply to the stickies too, or a sticky post from some
+					// other category walks into this loop.
+					$s_args                   = $args;
+					$s_args['post__in']       = $s_in;
+					$s_args['posts_per_page'] = self::MAX_ITEMS;
+					$s_args['no_found_rows']  = true;
+					unset( $s_args['paged'], $s_args['offset'] );
+					if ( ! $first_batch ) {
+						// Later pages only need the count, to know how many slots page 1 ate.
+						$s_args['fields'] = 'ids';
+					}
+					$sq           = new WP_Query( $s_args );
+					$sticky_total = count( $sq->posts );
+					$sticky_shown = $eff_ppp > 0 ? min( $sticky_total, $eff_ppp ) : $sticky_total;
+					if ( $first_batch ) {
+						foreach ( array_slice( $sq->posts, 0, $sticky_shown ) as $post ) {
+							if ( $avoid ) {
+								self::$seen_posts[] = (int) $post->ID;
+							}
+							$sticky_items[] = Uich_Dynamic::post_provider( $post );
+						}
+					}
+				}
+				// Ask for 6 and 6 comes back: the main query gives up one seat per sticky
+				// post already on screen. Page 1 is therefore shorter than a full page,
+				// which is why the pages after it walk by offset rather than by `paged`.
+				$page_one_cap = max( 0, $eff_ppp - $sticky_shown );
+				if ( $has_offset ) {
+					$args['offset'] = max( 0, $offset - $sticky_shown );
+					if ( $first_batch ) {
+						$args['posts_per_page'] = $page_one_cap;
+						$run_main               = $page_one_cap > 0;
+					}
+				} elseif ( $paged > 1 ) {
+					$args['offset'] = $page_one_cap + ( $paged - 2 ) * $eff_ppp;
+					unset( $args['paged'] );
+				} else {
+					$args['posts_per_page'] = $page_one_cap;
+					$run_main               = $page_one_cap > 0;
+				}
+				// Excluded on EVERY page, not just page 1. Otherwise a sticky post appears
+				// twice: floated at the top, and again in its natural date position.
+				$args['post__not_in'] = self::sticky_not_in( $args, $sticky_ids ); // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.PostNotIn_post__not_in -- Intentional; VIP-only advisory, acceptable for this query.
 			}
-			if ( $paged ) {
+
+			$q     = null;
+			$items = array();
+			if ( $run_main ) {
+				$q = new WP_Query( $args );
+				foreach ( $q->posts as $post ) {
+					if ( $avoid ) {
+						self::$seen_posts[] = (int) $post->ID;
+					}
+					// One factory decides which provider this build wraps a post in — Free's
+					// four-field one, or Pro's full/Product provider. Choosing the Product
+					// class here would mean naming a class Free does not ship.
+					$items[] = Uich_Dynamic::post_provider( $post );
+				}
+			}
+			if ( $sticky_items ) {
+				$items = array_merge( $sticky_items, $items );
+			}
+			if ( $q && $paged ) {
+				$total = (int) $q->max_num_pages;
+				if ( $sticky_shown ) {
+					// max_num_pages assumes every page holds posts_per_page rows, but page 1
+					// is short by the stickies sitting on it. Count it ourselves.
+					$rest  = max( 0, (int) $q->found_posts - max( 0, $eff_ppp - $sticky_shown ) );
+					$total = 1 + ( $eff_ppp > 0 ? (int) ceil( $rest / $eff_ppp ) : 0 );
+				}
 				self::$last_pagination = array(
-					'total'   => (int) $q->max_num_pages,
+					'total'   => $total,
+					'current' => $paged,
+				);
+			} elseif ( $paged ) {
+				// posts_per_page was fully spent on stickies, so there is no main query to
+				// read found_posts from -- reachable when a loop asks for fewer posts than
+				// it has stickies. Count the remainder separately, or the pager would report
+				// a single page and hide everything after this one.
+				$c_args                   = $args;
+				$c_args['fields']         = 'ids';
+				$c_args['posts_per_page'] = 1;
+				$c_args['paged']          = 1;
+				$c_args['no_found_rows']  = false;
+				unset( $c_args['offset'] );
+				$cq                    = new WP_Query( $c_args );
+				$rest                  = max( 0, (int) $cq->found_posts - max( 0, $eff_ppp - $sticky_shown ) );
+				self::$last_pagination = array(
+					'total'   => 1 + ( $eff_ppp > 0 ? (int) ceil( $rest / $eff_ppp ) : 0 ),
 					'current' => $paged,
 				);
 			}
 			if ( $has_offset ) {
 				self::$last_loop_more = array(
-					'found' => (int) $q->found_posts,
+					'found' => ( $q ? (int) $q->found_posts : 0 ) + $sticky_total,
 					'shown' => $offset + count( $items ),
 				);
 			}
 			wp_reset_postdata();
 			return $items;
+		}
+
+		/**
+		 * Sticky IDs narrowed to what the caller's own post__in / post__not_in allow.
+		 *
+		 * An existing post__not_in has to be folded in by hand: WP_Query builds the two
+		 * as an if/elseif (see WP_Query::get_posts()), so a post__in silently voids it.
+		 *
+		 * @param array $args WP_Query args as built so far.
+		 * @param int[] $ids  Sticky post IDs.
+		 * @return int[]
+		 */
+		private static function sticky_in( $args, $ids ) {
+			if ( ! empty( $args['post__in'] ) ) {
+				$ids = array_intersect( $ids, array_map( 'intval', (array) $args['post__in'] ) );
+			}
+			if ( ! empty( $args['post__not_in'] ) ) {
+				$ids = array_diff( $ids, array_map( 'intval', (array) $args['post__not_in'] ) );
+			}
+			return array_values( $ids );
+		}
+
+		/**
+		 * Add IDs to post__not_in without dropping whatever is already excluded.
+		 *
+		 * @param array $args WP_Query args as built so far.
+		 * @param int[] $ids  IDs to exclude.
+		 * @return int[]
+		 */
+		private static function sticky_not_in( $args, $ids ) {
+			$existing = isset( $args['post__not_in'] ) ? (array) $args['post__not_in'] : array();
+			return array_values( array_unique( array_merge( array_map( 'intval', $existing ), $ids ) ) );
 		}
 
 
