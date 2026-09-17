@@ -231,6 +231,13 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 				true
 			);
 
+			// The block's index.js localizes its UI through wp.i18n.__( …, 'uichemy' )
+			// (inserter title, "Edit Layers/Code/AI", slot labels, empty-state copy).
+			// Without this those strings load untranslated no matter what a language
+			// pack provides — WordPress only ships a script's JSON translations when
+			// the handle is registered for them. Mirrors the dashboard + Nexter scripts.
+			wp_set_script_translations( 'uichemy-composer-block', 'uichemy' );
+
 			// White-label block icon + title — parity with the Elementor widget's
 			// get_icon() / get_title(). The block's client registration (index.js)
 			// reads these to set its inserter / list-view / "Edit …" header icon and

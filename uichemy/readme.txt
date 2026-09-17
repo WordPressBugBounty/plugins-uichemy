@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.2.0
+Stable tag: 5.2.1
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -221,6 +221,11 @@ Yes. UiChemy supports multi-site connections directly from the plugin dashboard.
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.2.1 = 17 September 2026
+- Improved : Default settings for PIC options are now disabled in the frontend.
+- Fixed : Resolved string translation issues.
+- Fixed : Various bug fixes and improvements.
 
 = 5.2.0 = 15 September 2026
 - Added : AI website building now works in Bricks and Gutenberg as well as Elementor, including headers, footers and full page templates.

@@ -271,8 +271,8 @@ class UiChemy_SL_Plugin_Updater {
 
 			if ( empty( $version_info->download_link ) ) {
 				printf(
-					/**
-					 * translators: 
+					/*
+					 * translators:
 					 * %1$s: Plugin name
 					 * %2$s: Opening anchor tag
 					 * %3$s: Plugin version number
@@ -286,7 +286,7 @@ class UiChemy_SL_Plugin_Updater {
 				);
 			} else {
 				printf(
-					/**
+					/*
 					 * translators:
 					 * %1$s: Plugin name
 					 * %2$s: Opening link tag to plugin changelog

@@ -787,6 +787,7 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 			if ( $code < 200 || $code >= 300 ) {
 				return new WP_Error(
 					'uichemy_download_failed',
+					/* translators: %d is the HTTP status code returned by the download request. */
 					sprintf( __( 'UiChemy download failed (HTTP %d).', 'uichemy' ), $code ),
 					array( 'status' => 500 )
 				);

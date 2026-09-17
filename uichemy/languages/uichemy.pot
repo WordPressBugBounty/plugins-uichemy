@@ -9,7 +9,7 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-15T10:01:52+00:00\n"
+"POT-Creation-Date: 2026-09-17T10:22:18+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: uichemy\n"
@@ -321,20 +321,21 @@ msgstr ""
 msgid "UiChemy installation failed."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:790
+#. translators: %d is the HTTP status code returned by the download request.
+#: includes/new-dashboard/class-uich-nd-installer.php:791
 #, php-format
 msgid "UiChemy download failed (HTTP %d)."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:797
+#: includes/new-dashboard/class-uich-nd-installer.php:798
 msgid "UiChemy download returned an empty package."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:802
+#: includes/new-dashboard/class-uich-nd-installer.php:803
 msgid "Could not create a temporary file for the download."
 msgstr ""
 
-#: includes/new-dashboard/class-uich-nd-installer.php:807
+#: includes/new-dashboard/class-uich-nd-installer.php:808
 msgid "Could not write the downloaded package."
 msgstr ""
 
@@ -855,11 +856,13 @@ msgstr ""
 msgid "Sorry, you are not allowed to use this UiChemy feature."
 msgstr ""
 
+#. translators: %1$s: Plugin name %2$s: Opening anchor tag %3$s: Plugin version number %4$s: Closing anchor tag
 #: uichemy-composer/includes/admin/class-uichemy-sl-plugin-updater.php:281
 #, php-format
 msgid "There is a new version of %1$s available. %2$sView version %3$s details%4$s."
 msgstr ""
 
+#. translators: %1$s: Plugin name %2$s: Opening link tag to plugin changelog %3$s: Plugin version number %4$s: Closing link tag %5$s: Opening link tag to update plugin %6$s: Closing link tag
 #: uichemy-composer/includes/admin/class-uichemy-sl-plugin-updater.php:298
 #, php-format
 msgid "There is a new version of %1$s available. %2$sView version %3$s details%4$s or %5$supdate now%6$s."
@@ -968,21 +971,23 @@ msgstr ""
 msgid "Loading Composer…"
 msgstr ""
 
-#: uichemy-composer/includes/bricks/class-uichemy-bricks-composer.php:161
+#. translators: %d is the slot number.
+#: uichemy-composer/includes/bricks/class-uichemy-bricks-composer.php:162
 #, php-format
 msgid "Text %d"
 msgstr ""
 
-#: uichemy-composer/includes/bricks/class-uichemy-bricks-composer.php:172
+#. translators: %d is the slot number.
+#: uichemy-composer/includes/bricks/class-uichemy-bricks-composer.php:174
 #, php-format
 msgid "Image %d"
 msgstr ""
 
-#: uichemy-composer/includes/bricks/class-uichemy-bricks-composer.php:225
+#: uichemy-composer/includes/bricks/class-uichemy-bricks-composer.php:227
 msgid "Add HTML/CSS/JS via the UiChemy panel to render this element."
 msgstr ""
 
-#: uichemy-composer/includes/bricks/class-uichemy-bricks-composer.php:228
+#: uichemy-composer/includes/bricks/class-uichemy-bricks-composer.php:230
 msgid "Open Composer"
 msgstr ""
 
@@ -1553,6 +1558,96 @@ msgstr ""
 
 #: assets/js/index.js:1
 msgid "Override CSS"
+msgstr ""
+
+#: assets/js/uich-bricks-button.js:69
+#: assets/js/uich-bricks-button.js:132
+#: assets/js/uich-bricks-button.js:263
+#: assets/js/uich-elementor-button.js:133
+#: assets/js/uich-elementor-button.js:221
+#: assets/js/uich-elementor-button.js:345
+msgid "Upload Images to WordPress"
+msgstr ""
+
+#: assets/js/uich-bricks-button.js:89
+#: assets/js/uich-elementor-button.js:173
+msgid "Paste Content Here & Click the button below"
+msgstr ""
+
+#: assets/js/uich-bricks-button.js:151
+#: assets/js/uich-elementor-button.js:234
+msgid "Copy Now"
+msgstr ""
+
+#: assets/js/uich-bricks-button.js:187
+#: assets/js/uich-elementor-button.js:158
+msgid "Upload Media & Paste"
+msgstr ""
+
+#: assets/js/uich-bricks-button.js:224
+#: assets/js/uich-elementor-button.js:320
+msgid "Uploading Media..."
+msgstr ""
+
+#: assets/js/uich-bricks-button.js:247
+#: assets/js/uich-elementor-button.js:336
+msgid "Media Uploaded, Copying to Clipboard.."
+msgstr ""
+
+#: assets/js/uich-bricks-button.js:257
+#: assets/js/uich-elementor-button.js:341
+msgid "Copied Updated Content To Your Clipboard!"
+msgstr ""
+
+#: assets/js/uich-bricks-button.js:260
+#: assets/js/uich-elementor-button.js:343
+msgid "You can paste it with <b> CTRL/CMD + V </b> now"
+msgstr ""
+
+#: assets/js/uich-bricks-button.js:276
+#: assets/js/uich-elementor-button.js:354
+msgid "Failed while copying to your Clipboard"
+msgstr ""
+
+#: assets/js/uich-bricks-button.js:280
+#: assets/js/uich-bricks-button.js:284
+#: assets/js/uich-elementor-button.js:358
+#: assets/js/uich-elementor-button.js:362
+msgid "Failed to import media"
+msgstr ""
+
+#: assets/js/uich-copy-button.js:32
+#: assets/js/uich-copy-button.js:232
+msgid "Paste"
+msgstr ""
+
+#: assets/js/uich-copy-button.js:35
+msgid "Uploading..."
+msgstr ""
+
+#: assets/js/uich-copy-button.js:67
+#: assets/js/uich-elementor-button.js:98
+#: new-dashboard/build/index.js:13
+#: new-dashboard/build/index.js:14
+#: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:309
+#: new-dashboard/src/uichemy-webpage/components/Modal.jsx:54
+msgid "Close"
+msgstr ""
+
+#: assets/js/uich-copy-button.js:89
+msgid "For Mac:"
+msgstr ""
+
+#: assets/js/uich-copy-button.js:97
+msgid "For Windows:"
+msgstr ""
+
+#: assets/js/uich-copy-button.js:104
+msgid "To paste with images from"
+msgstr ""
+
+#: assets/js/uich-elementor-button.js:164
+msgid "Paste your copied content below and we'll upload its images to your WordPress media library."
 msgstr ""
 
 #: new-dashboard/build/index.js:1
@@ -3763,13 +3858,6 @@ msgstr[1] ""
 #: new-dashboard/build/index.js:13
 #: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1998
 msgid "Import"
-msgstr ""
-
-#: new-dashboard/build/index.js:13
-#: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:309
-#: new-dashboard/src/uichemy-webpage/components/Modal.jsx:54
-msgid "Close"
 msgstr ""
 
 #: new-dashboard/build/index.js:13

@@ -81,6 +81,7 @@ if ( ! class_exists( 'Uich_Enqueue' ) ) {
 
 				// Editor's Image Uploads script
 				wp_enqueue_script( 'uich-editor-js', UICH_URL . 'assets/js/uich-copy-button.js', $scripts_dep, '1.0.0', false );
+				wp_set_script_translations( 'uich-editor-js', 'uichemy' );
 				wp_localize_script(
 					'uich-editor-js',
 					'uichemy_ajax_object',
@@ -139,12 +140,13 @@ if ( ! class_exists( 'Uich_Enqueue' ) ) {
 			wp_register_script(
 				'uich-elementor-button-js',
 				UICH_URL . 'assets/js/uich-elementor-button.js',
-				array( 'jquery' ),
+				array( 'jquery', 'wp-i18n' ),
 				UICH_VERSION,
 				true,
 			);
 
 			wp_enqueue_script( 'uich-elementor-button-js' );
+				wp_set_script_translations( 'uich-elementor-button-js', 'uichemy' );
 
 			wp_localize_script(
 				'uich-elementor-button-js',
@@ -180,13 +182,14 @@ if ( ! class_exists( 'Uich_Enqueue' ) ) {
 			wp_register_script(
 				'uich-bricks-button-js',
 				UICH_URL . 'assets/js/uich-bricks-button.js',
-				array( 'jquery' ),
+				array( 'jquery', 'wp-i18n' ),
 				UICH_VERSION,
 				true,
 			);
 
 			if ( ! empty( $_GET['bricks'] ) && 'run' === $_GET['bricks'] ) {  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin page/asset check; no state change.
 				wp_enqueue_script( 'uich-bricks-button-js' );
+				wp_set_script_translations( 'uich-bricks-button-js', 'uichemy' );
 
 				wp_localize_script(
 					'uich-bricks-button-js',

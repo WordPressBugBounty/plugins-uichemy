@@ -158,6 +158,7 @@ class UiChemy_Bricks_Composer extends \Bricks\Element {
 			$this->controls[ "uichemy_slot_{$i}_text" ] = array(
 				'tab'      => 'content',
 				'group'    => 'uichemy',
+				/* translators: %d is the slot number. */
 				'label'    => sprintf( esc_html__( 'Text %d', 'uichemy' ), $i + 1 ),
 				'type'     => 'text',
 				'required' => array(
@@ -169,6 +170,7 @@ class UiChemy_Bricks_Composer extends \Bricks\Element {
 			$this->controls[ "uichemy_slot_{$i}_image" ] = array(
 				'tab'      => 'content',
 				'group'    => 'uichemy',
+				/* translators: %d is the slot number. */
 				'label'    => sprintf( esc_html__( 'Image %d', 'uichemy' ), $i + 1 ),
 				'type'     => 'image',
 				'required' => array(

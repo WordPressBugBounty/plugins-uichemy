@@ -1,3 +1,9 @@
+// UiChemy paste button (Elementor). User-facing strings go through wp.i18n so a
+// language pack can translate them; `wp-i18n` is declared as a script dependency
+// and the plugin registers this handle for translations. The fallback returns the
+// text unchanged if i18n is somehow unavailable, so the button never breaks.
+var __ = ( window.wp && window.wp.i18n && window.wp.i18n.__ ) ? window.wp.i18n.__ : function ( s ) { return s; };
+
 // Create modal overlay
 document.addEventListener('DOMContentLoaded', () => {
     const link = document.createElement("link");
@@ -89,7 +95,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Close button — sits just outside the tray's top-right corner --------
         const closeIcon = document.createElement("button");
         closeIcon.type = "button";
-        closeIcon.setAttribute("aria-label", "Close");
+        closeIcon.setAttribute("aria-label", __("Close", "uichemy"));
         closeIcon.innerHTML = `
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M5.63623 5.63672L18.3642 18.3646" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -124,7 +130,7 @@ document.addEventListener('DOMContentLoaded', () => {
             modal.style.display = "none";
             modalOverlay.style.display = "none";
             inputField.value = "";
-            submitBtn.innerText = "Upload Images to WordPress";
+            submitBtn.innerText = __("Upload Images to WordPress", "uichemy");
             if (currentAjaxCall) currentAjaxCall.abort();
             timeoutIDs.forEach(id => clearTimeout(id));
         };
@@ -149,13 +155,13 @@ document.addEventListener('DOMContentLoaded', () => {
         header.style.cssText = "display:flex; flex-direction:column; align-items:flex-start; text-align:left; gap:4px;";
 
         const title = document.createElement("h2");
-        title.innerText = "Upload Media & Paste";
+        title.innerText = __("Upload Media & Paste", "uichemy");
         // DS .title: --uc-text-xl (1.25rem) / --uc-weight-semibold (folded to 500).
         title.style.cssText = `margin:0; font-family:${UC.fontSans}; font-size:1.25rem; font-weight:500; line-height:1.2; color:${UC.textStrong};`;
         header.appendChild(title);
 
         const desc = document.createElement("p");
-        desc.innerText = "Paste your copied content below and we'll upload its images to your WordPress media library.";
+        desc.innerText = __("Paste your copied content below and we'll upload its images to your WordPress media library.", "uichemy");
         desc.style.cssText = `margin:0; font-family:${UC.fontSans}; font-size:0.875rem; line-height:1.4; color:${UC.textMuted};`;
         header.appendChild(desc);
 
@@ -164,7 +170,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Body: textarea -------------------------------------------------------
         const inputField = document.createElement("textarea");
         inputField.className = "uich-ds-textarea";
-        inputField.placeholder = "Paste Content Here & Click the button below";
+        inputField.placeholder = __("Paste Content Here & Click the button below", "uichemy");
         inputField.style.cssText = `
             width: 100%;
             height: 104px;
@@ -212,7 +218,7 @@ document.addEventListener('DOMContentLoaded', () => {
         `;
         const submitBtn = document.createElement("button");
         submitBtn.type = "button";
-        submitBtn.innerText = "Upload Images to WordPress";
+        submitBtn.innerText = __("Upload Images to WordPress", "uichemy");
         submitBtn.style.cssText = submitButtonStyles;
         submitBtn.addEventListener('mouseenter', () => {
             submitBtn.style.backgroundImage = `linear-gradient(rgba(255,255,255,0.12), rgba(255,255,255,0.12)), ${UC.sheen}`;
@@ -225,7 +231,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Copy Now button (optional, hidden) -----------------------------------
         const copyNowBtn = document.createElement("button");
         copyNowBtn.type = "button";
-        copyNowBtn.innerText = "Copy Now";
+        copyNowBtn.innerText = __("Copy Now", "uichemy");
         copyNowBtn.style.cssText = `
             width: 100%;
             box-sizing: border-box;
@@ -311,7 +317,7 @@ document.addEventListener('DOMContentLoaded', () => {
         submitBtn.addEventListener("click", () => {
             const inputData = inputField.value;
             if (inputData) {
-                submitBtn.innerText = "Uploading Media...";
+                submitBtn.innerText = __("Uploading Media...", "uichemy");
                 currentAjaxCall = jQuery.ajax({
                     url: uich_ajax_object_data.ajax_url,
                     method: "POST",
@@ -327,16 +333,16 @@ document.addEventListener('DOMContentLoaded', () => {
                         if (contentToCopy) {
                             const formattedContent = JSON.stringify(contentToCopy, null, 2);
                             inputField.innerText = formattedContent;
-                            submitBtn.innerText = "Media Uploaded, Copying to Clipboard..";
+                            submitBtn.innerText = __("Media Uploaded, Copying to Clipboard..", "uichemy");
                             submitBtn.setAttribute("data-clipboard-text", formattedContent);
                             navigator.clipboard.writeText(formattedContent)
                                 .then(() => {
                                     const t1 = setTimeout(() => {
-                                        submitBtn.innerText = "Copied Updated Content To Your Clipboard!";
+                                        submitBtn.innerText = __("Copied Updated Content To Your Clipboard!", "uichemy");
                                         const t2 = setTimeout(() => {
-                                            submitBtn.innerHTML = "You can paste it with <b> CTRL/CMD + V </b> now";
+                                            submitBtn.innerHTML = __("You can paste it with <b> CTRL/CMD + V </b> now", "uichemy");
                                             const t3 = setTimeout(() => {
-                                                submitBtn.innerText = "Upload Images to WordPress";
+                                                submitBtn.innerText = __("Upload Images to WordPress", "uichemy");
                                             }, 45000);
                                             timeoutIDs.push(t3);
                                         }, 4000);
@@ -345,15 +351,15 @@ document.addEventListener('DOMContentLoaded', () => {
                                     timeoutIDs.push(t1);
                                 })
                                 .catch((err) => {
-                                    submitBtn.innerText = "Failed while copying to your Clipboard";
+                                    submitBtn.innerText = __("Failed while copying to your Clipboard", "uichemy");
                                 });
                         }
                     } else {
-                        submitBtn.innerText = "Failed to import media";
+                        submitBtn.innerText = __("Failed to import media", "uichemy");
                     }
                 })
                 .fail(function(jqXHR, textStatus, errorThrown) {
-                        submitBtn.innerText = "Failed to import media";
+                        submitBtn.innerText = __("Failed to import media", "uichemy");
                 });
             }
         });
