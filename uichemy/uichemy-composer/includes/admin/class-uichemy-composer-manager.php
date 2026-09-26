@@ -7258,45 +7258,11 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @return string HTML tag or empty string.
 		 */
 		private static function build_dep_asset_tag( $dep ) {
-			$url   = isset( $dep['url'] ) ? trim( (string) $dep['url'] ) : '';
-			$ver   = isset( $dep['v'] ) ? trim( (string) $dep['v'] ) : '';
-			$kind  = isset( $dep['kind'] ) ? (string) $dep['kind'] : 'script';
-			$attrs = isset( $dep['attrs'] ) && is_array( $dep['attrs'] ) ? $dep['attrs'] : array();
-
-			if ( '' === $url ) {
-				return '';
+			// Same shared builder as the widget and the renderer — see the note there.
+			if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
+				return UiChemy_Composer_Renderer::build_asset_tag_html( $dep );
 			}
-
-			if ( '' !== $ver && '—' !== $ver ) {
-				$url = str_replace( '{v}', $ver, $url );
-			} else {
-				$url = str_replace( '{v}', '', $url );
-			}
-
-			$url = esc_url( $url );
-
-			if ( 'style' === $kind ) {
-				$media = '';
-				if ( in_array( 'print', $attrs, true ) ) {
-					$media = ' media="print"';
-				} elseif ( in_array( 'all', $attrs, true ) ) {
-					$media = ' media="all"';
-				}
-				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- User-configured third-party dependency injected inline at a builder-defined position; URL escaped via esc_url(); not eligible for the standard enqueue pipeline.
-				return '<link rel="stylesheet" href="' . $url . '"' . $media . ' />';
-			} else {
-				$extra = '';
-				if ( in_array( 'defer', $attrs, true ) ) {
-					$extra .= ' defer';
-				} elseif ( in_array( 'async', $attrs, true ) ) {
-					$extra .= ' async';
-				}
-				if ( in_array( 'module', $attrs, true ) ) {
-					$extra .= ' type="module"';
-				}
-				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- User-configured third-party dependency injected inline at a builder-defined position; URL escaped via esc_url(); not eligible for the standard enqueue pipeline.
-				return '<script src="' . $url . '"' . $extra . '></script>';
-			}
+			return '';
 		}
 
 		/**

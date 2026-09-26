@@ -746,46 +746,14 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 		 * @return string HTML tag or empty string.
 		 */
 		private function build_asset_tag_html( $dep ) {
-			$url   = isset( $dep['url'] ) ? trim( (string) $dep['url'] ) : '';
-			$ver   = isset( $dep['v'] ) ? trim( (string) $dep['v'] ) : '';
-			$kind  = isset( $dep['kind'] ) ? (string) $dep['kind'] : 'script';
-			$attrs = isset( $dep['attrs'] ) && is_array( $dep['attrs'] ) ? $dep['attrs'] : array();
-
-			if ( '' === $url ) {
-				return '';
+			// Delegates to the renderer's builder, which every scope now shares.
+			// This was one of three copies of the same logic: a dep shape added in
+			// one place produced an old-style tag through the others, and "Run with"
+			// was exactly such a shape.
+			if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
+				return UiChemy_Composer_Renderer::build_asset_tag_html( $dep );
 			}
-
-			// Replace {v} placeholder.
-			if ( '' !== $ver && '—' !== $ver ) {
-				$url = str_replace( '{v}', $ver, $url );
-			} else {
-				$url = str_replace( '{v}', '', $url );
-			}
-
-			$url = esc_url( $url );
-
-			if ( 'style' === $kind ) {
-				$media = '';
-				if ( in_array( 'print', $attrs, true ) ) {
-					$media = ' media="print"';
-				} elseif ( in_array( 'all', $attrs, true ) ) {
-					$media = ' media="all"';
-				}
-				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedStylesheet -- User-configured third-party dependency injected inline at a builder-defined position; URL escaped via esc_url(); not eligible for the standard enqueue pipeline.
-				return '<link rel="stylesheet" href="' . $url . '"' . $media . ' />';
-			} else {
-				$extra = '';
-				if ( in_array( 'defer', $attrs, true ) ) {
-					$extra .= ' defer';
-				} elseif ( in_array( 'async', $attrs, true ) ) {
-					$extra .= ' async';
-				}
-				if ( in_array( 'module', $attrs, true ) ) {
-					$extra .= ' type="module"';
-				}
-				// phpcs:ignore WordPress.WP.EnqueuedResources.NonEnqueuedScript -- User-configured third-party dependency injected inline at a builder-defined position; URL escaped via esc_url(); not eligible for the standard enqueue pipeline.
-				return '<script src="' . $url . '"' . $extra . '></script>';
-			}
+			return '';
 		}
 
 		/**
@@ -3415,6 +3383,16 @@ JS;
 				);
 			}
 
+			// A dependency bound with "Run with" ships as an inert carrier, which
+			// needs the runtime that watches its element. Checked against the
+			// markup AND both dep blocks: a bound asset can sit in page- or
+			// site-scope code while the element it names lives in this widget, so
+			// neither half alone is a reliable signal.
+			if ( ! $is_editor && class_exists( 'UiChemy_RunWith' )
+				&& UiChemy_RunWith::output_needs_runtime( $output . $deps_before . $deps_after ) ) {
+				UiChemy_RunWith::enqueue_runtime();
+			}
+
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			if ( '' !== $deps_before ) echo $deps_before;
 
@@ -3445,6 +3423,19 @@ JS;
 				|| false !== strpos( $output, 'uich-loop-pagination"' )
 				|| false !== strpos( $output, 'data-uich-filter' ) ) ) {
 				self::enqueue_loop_runtime();
+			}
+
+			// Icon fonts (Font Awesome, eicons, dashicons) paint their glyph through
+			// a font-family the icon plugin sets on the element. The stored raw_css
+			// below starts with `*{font-family:... !important}` on every converted
+			// section, and the generated design system adds a second wildcard
+			// !important rule — either one takes that family away and the browser
+			// paints a blank box instead of the icon. This hands it back. Shared
+			// with UiChemy_Composer_Renderer (the Gutenberg/Bricks path) so it is
+			// defined once and printed once per request, whichever path runs first.
+			if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static, self-authored <style> with no dynamic input.
+				echo \UiChemy_Composer_Renderer::icon_font_guard();
 			}
 
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- raw_html markup is kses-filtered on save for users without unfiltered_html (Elementor pipeline); admins author it raw, mirroring core's Custom HTML block.

@@ -510,11 +510,53 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 				);
 			}
 
+			// Roles come from the live site, not a fixed list: a membership or
+			// LMS plugin adds its own, and gating a template to "Subscriber" only
+			// is the least interesting case.
+			$roles = array();
+			if ( function_exists( 'wp_roles' ) ) {
+				foreach ( wp_roles()->get_names() as $slug => $name ) {
+					$roles[] = array(
+						'slug'  => $slug,
+						'label' => translate_user_role( $name ),
+					);
+				}
+			}
+
+			// Monday-first and ISO-numbered (1..7) so the stored value matches
+			// what current_time('N') returns at evaluation time.
+			$days = array();
+			foreach ( array( 1 => 'Monday', 2 => 'Tuesday', 3 => 'Wednesday', 4 => 'Thursday', 5 => 'Friday', 6 => 'Saturday', 7 => 'Sunday' ) as $n => $label ) {
+				$days[] = array(
+					'slug'  => (string) $n,
+					'label' => $label,
+				);
+			}
+
 			wp_send_json_success(
 				array(
 					'postTypes'  => $post_types,
 					'taxonomies' => $taxonomies,
 					'authors'    => $authors,
+					'roles'      => $roles,
+					'days'       => $days,
+					'osList'     => array(
+						array( 'slug' => 'windows', 'label' => 'Windows' ),
+						array( 'slug' => 'macos', 'label' => 'macOS' ),
+						array( 'slug' => 'linux', 'label' => 'Linux' ),
+						array( 'slug' => 'android', 'label' => 'Android' ),
+						array( 'slug' => 'ios', 'label' => 'iOS' ),
+					),
+					'browsers'   => array(
+						array( 'slug' => 'chrome', 'label' => 'Chrome' ),
+						array( 'slug' => 'firefox', 'label' => 'Firefox' ),
+						array( 'slug' => 'safari', 'label' => 'Safari' ),
+						array( 'slug' => 'edge', 'label' => 'Edge' ),
+						array( 'slug' => 'opera', 'label' => 'Opera' ),
+					),
+					// Only offered when the store exists; a shop rule on a
+					// store-less site can never match.
+					'hasWoo'     => class_exists( 'WooCommerce' ),
 				)
 			);
 		}

@@ -781,9 +781,16 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 				if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->frontend ) ) {
 					\Elementor\Plugin::$instance->frontend->enqueue_styles();
 				}
-				// Header/footer may be Gutenberg-authored — ensure block styles too.
+				// Header/footer may be Gutenberg-authored — ensure block styles too,
+				// including the per-template stylesheet its block addon generates
+				// (which is keyed to the template's own post id, not the query's).
 				if ( class_exists( 'UiChemy_Template_Render' ) ) {
 					UiChemy_Template_Render::enqueue_block_styles();
+					foreach ( array( 'header', 'footer' ) as $location ) {
+						UiChemy_Template_Render::enqueue_block_addon_css(
+							UiChemy_Template_Resolver::resolve( $location )
+						);
+					}
 				}
 			}
 		}

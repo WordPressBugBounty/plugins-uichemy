@@ -209,6 +209,7 @@ class UiChemy {
 		require_once UICHEMY_PATH . 'includes/dynamic/class-uich-dd-catalog.php';
 		require_once UICHEMY_PATH . 'includes/dynamic/class-uich-dd-enqueue.php';
 		require_once UICHEMY_PATH . 'includes/dynamic/dynamic-tags/class-uich-dynamic-tags.php';
+		require_once UICHEMY_PATH . 'includes/perf/class-uichemy-runwith.php';
 		require_once UICHEMY_PATH . 'includes/forms/class-uich-forms-db.php';
 		require_once UICHEMY_PATH . 'includes/forms/class-uich-forms.php';
 		// Serves form submissions to the React dashboard's "Form Submissions" screen.

@@ -18,6 +18,81 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 	class UiChemy_Composer_Renderer {
 
 		/**
+		 * Whether the icon-font guard has already been emitted on this request.
+		 *
+		 * @var bool
+		 */
+		private static $icon_font_guard_printed = false;
+
+		/**
+		 * Reset the per-request icon-font guard flag.
+		 *
+		 * Only needed by tests and by long-running processes that render several
+		 * independent documents in one PHP request.
+		 *
+		 * @return void
+		 */
+		public static function reset_icon_font_guard() {
+			self::$icon_font_guard_printed = false;
+		}
+
+		/**
+		 * Icon fonts render a glyph through `content:"\fXXX"` plus a `font-family`
+		 * pointing at the icon font. Any rule that forces a different family onto
+		 * the icon element wins that glyph away and the browser paints a blank
+		 * tofu box instead — the icon looks deleted while the markup is intact.
+		 *
+		 * Two rules UiChemy itself emits do exactly that, and both carry
+		 * `!important`, so nothing in the icon plugin's own stylesheet can win:
+		 *
+		 *   1. Converted section CSS starts with `*{font-family:... !important}`,
+		 *      which this renderer scopes to `.elementor-element-<id> *`.
+		 *   2. The generated design system adds
+		 *      `[data-uichemy-root] :is([class*="uichemy-body-"], …) *
+		 *       { font-family: var(--uc-body-family) !important; }`.
+		 *
+		 * This guard hands the family back to elements that carry an icon-font
+		 * class. `html body` costs nothing visually and lifts specificity to
+		 * (0,2,2), above both rules above, so the guard wins wherever it is
+		 * printed. Font matching is per glyph, so listing several families is
+		 * safe: the browser walks the list until one actually has the codepoint,
+		 * and the icon plugin's own `font-weight` (900 for solid, 400 for regular
+		 * and brands) still picks the right face within a family.
+		 *
+		 * Scoped to `[data-uichemy-root]` so nothing outside UiChemy content is
+		 * touched.
+		 *
+		 * Public and static because there are two independent render paths: the
+		 * Gutenberg block, Bricks element and section-ops all go through
+		 * render() below, while the Elementor widget
+		 * (Uich_UiChemy_Composer_Widget) has its own render() and its own CSS
+		 * scoping. Both call this, and the shared flag keeps it to one copy per
+		 * request no matter which path runs first.
+		 *
+		 * @return string A <style> tag, or '' if already emitted on this request.
+		 */
+		public static function icon_font_guard() {
+			if ( self::$icon_font_guard_printed ) {
+				return '';
+			}
+			self::$icon_font_guard_printed = true;
+
+			$css = 'html body [data-uichemy-root] [class*="fa-"],'
+				. 'html body [data-uichemy-root] [class*="fa-"]::before,'
+				. 'html body [data-uichemy-root] [class*="fa-"]::after'
+				. '{font-family:"Font Awesome 6 Free","Font Awesome 6 Brands","Font Awesome 6 Pro",'
+				. '"Font Awesome 5 Free","Font Awesome 5 Brands","Font Awesome 5 Pro","FontAwesome" !important}'
+				. 'html body [data-uichemy-root] [class*="eicon-"],'
+				. 'html body [data-uichemy-root] [class*="eicon-"]::before'
+				. '{font-family:"eicons" !important}'
+				. 'html body [data-uichemy-root] [class*="dashicons"],'
+				. 'html body [data-uichemy-root] [class*="dashicons"]::before'
+				. '{font-family:"dashicons" !important}';
+
+			return '<style id="uich-icon-font-guard">' . $css . '</style>';
+		}
+
+		/**
 		 * Convenience static entry point.
 		 *
 		 * @param array  $settings       Composer settings map (same shape as the Elementor widget settings).
@@ -83,6 +158,13 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			$path = UICHEMY_PATH . 'assets/js/uichemy-loop.js';
 			$ver  = file_exists( $path ) ? filemtime( $path ) : ( defined( 'UICHEMY_VERSION' ) ? UICHEMY_VERSION : false );
 			wp_enqueue_script( 'uichemy-loop', UICHEMY_URL . 'assets/js/uichemy-loop.js', array(), $ver, true );
+
+			// The skeleton, pagination and load-more styling this runtime draws with.
+			// It rides with the runtime rather than with the page, so a page without
+			// a loop never pays for it.
+			if ( class_exists( 'Uich_DD_Enqueue' ) ) {
+				Uich_DD_Enqueue::enqueue_public();
+			}
 		}
 
 		/**
@@ -282,7 +364,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 				$is_editor
 			);
 
-			$out = '';
+			$out = self::icon_font_guard();
 
 			if ( '' !== $deps_before ) {
 				$out .= $deps_before;
@@ -359,7 +441,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 		 * @param array $dep Dep entry from raw_deps_* JSON.
 		 * @return string HTML tag or empty string.
 		 */
-		private function build_asset_tag_html( $dep ) {
+		public static function build_asset_tag_html( $dep ) {
 			$url   = isset( $dep['url'] ) ? trim( (string) $dep['url'] ) : '';
 			$ver   = isset( $dep['v'] ) ? trim( (string) $dep['v'] ) : '';
 			$kind  = isset( $dep['kind'] ) ? (string) $dep['kind'] : 'script';
@@ -377,6 +459,13 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			}
 
 			$url = esc_url( $url );
+
+			// Bound to an element ("Run with"): emit the inert carrier instead of a
+			// real tag, so the browser does not fetch it until that element is near.
+			$run_with = isset( $dep['runWith'] ) ? trim( (string) $dep['runWith'] ) : '';
+			if ( '' !== $run_with && class_exists( 'UiChemy_RunWith' ) ) {
+				return UiChemy_RunWith::carrier_tag( $run_with, $kind, $url, $attrs );
+			}
 
 			if ( 'style' === $kind ) {
 				$media = '';

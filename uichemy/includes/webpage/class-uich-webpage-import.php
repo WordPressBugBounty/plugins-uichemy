@@ -3324,6 +3324,11 @@ class Uich_Webpage_Import {
 			)
 		);
 
+		// Before anything is created: a store import needs WooCommerce present,
+		// or every product template is refused further down.
+		$this->update_job_progress( array( 'phase' => 'install_plugins', 'label' => 'WooCommerce' ) );
+		$this->ensure_woocommerce_for_import( $files );
+
 		// Store all replacement data (pages, navbar, footer, etc.) for use in page content.
 		update_option( self::OPTION_REPLACEMENT_DATA, $files, false );
 
@@ -4904,6 +4909,69 @@ class Uich_Webpage_Import {
 	 *              (e.g. header/footer with no Nexter Extension installed) so the
 	 *              caller can surface it instead of only ever returning `success: true`.
 	 */
+	/**
+	 * Canonical Theme-Builder filename for a downloaded file, or '' when the file
+	 * is not a theme template.
+	 *
+	 * The API names these files after whatever the designer called the page, so
+	 * the same context arrives as "Product Single.json" on one project and
+	 * "Product details.json" on the next. Matching the canonical spelling only
+	 * meant an unrecognised name fell through to the regular-page branch and the
+	 * design was imported as a stray page instead of the template it belongs to.
+	 *
+	 * Only wordings that unambiguously NAME a template context are aliased.
+	 * "Shop Home" and "Product listing" deliberately are not: they arrive in the
+	 * page buckets and are real pages on plenty of projects.
+	 *
+	 * @param string $filename Downloaded filename (any case).
+	 * @return string Canonical key into the theme-builder template map, or ''.
+	 */
+	protected function theme_builder_template_key( $filename ) {
+		$stem = strtolower( (string) $filename );
+		$stem = (string) preg_replace( '/\.json$/', '', $stem );
+		$stem = trim( (string) preg_replace( '/\s+/', ' ', str_replace( array( '-', '_' ), ' ', $stem ) ) );
+		if ( '' === $stem ) {
+			return '';
+		}
+
+		$aliases = array(
+			'product single'      => 'product details.json',
+			'single product'      => 'product details.json',
+			'product detail'      => 'product details.json',
+			'product details'     => 'product details.json',
+			'product detail page' => 'product details.json',
+			'product single page' => 'product details.json',
+			'product page'        => 'product details.json',
+			'search result'       => 'search results page.json',
+			'search results'      => 'search results page.json',
+			'search result page'  => 'search results page.json',
+			'search page'         => 'search results page.json',
+			'blog detail'         => 'blog detail page.json',
+			'blog single'         => 'blog detail page.json',
+			'single post'         => 'blog detail page.json',
+			'post single'         => 'blog detail page.json',
+			'post detail'         => 'blog detail page.json',
+			'author'              => 'author page.json',
+			'author archive'      => 'author page.json',
+			'category'            => 'category page.json',
+			'category archive'    => 'category page.json',
+			'tag'                 => 'tag featured page.json',
+			'tag page'            => 'tag featured page.json',
+			'tag archive'         => 'tag featured page.json',
+			'tag featured'        => 'tag featured page.json',
+			'product archive'     => 'shop.json',
+			'products archive'    => 'shop.json',
+			'shop archive'        => 'shop.json',
+			'shop landing'        => 'shop home.json',
+			'shop home page'      => 'shop home.json',
+			'product grid'        => 'product listing.json',
+			'products listing'    => 'product listing.json',
+			'product list'        => 'product listing.json',
+		);
+
+		return isset( $aliases[ $stem ] ) ? $aliases[ $stem ] : $stem . '.json';
+	}
+
 	protected function create_pages_from_import( array $files, array $import_meta ) {
 		$created  = array();
 		$warnings = array();
@@ -4936,6 +5004,29 @@ class Uich_Webpage_Import {
 				'el_type'      => 'archive',
 				'archive_rule' => 'post_tag',
 			),
+			'shop.json'                => array(
+				'title'        => 'Shop',
+				'el_type'      => 'product_archive',
+				'archive_rule' => '',
+			),
+			// A store export usually ships the /shop/ landing and the product grid
+			// as two designs. Both are product listings, so both are this type —
+			// scoped by their rule so they do not fight over the same slot.
+			'shop home.json'           => array(
+				'title'        => 'Shop',
+				'el_type'      => 'product_archive',
+				'archive_rule' => 'woo_shop',
+			),
+			'product listing.json'     => array(
+				'title'        => 'Product Listing',
+				'el_type'      => 'product_archive',
+				'archive_rule' => 'product_taxonomy',
+			),
+			'product details.json'     => array(
+				'title'        => 'Product Details',
+				'el_type'      => 'single_product',
+				'archive_rule' => '',
+			),
 			'category page.json'       => array(
 				'title'        => 'Category Page',
 				'el_type'      => 'archive',
@@ -4943,12 +5034,36 @@ class Uich_Webpage_Import {
 			),
 		);
 
+		/*
+		 * Resolve which downloaded files are theme templates BEFORE anything else
+		 * looks at the file list, so the same answer drives both the skip list and
+		 * the import loop below. Keyed by the real filename, because the API names
+		 * the file after the designer's page ("Product Single.json"), not after the
+		 * context it represents.
+		 */
+		$theme_builder_files = array();
+		foreach ( array_keys( $files ) as $filename ) {
+			$key = $this->theme_builder_template_key( $filename );
+			if ( '' === $key || ! isset( $theme_builder_templates[ $key ] ) ) {
+				continue;
+			}
+			$config = $theme_builder_templates[ $key ];
+			// Title the template after the file when the designer named it something
+			// of their own, rather than renaming their "Product Single" to ours.
+			$stem = (string) preg_replace( '/\.json$/i', '', $filename );
+			if ( '' !== $stem && strtolower( $stem . '.json' ) !== $key ) {
+				$config['title'] = $stem;
+			}
+			$theme_builder_files[ $filename ] = $config;
+		}
+
 		// Files that are never a regular page. Used both when meta carries no pages
 		// list at all and when it carries a partial one (API may use a capital first
 		// letter: Home.json), so the comparison is always lowercased.
 		$skip_files = array_merge(
 			array( 'globals.json', 'uichemy-globals.json', 'navbar.json', 'footer.json', 'blog-post-content.json' ),
 			array_keys( $theme_builder_templates ),
+			array_map( 'strtolower', array_keys( $theme_builder_files ) ),
 			$this->get_elementor_template_filenames_from_meta( $import_meta )
 		);
 		if ( empty( $pages ) ) {
@@ -5063,11 +5178,7 @@ class Uich_Webpage_Import {
 
 		// Import Blog Detail Page, Author Page, Search Results Page, Tag Featured Page, Category Page
 		// as Nexter Theme Builder (nxt_builder) templates with appropriate display conditions.
-		foreach ( $theme_builder_templates as $fn_lower => $config ) {
-			$found = $this->find_file_key( $files, $fn_lower );
-			if ( null === $found ) {
-				continue;
-			}
+		foreach ( $theme_builder_files as $found => $config ) {
 			$post_id = $this->create_or_update_theme_builder_template(
 				$config['title'],
 				$files[ $found ],
@@ -5489,7 +5600,7 @@ class Uich_Webpage_Import {
 		// disable other systems' templates or render into theme hooks — doing so
 		// left the site with no header/footer at all on themes UiChemy does not
 		// claim a location on.
-		return $this->create_or_update_uichemy_template(
+		$post_id = $this->create_or_update_uichemy_template(
 			$title,
 			$data,
 			$section_type,
@@ -5497,6 +5608,8 @@ class Uich_Webpage_Import {
 			$el_type,
 			$archive_rule
 		);
+
+		return $post_id;
 	}
 
 	/**
@@ -5720,6 +5833,71 @@ class Uich_Webpage_Import {
 			return array( 'type' => 'error_404', 'placement' => array() );
 		}
 
+		/*
+		 * WooCommerce contexts. These are separate UiChemy types rather than a
+		 * single/archive with a product placement, because WooCommerce renders
+		 * them through its own template hierarchy — a `single` template scoped to
+		 * the product post type never gets a chance to run.
+		 *
+		 * Gated on WooCommerce being active: creating a product template on a
+		 * store-less site puts a type in the Theme Builder that can never
+		 * resolve, and the caller reports the skip instead of failing the import.
+		 */
+		if ( 'single_product' === $el || 'product' === $el ) {
+			if ( ! class_exists( 'WooCommerce' ) ) {
+				return new WP_Error(
+					'IMPORT_UICHEMY_TMPL_NO_WOO',
+					__( 'Skipped the product template. It needs WooCommerce, which is not active.', 'uichemy' )
+				);
+			}
+			return array( 'type' => 'single_product', 'placement' => array( 'post_type' => 'product' ) );
+		}
+
+		if ( 'product_archive' === $el || 'shop' === $el ) {
+			if ( ! class_exists( 'WooCommerce' ) ) {
+				return new WP_Error(
+					'IMPORT_UICHEMY_TMPL_NO_WOO',
+					__( 'Skipped the shop template. It needs WooCommerce, which is not active.', 'uichemy' )
+				);
+			}
+			/*
+			 * UiChemy renders this type on
+			 * `is_shop() || is_product_taxonomy() || is_post_type_archive('product')`
+			 * (UiChemy_Template_Render::is_woo_product_archive), so one template
+			 * with no conditions covers the shop, every product category and every
+			 * product tag — which is what an export carrying a single shop design
+			 * still gets.
+			 *
+			 * An export that ships TWO listings (a "Shop Home" landing plus a
+			 * "Product listing" grid) needs them scoped, or the second would just
+			 * compete for the same slot and the newest would take the whole store.
+			 * The resolver narrows product_archive by conditions, so each says
+			 * where it belongs.
+			 */
+			if ( 'woo_shop' === $rule ) {
+				return array(
+					'type'      => 'product_archive',
+					'placement' => array(
+						'rules' => array(
+							array( 'match' => 'include', 'type' => 'woo_shop' ),
+						),
+					),
+				);
+			}
+			if ( 'product_taxonomy' === $rule ) {
+				$tax_rules = array();
+				foreach ( array( 'product_cat', 'product_tag' ) as $tax ) {
+					if ( taxonomy_exists( $tax ) ) {
+						$tax_rules[] = array( 'match' => 'include', 'type' => 'taxonomy', 'taxonomy' => $tax, 'term' => 0 );
+					}
+				}
+				if ( ! empty( $tax_rules ) ) {
+					return array( 'type' => 'product_archive', 'placement' => array( 'rules' => $tax_rules ) );
+				}
+			}
+			return array( 'type' => 'product_archive', 'placement' => array() );
+		}
+
 		if ( 'single' === $el ) {
 			// Nexter's "singular" covers posts; UiChemy wants the post type.
 			return array( 'type' => 'single', 'placement' => array( 'post_type' => 'post' ) );
@@ -5802,6 +5980,31 @@ class Uich_Webpage_Import {
 		 * those walk an Elementor element array that does not exist here.
 		 */
 		if ( $this->is_gutenberg_replacement_data( $data ) ) {
+			/*
+			 * The raw export is NOT post_content. It has to go through the same
+			 * block pipeline every other Gutenberg import uses — unicode-escape
+			 * repair (\u002d\u002dtpgb-C16 → var(--tpgb-C16)), duplicate-slide
+			 * removal, tpgb class/block_id syncing, globalTypo remapping and remote
+			 * image resolving. Handing the store the raw markup instead is what
+			 * left imported headers unstyled: the CSS variables were still sitting
+			 * in the attributes as literal "u002du002d…" text.
+			 */
+			$post_content = $this->process_gutenberg_markup_to_post_content( $data['markup'] );
+			if ( is_wp_error( $post_content ) ) {
+				return $post_content;
+			}
+
+			// Menus live in the header; point them at the pages this import created.
+			if ( 'header' === $type ) {
+				$nav_map = array_merge(
+					$this->build_nav_menu_filterlabel_permalink_map_from_wp_pages(),
+					$this->build_nav_menu_filterlabel_permalink_map_from_created( $created_pages_for_nav_links )
+				);
+				if ( ! empty( $nav_map ) ) {
+					$post_content = $this->apply_gutenberg_nav_item_menu_links( $post_content, $nav_map );
+				}
+			}
+
 			// Same re-import behaviour as the Elementor path: an earlier template
 			// with this title+type is drafted, not left active alongside the new one.
 			$existing_block = $this->find_uichemy_template_by_title_and_type( $title, $type );
@@ -5818,7 +6021,7 @@ class Uich_Webpage_Import {
 					'status'    => 'active',
 					'editor'    => 'gutenberg',
 					'placement' => $placement,
-					'content'   => (string) $data['markup'],
+					'content'   => $post_content,
 					'source'    => 'uichemy-webpage',
 				)
 			);
@@ -5832,13 +6035,38 @@ class Uich_Webpage_Import {
 					__( 'UiChemy Theme Builder did not handle the template creation request.', 'uichemy' )
 				);
 			}
+			$block_post_id = 0;
 			if ( is_array( $result ) && ! empty( $result['post_id'] ) ) {
-				return (int) $result['post_id'];
+				$block_post_id = (int) $result['post_id'];
+			} elseif ( is_numeric( $result ) ) {
+				$block_post_id = (int) $result;
 			}
-			return is_numeric( $result ) ? (int) $result : new WP_Error(
-				'IMPORT_UICHEMY_TMPL_FAILED',
-				__( 'UiChemy Theme Builder returned no template id.', 'uichemy' )
-			);
+			if ( ! $block_post_id ) {
+				return new WP_Error(
+					'IMPORT_UICHEMY_TMPL_FAILED',
+					__( 'UiChemy Theme Builder returned no template id.', 'uichemy' )
+				);
+			}
+
+			/*
+			 * TPGB keys a block's generated CSS by the post id embedded in its
+			 * block_id ("f0a6_47193"), and writes it to plus-css-<post id>.css.
+			 * Left with the exporting site's id, the stylesheet is never generated
+			 * for this post and the template renders unstyled, so the ids are
+			 * restamped once the real post id exists and the stale file dropped.
+			 */
+			$restamped = $this->apply_unique_tpgb_block_ids( $post_content, $block_post_id );
+			if ( is_string( $restamped ) && '' !== $restamped && $restamped !== $post_content ) {
+				wp_update_post(
+					array(
+						'ID'           => $block_post_id,
+						'post_content' => wp_slash( $restamped ),
+					)
+				);
+			}
+			$this->invalidate_tpgb_block_css_file( $block_post_id );
+
+			return $block_post_id;
 		}
 
 		$content = $this->extract_elementor_content( $data );
@@ -6536,6 +6764,94 @@ class Uich_Webpage_Import {
 	 * @param string $original_slug Plugin slug on wp.org, e.g. 'elementor'.
 	 * @return bool True if active (or activated), false otherwise.
 	 */
+	/**
+	 * Install and activate WooCommerce when this import actually needs a store.
+	 *
+	 * Decided from the downloaded FILES, not from `requiredPlugins`: the API
+	 * returns that as null for the Woo projects checked, so a store import would
+	 * otherwise arrive with every product template skipped ("needs WooCommerce,
+	 * which is not active") and the shop pages wired to nothing.
+	 *
+	 * Order matters — this runs in the fetch phase, before any template is
+	 * created. map_import_template_to_uichemy() refuses single_product /
+	 * product_archive while WooCommerce is inactive, and that refusal is exactly
+	 * what shows up as a skipped Shop and Product Details.
+	 *
+	 * Non-fatal: a store that cannot be installed still leaves a usable site, so
+	 * the import proceeds and the failure is reported instead.
+	 *
+	 * @param array $files Map of stored filename => decoded file.
+	 * @return array { needed: bool, status: string }
+	 */
+	protected function ensure_woocommerce_for_import( array $files ) {
+		$needs = false;
+		foreach ( array_keys( $files ) as $filename ) {
+			$lower = strtolower( (string) $filename );
+			// The file is named after the designer's page, so "Product Single.json"
+			// is the same WooCommerce context as "product details.json" — matching
+			// only the canonical spellings left the store uninstalled and the
+			// product template skipped for "needs WooCommerce".
+			$key = $this->theme_builder_template_key( $filename );
+			if ( in_array( $lower, array( 'shop.json', 'product details.json', 'cart.json', 'my cart.json', 'checkout.json' ), true )
+				|| in_array( $key, array( 'shop.json', 'shop home.json', 'product listing.json', 'product details.json' ), true ) ) {
+				$needs = true;
+				break;
+			}
+		}
+
+		if ( ! $needs ) {
+			return array( 'needed' => false, 'status' => 'not-needed' );
+		}
+		if ( class_exists( 'WooCommerce' ) ) {
+			return array( 'needed' => true, 'status' => 'already-active' );
+		}
+
+		// Activation also runs WooCommerce's own setup, which creates its
+		// Shop/Cart/Checkout/My Account pages and registers the product
+		// taxonomies and endpoints. Both are wanted: the page settings step
+		// later repoints those options at the imported designs.
+		$ok = $this->ensure_plugin_active_generic( 'woocommerce/woocommerce.php', 'woocommerce' );
+
+		if ( ! $ok ) {
+			$api = new Uich_Webpage_Api();
+			$api->report_error(
+				'IMPORT_WOOCOMMERCE_INSTALL_FAILED',
+				array(
+					'message' => 'This project needs WooCommerce and it could not be installed or activated; product templates will be skipped.',
+					'source'  => 'uichemy-webpage',
+					'level'   => 'warning',
+				)
+			);
+			return array( 'needed' => true, 'status' => 'failed' );
+		}
+
+		$this->disable_woocommerce_coming_soon();
+
+		return array( 'needed' => true, 'status' => 'installed' );
+	}
+
+	/**
+	 * Take a freshly installed store out of WooCommerce's "Coming soon" mode.
+	 *
+	 * WooCommerce ships `woocommerce_coming_soon = yes` (with
+	 * `woocommerce_store_pages_only = yes`) on a new install, and its
+	 * ComingSoonRequestHandler claims `template_include` at priority 10 — ahead of
+	 * every theme-builder integration. The shop and product templates this import
+	 * just created then never render: the URLs answer 200 with WooCommerce's
+	 * placeholder, which reads as "the template did not import" rather than "the
+	 * store is hidden".
+	 *
+	 * Only called after WE activated WooCommerce, so a site that deliberately
+	 * turned coming-soon on keeps it.
+	 *
+	 * @return void
+	 */
+	protected function disable_woocommerce_coming_soon() {
+		if ( 'yes' === get_option( 'woocommerce_coming_soon' ) ) {
+			update_option( 'woocommerce_coming_soon', 'no' );
+		}
+	}
+
 	protected function ensure_plugin_active_generic( $plugin_slug, $original_slug ) {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
@@ -7181,6 +7497,12 @@ class Uich_Webpage_Import {
 				continue;
 			}
 
+			// WooCommerce, when globals.json names it.
+			if ( false !== strpos( $name_lower, 'woocommerce' ) || false !== strpos( $name_lower, 'woo commerce' ) ) {
+				$this->ensure_plugin_active_generic( 'woocommerce/woocommerce.php', 'woocommerce' );
+				continue;
+			}
+
 			// Elementor.
 			if ( false !== strpos( $name_lower, 'elementor' ) && false === strpos( $name_lower, 'plus' ) ) {
 				$this->ensure_plugin_active_generic(
@@ -7221,6 +7543,19 @@ class Uich_Webpage_Import {
 					'plugin_slug'   => 'the-plus-addons-for-block-editor/the-plus-addons-for-block-editor.php',
 					'original_slug' => 'the-plus-addons-for-block-editor',
 					'icon'          => 'theplus',
+				);
+				continue;
+			}
+
+			// WooCommerce — named here when the API fills requiredPlugins at all;
+			// ensure_woocommerce_for_import() covers the common case where it does not.
+			if ( false !== strpos( $name_lower, 'woocommerce' ) || false !== strpos( $name_lower, 'woo commerce' ) ) {
+				$result[] = array(
+					'name'          => 'woocommerce',
+					'label'         => 'WooCommerce',
+					'plugin_slug'   => 'woocommerce/woocommerce.php',
+					'original_slug' => 'woocommerce',
+					'icon'          => 'woocommerce',
 				);
 				continue;
 			}
@@ -11896,9 +12231,239 @@ class Uich_Webpage_Import {
 	 * @param WP_REST_Request $request Request (body unused).
 	 * @return WP_REST_Response
 	 */
+	/**
+	 * Title (normalised) => the WooCommerce option that should point at it.
+	 *
+	 * Importing a designed Checkout is only half the job: WooCommerce routes by
+	 * stored page ID, so until the option is repointed the designed page sits
+	 * there unused while /checkout/ still renders whatever was configured
+	 * before. Every alias a generator has produced for the same page is listed,
+	 * because the design names these pages editorially ("My Cart", "Profile")
+	 * and an unmatched title silently leaves the option stale.
+	 *
+	 * @return array<string,string>
+	 */
+	protected function woocommerce_page_option_map() {
+		return array(
+			'shop'                 => 'woocommerce_shop_page_id',
+			'shop page'            => 'woocommerce_shop_page_id',
+			'store'                => 'woocommerce_shop_page_id',
+			'cart'                 => 'woocommerce_cart_page_id',
+			'my cart'              => 'woocommerce_cart_page_id',
+			'shopping cart'        => 'woocommerce_cart_page_id',
+			'checkout'             => 'woocommerce_checkout_page_id',
+			'check out'            => 'woocommerce_checkout_page_id',
+			'my account'           => 'woocommerce_myaccount_page_id',
+			'account'              => 'woocommerce_myaccount_page_id',
+			'profile'              => 'woocommerce_myaccount_page_id',
+			'my profile'           => 'woocommerce_myaccount_page_id',
+			'terms'                => 'woocommerce_terms_page_id',
+			'terms and conditions' => 'woocommerce_terms_page_id',
+			'terms & conditions'   => 'woocommerce_terms_page_id',
+		);
+	}
+
+	/**
+	 * Point WooCommerce at the pages this import just created.
+	 *
+	 * Runs at the very end of an import (import-cleanup), because the pages are
+	 * created one REST call at a time and only then is the full set known.
+	 * Resolves against the live database rather than a passed-in list for the
+	 * same reason.
+	 *
+	 * No-op without WooCommerce: the options would be written for a plugin that
+	 * may never arrive, and a later WooCommerce install runs its own page setup
+	 * which would then find ours and skip creating its defaults — leaving a
+	 * store wired to pages whose design assumed a different flow.
+	 *
+	 * @return array Report of what was set / skipped.
+	 */
+	protected function apply_woocommerce_page_settings() {
+		$report = array( 'set' => array(), 'skipped' => array() );
+
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			$report['skipped'][] = 'woocommerce-inactive';
+			return $report;
+		}
+
+		$map   = $this->woocommerce_page_option_map();
+		$pages = get_posts(
+			array(
+				'post_type'              => 'page',
+				'post_status'            => 'publish',
+				'posts_per_page'         => -1,
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			)
+		);
+
+		// Newest first, so a re-import's page wins over an identically titled
+		// leftover from an earlier run.
+		$by_option = array();
+		foreach ( $pages as $page ) {
+			$key = $this->normalize_nav_menu_filterlabel( $page->post_title );
+			if ( ! isset( $map[ $key ] ) ) {
+				continue;
+			}
+			$option = $map[ $key ];
+			if ( ! isset( $by_option[ $option ] ) || $page->ID > $by_option[ $option ]->ID ) {
+				$by_option[ $option ] = $page;
+			}
+		}
+
+		foreach ( $by_option as $option => $page ) {
+			$current = (int) get_option( $option );
+			if ( $current === (int) $page->ID ) {
+				$report['skipped'][] = $option . ' (already correct)';
+				continue;
+			}
+			update_option( $option, (int) $page->ID );
+			$report['set'][ $option ] = array( 'post_id' => (int) $page->ID, 'title' => $page->post_title );
+		}
+
+		$repaired = $this->repair_missing_woocommerce_pages( $map );
+		if ( ! empty( $repaired ) ) {
+			$report['repaired'] = $repaired;
+		}
+
+		// Permalinks embed the shop page slug, so a changed shop page leaves
+		// every product URL pointing at the old base until rules are rebuilt.
+		if ( isset( $report['set']['woocommerce_shop_page_id'] ) || in_array( 'woocommerce_shop_page_id', $repaired, true ) ) {
+			flush_rewrite_rules( false );
+		}
+
+		return $report;
+	}
+
+	/**
+	 * Re-create any WooCommerce page whose option points at a post that is gone.
+	 *
+	 * An import that resets existing content, or a re-import over an earlier run,
+	 * can delete the page a WooCommerce option still names. The option keeps the
+	 * stale ID, WooCommerce's installer sees a value and does not recreate the
+	 * page, and /shop/ answers 404 while the product archive template resolves
+	 * perfectly — which reads as the template not importing.
+	 *
+	 * WooCommerce's own installer does the work, so the pages come back with the
+	 * slugs, content and shortcodes it expects.
+	 *
+	 * @param array $map Title => option map (used for the option list only).
+	 * @return string[] Option names that were repaired.
+	 */
+	protected function repair_missing_woocommerce_pages( array $map ) {
+		$dangling = array();
+		foreach ( array_unique( array_values( $map ) ) as $option ) {
+			$page_id = (int) get_option( $option );
+			if ( ! $page_id ) {
+				continue; // Never set is WooCommerce's business, not ours.
+			}
+			$page = get_post( $page_id );
+			if ( ! $page || 'page' !== $page->post_type || 'trash' === $page->post_status ) {
+				delete_option( $option );
+				$dangling[] = $option;
+			}
+		}
+
+		if ( empty( $dangling ) || ! class_exists( 'WC_Install' ) || ! is_callable( array( 'WC_Install', 'create_pages' ) ) ) {
+			return $dangling;
+		}
+
+		WC_Install::create_pages();
+
+		return $dangling;
+	}
+
+	/**
+	 * Make sure the store ships with one working coupon.
+	 *
+	 * Creates it only when the code is absent. An existing coupon is left
+	 * exactly as it is — a store owner may already have set their own amount,
+	 * expiry or restrictions on that code, and an import silently rewriting
+	 * them would be a far worse failure than a duplicate-looking skip.
+	 *
+	 * @return array Report.
+	 */
+	protected function ensure_woocommerce_coupon() {
+		$code   = apply_filters( 'uichemy/import/default_coupon_code', 'WELCOME10' );
+		$amount = apply_filters( 'uichemy/import/default_coupon_amount', '10' );
+		$type   = apply_filters( 'uichemy/import/default_coupon_type', 'percent' );
+
+		if ( ! class_exists( 'WooCommerce' ) || ! post_type_exists( 'shop_coupon' ) ) {
+			return array( 'status' => 'skipped', 'reason' => 'woocommerce-inactive' );
+		}
+
+		// Coupon codes are stored lowercased as the post title; wc_get_coupon_id_by_code
+		// is the supported lookup and also catches codes created outside the CPT.
+		$existing = 0;
+		if ( function_exists( 'wc_get_coupon_id_by_code' ) ) {
+			$existing = (int) wc_get_coupon_id_by_code( $code );
+		}
+		if ( ! $existing ) {
+			$found = get_posts(
+				array(
+					'post_type'      => 'shop_coupon',
+					'post_status'    => 'any',
+					'posts_per_page' => 1,
+					'title'          => strtolower( $code ),
+					'fields'         => 'ids',
+				)
+			);
+			$existing = ! empty( $found ) ? (int) $found[0] : 0;
+		}
+
+		if ( $existing ) {
+			return array( 'status' => 'exists', 'code' => $code, 'post_id' => $existing );
+		}
+
+		$coupon_id = wp_insert_post(
+			array(
+				'post_title'   => strtolower( $code ),
+				'post_content' => '',
+				'post_excerpt' => sprintf(
+					/* translators: %s: discount amount, already formatted. */
+					__( '%s%% off your order', 'uichemy' ),
+					$amount
+				),
+				'post_status'  => 'publish',
+				'post_author'  => get_current_user_id() ? get_current_user_id() : 1,
+				'post_type'    => 'shop_coupon',
+			),
+			true
+		);
+
+		if ( is_wp_error( $coupon_id ) || ! $coupon_id ) {
+			return array( 'status' => 'failed', 'code' => $code );
+		}
+
+		update_post_meta( $coupon_id, 'discount_type', $type );
+		update_post_meta( $coupon_id, 'coupon_amount', $amount );
+		update_post_meta( $coupon_id, 'individual_use', 'no' );
+		update_post_meta( $coupon_id, 'usage_limit', '' );
+		update_post_meta( $coupon_id, 'expiry_date', '' );
+		update_post_meta( $coupon_id, 'free_shipping', 'no' );
+		update_post_meta( $coupon_id, 'exclude_sale_items', 'no' );
+
+		// A coupon nobody can enter is not a coupon.
+		if ( 'yes' !== get_option( 'woocommerce_enable_coupons' ) ) {
+			update_option( 'woocommerce_enable_coupons', 'yes' );
+		}
+
+		return array( 'status' => 'created', 'code' => $code, 'post_id' => (int) $coupon_id );
+	}
+
 	public function rest_import_cleanup( WP_REST_Request $request ) {
+		// WooCommerce wiring happens here rather than per page: the pages arrive
+		// one REST call at a time, so this is the first point at which the whole
+		// set exists. Both helpers no-op without WooCommerce.
+		$woo = array(
+			'pages'  => $this->apply_woocommerce_page_settings(),
+			'coupon' => $this->ensure_woocommerce_coupon(),
+		);
+
 		$this->cleanup_stale_import_options();
-		return rest_ensure_response( array( 'success' => true ) );
+
+		return rest_ensure_response( array( 'success' => true, 'woocommerce' => $woo ) );
 	}
 
 	/**

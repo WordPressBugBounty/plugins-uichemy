@@ -2,21 +2,21 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: UiChemy — Figma Converter for Elementor, Gutenberg and Bricks 5.2.0\n"
+"Project-Id-Version: UiChemy - Convert Figma, Prompts and AI Builds to Elementor, Gutenberg and Bricks 5.2.2\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/uichemy\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-09-17T10:22:18+00:00\n"
+"POT-Creation-Date: 2026-09-25T09:46:04+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: uichemy\n"
 
 #. Plugin Name of the plugin
 #: uichemy.php
-msgid "UiChemy — Figma Converter for Elementor, Gutenberg and Bricks"
+msgid "UiChemy - Convert Figma, Prompts and AI Builds to Elementor, Gutenberg and Bricks"
 msgstr ""
 
 #. Plugin URI of the plugin
@@ -530,9 +530,9 @@ msgid "downloadUrls array is required."
 msgstr ""
 
 #: includes/webpage/class-uich-webpage-import.php:1689
-#: includes/webpage/class-uich-webpage-import.php:3490
-#: includes/webpage/class-uich-webpage-import.php:11469
-#: includes/webpage/class-uich-webpage-import.php:11516
+#: includes/webpage/class-uich-webpage-import.php:3495
+#: includes/webpage/class-uich-webpage-import.php:11739
+#: includes/webpage/class-uich-webpage-import.php:11786
 msgid "No replacement data found. Run fetch-replacement-json first."
 msgstr ""
 
@@ -595,189 +595,203 @@ msgid "No valid download URLs were found to fetch. downloadUrls must contain at 
 msgstr ""
 
 #. translators: 1: template title, 2: error message
-#: includes/webpage/class-uich-webpage-import.php:5057
-#: includes/webpage/class-uich-webpage-import.php:5086
+#: includes/webpage/class-uich-webpage-import.php:5154
+#: includes/webpage/class-uich-webpage-import.php:5179
 #, php-format
 msgid "%1$s skipped: %2$s"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5423
+#: includes/webpage/class-uich-webpage-import.php:5516
 msgid "Invalid page JSON structure."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5451
+#: includes/webpage/class-uich-webpage-import.php:5544
 msgid "Could not encode page data."
 msgstr ""
 
+#: includes/webpage/class-uich-webpage-import.php:5832
+msgid "Skipped the product template. It needs WooCommerce, which is not active."
+msgstr ""
+
+#: includes/webpage/class-uich-webpage-import.php:5842
+msgid "Skipped the shop template. It needs WooCommerce, which is not active."
+msgstr ""
+
 #. translators: 1: section type, 2: elementor-style type
-#: includes/webpage/class-uich-webpage-import.php:5755
+#: includes/webpage/class-uich-webpage-import.php:5892
 #, php-format
 msgid "Could not map this template to a UiChemy type (section \"%1$s\", type \"%2$s\")."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5766
+#: includes/webpage/class-uich-webpage-import.php:5903
 msgid "UiChemy Theme Builder is not active. Install and activate the UiChemy plugin."
 msgstr ""
 
 #. translators: %s: template type, e.g. archive
-#: includes/webpage/class-uich-webpage-import.php:5792
+#: includes/webpage/class-uich-webpage-import.php:5929
 #, php-format
 msgid "Skipped \"%s\" templates. They need UiChemy Pro."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5832
-#: includes/webpage/class-uich-webpage-import.php:5946
+#: includes/webpage/class-uich-webpage-import.php:5994
+#: includes/webpage/class-uich-webpage-import.php:6133
 msgid "UiChemy Theme Builder did not handle the template creation request."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5840
+#: includes/webpage/class-uich-webpage-import.php:6006
 msgid "UiChemy Theme Builder returned no template id."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5846
-#: includes/webpage/class-uich-webpage-import.php:6212
-#: includes/webpage/class-uich-webpage-import.php:6307
-#: includes/webpage/class-uich-webpage-import.php:12264
-#: includes/webpage/class-uich-webpage-import.php:12387
+#: includes/webpage/class-uich-webpage-import.php:6033
+#: includes/webpage/class-uich-webpage-import.php:6399
+#: includes/webpage/class-uich-webpage-import.php:6494
+#: includes/webpage/class-uich-webpage-import.php:12721
+#: includes/webpage/class-uich-webpage-import.php:12844
 msgid "Invalid template JSON structure."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:5960
+#: includes/webpage/class-uich-webpage-import.php:6147
 msgid "UiChemy Theme Builder returned no template ID."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:6268
-#: includes/webpage/class-uich-webpage-import.php:6355
-#: includes/webpage/class-uich-webpage-import.php:12357
-#: includes/webpage/class-uich-webpage-import.php:12437
+#: includes/webpage/class-uich-webpage-import.php:6455
+#: includes/webpage/class-uich-webpage-import.php:6542
+#: includes/webpage/class-uich-webpage-import.php:12814
+#: includes/webpage/class-uich-webpage-import.php:12894
 msgid "Could not encode template data."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:6292
-#: includes/webpage/class-uich-webpage-import.php:12237
+#: includes/webpage/class-uich-webpage-import.php:6479
+#: includes/webpage/class-uich-webpage-import.php:12694
 msgid "Nexter Extension is not active."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:7424
+#: includes/webpage/class-uich-webpage-import.php:7694
 msgid "UiChemy Import"
 msgstr ""
 
 #. translators: %d: gradient slot
-#: includes/webpage/class-uich-webpage-import.php:9148
+#: includes/webpage/class-uich-webpage-import.php:9418
 #, php-format
 msgid "Gradient %d"
 msgstr ""
 
 #. translators: %d: shadow slot
-#: includes/webpage/class-uich-webpage-import.php:9327
+#: includes/webpage/class-uich-webpage-import.php:9597
 #, php-format
 msgid "Shadow %d"
 msgstr ""
 
 #. translators: %d: spacing slot
-#: includes/webpage/class-uich-webpage-import.php:9391
+#: includes/webpage/class-uich-webpage-import.php:9661
 #, php-format
 msgid "Spacing %d"
 msgstr ""
 
 #. translators: %d: border slot
-#: includes/webpage/class-uich-webpage-import.php:9437
+#: includes/webpage/class-uich-webpage-import.php:9707
 #, php-format
 msgid "Border %d"
 msgstr ""
 
 #. translators: %d: radius slot
-#: includes/webpage/class-uich-webpage-import.php:9503
+#: includes/webpage/class-uich-webpage-import.php:9773
 #, php-format
 msgid "Radius %d"
 msgstr ""
 
 #. translators: %d: animation slot
-#: includes/webpage/class-uich-webpage-import.php:9569
+#: includes/webpage/class-uich-webpage-import.php:9839
 #, php-format
 msgid "Animation %d"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:10121
+#: includes/webpage/class-uich-webpage-import.php:10391
 msgid "Typography"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11318
+#: includes/webpage/class-uich-webpage-import.php:11588
 msgid "No widgets found."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11327
+#: includes/webpage/class-uich-webpage-import.php:11597
 msgid "The Plus Addons for Elementor is not active."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11344
+#: includes/webpage/class-uich-webpage-import.php:11614
 msgid "Widgets enabled successfully."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11357
+#: includes/webpage/class-uich-webpage-import.php:11627
 msgid "Failed to enable widgets."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11419
+#: includes/webpage/class-uich-webpage-import.php:11689
 msgid "Blocks enabled successfully."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11431
+#: includes/webpage/class-uich-webpage-import.php:11701
 msgid "Failed to enable blocks."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11464
-#: includes/webpage/class-uich-webpage-import.php:11509
+#: includes/webpage/class-uich-webpage-import.php:11734
+#: includes/webpage/class-uich-webpage-import.php:11779
 msgid "pageName is required."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11656
+#: includes/webpage/class-uich-webpage-import.php:11926
 msgid "Skipped Cookie Policy. It needs Nexter Extension, which this import no longer installs."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11690
+#: includes/webpage/class-uich-webpage-import.php:11960
 msgid "Invalid template JSON for Elementor."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:11719
+#: includes/webpage/class-uich-webpage-import.php:11989
 msgid "Invalid theme template JSON for Elementor."
 msgstr ""
 
 #. translators: %s: page type identifier.
-#: includes/webpage/class-uich-webpage-import.php:11817
+#: includes/webpage/class-uich-webpage-import.php:12087
 #, php-format
 msgid "Unknown page type: %s"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:12382
+#. translators: %s: discount amount, already formatted.
+#: includes/webpage/class-uich-webpage-import.php:12317
+#, php-format
+msgid "%s%% off your order"
+msgstr ""
+
+#: includes/webpage/class-uich-webpage-import.php:12839
 msgid "Elementor is not active."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:12645
+#: includes/webpage/class-uich-webpage-import.php:13102
 msgid "Could not create blog posts."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:12758
+#: includes/webpage/class-uich-webpage-import.php:13215
 msgid "Blog post title is required."
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:13300
+#: includes/webpage/class-uich-webpage-import.php:13757
 msgid "No Gutenberg extras to enable"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:13523
+#: includes/webpage/class-uich-webpage-import.php:13980
 msgid "The Plus Addons for Elementor not active"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:13524
+#: includes/webpage/class-uich-webpage-import.php:13981
 msgid "TPAE plugin is required to enable widgets"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:13531
+#: includes/webpage/class-uich-webpage-import.php:13988
 msgid "No widgets to enable"
 msgstr ""
 
-#: includes/webpage/class-uich-webpage-import.php:13560
+#: includes/webpage/class-uich-webpage-import.php:14017
 msgid "No Nexter blocks to enable"
 msgstr ""
 
@@ -1028,7 +1042,7 @@ msgid "Page"
 msgstr ""
 
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:50
-#: uichemy-composer/includes/forms/class-uich-forms.php:437
+#: uichemy-composer/includes/forms/class-uich-forms.php:443
 msgid "Email"
 msgstr ""
 
@@ -1072,7 +1086,7 @@ msgstr ""
 #: new-dashboard/build/index.js:10
 #: new-dashboard/build/index.js:14
 #: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:197
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1652
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1732
 msgid "All"
 msgstr ""
 
@@ -1175,7 +1189,7 @@ msgstr ""
 
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:610
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:362
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:436
 msgid "Failed"
 msgstr ""
 
@@ -1188,7 +1202,7 @@ msgid "Form:"
 msgstr ""
 
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:634
-#: uichemy-composer/includes/forms/class-uich-forms.php:523
+#: uichemy-composer/includes/forms/class-uich-forms.php:529
 msgid "Page:"
 msgstr ""
 
@@ -1231,8 +1245,8 @@ msgstr ""
 #: new-dashboard/build/index.js:13
 #: new-dashboard/build/index.js:14
 #: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:157
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:281
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:86
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:386
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:90
 msgid "Cancel"
 msgstr ""
 
@@ -1262,44 +1276,44 @@ msgstr ""
 msgid "Forms are disabled."
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:290
+#: uichemy-composer/includes/forms/class-uich-forms.php:296
 msgid "Security check failed. Please refresh and try again."
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:301
+#: uichemy-composer/includes/forms/class-uich-forms.php:307
 msgid "Thank you!"
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:316
+#: uichemy-composer/includes/forms/class-uich-forms.php:322
 msgid "Too many submissions. Please wait a moment and try again."
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:359
+#: uichemy-composer/includes/forms/class-uich-forms.php:365
 msgid "Please fill in the form."
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:407
+#: uichemy-composer/includes/forms/class-uich-forms.php:413
 msgid "Could not save submission."
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:419
+#: uichemy-composer/includes/forms/class-uich-forms.php:425
 msgid "Collect Submissions"
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:446
+#: uichemy-composer/includes/forms/class-uich-forms.php:452
 msgid "Email 2"
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:455
+#: uichemy-composer/includes/forms/class-uich-forms.php:461
 msgid "Webhook"
 msgstr ""
 
-#: uichemy-composer/includes/forms/class-uich-forms.php:476
+#: uichemy-composer/includes/forms/class-uich-forms.php:482
 msgid "Thank you! Your submission has been received."
 msgstr ""
 
 #. translators: %s form name
-#: uichemy-composer/includes/forms/class-uich-forms.php:515
+#: uichemy-composer/includes/forms/class-uich-forms.php:521
 #, php-format
 msgid "New submission: %s"
 msgstr ""
@@ -1379,43 +1393,43 @@ msgstr ""
 msgid "Search Templates"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:639
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:683
 msgid "Header (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:641
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:685
 msgid "Footer (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:643
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:687
 msgid "Single Post or Page (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:645
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:689
 msgid "Archive (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:647
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:691
 msgid "Single Product (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:649
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:693
 msgid "Products Archive (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:651
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:695
 msgid "Order Received / Thank You (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:653
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:697
 msgid "Search Results (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:655
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:699
 msgid "404 Page (UiChemy)"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:657
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:701
 msgid "Template (UiChemy)"
 msgstr ""
 
@@ -1429,11 +1443,13 @@ msgstr ""
 #: new-dashboard/build/index.js:9
 #: new-dashboard/build/index.js:14
 #: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:46
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1248
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1328
 msgid "Footer"
 msgstr ""
 
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:214
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:56
 msgid "Front Page"
 msgstr ""
 
@@ -1458,10 +1474,14 @@ msgid "%s Archive"
 msgstr ""
 
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:233
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:59
 msgid "Author Archive"
 msgstr ""
 
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:234
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:58
 msgid "Date Archive"
 msgstr ""
 
@@ -1477,74 +1497,70 @@ msgstr ""
 
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:239
 #: new-dashboard/build/index.js:9
+#: new-dashboard/build/index.js:13
 #: new-dashboard/build/index.js:14
 #: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:52
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1249
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:61
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1329
 msgid "404 Page"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:591
-#: new-dashboard/build/index.js:13
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:633
 #: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:36
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:65
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:120
 msgid "Entire site"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:593
-#: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:32
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:635
 msgid "Search results"
 msgstr ""
 
 #. translators: %s: post type plural name.
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:597
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:641
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:639
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:683
 #, php-format
 msgid "All %s"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:601
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:643
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:147
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:202
 msgid "Any author"
 msgstr ""
 
 #. translators: %s: taxonomy singular name.
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:614
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:656
 #, php-format
 msgid "Any %s"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:636
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:678
 msgid "Front page"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:643
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:685
 msgid "All posts & pages"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:649
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:691
 msgid "Blog home"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:651
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:693
 msgid "Author archives"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:653
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:695
 msgid "Date archives"
 msgstr ""
 
 #. translators: %s: taxonomy singular name.
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:658
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:700
 #, php-format
 msgid "%s archives"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:660
-#: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:29
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:702
 msgid "All archives"
 msgstr ""
 
@@ -1777,7 +1793,7 @@ msgstr ""
 #: new-dashboard/build/index.js:20
 #: new-dashboard/src/components/WizardShell.jsx:146
 #: new-dashboard/src/screens/dashboard/SetupFlow.jsx:452
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1978
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2072
 msgid "Back"
 msgstr ""
 
@@ -2080,7 +2096,7 @@ msgstr ""
 #: new-dashboard/src/App.jsx:349
 #: new-dashboard/src/dashboard/use-builder-setup.js:71
 #: new-dashboard/src/screens/wizard/BuilderScreen.jsx:141
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:207
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:281
 msgid "Working…"
 msgstr ""
 
@@ -2523,8 +2539,8 @@ msgstr ""
 #: new-dashboard/src/screens/errors/ErrorCard.jsx:54
 #: new-dashboard/src/screens/errors/ErrorCard.jsx:78
 #: new-dashboard/src/screens/wizard/ConnectScreen.jsx:129
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:429
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:443
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:503
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:517
 msgid "Retry"
 msgstr ""
 
@@ -3330,14 +3346,14 @@ msgstr ""
 #: new-dashboard/build/index.js:5
 #: new-dashboard/build/index.js:8
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/lib/project-pages.js:426
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:979
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1845
+#: new-dashboard/src/uichemy-webpage/lib/project-pages.js:453
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1053
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1939
 msgid "Nexter WP Theme"
 msgstr ""
 
 #: new-dashboard/build/index.js:5
-#: new-dashboard/src/uichemy-webpage/lib/project-pages.js:433
+#: new-dashboard/src/uichemy-webpage/lib/project-pages.js:460
 msgid "Free plugin"
 msgstr ""
 
@@ -3381,474 +3397,484 @@ msgstr ""
 msgid "Cookie Policy"
 msgstr ""
 
+#: new-dashboard/build/index.js:5
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:68
+msgid "Shop (Product Archive)"
+msgstr ""
+
+#: new-dashboard/build/index.js:5
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:69
+msgid "Product Details"
+msgstr ""
+
 #. translators: 1: files downloaded so far, 2: total files.
 #: new-dashboard/build/index.js:6
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:175
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:249
 #, js-format
 msgid "Downloading %1$d of %2$d files"
 msgstr ""
 
 #: new-dashboard/build/index.js:6
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:180
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:254
 msgid "Saving downloaded content"
 msgstr ""
 
 #. translators: %s: plugin name.
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:185
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:259
 #, js-format
 msgid "Installing %s"
 msgstr ""
 
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:188
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:262
 msgid "Installing required plugins"
 msgstr ""
 
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:190
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:264
 msgid "Applying global styles"
 msgstr ""
 
 #. translators: 1: templates imported so far, 2: total templates.
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:195
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:269
 #, js-format
 msgid "Importing templates (%1$d of %2$d)"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:199
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:273
 msgid "Importing templates"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:201
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:275
 msgid "Downloading images"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:203
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:277
 msgid "Checking which widgets are used"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:205
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:279
 msgid "Finishing up"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:225
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:653
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:299
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:727
 msgid "This step failed. Please try again."
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:266
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:340
 msgid "Installing Plugins & Theme"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:267
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:341
 msgid "Installed Plugins & Theme"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:274
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:348
 msgid "Importing Site Content"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:275
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:349
 msgid "Imported Site Content"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:282
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:356
 msgid "Setting Up Pages & Layout"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:283
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:357
 msgid "Imported Pages & Layout"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:290
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:364
 msgid "Finalizing Settings"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:291
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:365
 msgid "Settings Finalized"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:295
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1266
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:369
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1346
 msgid "Applying plugin settings"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:296
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1267
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:370
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1347
 msgid "Applying theme settings"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:342
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:416
 msgid "Adding the theme and required plugins"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:343
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:417
 msgid "Bringing in media, posts, menus and styles"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:344
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:418
 msgid "Building each page from your design"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:345
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:419
 msgid "Applying plugin and theme configuration"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:361
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:435
 msgid "Done"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:363
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:437
 msgid "In progress"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:364
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:438
 msgid "Waiting"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:480
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:554
 msgid "Hide technical details"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:481
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:555
 msgid "Show technical details"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/lib/project-pages.js:185
+#: new-dashboard/src/uichemy-webpage/lib/project-pages.js:206
 msgid "Untitled Page"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
 #: new-dashboard/build/index.js:13
 #: new-dashboard/src/uichemy-webpage/index.jsx:173
-#: new-dashboard/src/uichemy-webpage/lib/project-pages.js:219
+#: new-dashboard/src/uichemy-webpage/lib/project-pages.js:246
 msgid "Pages"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:585
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:659
 msgid "Choose the pages and setup options you want to import."
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:806
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1041
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:880
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1115
 msgid "Could not download this plugin."
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:830
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1065
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:904
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1139
 msgid "Installation did not finish successfully."
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:911
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:985
 msgid "Please select at least one page to import."
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:935
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1009
 msgid "Failed to reset existing content. Please try again."
 msgstr ""
 
 #: new-dashboard/build/index.js:8
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1106
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1516
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1180
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1596
 msgid "Failed to start import. Please try again."
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1133
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1207
 msgid "Global Settings"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1135
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1209
 msgid "Plugin Settings"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1137
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1211
 msgid "Theme Settings"
 msgstr ""
 
 #: new-dashboard/build/index.js:8
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1139
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1213
 msgid "Site Content"
 msgstr ""
 
 #. translators: %s: comma-separated page names.
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1223
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1303
 #, js-format
 msgid "These pages were downloaded but missing from the API page list, importing them anyway: %s"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1233
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1313
 msgid "Creating Blog Posts"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1235
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1315
 #, js-format
 msgid "Page %1$s"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1247
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1327
 msgid "Navbar (Header)"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1253
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1333
 msgid "Importing pages"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1261
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1341
 msgid "Enabling used widgets"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1262
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1342
 msgid "Enabling used blocks"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1268
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1348
 msgid "Applying Nexter settings"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1303
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1383
 msgid "Could not apply plugin settings. Check site permissions or try again."
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1320
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1400
 msgid "Could not apply theme settings. Try again or apply them manually in the Customizer."
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1346
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1426
 msgid "Could not apply Nexter settings. Try again or configure them manually."
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1445
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1525
 msgid "Template skipped."
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1553
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1633
 #, js-format
 msgid "%1$s saved"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1555
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1635
 msgid "Your website is ready and live"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1557
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1637
 msgid "Your design is imported. Pages, styles, and settings are in place. Review it live and keep building."
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1564
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1644
 msgid "Back to Projects"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1567
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1647
 msgid "Visit Site"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1583
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1663
 msgid "Importing your design"
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1585
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1665
 msgid "Building your site, one step at a time."
 msgstr ""
 
 #: new-dashboard/build/index.js:9
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1620
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1700
 msgid "Select What to Import"
 msgstr ""
 
 #. translators: 1: selected count, 2: total pages
 #: new-dashboard/build/index.js:10
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1629
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1709
 #, js-format
 msgid "%1$d of %2$d Pages Selected"
 msgstr ""
 
 #: new-dashboard/build/index.js:10
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1638
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1718
 msgid "No pages found in this project."
 msgstr ""
 
 #: new-dashboard/build/index.js:10
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1649
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1729
 msgid "Page categories"
 msgstr ""
 
 #: new-dashboard/build/index.js:10
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1678
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1758
 msgid "Search pages…"
 msgstr ""
 
 #: new-dashboard/build/index.js:10
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1679
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1759
 msgid "Search pages"
 msgstr ""
 
 #: new-dashboard/build/index.js:10
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1698
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1778
 msgid "No pages match your search."
 msgstr ""
 
 #. translators: %s: group label
 #: new-dashboard/build/index.js:11
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1723
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1803
 #, js-format
 msgid "Select all pages in %s"
 msgstr ""
 
 #. translators: 1: selected in group, 2: total in group
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1735
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1815
 #, js-format
 msgid "%1$d/%2$d pages"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1797
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1909
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1891
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2003
 msgid "Advanced Configurations"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1810
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1904
 msgid "Required Plugins"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1811
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1812
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1905
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1906
 msgid "Plugins that will be installed or verified before import."
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1821
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1915
 msgid "No required plugins listed for this project."
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1848
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1942
 msgid "For the best experience, the Nexter WP Theme is recommended. Feel free to skip it if you're already running a lightweight, bloat-free theme."
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1860
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1954
 msgid "Reset Previous Content Before Import"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1861
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1862
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1955
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1956
 msgid "If enabled, your existing pages, posts, and Theme Builder content move to draft. Nothing is deleted. You can restore them anytime, or remove them manually later."
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1887
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1981
 msgid "Reset my previous content before importing"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1889
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1983
 msgid "Your current content moves to draft, not deleted."
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1896
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1990
 msgid "Your current content moves to draft, not deleted. On a live or active site, take a full backup before you continue. You can restore everything from drafts anytime."
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1910
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2004
 msgid "Coming Soon"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1923
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2017
 msgid "SEO"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1925
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2019
 msgid "Basic SEO setup"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1937
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2031
 msgid "Performance"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1939
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2033
 msgid "PageSpeed optimized"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1951
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2045
 msgid "Security"
 msgstr ""
 
 #: new-dashboard/build/index.js:12
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1953
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2047
 msgid "Basic protection"
 msgstr ""
 
 #. translators: %d: number of pages to import
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1995
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2089
 #, js-format
 msgid "Import %d page"
 msgid_plural "Import %d pages"
@@ -3856,32 +3882,32 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:1998
+#: new-dashboard/src/uichemy-webpage/screens/ImportScreen.jsx:2092
 msgid "Import"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:81
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:85
 msgid "Choose Your Builder"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:82
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:86
 msgid "Select the builder you want to import this website into."
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:89
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:93
 msgid "Next"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:96
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:100
 msgid "Export builder"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:113
+#: new-dashboard/src/uichemy-webpage/components/BuilderModal.jsx:117
 msgid "Coming soon"
 msgstr ""
 
@@ -4075,63 +4101,175 @@ msgid "Live preview"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:112
-msgid "Remove"
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:40
+msgid "Standard"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:137
-msgid "Choose post type"
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:41
+msgid "Default Pages"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:145
-msgid "Author"
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:42
+msgid "Date & Time"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:157
-msgid "Taxonomy"
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:43
+msgid "Visitors Source"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:161
-msgid "Any term, search to narrow…"
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:44
+#: uichemy-composer/assets/blocks/uichemy-composer/index.js:376
+msgid "Content"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:45
+msgid "Particular"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
 #: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:167
+msgid "Remove"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:192
+msgid "Choose post type"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:200
+msgid "Author"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:212
+msgid "Taxonomy"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:216
+msgid "Any term, search to narrow…"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:222
 msgid "Search page / post…"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:30
-msgid "Taxonomy archive"
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:228
+msgid "Choose day"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:31
-msgid "Author archive"
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:229
+msgid "Choose status"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:37
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:230
+msgid "Logged in"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:231
+msgid "Logged out"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:233
+msgid "Choose role"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:234
+msgid "Choose OS"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:235
+msgid "Choose browser"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:50
+msgid "Entire Website"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:51
+msgid "All Singulars"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:52
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:88
+msgid "All Archives"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:57
+msgid "Blog / Posts Page"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:60
+msgid "Search Page"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:64
+msgid "WooCommerce Shop Page"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:68
+msgid "Day of Week"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:72
+msgid "Operating System"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:73
+msgid "Browser"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:74
+msgid "Login Status"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:75
+msgid "User Roles"
+msgstr ""
+
+#: new-dashboard/build/index.js:13
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:79
 msgid "All of a post type"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:38
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:80
 msgid "In a taxonomy term"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:39
-msgid "By author"
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:81
+msgid "Particular Post / Page"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:40
-msgid "Specific page / post"
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:92
+msgid "Taxonomy archive"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
@@ -4140,59 +4278,59 @@ msgstr ""
 #: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:374
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:368
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:369
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:246
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:337
 msgid "Display conditions"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:247
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:338
 #, js-format
 msgid "Choose where “%s” appears. Rules stack, an Exclude always wins."
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:252
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:343
 msgid "Could not load the post types, taxonomies and authors to choose from, so only site-wide rules can be set right now. Reload and try again."
 msgstr ""
 
 #: new-dashboard/build/index.js:13
 #: new-dashboard/build/index.js:16
 #: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:361
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:264
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:355
 msgid "Include"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
 #: new-dashboard/build/index.js:16
 #: new-dashboard/src/screens/dashboard/ThemeBuilder.jsx:361
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:265
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:356
 msgid "Exclude"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:273
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:378
 msgid "Remove condition"
 msgstr ""
 
 #: new-dashboard/build/index.js:13
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:276
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:381
 msgid "Add condition"
 msgstr ""
 
 #. translators: %s: comma-separated list of condition names.
 #: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:222
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:313
 #, js-format
 msgid "Choose a value for: %s, or remove the rule. Nothing is saved until then."
 msgstr ""
 
 #: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:236
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:327
 msgid "Could not save the conditions. Please try again."
 msgstr ""
 
 #: new-dashboard/build/index.js:14
-#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:282
+#: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:387
 msgid "Save Conditions"
 msgstr ""
 
@@ -5436,10 +5574,6 @@ msgstr ""
 
 #: uichemy-composer/assets/blocks/uichemy-composer/index.js:271
 msgid "Select image"
-msgstr ""
-
-#: uichemy-composer/assets/blocks/uichemy-composer/index.js:376
-msgid "Content"
 msgstr ""
 
 #: uichemy-composer/assets/blocks/uichemy-composer/index.js:792

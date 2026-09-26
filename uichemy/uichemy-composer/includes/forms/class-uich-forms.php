@@ -89,6 +89,12 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 		 * @return string
 		 */
 		public static function process_output( $html, $widget_id, $post_id ) {
+			if ( false !== strpos( $html, 'data-atom-form' ) && class_exists( 'Uich_DD_Enqueue' ) ) {
+				// This output carries a managed form, so the message it prints after
+				// submitting needs its styling. Queued here rather than site-wide:
+				// a page with no form has nothing to style.
+				Uich_DD_Enqueue::enqueue_public();
+			}
 			if ( false === strpos( $html, 'data-atom-form' ) ) {
 				return $html;
 			}

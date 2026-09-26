@@ -84,8 +84,16 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			);
 			// A Gutenberg template stores block markup in post_content (empty on a
 			// blank create); an Elementor template stores an element tree instead.
+			//
+			// wp_slash() is mandatory: wp_insert_post() runs wp_unslash() on what it
+			// is given, so unslashed markup loses EVERY backslash. Block attributes
+			// are JSON, so a swallowed backslash turns "\u002d\u002dtpgb-C16" into
+			// "u002du002dtpgb-C16" and, where the JSON needed the escape to stay
+			// valid, makes the whole attribute blob unparseable — the block then
+			// renders as nothing at all. That is what left imported Gutenberg
+			// headers unstyled and imported footers blank.
 			if ( 'gutenberg' === $editor && isset( $args['content'] ) ) {
-				$postarr['post_content'] = (string) $args['content'];
+				$postarr['post_content'] = wp_slash( (string) $args['content'] );
 			}
 
 			$post_id = wp_insert_post( $postarr, true );
@@ -372,9 +380,11 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 
 		/**
 		 * The "slot" a template occupies — the unit within which only one template
-		 * may be active. header/footer/search/404/single_product/product_archive/order_received
-		 * are one slot per type; single/archive split further by their target so a
-		 * "Single Post" and a "Single Page" template can both be active at once.
+		 * may be active. search/404/single_product/order_received are one slot per
+		 * type; single/archive split further by their target so a "Single Post" and
+		 * a "Single Page" template can both be active at once; header, footer and
+		 * product_archive split by their display conditions, so a shop layout and a
+		 * product-category layout (or two headers) coexist.
 		 *
 		 * @param string $type   Template type.
 		 * @param string $target Template target.
@@ -399,7 +409,7 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			 * only a template competing for the SAME condition set gets replaced,
 			 * which is the real conflict.
 			 */
-			if ( in_array( $type, array( 'header', 'footer' ), true ) ) {
+			if ( in_array( $type, array( 'header', 'footer', 'product_archive' ), true ) ) {
 				return $type . '|' . self::conditions_key( (int) $post_id );
 			}
 
@@ -576,12 +586,48 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			$match = ( isset( $rule['match'] ) && 'exclude' === $rule['match'] ) ? 'exclude' : 'include';
 
 			switch ( $type ) {
+				// Context rules that carry no value of their own.
 				case 'entire':
 				case 'search':
+				case 'all_singulars':
+				case 'all_archives':
+				case 'front_page':
+				case 'blog':
+				case 'date':
+				case 'error_404':
+				case 'woo_shop':
 					return array(
 						'match' => $match,
 						'type'  => $type,
 					);
+
+				case 'day_of_week':
+					// ISO-8601 1..7. Anything else would evaluate to "never
+					// matches", which is indistinguishable from a broken rule.
+					$day = isset( $rule['value'] ) ? absint( $rule['value'] ) : 0;
+					return ( $day >= 1 && $day <= 7 ) ? array(
+						'match' => $match,
+						'type'  => $type,
+						'value' => $day,
+					) : null;
+
+				case 'login_status':
+					$state = isset( $rule['value'] ) ? sanitize_key( $rule['value'] ) : '';
+					return in_array( $state, array( 'logged_in', 'logged_out' ), true ) ? array(
+						'match' => $match,
+						'type'  => $type,
+						'value' => $state,
+					) : null;
+
+				case 'user_role':
+				case 'os':
+				case 'browser':
+					$value = isset( $rule['value'] ) ? sanitize_key( $rule['value'] ) : '';
+					return '' !== $value ? array(
+						'match' => $match,
+						'type'  => $type,
+						'value' => $value,
+					) : null;
 				case 'post_type':
 					$pt = isset( $rule['value'] ) ? sanitize_key( $rule['value'] ) : '';
 					return '' !== $pt ? array(

@@ -192,6 +192,38 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 					wp_enqueue_style( $handle );
 				}
 			}
+			self::enqueue_block_addon_css( self::$render_id );
+		}
+
+		/**
+		 * Per-template CSS from the block addons a Gutenberg template was built with.
+		 *
+		 * Nexter Blocks / The Plus Addons keep every block's styling in ONE file per
+		 * post (plus-css-<post id>.css) and enqueue it for the post the main query
+		 * resolved. A header or footer template is never that post — it is a
+		 * uichemy_template rendered beside the page — so nothing asked for its
+		 * stylesheet and the template came out as unstyled raw markup. Asking for it
+		 * explicitly is what the block addon's own theme-builder integration does.
+		 *
+		 * @param int $id Template post ID.
+		 * @return void
+		 */
+		public static function enqueue_block_addon_css( $id ) {
+			$id = (int) $id;
+			if ( ! $id || ! class_exists( 'UiChemy_Template_CPT' ) ) {
+				return;
+			}
+			if ( 'gutenberg' !== UiChemy_Template_CPT::editor_for( $id ) ) {
+				return;
+			}
+			if ( ! class_exists( 'Tpgb_Core_Init_Blocks' ) ) {
+				return;
+			}
+			$tpgb = Tpgb_Core_Init_Blocks::get_instance();
+			if ( $tpgb && is_callable( array( $tpgb, 'enqueue_post_css' ) ) ) {
+				// Generates the file on the first request when it is missing.
+				$tpgb->enqueue_post_css( $id );
+			}
 		}
 
 		/**

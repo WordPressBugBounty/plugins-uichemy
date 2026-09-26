@@ -66,9 +66,11 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 				// page conditions applied within the matching target: a template
 				// targeting the exact post type / taxonomy beats the "any" fallback.
 				//
+				// product_archive is narrowed by page-level conditions too, so a
+				// shop template and a product-category template can both be active.
+				//
 				// The remaining whole-context types (404, single_product,
-				// product_archive, order_received, search) are not narrowed —
-				// newest active wins.
+				// order_received, search) are not narrowed — newest active wins.
 				if ( in_array( $type, array( 'header', 'footer' ), true ) ) {
 					$id = self::best_match( $active );
 					// UiChemy WINS the slot. If another theme-builder system
@@ -93,6 +95,24 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 					$id = self::pick_by_target( $active, self::single_priority() );
 				} elseif ( 'archive' === $type ) {
 					$id = self::pick_by_target( $active, self::archive_priority() );
+				} elseif ( 'product_archive' === $type ) {
+					/*
+					 * A store's listings are not one context. /shop/ and a product
+					 * category archive routinely want different layouts, and an
+					 * import that ships both ("Shop Home" + "Product listing") has
+					 * nowhere to put the second one while this type is a single
+					 * unnarrowed slot — "newest active wins" would just hand the
+					 * whole store whichever imported last.
+					 *
+					 * Conditions decide instead, exactly as they do for
+					 * header/footer. A template with no conditions still matches
+					 * (at SPEC_ENTIRE), so a single shop template keeps behaving
+					 * as before and only loses to one that names its context.
+					 */
+					$id = self::best_match( $active );
+					if ( ! $id && ! empty( $active ) ) {
+						$id = (int) $active[0];
+					}
 				} else {
 					$id = ! empty( $active ) ? (int) $active[0] : 0;
 				}

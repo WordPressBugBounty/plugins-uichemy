@@ -325,8 +325,11 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		 *
 		 * Two passes, cheapest first: the filename match above, then a header
 		 * fallback for a build whose file was renamed but whose `Name` still says
-		 * so. The fallback deliberately requires BOTH the uichemy text domain and
-		 * "pro" in the name, so the free copy can never satisfy it.
+		 * so. The fallback skips the bundled free plugin (uichemy.php) outright and
+		 * matches "pro" only as a WHOLE WORD — a substring test wrongly flagged the
+		 * free copy once its marketing name gained "Prompts" ("...Convert Figma,
+		 * Prompts and AI Builds..."), which made every Pro-install path report the
+		 * free plugin as an already-active Pro and silently do nothing.
 		 *
 		 * @return string Plugin file relative to wp-content/plugins, or '' if absent.
 		 */
@@ -345,9 +348,15 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 			}
 
 			foreach ( $plugins as $file => $data ) {
+				// The bundled free plugin shares the `uichemy` text domain, so it can
+				// never stand in for Pro no matter what its display name contains.
+				if ( 'uichemy.php' === basename( (string) $file ) ) {
+					continue;
+				}
+
 				$domain = isset( $data['TextDomain'] ) ? strtolower( (string) $data['TextDomain'] ) : '';
 				$name   = isset( $data['Name'] ) ? strtolower( (string) $data['Name'] ) : '';
-				if ( 'uichemy' === $domain && false !== strpos( $name, 'pro' ) ) {
+				if ( 'uichemy' === $domain && preg_match( '/\bpro\b/', $name ) ) {
 					return (string) $file;
 				}
 			}

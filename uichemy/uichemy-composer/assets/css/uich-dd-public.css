@@ -1,0 +1,193 @@
+/* UiChemy dynamic data — PUBLIC styles.
+ *
+ * The rules a VISITOR's page can actually need: the message a managed form
+ * prints after submitting, and the loading states the loop runtime renders
+ * (skeleton, pagination, load-more).
+ *
+ * Split out of uich-dd.css, which is the dynamic-data PICKER's interface and
+ * belongs to the editor. That file was enqueued on every public page whether
+ * or not the page had a form or a loop, so a page with neither still paid
+ * ~7 KiB for a modal nobody could open. This file is enqueued only by the two
+ * runtimes that emit these classes — see Uich_DD_Enqueue::enqueue_public().
+ *
+ * Keep it that way: a rule only belongs here when markup on a public page
+ * carries its class.
+ */
+/* Front-end form message. */
+.uich-form-message {
+   margin-top: 10px;
+   padding: 10px 12px;
+   border-radius: 8px;
+   font-size: 14px
+}
+
+.uich-form-message.is-success {
+   background: #e8f7ef;
+   color: #1d8a5e
+}
+
+.uich-form-message.is-error {
+   background: #fdeaea;
+   color: #c0392b
+}
+
+/* Front-end loop pagination (numbered links rendered by loop_pagination()) */
+.uich-loop-pagination {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 6px;
+   align-items: center;
+   margin-top: 24px
+}
+
+.uich-loop-pagination .page-numbers {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   min-width: 36px;
+   height: 36px;
+   padding: 0 10px;
+   border: 1px solid currentColor;
+   border-radius: 6px;
+   text-decoration: none;
+   line-height: 1;
+   opacity: .75
+}
+
+.uich-loop-pagination .page-numbers.current {
+   opacity: 1;
+   font-weight: 600
+}
+
+.uich-loop-pagination a.page-numbers:hover {
+   opacity: 1
+}
+
+/* Front-end loop "Load more" (rendered by loop_load_more()). Deliberately
+   matches .page-numbers so a loop reads the same whichever mode is chosen.
+   It is an <a>, not a <button>, so it still navigates with JS off. */
+.uich-loop-more-slot {
+   display: flex;
+   justify-content: center;
+   margin-top: 24px
+}
+
+.uich-loop-more {
+   display: inline-flex;
+   align-items: center;
+   justify-content: center;
+   min-height: 36px;
+   padding: 0 18px;
+   border: 1px solid currentColor;
+   border-radius: 6px;
+   text-decoration: none;
+   line-height: 1;
+   cursor: pointer;
+   opacity: .75
+}
+
+.uich-loop-more:hover {
+   opacity: 1
+}
+
+/* Mid-fetch: keep the control in place but make it clearly inert, so a second
+   click cannot queue a duplicate page. */
+.uich-loop--busy .uich-loop-more,
+.uich-loop--busy .uich-loop-pagination {
+   opacity: .45;
+   pointer-events: none
+}
+
+/* Skeleton placeholders shown while a page/batch is fetched. These are clones of
+   real items, so they already have the right size and grid placement — all that
+   is needed is to mask their content and shimmer. */
+.uich-loop-skeleton {
+   position: relative;
+   overflow: hidden;
+   pointer-events: none;
+   user-select: none;
+   /* The clone arrives carrying the item's OWN styling, so a white card stayed a
+      white box on a white page — invisible. Force a neutral card, with
+      !important because the item's own rules are just as specific and come from
+      the theme. */
+   background: #f2f3f5 !important;
+   background-image: none !important;
+   border: 1px solid rgba(0, 0, 0, .08) !important;
+   box-shadow: none !important;
+   border-radius: 10px
+}
+
+/* Paint the clone's own structure as grey bars instead of hiding it, so the
+   placeholder reads as a card with an image and a few lines of text rather than
+   one flat rectangle. Keeping the elements in flow (rather than
+   visibility:hidden) is what preserves each bar's real size and position. */
+.uich-loop-skeleton *,
+.uich-loop-skeleton *::before,
+.uich-loop-skeleton *::after {
+   color: transparent !important;
+   background-image: none !important;
+   border-color: transparent !important;
+   box-shadow: none !important;
+   text-decoration: none !important
+}
+
+/* Anything carrying text or acting as a media box becomes a bar. :not(:empty)
+   keeps genuinely empty wrappers from adding stray blocks. */
+.uich-loop-skeleton p,
+.uich-loop-skeleton h1,
+.uich-loop-skeleton h2,
+.uich-loop-skeleton h3,
+.uich-loop-skeleton h4,
+.uich-loop-skeleton h5,
+.uich-loop-skeleton h6,
+.uich-loop-skeleton span:not(:empty),
+.uich-loop-skeleton li,
+.uich-loop-skeleton time,
+.uich-loop-skeleton strong,
+.uich-loop-skeleton em {
+   background-color: rgba(0, 0, 0, .11) !important;
+   border-radius: 4px
+}
+
+/* Media keeps its real box — that is what gives the card its height — but the
+   bitmap is flattened to a uniform grey. contrast(0) collapses every pixel to
+   mid-grey and brightness lifts it to a light placeholder tone, so the image
+   area reads as a solid block while occupying exactly the space the real image
+   will. (Hiding the image instead would collapse it to 0px and take the card's
+   height with it.) */
+.uich-loop-skeleton img,
+.uich-loop-skeleton picture > img {
+   filter: grayscale(1) contrast(0) brightness(1.82) !important;
+   border-radius: 6px;
+   opacity: 1 !important;
+   visibility: visible !important
+}
+
+.uich-loop-skeleton svg,
+.uich-loop-skeleton video,
+.uich-loop-skeleton iframe {
+   background-color: rgba(0, 0, 0, .13) !important;
+   border-radius: 6px
+}
+
+.uich-loop-skeleton::after {
+   content: "";
+   position: absolute;
+   inset: 0;
+   transform: translateX(-100%);
+   background: linear-gradient(90deg, transparent, rgba(255, 255, 255, .6), transparent);
+   animation: uich-loop-shimmer 1.2s infinite
+}
+
+@keyframes uich-loop-shimmer {
+   100% {
+      transform: translateX(100%)
+   }
+}
+
+/* Respect a reduced-motion preference: keep the placeholder, drop the sweep. */
+@media (prefers-reduced-motion: reduce) {
+   .uich-loop-skeleton::after {
+      animation: none
+   }
+}

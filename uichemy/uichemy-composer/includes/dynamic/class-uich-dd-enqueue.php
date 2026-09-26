@@ -4,7 +4,11 @@
  * injects "+ Data / + Loop / + Condition" buttons into the Composer/Atom popup header.
  *
  * The builders (UichDD.ui) produce Twig and hand it to UichDD.bridge.insert(), which drops it
- * into the focused code editor. Front-end gets only the small CSS (for form messages + chips).
+ * into the focused code editor.
+ *
+ * The front end gets `uich-dd-public.css` and ONLY when a runtime that emits its
+ * classes is on the page. The picker's own stylesheet is editor furniture, and
+ * loading it everywhere put ~7 KiB on pages with no form and no loop.
  *
  * @package Uichemy
  */
@@ -18,10 +22,11 @@ if ( ! class_exists( 'Uich_DD_Enqueue' ) ) {
 
 		public static function init() {
 			add_action( 'elementor/editor/after_enqueue_scripts', array( __CLASS__, 'editor_assets' ), 999 );
-			// Priority 100: keep uich-dd.css printing AFTER the active theme's reset on
-			// the front end so the picker's own rules (e.g. `.uich-dd-row{display:flex}`)
-			// win over ties like the theme's `[type=button]{display:inline-block}`.
-			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'frontend_assets' ), 100 );
+			// Registered, not enqueued. A public page gets the stylesheet only when
+			// something on it renders one of its classes — see enqueue_public().
+			// Priority 100 so that when it IS enqueued it still prints after the
+			// active theme's reset, which is what lets its rules win a tie.
+			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_public' ), 100 );
 		}
 
 		/** Version a file by its mtime so edits always bust the browser cache (dev-safe). */
@@ -31,8 +36,41 @@ if ( ! class_exists( 'Uich_DD_Enqueue' ) ) {
 			return UICHEMY_VERSION . '.' . $mtime;
 		}
 
-		public static function frontend_assets() {
-			wp_enqueue_style( 'uich-dd', UICHEMY_URL . 'assets/css/uich-dd.css', array(), self::ver( 'assets/css/uich-dd.css' ) );
+		/**
+		 * Register the public stylesheet. Nothing is queued here.
+		 *
+		 * @return void
+		 */
+		public static function register_public() {
+			wp_register_style(
+				'uich-dd-public',
+				UICHEMY_URL . 'assets/css/uich-dd-public.css',
+				array(),
+				self::ver( 'assets/css/uich-dd-public.css' )
+			);
+		}
+
+		/**
+		 * Queue the public stylesheet, for a page that actually renders one of its
+		 * classes: a managed form's message, or the loop runtime's skeleton,
+		 * pagination and load-more.
+		 *
+		 * Callers are the two runtimes themselves rather than a page-wide guess,
+		 * because only they know whether their markup reached the output. Safe to
+		 * call repeatedly — wp_enqueue_style de-dupes by handle — and safe to call
+		 * during rendering, since styles can still be queued while the footer has
+		 * not printed.
+		 *
+		 * @return void
+		 */
+		public static function enqueue_public() {
+			if ( ! defined( 'UICHEMY_URL' ) ) {
+				return;
+			}
+			if ( ! wp_style_is( 'uich-dd-public', 'registered' ) ) {
+				self::register_public();
+			}
+			wp_enqueue_style( 'uich-dd-public' );
 		}
 
 		/**
@@ -46,7 +84,9 @@ if ( ! class_exists( 'Uich_DD_Enqueue' ) ) {
 		 * @return void
 		 */
 		public static function enqueue_picker() {
-			wp_enqueue_style( 'uich-dd', UICHEMY_URL . 'assets/css/uich-dd.css', array(), self::ver( 'assets/css/uich-dd.css' ) );
+			// The picker previews forms and loops too, so it needs both halves.
+			self::enqueue_public();
+			wp_enqueue_style( 'uich-dd', UICHEMY_URL . 'assets/css/uich-dd.css', array( 'uich-dd-public' ), self::ver( 'assets/css/uich-dd.css' ) );
 
 			wp_enqueue_script( 'uich-dd-schema', UICHEMY_URL . 'assets/js/uich-dd-schema.js', array(), self::ver( 'assets/js/uich-dd-schema.js' ), true );
 			wp_enqueue_script( 'uich-dd-compile', UICHEMY_URL . 'assets/js/uich-dd-compile.js', array(), self::ver( 'assets/js/uich-dd-compile.js' ), true );
