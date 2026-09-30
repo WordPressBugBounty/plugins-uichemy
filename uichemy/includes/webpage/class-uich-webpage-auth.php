@@ -340,46 +340,91 @@ class Uich_Webpage_Auth {
 	}
 
 	/**
-	 * Token storage transform for update_option().
+	 * The 32-byte symmetric key used to encrypt tokens at rest.
 	 *
-	 * Encryption at rest was intentionally removed — tokens are now stored in
-	 * wp_options as plaintext. This is deliberately a passthrough (kept as a
-	 * method so the call sites read the same and a future storage policy has one
-	 * place to hook). A DB read now yields directly usable access/refresh/id
-	 * tokens, so protect wp_options access accordingly.
+	 * Derived from the site's own `secure_auth` salt, so it never has to be stored
+	 * and is unique per install. If the salts are rotated, old ciphertexts simply
+	 * fail to decrypt and the admin signs in again — no token leak, no crash.
 	 *
-	 * @param mixed $plaintext Raw token value from the OAuth response.
-	 * @return mixed Stored as-is.
+	 * @return string 32 raw bytes.
 	 */
-	protected function encrypt_token( $plaintext ) {
-		return $plaintext;
+	protected function token_encryption_key() {
+		$salt = function_exists( 'wp_salt' ) ? wp_salt( 'secure_auth' ) : '';
+		return hash( 'sha256', 'uich-webpage-token|' . $salt, true );
 	}
 
 	/**
-	 * Token read transform for get_option().
+	 * Token storage transform for update_option(): encrypt at rest.
 	 *
-	 * Counterpart to encrypt_token(): returns the stored value as-is. It still
-	 * recognises the two prefixes older, encrypting builds used, so upgrading a
-	 * site doesn't hand a prefixed string back as if it were the token:
-	 *   • `plain:` — was stored plaintext-with-marker; strip the marker.
-	 *   • `enc:`   — was AES-encrypted; the key is gone, so it can't be read.
-	 *     Return false so the site cleanly falls back to the login screen and a
-	 *     fresh plaintext token is stored on the next sign-in.
+	 * Access/refresh/id tokens are encrypted with libsodium's authenticated
+	 * secretbox (XSalsa20-Poly1305) under a key derived from the site salt, and
+	 * stored with a `uichenc2:` marker. A DB/backup read therefore no longer
+	 * yields live OAuth tokens. On a PHP build without libsodium, or on any
+	 * failure, it falls back to storing the value as-is (matching legacy
+	 * behaviour) so sign-in never breaks.
+	 *
+	 * @param mixed $plaintext Raw token value from the OAuth response.
+	 * @return mixed Encrypted string, or the value unchanged on fallback.
+	 */
+	protected function encrypt_token( $plaintext ) {
+		if ( ! is_string( $plaintext ) || '' === $plaintext ) {
+			return $plaintext;
+		}
+		if ( ! function_exists( 'sodium_crypto_secretbox' ) || ! defined( 'SODIUM_CRYPTO_SECRETBOX_NONCEBYTES' ) ) {
+			return $plaintext;
+		}
+		try {
+			$nonce  = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
+			$cipher = sodium_crypto_secretbox( $plaintext, $nonce, $this->token_encryption_key() );
+			return 'uichenc2:' . base64_encode( $nonce . $cipher );
+		} catch ( \Throwable $e ) {
+			return $plaintext;
+		}
+	}
+
+	/**
+	 * Token read transform for get_option(): decrypt, with legacy fallbacks.
+	 *
+	 * Recognises, in order:
+	 *   • `uichenc2:` — current libsodium ciphertext; decrypted (false if the key
+	 *     no longer matches, e.g. after a salt rotation).
+	 *   • `enc:`      — a much older AES scheme whose key is gone → false.
+	 *   • `plain:`    — an old plaintext-with-marker → strip the marker.
+	 *   • anything else — a bare plaintext token from the passthrough era → returned
+	 *     as-is so existing connected sites keep working and are re-encrypted on the
+	 *     next token write. This is the backward-compatible migration path.
 	 *
 	 * @param mixed $stored Raw value from get_option().
-	 * @return string|false The token, or false if empty / unreadable legacy ciphertext.
+	 * @return string|false The token, or false if empty / unreadable.
 	 */
 	protected function decrypt_token( $stored ) {
 		if ( ! is_string( $stored ) || '' === $stored ) {
 			return false;
 		}
+		if ( 0 === strpos( $stored, 'uichenc2:' ) ) {
+			if ( ! function_exists( 'sodium_crypto_secretbox_open' ) || ! defined( 'SODIUM_CRYPTO_SECRETBOX_NONCEBYTES' ) ) {
+				return false;
+			}
+			$raw = base64_decode( substr( $stored, strlen( 'uichenc2:' ) ), true );
+			if ( false === $raw || strlen( $raw ) <= SODIUM_CRYPTO_SECRETBOX_NONCEBYTES ) {
+				return false;
+			}
+			$nonce  = substr( $raw, 0, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
+			$cipher = substr( $raw, SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
+			try {
+				$plain = sodium_crypto_secretbox_open( $cipher, $nonce, $this->token_encryption_key() );
+			} catch ( \Throwable $e ) {
+				return false;
+			}
+			return false === $plain ? false : $plain;
+		}
 		if ( 0 === strpos( $stored, 'enc:' ) ) {
-			return false; // Legacy ciphertext, unreadable without the removed key.
+			return false; // Legacy AES ciphertext, unreadable without the removed key.
 		}
 		if ( 0 === strpos( $stored, 'plain:' ) ) {
 			return substr( $stored, strlen( 'plain:' ) );
 		}
-		return $stored;
+		return $stored; // Bare plaintext from the passthrough era — still usable.
 	}
 
 	/**

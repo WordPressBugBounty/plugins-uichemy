@@ -414,22 +414,6 @@ class UiChemy_SL_Plugin_Updater {
 	}
 
 	/**
-	 * Disable SSL verification in order to prevent download update failures
-	 *
-	 * @param array  $args
-	 * @param string $url
-	 * @return object $array
-	 */
-	public function htuichemy_request_args( $args, $url ) {
-
-		$verify_ssl = $this->verify_ssl();
-		if ( strpos( $url, 'https://' ) !== false && strpos( $url, 'edd_action=package_download' ) ) {
-			$args['sslverify'] = $verify_ssl;
-		}
-		return $args;
-	}
-
-	/**
 	 * Calls the API and, if successfull, returns the object delivered by the API.
 	 *
 	 * @uses get_bloginfo()
@@ -687,6 +671,17 @@ class UiChemy_SL_Plugin_Updater {
 	 * @return bool
 	 */
 	private function verify_ssl() {
-		return (bool) apply_filters( 'edd_sl_api_request_verify_ssl', true, $this );
+		$verify = (bool) apply_filters( 'edd_sl_api_request_verify_ssl', true, $this );
+
+		// A disabled TLS check is a MITM vector. Honour the filter override only on
+		// local/development sites; force verification on for production.
+		if ( ! $verify && function_exists( 'wp_get_environment_type' ) ) {
+			$env = wp_get_environment_type();
+			if ( 'local' !== $env && 'development' !== $env ) {
+				$verify = true;
+			}
+		}
+
+		return $verify;
 	}
 }

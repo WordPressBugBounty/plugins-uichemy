@@ -36,6 +36,8 @@ class Uich_Webpage_Import {
 	 * Option key for stored replacement data (pages, navbar, footer, etc.).
 	 */
 	const OPTION_REPLACEMENT_DATA = 'uich_webpage_replacement_data';
+	/** Filename of the WooCommerce catalogue the API ships beside the pages. */
+	const WOO_PRODUCT_FILE = 'woo-product-content.json';
 
 	/**
 	 * Transient key: created blog-post IDs accumulated across batched import-blog-posts
@@ -548,6 +550,17 @@ class Uich_Webpage_Import {
 			array(
 				'methods'             => 'POST',
 				'callback'            => array( $this, 'rest_import_blog_posts' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
+		// The project's WooCommerce catalogue (products, terms, coupons).
+		register_rest_route(
+			'uichemy/v2/webpage',
+			'/import-woo-products',
+			array(
+				'methods'             => 'POST',
+				'callback'            => array( $this, 'rest_import_woo_products' ),
 				'permission_callback' => array( $this, 'check_permission' ),
 			)
 		);
@@ -4067,6 +4080,44 @@ class Uich_Webpage_Import {
 	 * @param array $import_meta Import meta from API / stored option.
 	 * @return string[] Unique filenames e.g. array( 'pricing-monthly.json' ).
 	 */
+	/**
+	 * Lowercased filenames the API put in the `theme_builder` bucket.
+	 *
+	 * The bucket, not the filename, is what says whether a design is a Theme
+	 * Builder template. A project can legitimately ship "Blog.json" as an
+	 * ordinary page in `static_pages` while its archive templates live in
+	 * `theme_builder`, and deciding from the name alone turned that page into an
+	 * archive template nobody asked for.
+	 *
+	 * An empty result means the caller has no bucket information — older API
+	 * responses and already-stored data — and must keep its previous
+	 * filename-only behaviour rather than treating everything as a page.
+	 *
+	 * @param array $import_meta Import meta.
+	 * @return string[] Lowercased filenames, empty when the bucket was not sent.
+	 */
+	protected function get_theme_builder_filenames_from_meta( array $import_meta ) {
+		$raw = null;
+		if ( ! empty( $import_meta['theme_builder'] ) && is_array( $import_meta['theme_builder'] ) ) {
+			$raw = $import_meta['theme_builder'];
+		} elseif ( ! empty( $import_meta['meta']['theme_builder'] ) && is_array( $import_meta['meta']['theme_builder'] ) ) {
+			$raw = $import_meta['meta']['theme_builder'];
+		}
+		if ( empty( $raw ) ) {
+			return array();
+		}
+
+		$out = array();
+		foreach ( $raw as $item ) {
+			if ( ! is_string( $item ) || '' === trim( $item ) ) {
+				continue;
+			}
+			$out[] = strtolower( $this->replacement_filename_from_url( trim( $item ) ) );
+		}
+
+		return array_values( array_unique( array_filter( $out ) ) );
+	}
+
 	protected function get_elementor_template_filenames_from_meta( array $import_meta ) {
 		$raw = null;
 		if ( ! empty( $import_meta['elementor_template'] ) && is_array( $import_meta['elementor_template'] ) ) {
@@ -4520,10 +4571,37 @@ class Uich_Webpage_Import {
 			function ( $m ) use ( $label_to_url ) {
 				list( $tag, $attrs, $inner ) = $m;
 
-				// Only rewrite placeholder links; never clobber a real URL.
-				if ( ! preg_match( '/\bhref\s*=\s*("|\')(#?)\1/u', $attrs ) ) {
+				$href = '';
+				if ( preg_match( '/\bhref\s*=\s*("|\')(.*?)\1/su', $attrs, $href_match ) ) {
+					$href = trim( $href_match[2] );
+				}
+
+				$is_placeholder = ( '' === $href || '#' === $href );
+
+				/*
+				 * A root-relative href resolves against the DOMAIN root, so it only
+				 * lands on the right page when WordPress is installed there. In a
+				 * subfolder — and every multisite subsite is one — the export's
+				 * "/about-us/" is a 404 while the real page sits at
+				 * "/site/about-us/". So it is something still to resolve, not a
+				 * finished URL to leave alone. "//host/path" is protocol-relative
+				 * and genuinely absolute, so it is excluded.
+				 */
+				$is_root_relative = ( isset( $href[0] ) && '/' === $href[0] && 0 !== strpos( $href, '//' ) );
+
+				// Never clobber a real, absolute URL.
+				if ( ! $is_placeholder && ! $is_root_relative ) {
 					return $tag;
 				}
+
+				$set_href = static function ( $attributes, $new_url ) {
+					return preg_replace(
+						'/\bhref\s*=\s*("|\').*?\1/su',
+						'href="' . esc_url( $new_url ) . '"',
+						$attributes,
+						1
+					);
+				};
 
 				$label = '';
 				if ( preg_match( '/<span\b[^>]*>(.*?)<\/span>/su', $inner, $sm ) ) {
@@ -4540,16 +4618,29 @@ class Uich_Webpage_Import {
 				 * logo links home, on every site — so resolve it by shape instead.
 				 */
 				if ( '' === $key && $this->composer_anchor_is_site_logo( $inner ) ) {
-					return '<a' . preg_replace( '/\bhref\s*=\s*("|\')#?\1/u', 'href="' . esc_url( home_url( '/' ) ) . '"', $attrs, 1 ) . '>' . $inner . '</a>';
+					return '<a' . $set_href( $attrs, home_url( '/' ) ) . '>' . $inner . '</a>';
 				}
 
 				$url = $this->match_composer_nav_label_to_url( $key, $label_to_url );
+
+				/*
+				 * No label match, but the export still named a path. Resolve it
+				 * against THIS site rather than leaving it pointing at the domain
+				 * root: the page it names usually exists, and where it does not,
+				 * a link under the site's own home URL is still reachable while
+				 * "/about-us/" on a subfolder install is not.
+				 */
+				if ( '' === $url && $is_root_relative ) {
+					$candidate = home_url( $href );
+					$post_id   = url_to_postid( $candidate );
+					$url       = $post_id ? get_permalink( $post_id ) : $candidate;
+				}
+
 				if ( '' === $url ) {
 					return $tag;
 				}
 
-				$new_attrs = preg_replace( '/\bhref\s*=\s*("|\')#?\1/u', 'href="' . esc_url( $url ) . '"', $attrs, 1 );
-				return '<a' . $new_attrs . '>' . $inner . '</a>';
+				return '<a' . $set_href( $attrs, $url ) . '>' . $inner . '</a>';
 			},
 			$html
 		);
@@ -5041,10 +5132,27 @@ class Uich_Webpage_Import {
 		 * the file after the designer's page ("Product Single.json"), not after the
 		 * context it represents.
 		 */
+		$theme_builder_bucket = $this->get_theme_builder_filenames_from_meta( $import_meta );
+
+		/*
+		 * The WooCommerce shop designs are the one exception to "the bucket
+		 * decides". They arrive in `shop_pages` because that is where the app
+		 * groups them, but a store's listing belongs in a product-archive
+		 * template, not at a page URL of its own.
+		 */
+		$bucket_exempt = array( 'shop.json', 'shop home.json', 'product listing.json', 'product details.json' );
+
 		$theme_builder_files = array();
 		foreach ( array_keys( $files ) as $filename ) {
 			$key = $this->theme_builder_template_key( $filename );
 			if ( '' === $key || ! isset( $theme_builder_templates[ $key ] ) ) {
+				continue;
+			}
+			// With bucket information available, a file the API did not put in
+			// `theme_builder` is a page, whatever it happens to be called.
+			if ( ! empty( $theme_builder_bucket )
+				&& ! in_array( strtolower( $filename ), $theme_builder_bucket, true )
+				&& ! in_array( $key, $bucket_exempt, true ) ) {
 				continue;
 			}
 			$config = $theme_builder_templates[ $key ];
@@ -5057,13 +5165,19 @@ class Uich_Webpage_Import {
 			$theme_builder_files[ $filename ] = $config;
 		}
 
+		// Lowercased names of the files resolved above, for every later "is this a
+		// template?" test. $theme_builder_files is keyed by the REAL filename
+		// ("Category.json"), so any check against a lowercased name has to go
+		// through this list rather than isset() on the map itself.
+		$theme_builder_file_names = array_map( 'strtolower', array_keys( $theme_builder_files ) );
+
 		// Files that are never a regular page. Used both when meta carries no pages
 		// list at all and when it carries a partial one (API may use a capital first
 		// letter: Home.json), so the comparison is always lowercased.
 		$skip_files = array_merge(
-			array( 'globals.json', 'uichemy-globals.json', 'navbar.json', 'footer.json', 'blog-post-content.json' ),
+			array( 'globals.json', 'uichemy-globals.json', 'navbar.json', 'footer.json', 'blog-post-content.json', self::WOO_PRODUCT_FILE ),
 			array_keys( $theme_builder_templates ),
-			array_map( 'strtolower', array_keys( $theme_builder_files ) ),
+			$theme_builder_file_names,
 			$this->get_elementor_template_filenames_from_meta( $import_meta )
 		);
 		if ( empty( $pages ) ) {
@@ -5121,7 +5235,16 @@ class Uich_Webpage_Import {
 			if ( in_array( $filename_lower, array( 'navbar.json', 'footer.json' ), true ) ) {
 				continue;
 			}
-			if ( isset( $theme_builder_templates[ $filename_lower ] ) ) {
+			/*
+			 * Both spellings, or the file is imported twice. $skip_files only
+			 * guards the sweep that ADDS unlisted files to $pages — a file the API
+			 * already named in `pages` never goes through it. Testing only the
+			 * canonical map here let every alias-matched name ("Category.json",
+			 * "Product Single.json") through as a regular page, while the template
+			 * loop below imported the very same file again as a template.
+			 */
+			if ( isset( $theme_builder_templates[ $filename_lower ] )
+				|| in_array( $filename_lower, $theme_builder_file_names, true ) ) {
 				continue;
 			}
 
@@ -11143,6 +11266,65 @@ class Uich_Webpage_Import {
 	 * @param string[] $urls Remote image URLs (any mix; non-importables are skipped).
 	 * @return void
 	 */
+	/**
+	 * SSRF guard: does this URL's host resolve to a private, loopback or
+	 * link-local address?
+	 *
+	 * wp_http_validate_url() (used by prefetch and download_url) blocks the
+	 * RFC-1918 private ranges but NOT link-local 169.254.0.0/16 — which includes
+	 * the cloud-metadata endpoint 169.254.169.254 — nor IPv6 reserved ranges.
+	 * PHP's own FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE covers all of
+	 * them, so we resolve the host and reject if ANY resolved IP is non-public.
+	 *
+	 * A public image host always resolves to a public IP, so legitimate imports
+	 * are unaffected. On a resolution failure we return false and let the HTTP
+	 * layer fail naturally (a name that does not resolve is not an SSRF target).
+	 *
+	 * @param string $url URL to check.
+	 * @return bool True if the URL must NOT be fetched.
+	 */
+	protected function url_resolves_to_blocked_ip( $url ) {
+		$host = wp_parse_url( (string) $url, PHP_URL_HOST );
+		if ( ! $host ) {
+			return true;
+		}
+		// A bracketed IPv6 literal (e.g. "[::1]") arrives with its brackets — strip
+		// them so the IP check below sees a valid address rather than a hostname.
+		$host = trim( $host, '[]' );
+
+		$ips = array();
+		if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+			$ips[] = $host;
+		} else {
+			$a = gethostbynamel( $host );
+			if ( is_array( $a ) ) {
+				$ips = array_merge( $ips, $a );
+			}
+			if ( function_exists( 'dns_get_record' ) ) {
+				$aaaa = @dns_get_record( $host, DNS_AAAA ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- a lookup miss is expected, not an error.
+				if ( is_array( $aaaa ) ) {
+					foreach ( $aaaa as $rec ) {
+						if ( ! empty( $rec['ipv6'] ) ) {
+							$ips[] = $rec['ipv6'];
+						}
+					}
+				}
+			}
+		}
+
+		if ( empty( $ips ) ) {
+			return false;
+		}
+
+		foreach ( $ips as $ip ) {
+			if ( false === filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+				return true;
+			}
+		}
+
+		return false;
+	}
+
 	protected function prefetch_assets( array $urls ) {
 		if ( ! class_exists( '\\WpOrg\\Requests\\Requests' ) ) {
 			return;
@@ -11157,6 +11339,9 @@ class Uich_Webpage_Import {
 			}
 			if ( ! wp_http_validate_url( $url ) ) {
 				continue;
+			}
+			if ( $this->url_resolves_to_blocked_ip( $url ) ) {
+				continue; // SSRF: host resolves to a private/loopback/link-local IP.
 			}
 			$existing = get_posts(
 				array(
@@ -11281,6 +11466,16 @@ class Uich_Webpage_Import {
 		require_once ABSPATH . 'wp-admin/includes/file.php';
 		require_once ABSPATH . 'wp-admin/includes/media.php';
 		require_once ABSPATH . 'wp-admin/includes/image.php';
+
+		// SSRF guard before any network fetch: refuse a host that resolves to a
+		// private/loopback/link-local IP (e.g. 169.254.169.254). Skipped when a
+		// prefetched body already exists — prefetch_assets() ran this same check.
+		$has_prefetched = isset( $this->prefetched_assets[ $url ] )
+			&& is_string( $this->prefetched_assets[ $url ] )
+			&& file_exists( $this->prefetched_assets[ $url ] );
+		if ( ! $has_prefetched && $this->url_resolves_to_blocked_ip( $url ) ) {
+			return false;
+		}
 
 		// Prefetched in parallel by prefetch_assets()? Consume that body instead
 		// of re-downloading. Everything after this point (sideload, dedupe meta)
@@ -13309,6 +13504,923 @@ class Uich_Webpage_Import {
 					update_term_meta( $term_id, 'thumbnail_id', $attachment_id );
 				}
 			}
+		}
+	}
+
+	/* ── WooCommerce products ─────────────────────────────────────────────── */
+
+	/**
+	 * The stored WooCommerce catalogue, or null when this project has none.
+	 *
+	 * @return array|null Decoded woo-product-content.json.
+	 */
+	protected function get_stored_woo_catalogue() {
+		$files = get_option( self::OPTION_REPLACEMENT_DATA, array() );
+		if ( ! is_array( $files ) ) {
+			return null;
+		}
+		$key = $this->find_file_key( $files, self::WOO_PRODUCT_FILE );
+		if ( null === $key || ! is_array( $files[ $key ] ) ) {
+			return null;
+		}
+		return $files[ $key ];
+	}
+
+	/**
+	 * REST callback: import the project's WooCommerce catalogue, one batch at a time.
+	 *
+	 * @param WP_REST_Request $request Request.
+	 * @return WP_REST_Response|WP_Error
+	 */
+	public function rest_import_woo_products( WP_REST_Request $request ) {
+		$params = $request->get_json_params();
+		$params = is_array( $params ) ? $params : array();
+
+		return rest_ensure_response(
+			$this->import_woo_products_batch(
+				array(
+					'offset' => isset( $params['offset'] ) ? (int) $params['offset'] : 0,
+					'limit'  => isset( $params['limit'] ) ? (int) $params['limit'] : 0,
+				)
+			)
+		);
+	}
+
+	/**
+	 * Import one batch of products.
+	 *
+	 * Batched for the same reason blog posts are: a product carries several
+	 * images, and a dozen products with four images each is more work than one
+	 * PHP request should try to finish.
+	 *
+	 * The first batch creates the categories, tags and brands every product then
+	 * refers to. The LAST one resolves the links products make to each other —
+	 * upsells, cross-sells and the contents of a grouped product — because those
+	 * arrive as slugs, and a slug cannot become an ID until the product it names
+	 * exists. Doing that in one pass silently produced empty related-product
+	 * lists for everything that referred to a product created later.
+	 *
+	 * @param array $params { offset, limit }.
+	 * @return array
+	 */
+	protected function import_woo_products_batch( array $params ) {
+		$empty = array(
+			'success'     => true,
+			'created'     => 0,
+			'total'       => 0,
+			'processed'   => 0,
+			'offset'      => 0,
+			'next_offset' => null,
+			'done'        => true,
+			'errors'      => array(),
+		);
+
+		$catalogue = $this->get_stored_woo_catalogue();
+		if ( null === $catalogue ) {
+			$empty['skipped'] = true;
+			return $empty;
+		}
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			$empty['skipped'] = true;
+			$empty['errors'][] = __( 'WooCommerce is not active, so the products were skipped.', 'uichemy' );
+			return $empty;
+		}
+
+		$products = isset( $catalogue['products'] ) && is_array( $catalogue['products'] )
+			? array_values( $catalogue['products'] )
+			: array();
+		$total    = count( $products );
+		if ( 0 === $total ) {
+			return $empty;
+		}
+
+		$offset = max( 0, (int) $params['offset'] );
+		$limit  = (int) $params['limit'] > 0 ? (int) $params['limit'] : $total;
+
+		$errors = array();
+
+		// First batch: the taxonomy terms and store settings the catalogue needs.
+		if ( 0 === $offset ) {
+			$this->update_job_progress( array( 'phase' => 'woo_products', 'current' => 0, 'total' => $total ) );
+			$this->apply_woo_catalogue_settings();
+			$this->import_woo_terms( $catalogue );
+		}
+
+		$slice = array_slice( $products, $offset, $limit );
+
+		/*
+		 * Download this batch's images in parallel before touching any product.
+		 * One at a time, a catalogue where a few images no longer resolve spends
+		 * 30 seconds per dead URL and takes the whole batch past the request's
+		 * time limit — which is exactly how a run dies with four products in and
+		 * nothing to show for it. Prefetching bounds that to one parallel pass,
+		 * and anything it could not fetch still falls back to its own download.
+		 */
+		$this->prefetch_assets( $this->collect_woo_image_urls( $slice, 0 === $offset ? $catalogue : array() ) );
+
+		$created = 0;
+		$index   = 0;
+		foreach ( $slice as $product_data ) {
+			++$index;
+			if ( ! is_array( $product_data ) ) {
+				continue;
+			}
+			$this->update_job_progress(
+				array( 'phase' => 'woo_products', 'current' => $offset + $index, 'total' => $total )
+			);
+			$result = $this->import_single_woo_product( $product_data );
+			if ( is_wp_error( $result ) ) {
+				$errors[] = $result->get_error_message();
+				continue;
+			}
+			++$created;
+		}
+
+		$processed   = $offset + count( $slice );
+		$done        = $processed >= $total;
+		$next_offset = $done ? null : $processed;
+
+		$this->cleanup_prefetched_assets();
+
+		// Last batch: everything that needs the whole catalogue to already exist.
+		if ( $done ) {
+			$this->link_woo_related_products( $products );
+			$this->import_woo_coupons( $catalogue );
+		}
+
+		return array(
+			'success'     => true,
+			'created'     => $created,
+			'total'       => $total,
+			'processed'   => $processed,
+			'offset'      => $offset,
+			'next_offset' => $next_offset,
+			'done'        => $done,
+			'errors'      => $errors,
+		);
+	}
+
+	/**
+	 * Every image URL a batch of products will need.
+	 *
+	 * Product images, variation images and — on the first batch, where the terms
+	 * are created — the category images too, so one parallel pass covers the lot.
+	 *
+	 * @param array $products  The products in this batch.
+	 * @param array $catalogue Whole catalogue on the first batch, empty otherwise.
+	 * @return string[]
+	 */
+	protected function collect_woo_image_urls( array $products, array $catalogue ) {
+		$urls = array();
+
+		foreach ( $products as $product_data ) {
+			if ( ! is_array( $product_data ) ) {
+				continue;
+			}
+			foreach ( (array) ( $product_data['images'] ?? array() ) as $image ) {
+				if ( is_string( $image ) ) {
+					$urls[] = $image;
+				} elseif ( is_array( $image ) && ! empty( $image['src'] ) ) {
+					$urls[] = (string) $image['src'];
+				}
+			}
+			foreach ( (array) ( $product_data['variations'] ?? array() ) as $variation ) {
+				if ( is_array( $variation ) && ! empty( $variation['image'] ) ) {
+					$urls[] = (string) $variation['image'];
+				}
+			}
+		}
+
+		foreach ( (array) ( $catalogue['categories'] ?? array() ) as $term_data ) {
+			if ( is_array( $term_data ) && ! empty( $term_data['image'] ) ) {
+				$urls[] = (string) $term_data['image'];
+			}
+		}
+
+		return array_values( array_unique( array_filter( $urls, 'is_string' ) ) );
+	}
+
+	/**
+	 * Turn on the store features the catalogue assumes are available.
+	 *
+	 * The export ships reviews, ratings, stock numbers and coupons. With those
+	 * switches off WooCommerce accepts the data and then shows none of it, which
+	 * reads as "the products imported wrong" rather than "the store is
+	 * configured to hide this".
+	 *
+	 * @return void
+	 */
+	protected function apply_woo_catalogue_settings() {
+		$settings = array(
+			'woocommerce_enable_reviews'        => 'yes',
+			'woocommerce_enable_review_rating'  => 'yes',
+			'woocommerce_manage_stock'          => 'yes',
+			'woocommerce_enable_coupons'        => 'yes',
+		);
+		foreach ( $settings as $option => $value ) {
+			if ( $value !== get_option( $option ) ) {
+				update_option( $option, $value );
+			}
+		}
+	}
+
+	/**
+	 * Create the product categories, tags and brands the catalogue refers to.
+	 *
+	 * Terms are created up front so a product can simply name them. Categories
+	 * carry an image and a description; tags and brands are name + slug.
+	 *
+	 * @param array $catalogue Decoded catalogue.
+	 * @return void
+	 */
+	protected function import_woo_terms( array $catalogue ) {
+		$groups = array(
+			'categories' => 'product_cat',
+			'tags'       => 'product_tag',
+			'brands'     => 'product_brand',
+		);
+
+		foreach ( $groups as $key => $taxonomy ) {
+			if ( empty( $catalogue[ $key ] ) || ! is_array( $catalogue[ $key ] ) || ! taxonomy_exists( $taxonomy ) ) {
+				continue;
+			}
+
+			foreach ( $catalogue[ $key ] as $term_data ) {
+				if ( ! is_array( $term_data ) || empty( $term_data['name'] ) ) {
+					continue;
+				}
+				$name = sanitize_text_field( (string) $term_data['name'] );
+				$slug = ! empty( $term_data['slug'] ) ? sanitize_title( (string) $term_data['slug'] ) : sanitize_title( $name );
+
+				$term = get_term_by( 'slug', $slug, $taxonomy );
+				if ( ! $term ) {
+					$term = get_term_by( 'name', $name, $taxonomy );
+				}
+
+				$args = array( 'slug' => $slug );
+				if ( ! empty( $term_data['description'] ) ) {
+					$args['description'] = wp_kses_post( (string) $term_data['description'] );
+				}
+
+				if ( $term && ! is_wp_error( $term ) ) {
+					$term_id = (int) $term->term_id;
+					wp_update_term( $term_id, $taxonomy, $args );
+				} else {
+					$inserted = wp_insert_term( $name, $taxonomy, $args );
+					if ( is_wp_error( $inserted ) ) {
+						continue;
+					}
+					$term_id = (int) $inserted['term_id'];
+				}
+
+				// A category image is a real attachment, the same as anywhere else
+				// in an import, so the media library stays the single source.
+				$image = '';
+				foreach ( array( 'image', 'logo', 'thumbnail' ) as $image_key ) {
+					if ( ! empty( $term_data[ $image_key ] ) && is_string( $term_data[ $image_key ] ) ) {
+						$image = $term_data[ $image_key ];
+						break;
+					}
+				}
+				if ( '' !== $image && $this->is_remote_image( $image ) ) {
+					$asset = $this->import_asset( $image );
+					if ( $asset && ! empty( $asset['id'] ) ) {
+						update_term_meta( $term_id, 'thumbnail_id', (int) $asset['id'] );
+					}
+				}
+			}
+		}
+	}
+
+	/**
+	 * Find an existing imported product by SKU, then by slug.
+	 *
+	 * SKU first because it is the store's own identity for a product and stays
+	 * stable across re-imports even when the name changes.
+	 *
+	 * @param array $product_data Product entry.
+	 * @return int Product ID, or 0.
+	 */
+	protected function find_existing_woo_product( array $product_data ) {
+		if ( ! empty( $product_data['sku'] ) && function_exists( 'wc_get_product_id_by_sku' ) ) {
+			$by_sku = (int) wc_get_product_id_by_sku( (string) $product_data['sku'] );
+			if ( $by_sku ) {
+				return $by_sku;
+			}
+		}
+		$slug = ! empty( $product_data['slug'] ) ? sanitize_title( (string) $product_data['slug'] ) : '';
+		if ( '' !== $slug ) {
+			$existing = get_page_by_path( $slug, OBJECT, 'product' );
+			if ( $existing ) {
+				return (int) $existing->ID;
+			}
+		}
+		return 0;
+	}
+
+	/**
+	 * Create or update one WooCommerce product from the catalogue.
+	 *
+	 * Related products (upsells, cross-sells, grouped children) are deliberately
+	 * NOT set here — see link_woo_related_products().
+	 *
+	 * @param array $product_data One entry from the catalogue's products list.
+	 * @return int|WP_Error Product ID.
+	 */
+	protected function import_single_woo_product( array $product_data ) {
+		$name = isset( $product_data['name'] ) ? sanitize_text_field( (string) $product_data['name'] ) : '';
+		if ( '' === $name ) {
+			return new WP_Error( 'IMPORT_WOO_PRODUCT_MISSING_NAME', __( 'Product name is required.', 'uichemy' ) );
+		}
+
+		$type    = isset( $product_data['type'] ) ? sanitize_key( (string) $product_data['type'] ) : 'simple';
+		$classes = array(
+			'simple'   => 'WC_Product_Simple',
+			'variable' => 'WC_Product_Variable',
+			'grouped'  => 'WC_Product_Grouped',
+			'external' => 'WC_Product_External',
+		);
+		$class = isset( $classes[ $type ] ) ? $classes[ $type ] : 'WC_Product_Simple';
+		if ( ! class_exists( $class ) ) {
+			return new WP_Error( 'IMPORT_WOO_PRODUCT_TYPE', __( 'Unsupported product type.', 'uichemy' ) );
+		}
+
+		$existing_id = $this->find_existing_woo_product( $product_data );
+		$product     = new $class( $existing_id );
+
+		$product->set_name( $name );
+		if ( ! empty( $product_data['slug'] ) ) {
+			$product->set_slug( sanitize_title( (string) $product_data['slug'] ) );
+		}
+		$product->set_status( ! empty( $product_data['status'] ) ? sanitize_key( (string) $product_data['status'] ) : 'publish' );
+		$product->set_featured( ! empty( $product_data['featured'] ) );
+		if ( ! empty( $product_data['catalog_visibility'] ) ) {
+			$product->set_catalog_visibility( sanitize_key( (string) $product_data['catalog_visibility'] ) );
+		}
+		if ( isset( $product_data['description'] ) ) {
+			$product->set_description( wp_kses_post( (string) $product_data['description'] ) );
+		}
+		if ( isset( $product_data['short_description'] ) ) {
+			$product->set_short_description( wp_kses_post( (string) $product_data['short_description'] ) );
+		}
+		if ( ! empty( $product_data['sku'] ) ) {
+			// A duplicate SKU makes WooCommerce throw, which would lose the whole
+			// product over a field that is only an identifier.
+			try {
+				$product->set_sku( wc_clean( (string) $product_data['sku'] ) );
+			} catch ( \Exception $e ) {
+				unset( $e );
+			}
+		}
+
+		// Price, stock and shipping are meaningless on a grouped product (it has
+		// no price of its own) and WooCommerce ignores them there.
+		if ( 'grouped' !== $type ) {
+			$this->apply_woo_product_pricing( $product, $product_data );
+			$this->apply_woo_product_stock( $product, $product_data );
+			$this->apply_woo_product_shipping( $product, $product_data );
+		}
+
+		if ( 'external' === $type ) {
+			if ( ! empty( $product_data['external_url'] ) ) {
+				$product->set_product_url( esc_url_raw( (string) $product_data['external_url'] ) );
+			}
+			if ( ! empty( $product_data['button_text'] ) ) {
+				$product->set_button_text( sanitize_text_field( (string) $product_data['button_text'] ) );
+			}
+		}
+
+		$product->set_reviews_allowed( ! isset( $product_data['reviews_allowed'] ) || ! empty( $product_data['reviews_allowed'] ) );
+
+		if ( 'variable' === $type && ! empty( $product_data['attributes'] ) && is_array( $product_data['attributes'] ) ) {
+			$product->set_attributes( $this->build_woo_product_attributes( $product_data['attributes'] ) );
+		}
+
+		$product_id = $product->save();
+		if ( ! $product_id || is_wp_error( $product_id ) ) {
+			return new WP_Error( 'IMPORT_WOO_PRODUCT_SAVE_FAILED', __( 'Could not save the product.', 'uichemy' ) );
+		}
+		$product_id = (int) $product_id;
+
+		$this->assign_woo_product_terms( $product_id, $product_data );
+		$this->import_woo_product_images( $product_id, $product_data );
+
+		if ( 'variable' === $type && ! empty( $product_data['variations'] ) && is_array( $product_data['variations'] ) ) {
+			$this->import_woo_variations( $product_id, $product_data['variations'] );
+		}
+
+		if ( ! empty( $product_data['reviews'] ) && is_array( $product_data['reviews'] ) ) {
+			$this->import_woo_product_reviews( $product_id, $product_data['reviews'] );
+		}
+
+		return $product_id;
+	}
+
+	/**
+	 * Price fields, including a scheduled sale.
+	 *
+	 * @param WC_Product $product      Product.
+	 * @param array      $product_data Source entry.
+	 * @return void
+	 */
+	protected function apply_woo_product_pricing( $product, array $product_data ) {
+		if ( isset( $product_data['regular_price'] ) && '' !== $product_data['regular_price'] ) {
+			$product->set_regular_price( wc_format_decimal( $product_data['regular_price'] ) );
+		}
+		if ( isset( $product_data['sale_price'] ) && '' !== $product_data['sale_price'] ) {
+			$product->set_sale_price( wc_format_decimal( $product_data['sale_price'] ) );
+		}
+		foreach ( array( 'date_on_sale_from', 'date_on_sale_to' ) as $field ) {
+			if ( empty( $product_data[ $field ] ) ) {
+				continue;
+			}
+			$setter = 'set_' . $field;
+			if ( is_callable( array( $product, $setter ) ) ) {
+				$product->$setter( sanitize_text_field( (string) $product_data[ $field ] ) );
+			}
+		}
+	}
+
+	/**
+	 * Stock fields.
+	 *
+	 * @param WC_Product $product      Product.
+	 * @param array      $product_data Source entry.
+	 * @return void
+	 */
+	protected function apply_woo_product_stock( $product, array $product_data ) {
+		$manage = ! empty( $product_data['manage_stock'] );
+		$product->set_manage_stock( $manage );
+		if ( $manage && isset( $product_data['stock_quantity'] ) ) {
+			$product->set_stock_quantity( (int) $product_data['stock_quantity'] );
+		}
+		if ( ! empty( $product_data['stock_status'] ) ) {
+			$product->set_stock_status( sanitize_key( (string) $product_data['stock_status'] ) );
+		}
+		if ( ! empty( $product_data['backorders'] ) ) {
+			$product->set_backorders( sanitize_key( (string) $product_data['backorders'] ) );
+		}
+	}
+
+	/**
+	 * Weight, dimensions and the virtual / downloadable flags.
+	 *
+	 * @param WC_Product $product      Product.
+	 * @param array      $product_data Source entry.
+	 * @return void
+	 */
+	protected function apply_woo_product_shipping( $product, array $product_data ) {
+		if ( isset( $product_data['weight'] ) && '' !== $product_data['weight'] ) {
+			$product->set_weight( wc_format_decimal( $product_data['weight'] ) );
+		}
+		if ( ! empty( $product_data['dimensions'] ) && is_array( $product_data['dimensions'] ) ) {
+			foreach ( array( 'length', 'width', 'height' ) as $dimension ) {
+				if ( isset( $product_data['dimensions'][ $dimension ] ) && '' !== $product_data['dimensions'][ $dimension ] ) {
+					$setter = 'set_' . $dimension;
+					$product->$setter( wc_format_decimal( $product_data['dimensions'][ $dimension ] ) );
+				}
+			}
+		}
+		$product->set_virtual( ! empty( $product_data['virtual'] ) );
+		$product->set_downloadable( ! empty( $product_data['downloadable'] ) );
+	}
+
+	/**
+	 * Build WC_Product_Attribute objects from the catalogue's attribute list.
+	 *
+	 * Custom (product-level) attributes rather than global taxonomy ones: the
+	 * export gives plain option strings, and inventing a global attribute
+	 * taxonomy per store would leak between imports.
+	 *
+	 * @param array $attributes Attribute entries.
+	 * @return WC_Product_Attribute[]
+	 */
+	protected function build_woo_product_attributes( array $attributes ) {
+		$built    = array();
+		$position = 0;
+
+		foreach ( $attributes as $attribute_data ) {
+			if ( ! is_array( $attribute_data ) || empty( $attribute_data['name'] ) || empty( $attribute_data['options'] ) ) {
+				continue;
+			}
+			$options = array_values(
+				array_filter(
+					array_map(
+						static function ( $option ) {
+							return is_scalar( $option ) ? wc_clean( (string) $option ) : '';
+						},
+						(array) $attribute_data['options']
+					),
+					static function ( $option ) {
+						return '' !== $option;
+					}
+				)
+			);
+			if ( empty( $options ) ) {
+				continue;
+			}
+
+			$attribute = new WC_Product_Attribute();
+			$attribute->set_name( wc_clean( (string) $attribute_data['name'] ) );
+			$attribute->set_options( $options );
+			$attribute->set_position( $position );
+			$attribute->set_visible( ! isset( $attribute_data['visible'] ) || ! empty( $attribute_data['visible'] ) );
+			$attribute->set_variation( ! empty( $attribute_data['variation'] ) );
+			$built[] = $attribute;
+			++$position;
+		}
+
+		return $built;
+	}
+
+	/**
+	 * Create the variations of a variable product.
+	 *
+	 * Variation attribute keys must be the SANITISED attribute name, which is
+	 * what WooCommerce stores on the parent; passing the human-readable name
+	 * produces a variation that matches nothing and never shows in the dropdown.
+	 *
+	 * @param int   $parent_id  Variable product ID.
+	 * @param array $variations Variation entries.
+	 * @return void
+	 */
+	protected function import_woo_variations( $parent_id, array $variations ) {
+		if ( ! class_exists( 'WC_Product_Variation' ) ) {
+			return;
+		}
+
+		foreach ( $variations as $variation_data ) {
+			if ( ! is_array( $variation_data ) ) {
+				continue;
+			}
+
+			$existing_id = 0;
+			if ( ! empty( $variation_data['sku'] ) && function_exists( 'wc_get_product_id_by_sku' ) ) {
+				$existing_id = (int) wc_get_product_id_by_sku( (string) $variation_data['sku'] );
+			}
+
+			$variation = new WC_Product_Variation( $existing_id );
+			$variation->set_parent_id( (int) $parent_id );
+			$variation->set_status( 'publish' );
+
+			if ( ! empty( $variation_data['attributes'] ) && is_array( $variation_data['attributes'] ) ) {
+				$attributes = array();
+				foreach ( $variation_data['attributes'] as $attribute_name => $value ) {
+					$attributes[ sanitize_title( (string) $attribute_name ) ] = wc_clean( (string) $value );
+				}
+				$variation->set_attributes( $attributes );
+			}
+
+			if ( ! empty( $variation_data['sku'] ) ) {
+				try {
+					$variation->set_sku( wc_clean( (string) $variation_data['sku'] ) );
+				} catch ( \Exception $e ) {
+					unset( $e );
+				}
+			}
+
+			$this->apply_woo_product_pricing( $variation, $variation_data );
+			$this->apply_woo_product_stock( $variation, $variation_data );
+			$this->apply_woo_product_shipping( $variation, $variation_data );
+
+			$variation_id = $variation->save();
+
+			if ( $variation_id && ! empty( $variation_data['image'] ) && $this->is_remote_image( $variation_data['image'] ) ) {
+				$asset = $this->import_asset( (string) $variation_data['image'] );
+				if ( $asset && ! empty( $asset['id'] ) ) {
+					$saved = new WC_Product_Variation( $variation_id );
+					$saved->set_image_id( (int) $asset['id'] );
+					$saved->save();
+				}
+			}
+		}
+
+		// Recalculates the parent's price range from the variations it now has.
+		if ( class_exists( 'WC_Product_Variable' ) ) {
+			WC_Product_Variable::sync( (int) $parent_id );
+		}
+	}
+
+	/**
+	 * Attach a product to its categories, tags and brand.
+	 *
+	 * Matched by name or slug against the terms created earlier; a name the
+	 * catalogue never declared is created rather than dropped.
+	 *
+	 * @param int   $product_id   Product ID.
+	 * @param array $product_data Source entry.
+	 * @return void
+	 */
+	protected function assign_woo_product_terms( $product_id, array $product_data ) {
+		$map = array(
+			'categories' => 'product_cat',
+			'tags'       => 'product_tag',
+			'brand'      => 'product_brand',
+		);
+
+		foreach ( $map as $key => $taxonomy ) {
+			if ( empty( $product_data[ $key ] ) || ! taxonomy_exists( $taxonomy ) ) {
+				continue;
+			}
+			$names    = (array) $product_data[ $key ];
+			$term_ids = array();
+			foreach ( $names as $name ) {
+				if ( ! is_string( $name ) || '' === trim( $name ) ) {
+					continue;
+				}
+				$name = sanitize_text_field( $name );
+				$term = get_term_by( 'name', $name, $taxonomy );
+				if ( ! $term ) {
+					$term = get_term_by( 'slug', sanitize_title( $name ), $taxonomy );
+				}
+				if ( ! $term ) {
+					$inserted = wp_insert_term( $name, $taxonomy );
+					if ( is_wp_error( $inserted ) ) {
+						continue;
+					}
+					$term_ids[] = (int) $inserted['term_id'];
+					continue;
+				}
+				$term_ids[] = (int) $term->term_id;
+			}
+			if ( ! empty( $term_ids ) ) {
+				wp_set_object_terms( $product_id, $term_ids, $taxonomy, false );
+			}
+		}
+	}
+
+	/**
+	 * Import a product's images: the featured one plus the rest as its gallery.
+	 *
+	 * @param int   $product_id   Product ID.
+	 * @param array $product_data Source entry.
+	 * @return void
+	 */
+	protected function import_woo_product_images( $product_id, array $product_data ) {
+		if ( empty( $product_data['images'] ) || ! is_array( $product_data['images'] ) ) {
+			return;
+		}
+
+		$featured_id = 0;
+		$gallery_ids = array();
+
+		foreach ( $product_data['images'] as $image ) {
+			$src = '';
+			$is_featured = false;
+			if ( is_string( $image ) ) {
+				$src = $image;
+			} elseif ( is_array( $image ) && ! empty( $image['src'] ) ) {
+				$src         = (string) $image['src'];
+				$is_featured = ! empty( $image['featured'] );
+			}
+			if ( '' === $src || ! $this->is_remote_image( $src ) ) {
+				continue;
+			}
+
+			$asset = $this->import_asset( $src );
+			if ( ! $asset || empty( $asset['id'] ) ) {
+				continue;
+			}
+			$attachment_id = (int) $asset['id'];
+
+			if ( is_array( $image ) && ! empty( $image['alt'] ) ) {
+				update_post_meta( $attachment_id, '_wp_attachment_image_alt', sanitize_text_field( (string) $image['alt'] ) );
+			}
+
+			// First image is the featured one when nothing is flagged, which is
+			// what every other importer does and what the export implies.
+			if ( $is_featured && ! $featured_id ) {
+				$featured_id = $attachment_id;
+			} else {
+				$gallery_ids[] = $attachment_id;
+			}
+		}
+
+		if ( ! $featured_id && ! empty( $gallery_ids ) ) {
+			$featured_id = array_shift( $gallery_ids );
+		}
+
+		if ( $featured_id ) {
+			set_post_thumbnail( $product_id, $featured_id );
+		}
+		if ( ! empty( $gallery_ids ) ) {
+			update_post_meta( $product_id, '_product_image_gallery', implode( ',', array_unique( $gallery_ids ) ) );
+		}
+	}
+
+	/**
+	 * Import a product's reviews as WooCommerce review comments.
+	 *
+	 * A review is a comment of type `review` carrying a `rating` meta; without
+	 * that meta WooCommerce shows the text but no stars. The star average is
+	 * recalculated afterwards so the rating shows immediately instead of after
+	 * the next save.
+	 *
+	 * @param int   $product_id Product ID.
+	 * @param array $reviews    Review entries.
+	 * @return void
+	 */
+	protected function import_woo_product_reviews( $product_id, array $reviews ) {
+		$imported = 0;
+
+		foreach ( $reviews as $review ) {
+			if ( ! is_array( $review ) || empty( $review['review'] ) ) {
+				continue;
+			}
+
+			$author  = isset( $review['author'] ) ? sanitize_text_field( (string) $review['author'] ) : '';
+			$email   = isset( $review['email'] ) ? sanitize_email( (string) $review['email'] ) : '';
+			$content = wp_kses_post( (string) $review['review'] );
+
+			// Re-importing must not stack duplicate reviews on the same product.
+			$duplicate = get_comments(
+				array(
+					'post_id'     => $product_id,
+					'author_email'=> $email,
+					'search'      => $content,
+					'number'      => 1,
+					'count'       => true,
+					'status'      => 'all',
+				)
+			);
+			if ( $duplicate ) {
+				continue;
+			}
+
+			$date = '';
+			if ( ! empty( $review['date'] ) ) {
+				$timestamp = strtotime( (string) $review['date'] );
+				if ( $timestamp ) {
+					$date = gmdate( 'Y-m-d H:i:s', $timestamp );
+				}
+			}
+
+			$comment_id = wp_insert_comment(
+				array(
+					'comment_post_ID'      => (int) $product_id,
+					'comment_author'       => $author,
+					'comment_author_email' => $email,
+					'comment_content'      => $content,
+					'comment_type'         => 'review',
+					'comment_approved'     => 1,
+					'comment_date'         => $date ? $date : current_time( 'mysql' ),
+					'comment_date_gmt'     => $date ? $date : current_time( 'mysql', 1 ),
+				)
+			);
+			if ( ! $comment_id ) {
+				continue;
+			}
+
+			$rating = isset( $review['rating'] ) ? (int) $review['rating'] : 0;
+			if ( $rating >= 1 && $rating <= 5 ) {
+				add_comment_meta( $comment_id, 'rating', $rating, true );
+			}
+			add_comment_meta( $comment_id, 'verified', ! empty( $review['verified'] ) ? 1 : 0, true );
+			++$imported;
+		}
+
+		if ( $imported && class_exists( 'WC_Comments' ) ) {
+			WC_Comments::clear_transients( $product_id );
+			if ( is_callable( array( 'WC_Comments', 'get_average_rating_for_product' ) ) ) {
+				$product = wc_get_product( $product_id );
+				if ( $product ) {
+					WC_Comments::get_average_rating_for_product( $product );
+					WC_Comments::get_review_count_for_product( $product );
+				}
+			}
+		}
+	}
+
+	/**
+	 * Resolve the links products make to each other, once they all exist.
+	 *
+	 * Upsells, cross-sells and a grouped product's children arrive as SLUGS. A
+	 * slug cannot become an ID until the product it names has been created, so
+	 * this runs as its own pass after the last batch — see
+	 * import_woo_products_batch().
+	 *
+	 * @param array $products The whole catalogue's product list.
+	 * @return void
+	 */
+	protected function link_woo_related_products( array $products ) {
+		// slug => id for everything this catalogue just created.
+		$by_slug = array();
+		foreach ( $products as $product_data ) {
+			if ( ! is_array( $product_data ) ) {
+				continue;
+			}
+			$id = $this->find_existing_woo_product( $product_data );
+			if ( ! $id ) {
+				continue;
+			}
+			$slug = ! empty( $product_data['slug'] )
+				? sanitize_title( (string) $product_data['slug'] )
+				: sanitize_title( isset( $product_data['name'] ) ? (string) $product_data['name'] : '' );
+			if ( '' !== $slug ) {
+				$by_slug[ $slug ] = $id;
+			}
+		}
+
+		$to_ids = static function ( $slugs ) use ( $by_slug ) {
+			$ids = array();
+			foreach ( (array) $slugs as $slug ) {
+				if ( ! is_string( $slug ) ) {
+					continue;
+				}
+				$key = sanitize_title( $slug );
+				if ( isset( $by_slug[ $key ] ) ) {
+					$ids[] = (int) $by_slug[ $key ];
+				}
+			}
+			return array_values( array_unique( $ids ) );
+		};
+
+		foreach ( $products as $product_data ) {
+			if ( ! is_array( $product_data ) ) {
+				continue;
+			}
+			$id = $this->find_existing_woo_product( $product_data );
+			if ( ! $id ) {
+				continue;
+			}
+			$product = wc_get_product( $id );
+			if ( ! $product ) {
+				continue;
+			}
+
+			$changed = false;
+
+			if ( ! empty( $product_data['upsells'] ) ) {
+				$ids = $to_ids( $product_data['upsells'] );
+				if ( ! empty( $ids ) ) {
+					$product->set_upsell_ids( $ids );
+					$changed = true;
+				}
+			}
+			if ( ! empty( $product_data['cross_sells'] ) && is_callable( array( $product, 'set_cross_sell_ids' ) ) ) {
+				$ids = $to_ids( $product_data['cross_sells'] );
+				if ( ! empty( $ids ) ) {
+					$product->set_cross_sell_ids( $ids );
+					$changed = true;
+				}
+			}
+			if ( ! empty( $product_data['grouped_products'] ) && is_callable( array( $product, 'set_children' ) ) ) {
+				$ids = $to_ids( $product_data['grouped_products'] );
+				if ( ! empty( $ids ) ) {
+					$product->set_children( $ids );
+					$changed = true;
+				}
+			}
+
+			if ( $changed ) {
+				$product->save();
+			}
+		}
+	}
+
+	/**
+	 * Create the catalogue's coupons.
+	 *
+	 * An existing coupon with the same code is left alone: it may carry usage
+	 * history or a deliberately edited amount, and an import has no business
+	 * overwriting that.
+	 *
+	 * @param array $catalogue Decoded catalogue.
+	 * @return void
+	 */
+	protected function import_woo_coupons( array $catalogue ) {
+		if ( empty( $catalogue['coupons'] ) || ! is_array( $catalogue['coupons'] ) || ! class_exists( 'WC_Coupon' ) ) {
+			return;
+		}
+
+		foreach ( $catalogue['coupons'] as $coupon_data ) {
+			if ( ! is_array( $coupon_data ) || empty( $coupon_data['code'] ) ) {
+				continue;
+			}
+			$code = wc_format_coupon_code( (string) $coupon_data['code'] );
+			if ( '' === $code || wc_get_coupon_id_by_code( $code ) ) {
+				continue;
+			}
+
+			$coupon = new WC_Coupon();
+			$coupon->set_code( $code );
+			if ( ! empty( $coupon_data['discount_type'] ) ) {
+				$coupon->set_discount_type( sanitize_key( (string) $coupon_data['discount_type'] ) );
+			}
+			if ( isset( $coupon_data['amount'] ) ) {
+				$coupon->set_amount( wc_format_decimal( $coupon_data['amount'] ) );
+			}
+			if ( ! empty( $coupon_data['description'] ) ) {
+				$coupon->set_description( sanitize_text_field( (string) $coupon_data['description'] ) );
+			}
+			if ( ! empty( $coupon_data['minimum_amount'] ) ) {
+				$coupon->set_minimum_amount( wc_format_decimal( $coupon_data['minimum_amount'] ) );
+			}
+			$coupon->set_free_shipping( ! empty( $coupon_data['free_shipping'] ) );
+			if ( ! empty( $coupon_data['date_expires'] ) ) {
+				$coupon->set_date_expires( sanitize_text_field( (string) $coupon_data['date_expires'] ) );
+			}
+			$coupon->save();
 		}
 	}
 

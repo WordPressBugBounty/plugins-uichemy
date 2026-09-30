@@ -381,7 +381,14 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 			// undefined reference is a hard XML parse error. Only the five
 			// predefined names and numeric references are safe to keep.
 			$svg = preg_replace( '#&(?!(?:amp|lt|gt|quot|apos);|\#)[A-Za-z_][A-Za-z0-9_.:-]*;#', '', $svg );
-			return $svg;
+
+			// Second, DOM-based pass. A regex cannot reliably see every vector — SMIL
+			// animation of an href to javascript: (<set attributeName="href" …>),
+			// namespaced/odd-cased handlers, style="…url(javascript:…)", or an
+			// external <use>. Parsing the tree and removing those nodes/attributes
+			// catches them. It FAILS OPEN to the regex-sanitised bytes when libxml
+			// cannot parse the document, so a valid SVG is never rejected.
+			return self::svg_dom_harden( $svg );
 		}
 
 		/**
@@ -396,7 +403,26 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 		 * @return string
 		 */
 		public static function neutralize_svg_url_attribute( $matches ) {
-			$decoded = html_entity_decode( (string) $matches[3], ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+			if ( ! self::svg_url_value_is_dangerous( $matches[3] ) ) {
+				return $matches[0];
+			}
+			return $matches[1] . '=' . $matches[2] . '#' . $matches[2];
+		}
+
+		/**
+		 * Is a URL attribute value an executable/unsafe scheme?
+		 *
+		 * Decodes first, because the browser decodes before it parses the URL:
+		 * `&#106;avascript:`, `java&#9;script:` and ` javascript:` are all the same
+		 * target. `javascript:`/`vbscript:` are always blocked; a `data:` URI is
+		 * blocked unless it is a plain raster image (png/jpeg/gif/webp) — notably
+		 * `data:image/svg+xml` is NOT allowed, since it can itself carry script.
+		 *
+		 * @param string $raw Raw attribute value.
+		 * @return bool
+		 */
+		private static function svg_url_value_is_dangerous( $raw ) {
+			$decoded = html_entity_decode( (string) $raw, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 			// html_entity_decode leaves the numeric references HTML5 calls
 			// disallowed, CR (&#13;) among them, so a reference can still sit
 			// between the scheme and the colon after decoding. Drop every
@@ -405,15 +431,121 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 			$decoded = preg_replace( '#&\#0*(?:[0-9]|1[0-9]|2[0-9]|3[0-2]);#', '', (string) $decoded );
 			$decoded = preg_replace( '#[\s\x00-\x1f]+#', '', (string) $decoded );
 
-			$blocked = (bool) preg_match( '#^(?:javascript|vbscript):#i', (string) $decoded );
-			if ( ! $blocked && preg_match( '#^data:#i', (string) $decoded ) ) {
-				$blocked = ! preg_match( '#^data:image/(?:png|jpe?g|gif|webp)[;,]#i', (string) $decoded );
+			if ( preg_match( '#^(?:javascript|vbscript):#i', (string) $decoded ) ) {
+				return true;
+			}
+			if ( preg_match( '#^data:#i', (string) $decoded ) ) {
+				return ! preg_match( '#^data:image/(?:png|jpe?g|gif|webp)[;,]#i', (string) $decoded );
+			}
+			return false;
+		}
+
+		/**
+		 * DOM-based hardening pass for an SVG that has already been through the
+		 * regex sweep in sanitize_svg_bytes().
+		 *
+		 * Removes: script/foreignObject/iframe/embed/object/handler/listener/audio/
+		 * video elements outright; any `on*` event handler; any href/src/xlink:href
+		 * with a dangerous scheme; a `style` carrying javascript/expression; an
+		 * external `<use>` reference; and a SMIL animation element that targets an
+		 * href attribute (the classic `<set attributeName="href" to="javascript:…">`).
+		 *
+		 * Fails OPEN: if libxml cannot parse the bytes, the already regex-sanitised
+		 * input is returned unchanged, so a valid upload is never rejected.
+		 *
+		 * @param string $svg SVG bytes (regex-sanitised).
+		 * @return string
+		 */
+		private static function svg_dom_harden( $svg ) {
+			if ( ! class_exists( 'DOMDocument' ) || '' === trim( (string) $svg ) ) {
+				return $svg;
 			}
 
-			if ( ! $blocked ) {
-				return $matches[0];
+			$prev_errors = libxml_use_internal_errors( true );
+			$prev_loader = null;
+			// PHP < 8 loads external entities by default (XXE); disable it. On PHP 8+
+			// they are off and the function is deprecated, so only touch it there.
+			if ( PHP_VERSION_ID < 80000 && function_exists( 'libxml_disable_entity_loader' ) ) {
+				$prev_loader = libxml_disable_entity_loader( true ); // phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated -- guarded to PHP < 8 where it is required for XXE safety.
 			}
-			return $matches[1] . '=' . $matches[2] . '#' . $matches[2];
+
+			$doc    = new \DOMDocument();
+			$loaded = $doc->loadXML( $svg, LIBXML_NONET | LIBXML_NOERROR | LIBXML_NOWARNING );
+
+			if ( PHP_VERSION_ID < 80000 && null !== $prev_loader && function_exists( 'libxml_disable_entity_loader' ) ) {
+				libxml_disable_entity_loader( $prev_loader ); // phpcs:ignore Generic.PHP.DeprecatedFunctions.Deprecated
+			}
+			libxml_clear_errors();
+			libxml_use_internal_errors( $prev_errors );
+
+			if ( ! $loaded || ! ( $doc->documentElement instanceof \DOMElement ) ) {
+				return $svg;
+			}
+
+			$bad_tags   = array( 'script', 'foreignobject', 'iframe', 'embed', 'object', 'handler', 'listener', 'audio', 'video' );
+			$anim_tags  = array( 'set', 'animate', 'animatetransform', 'animatemotion' );
+			$url_locals = array( 'href', 'src' );
+
+			$xpath = new \DOMXPath( $doc );
+			$nodes = $xpath->query( '//*' );
+			if ( $nodes ) {
+				foreach ( iterator_to_array( $nodes ) as $el ) {
+					if ( ! ( $el instanceof \DOMElement ) ) {
+						continue;
+					}
+					$tag = strtolower( $el->localName );
+
+					// Whole-element removals.
+					if ( in_array( $tag, $bad_tags, true ) ) {
+						if ( $el->parentNode ) {
+							$el->parentNode->removeChild( $el );
+						}
+						continue;
+					}
+					// A SMIL animation that retargets an href is the classic
+					// javascript: injection; icons never legitimately animate a link.
+					if ( in_array( $tag, $anim_tags, true ) ) {
+						$target = strtolower( (string) $el->getAttribute( 'attributeName' ) );
+						if ( 'href' === $target || 'xlink:href' === $target ) {
+							if ( $el->parentNode ) {
+								$el->parentNode->removeChild( $el );
+							}
+							continue;
+						}
+					}
+					// An external <use> can pull in a remote document; allow only a
+					// same-document fragment (#id).
+					if ( 'use' === $tag ) {
+						$use_href = (string) ( $el->getAttribute( 'href' ) ?: $el->getAttribute( 'xlink:href' ) );
+						if ( '' !== $use_href && 0 !== strpos( ltrim( $use_href ), '#' ) ) {
+							if ( $el->parentNode ) {
+								$el->parentNode->removeChild( $el );
+							}
+							continue;
+						}
+					}
+
+					// Attribute-level removals.
+					foreach ( iterator_to_array( $el->attributes ) as $attr ) {
+						$local = strtolower( $attr->localName );
+						$val   = (string) $attr->nodeValue;
+						$strip = false;
+						if ( 0 === strpos( $local, 'on' ) ) {
+							$strip = true;
+						} elseif ( in_array( $local, $url_locals, true ) && self::svg_url_value_is_dangerous( $val ) ) {
+							$strip = true;
+						} elseif ( 'style' === $local && preg_match( '#(?:java|vb)\s*script\s*:|expression\s*\(|url\s*\(\s*["\']?\s*(?:java|vb)\s*script#i', $val ) ) {
+							$strip = true;
+						}
+						if ( $strip ) {
+							$el->removeAttributeNode( $attr );
+						}
+					}
+				}
+			}
+
+			$out = $doc->saveXML( $doc->documentElement );
+			return ( false === $out || '' === trim( (string) $out ) ) ? $svg : $out;
 		}
 
 		// ============================================================

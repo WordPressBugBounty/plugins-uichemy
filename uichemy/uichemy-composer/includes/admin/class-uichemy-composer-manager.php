@@ -234,6 +234,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return '';
 			}
 
+			// Capability gate: a user without `unfiltered_html` cannot inject raw
+			// head markup (a <script>/<link>/<meta> or a </style> breakout). Their
+			// head code is treated as plain CSS — breakout neutralised, then wrapped.
+			if ( ! self::current_user_can_store_raw_code() ) {
+				return "<style>\n" . self::neutralize_style_close( $css ) . "\n</style>";
+			}
+
 			// Head code can be markup, such as Google Fonts <link> tags. Preserve it
 			// instead of placing markup inside <style>, which browsers ignore.
 			if ( preg_match( '/<(style|link|meta)\b/i', $css ) ) {
@@ -254,6 +261,18 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			if ( '' === $js ) {
 				return '';
 			}
+
+			// Capability gate: a user without `unfiltered_html` cannot inject
+			// executable body code. Bare JS is dropped entirely; body MARKUP is
+			// reduced to post-safe HTML (no <script>, no on* handlers).
+			if ( ! self::current_user_can_store_raw_code() ) {
+				if ( '<' !== $js[0] ) {
+					return '';
+				}
+				$js = wp_kses_post( $js );
+				return '' === trim( $js ) ? '' : $js;
+			}
+
 			if ( 0 === stripos( $js, '<script' ) ) {
 				return $js;
 			}
@@ -352,7 +371,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// neutralising just that closes stored-XSS while preserving every valid
 			// '<': inline SVG data URIs (url("data:image/svg+xml,<svg…")), media
 			// range queries ((width < 600px)), and content strings all pass through.
-			$css     = trim( str_ireplace( '</style', '< /style', (string) $css ) );
+			$css     = trim( self::neutralize_style_close( $css ) );
 			$current = self::get_site_custom_code_option();
 			$head    = UiChemy_Globals_CSS::upsert_block( $current['head'], $css );
 			// The #uichemy-globals block is plugin-generated design-token CSS (not
@@ -661,6 +680,79 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param array $payload  Sync payload.
 		 * @return array|\WP_Error
 		 */
+		/**
+		 * Whether the current user may persist RAW (executable) code.
+		 *
+		 * Mirrors WordPress core: only `unfiltered_html` users can store script
+		 * and unescaped markup. Everyone else — Authors/Contributors on any site,
+		 * and even administrators/editors on multisite — must have their code
+		 * sanitised before it is written.
+		 *
+		 * @return bool
+		 */
+		private static function current_user_can_store_raw_code() {
+			// A "content-only" UiChemy role (Pro Role Manager) is explicitly denied
+			// code and design changes — so it can never store raw code, even when its
+			// underlying WordPress role happens to hold `unfiltered_html` (e.g. an
+			// Editor placed in content-only). On the free build / with no Role Manager
+			// configured, is_content_only() is always false, so this is a no-op there.
+			if ( class_exists( 'UiChemy_Roles' ) && UiChemy_Roles::is_content_only() ) {
+				return false;
+			}
+			return current_user_can( 'unfiltered_html' );
+		}
+
+		/**
+		 * Sanitise a raw HTML block for a user who cannot store unfiltered markup.
+		 * `unfiltered_html` users get their markup verbatim.
+		 *
+		 * @param string $html Raw HTML.
+		 * @return string
+		 */
+		private static function gate_raw_html( $html ) {
+			return self::current_user_can_store_raw_code() ? $html : wp_kses_post( (string) $html );
+		}
+
+		/**
+		 * Neutralise the ONLY sequence that can break out of a raw-text <style>
+		 * element: a literal "</style" (case-insensitive). A "</style><script>"
+		 * payload would otherwise escape the wrapping <style> element every
+		 * plugin-emitted CSS block sits inside, and run as HTML.
+		 *
+		 * THIS IS THE SOLE XSS DEFENSE for those <style> blocks — do not remove it
+		 * (in upsert_globals_block, mcp_ensure_style_tag or gate_raw_css) without an
+		 * equivalent guard. Every legitimate '<' in CSS (SVG data URIs, media range
+		 * queries like (width < 600px), content strings) is preserved untouched.
+		 *
+		 * @param string $css CSS text.
+		 * @return string
+		 */
+		private static function neutralize_style_close( $css ) {
+			return str_ireplace( '</style', '< /style', (string) $css );
+		}
+
+		/**
+		 * Neutralise a `</style>` breakout in a CSS block for a user who cannot
+		 * store unfiltered markup (a `</style><script>` payload would otherwise
+		 * escape the wrapping <style> element the renderer emits and run as HTML).
+		 *
+		 * @param string $css Raw CSS.
+		 * @return string
+		 */
+		private static function gate_raw_css( $css ) {
+			return self::current_user_can_store_raw_code() ? $css : self::neutralize_style_close( $css );
+		}
+
+		/**
+		 * Drop executable JavaScript for a user who cannot store raw code.
+		 *
+		 * @param string $js Raw JS.
+		 * @return string
+		 */
+		private static function gate_raw_js( $js ) {
+			return self::current_user_can_store_raw_code() ? $js : '';
+		}
+
 		public static function mcp_sync_generated_code_to_widget( $post_id, $payload ) {
 			$post_id = absint( $post_id );
 			if ( ! $post_id ) {
@@ -3580,6 +3672,28 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		private static function build_mcp_tagged_code_block( $type, $code, $source, $label ) {
 			$code = (string) $code;
 			if ( '' === trim( $code ) ) {
+				return '';
+			}
+
+			// Capability gate (mirrors WordPress core). EVERY section-code write — the
+			// frontend live editor AND every MCP ability — funnels through here, so
+			// this single choke point stops a user without `unfiltered_html`
+			// (Author/Contributor on any site, admin/editor on multisite) from
+			// persisting executable JS or unescaped markup. `unfiltered_html` users
+			// are unaffected. Site-wide code is gated separately in
+			// update_site_custom_code_option()/sanitize_custom_code().
+			switch ( (string) $type ) {
+				case 'js':
+					$code = self::gate_raw_js( $code );
+					break;
+				case 'css':
+					$code = self::gate_raw_css( $code );
+					break;
+				case 'html':
+					$code = self::gate_raw_html( $code );
+					break;
+			}
+			if ( '' === trim( (string) $code ) ) {
 				return '';
 			}
 

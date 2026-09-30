@@ -95,7 +95,19 @@ if ( ! function_exists( 'uich_webpage_http_sslverify' ) ) {
 		 *
 		 * @param bool $verify Default from UICH_WEBPAGE_HTTP_SSLVERIFY.
 		 */
-		return (bool) apply_filters( 'uich_webpage_http_sslverify', (bool) UICH_WEBPAGE_HTTP_SSLVERIFY );
+		$verify = (bool) apply_filters( 'uich_webpage_http_sslverify', (bool) UICH_WEBPAGE_HTTP_SSLVERIFY );
+
+		// A disabled TLS check is a MITM vector, so the constant/filter override is
+		// honoured ONLY on local/development sites (e.g. a broken local CA bundle).
+		// On production, verification is always forced on.
+		if ( ! $verify && function_exists( 'wp_get_environment_type' ) ) {
+			$env = wp_get_environment_type();
+			if ( 'local' !== $env && 'development' !== $env ) {
+				$verify = true;
+			}
+		}
+
+		return $verify;
 	}
 }
 

@@ -132,6 +132,24 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 		 * @return void
 		 */
 		private static function handle_list() {
+			wp_send_json_success( self::list_payload() );
+		}
+
+		/**
+		 * Build the full template list + environment payload.
+		 *
+		 * Shared by tb_list AND tb_set_status: after a status change, the client
+		 * must reconcile from the AUTHORITATIVE list, because activating one
+		 * template can deactivate a slot-mate (same type + conditions) — and only
+		 * the server knows which. Returning the whole list here lets the client
+		 * replace its state in one atomic step, so it never has to guess which
+		 * siblings to deactivate (which turned off unrelated header/footer
+		 * templates that had different conditions) or fire a second request whose
+		 * response could race an earlier one.
+		 *
+		 * @return array { templates: array<string,array>, env: array }
+		 */
+		private static function list_payload() {
 			$out = array();
 			// Free lists only its four types — Pro-type templates stay in the DB
 			// untouched, they just aren't surfaced until Pro is active again.
@@ -154,11 +172,9 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 			$env['siteName'] = get_bloginfo( 'name' );
 			$env['siteUrl']  = home_url( '/' );
 
-			wp_send_json_success(
-				array(
-					'templates' => $out,
-					'env'       => $env,
-				)
+			return array(
+				'templates' => $out,
+				'env'       => $env,
 			);
 		}
 
@@ -361,7 +377,11 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 			$status = isset( $_POST['status'] ) && 'active' === $_POST['status'] ? 'active' : 'inactive';  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce (check_ajax_referer) and capability verified at handler entry.
 
 			UiChemy_Template_Store::set_status( $id, $status );
-			wp_send_json_success( self::template_payload( $id ) );
+
+			// Return the WHOLE list, not just this template: activating one can
+			// deactivate a slot-mate, and the client reconciles from this single
+			// authoritative response (see list_payload()).
+			wp_send_json_success( self::list_payload() );
 		}
 
 		/**
