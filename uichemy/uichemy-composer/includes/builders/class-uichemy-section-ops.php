@@ -242,6 +242,214 @@ if ( ! class_exists( 'UiChemy_Section_Ops' ) ) {
 		}
 
 		/**
+		 * Where a section's CSS and JS are printed on the front end.
+		 *
+		 * Stored as raw_css_placement / raw_js_placement on the section: '' = use the
+		 * default (UiChemy_Fast_Load::default_placement()), 'head' = Before Head,
+		 * 'body' = Before Body. Only the Elementor widget honours them.
+		 *
+		 * @param UiChemy_Builder_Driver $driver  Driver.
+		 * @param int                    $post_id Post id.
+		 * @param string                 $uid     Element id, or ''.
+		 * @param int                    $index   Section index, used when uid is ''.
+		 * @param string                 $area    Content area.
+		 * @return array|WP_Error { post_id, builder, widget_id, section_index, label, css_placement, css_is_default, js_placement, js_is_default }
+		 */
+		public static function get_placement( $driver, $post_id, $uid = '', $index = 0, $area = 'content' ) {
+			$sections = self::sections( $driver, $post_id, $area );
+			if ( is_wp_error( $sections ) ) {
+				return $sections;
+			}
+
+			$at = UiChemy_Section::locate( $sections, $uid, $index );
+			if ( null === $at ) {
+				return self::not_found( $sections, $uid, $index );
+			}
+
+			$settings = (array) $sections[ $at ]['settings'];
+			$index    = (int) $sections[ $at ]['index'];
+			$css_set  = self::placement_name( isset( $settings['raw_css_placement'] ) ? $settings['raw_css_placement'] : '' );
+			$js_set   = self::placement_name( isset( $settings['raw_js_placement'] ) ? $settings['raw_js_placement'] : '' );
+
+			// The effective placement: what the author chose, else the default for this
+			// position (the same rule the editor dropdown and the front end use).
+			return array(
+				'post_id'        => absint( $post_id ),
+				'builder'        => $driver->slug(),
+				'widget_id'      => (string) $sections[ $at ]['uid'],
+				'section_index'  => $index,
+				'label'          => isset( $settings['_title'] ) ? (string) $settings['_title'] : '',
+				'css_placement'  => $css_set ? $css_set : UiChemy_Fast_Load::default_placement( 'css', $index ),
+				'css_is_default' => ! $css_set,
+				'js_placement'   => $js_set ? $js_set : UiChemy_Fast_Load::default_placement( 'js', $index ),
+				'js_is_default'  => ! $js_set,
+			);
+		}
+
+		/**
+		 * Set a section's CSS placement, JS placement, or both.
+		 *
+		 * @param UiChemy_Builder_Driver $driver  Driver.
+		 * @param int                    $post_id Post id.
+		 * @param string                 $uid     Element id, or ''.
+		 * @param array                  $payload { css_placement?, js_placement? } each normal|head|body.
+		 * @param int                    $index   Section index, used when uid is ''.
+		 * @param string                 $area    Content area.
+		 * @return array|WP_Error The section's placement after the change.
+		 */
+		public static function set_placement( $driver, $post_id, $uid, array $payload, $index = -1, $area = 'content' ) {
+			$keys = array(
+				'css_placement' => 'raw_css_placement',
+				'js_placement'  => 'raw_js_placement',
+			);
+
+			$changes = array();
+			foreach ( $keys as $field => $setting ) {
+				if ( ! isset( $payload[ $field ] ) ) {
+					continue;
+				}
+				$value = strtolower( trim( (string) $payload[ $field ] ) );
+				if ( ! in_array( $value, array( 'normal', 'head', 'body' ), true ) ) {
+					return new WP_Error( 'uich_invalid_placement', sprintf( '%s must be "normal", "head" or "body", got "%s".', $field, $value ) );
+				}
+				$changes[ $setting ] = 'normal' === $value ? '' : $value;
+			}
+			if ( empty( $changes ) ) {
+				return new WP_Error( 'uich_missing_param', 'Pass css_placement, js_placement, or both (normal | head | body).' );
+			}
+			if ( 'elementor' !== $driver->slug() ) {
+				return new WP_Error( 'uich_placement_unsupported', 'CSS / JS placement is only applied by the Elementor widget; this post is built with ' . $driver->slug() . '.' );
+			}
+
+			$sections = self::sections( $driver, $post_id, $area );
+			if ( is_wp_error( $sections ) ) {
+				return $sections;
+			}
+
+			$at = UiChemy_Section::locate( $sections, $uid, $index );
+			if ( null === $at ) {
+				return self::not_found( $sections, $uid, $index );
+			}
+
+			$sections[ $at ]['settings'] = array_merge( (array) $sections[ $at ]['settings'], $changes );
+
+			$saved = self::commit( $driver, $post_id, $sections, $area );
+			if ( is_wp_error( $saved ) ) {
+				return $saved;
+			}
+
+			return self::get_placement( $driver, $post_id, (string) $sections[ $at ]['uid'], $at, $area );
+		}
+
+		/**
+		 * Placement of every section on a post, as a table (one row per section).
+		 *
+		 * Uses the names of the table tools: before-head-end (printed before </head>)
+		 * and before-body-end (printed before </body>), each with a flag saying whether
+		 * that is just the default for the section's position.
+		 *
+		 * @param UiChemy_Builder_Driver $driver  Driver.
+		 * @param int                    $post_id Post id.
+		 * @param string                 $area    Content area.
+		 * @return array|WP_Error { post_id, builder, total_sections, starting_sections, sections[] }
+		 */
+		public static function get_placement_table( $driver, $post_id, $area = 'content' ) {
+			$sections = self::sections( $driver, $post_id, $area );
+			if ( is_wp_error( $sections ) ) {
+				return $sections;
+			}
+
+			$rows = array();
+			foreach ( $sections as $section ) {
+				$settings = (array) $section['settings'];
+				$index    = (int) $section['index'];
+				$css_set  = self::placement_name( isset( $settings['raw_css_placement'] ) ? $settings['raw_css_placement'] : '' );
+				$js_set   = self::placement_name( isset( $settings['raw_js_placement'] ) ? $settings['raw_js_placement'] : '' );
+
+				$rows[] = array(
+					'section_index'  => $index,
+					'element_id'     => (string) $section['uid'],
+					'label'          => isset( $settings['_title'] ) ? (string) $settings['_title'] : '',
+					'css'            => self::table_name( $css_set ? $css_set : UiChemy_Fast_Load::default_placement( 'css', $index ) ),
+					'css_is_default' => ! $css_set,
+					'js'             => self::table_name( $js_set ? $js_set : UiChemy_Fast_Load::default_placement( 'js', $index ) ),
+					'js_is_default'  => ! $js_set,
+				);
+			}
+
+			return array(
+				'post_id'           => absint( $post_id ),
+				'builder'           => $driver->slug(),
+				'total_sections'    => count( $rows ),
+				'starting_sections' => UiChemy_Fast_Load::STARTING_SECTIONS,
+				'sections'          => $rows,
+			);
+		}
+
+		/**
+		 * Set one section's CSS or JS placement using the table tools' names.
+		 *
+		 * @param UiChemy_Builder_Driver $driver    Driver.
+		 * @param int                    $post_id   Post id.
+		 * @param int                    $index     0-based section index.
+		 * @param string                 $type      'css' or 'js'.
+		 * @param string                 $placement before-head-end | before-body-end | default.
+		 * @param string                 $area      Content area.
+		 * @return array|WP_Error That section's row of the table after the change.
+		 */
+		public static function set_table_placement( $driver, $post_id, $index, $type, $placement, $area = 'content' ) {
+			$type      = strtolower( trim( (string) $type ) );
+			$placement = strtolower( trim( (string) $placement ) );
+			if ( ! in_array( $type, array( 'css', 'js' ), true ) ) {
+				return new WP_Error( 'uich_invalid_placement', sprintf( 'type must be "css" or "js", got "%s".', $type ) );
+			}
+			$map = array(
+				'before-head-end' => 'head',
+				'before-body-end' => 'body',
+				'default'         => 'normal',
+			);
+			if ( ! isset( $map[ $placement ] ) ) {
+				return new WP_Error( 'uich_invalid_placement', sprintf( 'placement must be "before-head-end", "before-body-end" or "default", got "%s".', $placement ) );
+			}
+
+			$saved = self::set_placement( $driver, $post_id, '', array( $type . '_placement' => $map[ $placement ] ), (int) $index, $area );
+			if ( is_wp_error( $saved ) ) {
+				return $saved;
+			}
+
+			$table = self::get_placement_table( $driver, $post_id, $area );
+			if ( is_wp_error( $table ) ) {
+				return $table;
+			}
+			foreach ( $table['sections'] as $row ) {
+				if ( (int) $row['section_index'] === (int) $index ) {
+					return array_merge( array( 'post_id' => $table['post_id'], 'builder' => $table['builder'] ), $row );
+				}
+			}
+			return $saved;
+		}
+
+		/**
+		 * Stored placement name to the table tools' name.
+		 *
+		 * @param string $name head|body
+		 * @return string before-head-end|before-body-end
+		 */
+		private static function table_name( $name ) {
+			return 'head' === $name ? 'before-head-end' : 'before-body-end';
+		}
+
+		/**
+		 * Stored placement value to its public name.
+		 *
+		 * @param mixed $value Stored value.
+		 * @return string head|body, or '' when none is stored (the default applies)
+		 */
+		private static function placement_name( $value ) {
+			return in_array( $value, array( 'head', 'body' ), true ) ? $value : '';
+		}
+
+		/**
 		 * Add a section at the end.
 		 *
 		 * @param UiChemy_Builder_Driver $driver  Driver.

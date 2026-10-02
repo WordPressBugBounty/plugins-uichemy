@@ -23,6 +23,13 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 	class UiChemy_Composer_Enqueue {
 
 		/**
+		 * Whether the live-page (front-end) editor is loading on this request.
+		 *
+		 * @var bool
+		 */
+		public static $frontend_editor_active = false;
+
+		/**
 		 * Initialize the class and set its properties.
 		 *
 		 * @since   1.0.0
@@ -811,6 +818,21 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			if ( ! $this->frontend_editor_allowed() || ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return;
 			}
+
+			// Read by the Composer widget's render(): on a request where the
+			// live-page editor loads, each section stamps its elements with their
+			// layer paths so the picker can still identify them after the section's
+			// own JS has rewritten the DOM. Set here because this is the one place
+			// that has already decided the editor is loading for this request.
+			self::$frontend_editor_active = true;
+
+			// The media library (window.wp.media) is what every "Choose image /
+			// video / poster / audio" button opens (openWpMediaLibrary in
+			// composer-media-library.js). The Elementor / Gutenberg / Bricks editor
+			// contexts already have it, but the live front end never enqueued it, so
+			// on the front end the picker silently did nothing. frontend_editor_allowed()
+			// has already gated this to users who may edit, so loading it here is safe.
+			wp_enqueue_media();
 
 			$panel_css = UICHEMY_PATH . 'assets/css/uichemy-composer-editor-panel.css';
 			wp_enqueue_style(

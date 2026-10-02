@@ -1,4 +1,211 @@
 /*
+ * Composer THEME TOKENS — the single source of the palette.
+ *
+ * Imported by BOTH bundles: the composer panel (index.jsx) and the canvas
+ * (canvas-entry.js, which PHP enqueues into the Elementor preview). That shared
+ * import is the whole reason this file exists, and it replaces the old
+ * composer-skin-tokens.css, which did the same job back when there were three
+ * palettes. There is one palette now — UiChemy, light and dark — but the
+ * sharing still matters, and for exactly the reason that file recorded:
+ *
+ *   The on-canvas toolbar used to hard-code this palette as literals, because
+ *   it renders in a document these tokens never reached. Hand-copying is not the
+ *   same as matching: alongside the real values it grew a dozen invented
+ *   in-between shades that appear nowhere in the panel.
+ *
+ * That is not hypothetical. Deleting composer-skin-tokens.css took these
+ * declarations out of the CANVAS bundle, and the box-handle toolbar
+ * (composer-box-handles.js) resolves every colour through `var(--panel-bg)`,
+ * `var(--text-hi)` and friends. With nothing declaring them it fell back to the
+ * literals baked into its own `var()` fallbacks and stopped following the
+ * light/dark toggle at all. Moved here verbatim out of composer.css; no value
+ * was altered. Keep it imported by every entry that renders composer chrome.
+ */
+
+:root {
+  --bg-canvas: #f4f4f6;
+  --bg-canvas-ink: #15151a;
+  --panel-bg: #15161a;
+  --panel-bg-2: #1c1d22;
+  --panel-bg-3: #24262c;
+  --panel-bg-4: #2d2f37;
+  --panel-line: #2a2c33;
+  --panel-line-2: #34363f;
+  /* DROP SHADOWS, as a colour and a strength rather than a literal per site.
+     Every shadow in this file was written as rgba(0,0,0,α) against a near-black
+     panel, where pure black at a heavy alpha is what reads as depth. On the
+     white light panel the same values are black smudges, so light re-points the
+     hue to the panel's ink and scales every alpha by --shadow-a in one place.
+     Usage: rgba(var(--shadow-rgb), calc(<the original α> * var(--shadow-a))) —
+     the geometry of each shadow is left exactly as it was. */
+  --shadow-rgb: 0, 0, 0;
+  --shadow-a: 1;
+  /* Segmented controls — ONE language for every tabbing in the panel: a GREY
+     track with a lighter GREY active chip on top of it. Both values are neutral
+     overlays rather than ramp steps, so the track lifts off whatever panel it
+     sits on (brand #15161a, Elementor #1f2124, Gutenberg #1e1e1e) and the chip
+     lifts off the track by the same kind of step again, in every skin, without
+     six per-skin copies. The light theme states its own pair below.
+     The track was a black wash first (rgba(0,0,0,.28), recessed below the
+     panel). On a near-black panel that made the whole control disappear —
+     nothing to see until you found the one lit chip. A lift reads as a real
+     surface holding the tabs, which is what the reference does too.
+     Before this, the families disagreed: the Chat/Editor strip ran a GREY track
+     with a near-black active tab (inverted), .seg / .state-tabs / .responsive-tabs
+     ran a light wash track with a lighter chip, and .mode-seg filled the active
+     half solid white. Three languages for the same control. */
+  --seg-track: rgba(255, 255, 255, 0.06);
+  /* NO BORDERS on this control, by decision — the track and the chip are told
+     apart by tone alone. Both hairline tokens stay in place (and stay wired to
+     the inset rings in composer-dock.css) so bringing an edge back is a value
+     change here rather than an edit to nine selectors; `transparent` is the
+     off switch. Track edges came off first: once the track went lighter than
+     the panel it already had an edge of its own and the hairline drew a second
+     one beside it. */
+  --seg-track-line: transparent;
+  --seg-thumb: rgba(255, 255, 255, 0.10);
+  /* Off — see --seg-track-line. The chip is now read from its fill and the soft
+     shadow under it, nothing drawn round the outside. */
+  --seg-thumb-line: transparent;
+  --seg-thumb-hover: rgba(255, 255, 255, 0.045);
+  /* Softer than before: with a hairline doing the lifting, a heavy drop shadow
+     doubles the edge and muddies it. */
+  --seg-thumb-shadow: 0 1px 2px rgba(0, 0, 0, 0.22);
+  /* Segmented radii, deliberately softer than the panel's 6px/4px container
+     scale — a tab track is a pill, not a card, and at 6px the track read as a
+     small rectangle. The inner value keeps the classic 2px inset so the chip's
+     arc sits concentric inside the track's. Skins whose host has its own
+     geometry re-point these (see the Gutenberg block, which is WP's 4px/2px). */
+  --seg-radius: 9px;
+  --seg-radius-inner: 7px;
+  /* MINIMAL surfaces. A control is defined by its FILL and by the space around
+     it; a 1px line is the exception. Two values only:
+       --min-line  the one line colour left, for a STRUCTURAL boundary against
+                   something outside the panel (its own outer edge). Never for
+                   internal chrome.
+       --min-fill  what replaces a border on a control — a soft wash that reads
+                   as a surface without drawing an edge.
+     Both are neutral greys on purpose, the convention already used by --ctl-*
+     further down: a mid grey at low alpha darkens a light panel and lightens a
+     dark one, so one value is correct in both themes and every skin. That
+     matters here because the OLD lines were a single token too (#e8e8e8 light /
+     #27272a dark) and it did not carry — near-invisible on black, a hard rule on
+     white. Light was the case that had never been checked. */
+  /* The AI mark (the empty-state sparkle) is the ONE place a brand colour is
+     wanted in the composer, and it follows the ACTIVE SKIN's own accent. This is
+     the UiChemy skin's value: brand ORANGE. Elementor and Gutenberg re-point it
+     to their own accents in composer-skin-tokens.css.
+     Literal hexes, not rgba(var(--accent-rgb)): that token is white in this skin
+     now (the chrome went monochrome), and a white sparkle is not a brand mark. */
+  --ai-glyph-from: #FFC574;
+  --ai-glyph-to: #FD6A35;
+  --min-line: rgba(128, 128, 128, 0.16);
+  --min-fill: rgba(128, 128, 128, 0.10);
+  --min-fill-hover: rgba(128, 128, 128, 0.16);
+  --text-hi: #f4f5f7;
+  --uich-text: #d6d7dc;
+  --text-mid: #9a9ca6;
+  --text-dim: #6a6c76;
+  --accent-2: hsl(var(--primary));
+  /* legacy-only name, no shadcn collision */
+  /* Interactive accent as an RGB triplet so translucent accent tints (borders,
+     glows, hover fills) can be re-skinned in one place.
+     MONOCHROME: this was UiChemy indigo (75, 34, 204), which put brand violet
+     on every focus ring, selected chip and hover wash in the panel. The panel's
+     shadcn layer right next door is already neutral (--primary is #fafafa dark /
+     #18181b light, --ring likewise), so the indigo was the one thing making the
+     chrome brand-coloured — it read as decoration on top of an otherwise
+     black-and-white UI. Now white in dark, near-black in light (see the light
+     block below, which must state its own value since it inherits this one).
+     Platform skins still re-point it: Elementor keeps Elementor pink, Gutenberg
+     keeps the wp-admin blue, because those are the host's accents, not ours. */
+  --accent-rgb: 255, 255, 255;
+  --accent-bg: rgba(var(--accent-rgb), 0.10);
+  --brand-green: #E3ED5D;
+  --uich-danger: #ff7a7a;
+  --ok: #E3ED5D;
+  --warn: var(--warn);
+  /* No brand orange anywhere in the composer. These fed the Pro upsell surfaces
+     (badge, lock icon, CTA, modal icon, the setup cards' hover border) and were
+     the only orange left; they now follow the host skin's own accent, which is
+     near-black in a light skin, near-white in a dark one, and the builder's own
+     colour where a builder skin is active. Keep it that way: the composer uses
+     black/white shades plus whatever the builder skin supplies. */
+  --uich-pro-grad: currentColor;
+  --uich-pro-tint: rgba(128, 128, 128, 0.10);
+  /* Follows the skin rather than pinning a brand colour, for the same reason. */
+  --uich-brand: currentColor;
+  /* Corner rounding for legacy composer chrome (cards, inputs, chips,
+     segmented controls). Tightened from 10/7, the airy rounding read as
+     over-rounded, especially on tabs. Colors unchanged. */
+  --radius: 6px;
+  --radius-sm: 4px;
+  --input-h: 30px;
+  --row-h: 26px;
+}
+
+/* Theme tokens also apply when only the composer host carries data-theme (iframe mount). */
+.uich-composer-host {
+  color-scheme: dark;
+}
+
+.uich-composer-host[data-theme="light"],
+[data-uich-composer-theme="light"],
+body[data-theme="light"],
+.panel[data-theme="light"] {
+  color-scheme: light;
+}
+
+/* ===== Light theme overrides =====
+   Also keyed on `data-uich-composer-theme` so the OUTER shell
+   (`#uichemy-composer-floating-panel`, which only carries that attribute, not
+   `data-theme`) picks up the light `--panel-line` etc. Otherwise its borders
+   (e.g. the right-dock `border-left`) fall back to the dark `:root` tokens and
+   render as a black edge in light mode. */
+.uich-composer-host[data-theme="light"],
+[data-uich-composer-theme="light"],
+body[data-theme="light"],
+.panel[data-theme="light"] {
+  --bg-canvas: #f4f4f6;
+  --bg-canvas-ink: #15151a;
+  --panel-bg: #ffffff;
+  --panel-bg-2: #f7f7fa;
+  --panel-bg-3: #eeeef3;
+  --panel-bg-4: #e3e3eb;
+  --panel-line: #e3e4ec;
+  --panel-line-2: #cdcfd8;
+  /* Shadows: the panel's ink rather than pure black, at a little under half the
+     dark theme's strength. See the note in :root. */
+  --shadow-rgb: 15, 15, 21;
+  --shadow-a: 0.45;
+  /* Light segmented pair: a light-grey recessed track with a WHITE active chip
+     that lifts above it (macOS / iOS / Claude-settings style), rather than a
+     darker-grey active. A hairline + soft shadow give the white chip an edge so
+     it reads on the pale track. */
+  --seg-track: rgba(0, 0, 0, 0.06);
+  --seg-track-line: transparent;
+  --seg-thumb: #ffffff;
+  --seg-thumb-line: rgba(15, 15, 21, 0.06);
+  --seg-thumb-hover: rgba(0, 0, 0, 0.04);
+  --seg-thumb-shadow: 0 1px 2px rgba(15, 15, 21, 0.10);
+  --text-hi: #0f0f15;
+  --uich-text: #2a2b33;
+  --text-mid: #6a6c76;
+  --text-dim: #9a9ca6;
+  --accent-2: hsl(var(--primary));
+  /* Light counterpart of the monochrome accent — see the note in :root. Without
+     this the light panel would inherit white and every focus ring, selected
+     chip and hover wash would disappear into the white surface. Matches
+     --text-hi so accent and ink are the same black. */
+  --accent-rgb: 15, 15, 21;
+  --accent-bg: rgba(var(--accent-rgb), 0.07);
+  --brand-green: #E3ED5D;
+  --uich-danger: #d44a4a;
+  --ok: #b3bf3e;
+  --warn: #d49a3a;
+}
+
+/*
  * Tailwind entry for the CANVAS bundle — the design system, minus the reset.
  *
  * The on-canvas toolbar (composer-box-handles.js) renders in whichever document
@@ -134,9 +341,6 @@
 .uich-tw .top-1 {
   top: 0.25rem;
 }
-.uich-tw .top-1\/2 {
-  top: 50%;
-}
 .uich-tw .top-3 {
   top: 0.75rem;
 }
@@ -164,14 +368,14 @@
 .uich-tw .z-50 {
   z-index: 50;
 }
-.uich-tw .z-\[11\] {
-  z-index: 11;
-}
 .uich-tw .z-\[2147483646\] {
   z-index: 2147483646;
 }
 .uich-tw .z-\[2147483647\] {
   z-index: 2147483647;
+}
+.uich-tw .z-\[2\] {
+  z-index: 2;
 }
 .uich-tw .z-\[99999\] {
   z-index: 99999;
@@ -179,8 +383,14 @@
 .uich-tw .col-span-2 {
   grid-column: span 2 / span 2;
 }
+.uich-tw .m-0 {
+  margin: 0px;
+}
 .uich-tw .m-3 {
   margin: 0.75rem;
+}
+.uich-tw .m-4 {
+  margin: 1rem;
 }
 .uich-tw .m-auto {
   margin: auto;
@@ -193,10 +403,6 @@
   margin-left: -0.5rem;
   margin-right: -0.5rem;
 }
-.uich-tw .mx-2\.5 {
-  margin-left: 0.625rem;
-  margin-right: 0.625rem;
-}
 .uich-tw .mx-auto {
   margin-left: auto;
   margin-right: auto;
@@ -204,10 +410,6 @@
 .uich-tw .my-1 {
   margin-top: 0.25rem;
   margin-bottom: 0.25rem;
-}
-.uich-tw .my-1\.5 {
-  margin-top: 0.375rem;
-  margin-bottom: 0.375rem;
 }
 .uich-tw .my-3 {
   margin-top: 0.75rem;
@@ -217,11 +419,24 @@
   margin-top: 0.875rem;
   margin-bottom: 0.875rem;
 }
+.uich-tw .my-auto {
+  margin-top: auto;
+  margin-bottom: auto;
+}
 .uich-tw .-mb-2 {
   margin-bottom: -0.5rem;
 }
 .uich-tw .-mb-px {
   margin-bottom: -1px;
+}
+.uich-tw .-ml-1 {
+  margin-left: -0.25rem;
+}
+.uich-tw .-mr-1 {
+  margin-right: -0.25rem;
+}
+.uich-tw .-mt-1 {
+  margin-top: -0.25rem;
 }
 .uich-tw .mb-1 {
   margin-bottom: 0.25rem;
@@ -241,20 +456,20 @@
 .uich-tw .mb-4 {
   margin-bottom: 1rem;
 }
-.uich-tw .ml-0\.5 {
-  margin-left: 0.125rem;
-}
 .uich-tw .ml-1 {
   margin-left: 0.25rem;
+}
+.uich-tw .ml-1\.5 {
+  margin-left: 0.375rem;
+}
+.uich-tw .ml-2 {
+  margin-left: 0.5rem;
 }
 .uich-tw .ml-auto {
   margin-left: auto;
 }
 .uich-tw .mr-1 {
   margin-right: 0.25rem;
-}
-.uich-tw .mr-1\.5 {
-  margin-right: 0.375rem;
 }
 .uich-tw .mr-2 {
   margin-right: 0.5rem;
@@ -303,6 +518,9 @@
 }
 .uich-tw .inline-block {
   display: inline-block;
+}
+.uich-tw .\!inline {
+  display: inline !important;
 }
 .uich-tw .inline {
   display: inline;
@@ -402,6 +620,9 @@
 .uich-tw .\!h-4 {
   height: 1rem !important;
 }
+.uich-tw .h-0 {
+  height: 0px;
+}
 .uich-tw .h-1 {
   height: 0.25rem;
 }
@@ -447,23 +668,8 @@
 .uich-tw .h-\[1px\] {
   height: 1px;
 }
-.uich-tw .h-\[22px\] {
-  height: 22px;
-}
-.uich-tw .h-\[26px\] {
-  height: 26px;
-}
-.uich-tw .h-\[2px\] {
-  height: 2px;
-}
-.uich-tw .h-\[620px\] {
-  height: 620px;
-}
 .uich-tw .h-\[70vh\] {
   height: 70vh;
-}
-.uich-tw .h-\[var\(--input-h\)\] {
-  height: var(--input-h);
 }
 .uich-tw .h-\[var\(--radix-select-trigger-height\)\] {
   height: var(--radix-select-trigger-height);
@@ -489,17 +695,14 @@
 .uich-tw .max-h-\[220px\] {
   max-height: 220px;
 }
-.uich-tw .max-h-\[260px\] {
-  max-height: 260px;
-}
 .uich-tw .max-h-\[280px\] {
   max-height: 280px;
 }
 .uich-tw .max-h-\[300px\] {
   max-height: 300px;
 }
-.uich-tw .max-h-\[340px\] {
-  max-height: 340px;
+.uich-tw .max-h-\[380px\] {
+  max-height: 380px;
 }
 .uich-tw .max-h-\[52vh\] {
   max-height: 52vh;
@@ -507,14 +710,14 @@
 .uich-tw .max-h-\[86\%\] {
   max-height: 86%;
 }
-.uich-tw .max-h-\[86vh\] {
-  max-height: 86vh;
-}
 .uich-tw .max-h-\[min\(360px\2c 60vh\)\] {
   max-height: min(360px, 60vh);
 }
 .uich-tw .min-h-0 {
   min-height: 0px;
+}
+.uich-tw .min-h-8 {
+  min-height: 2rem;
 }
 .uich-tw .min-h-\[420px\] {
   min-height: 420px;
@@ -531,6 +734,9 @@
 .uich-tw .\!w-7 {
   width: 1.75rem !important;
 }
+.uich-tw .w-0 {
+  width: 0px;
+}
 .uich-tw .w-0\.5 {
   width: 0.125rem;
 }
@@ -543,9 +749,6 @@
 .uich-tw .w-10 {
   width: 2.5rem;
 }
-.uich-tw .w-16 {
-  width: 4rem;
-}
 .uich-tw .w-2 {
   width: 0.5rem;
 }
@@ -557,9 +760,6 @@
 }
 .uich-tw .w-24 {
   width: 6rem;
-}
-.uich-tw .w-28 {
-  width: 7rem;
 }
 .uich-tw .w-3\.5 {
   width: 0.875rem;
@@ -609,9 +809,6 @@
 .uich-tw .w-9 {
   width: 2.25rem;
 }
-.uich-tw .w-\[1\%\] {
-  width: 1%;
-}
 .uich-tw .w-\[104px\] {
   width: 104px;
 }
@@ -621,14 +818,14 @@
 .uich-tw .w-\[176px\] {
   width: 176px;
 }
-.uich-tw .w-\[184px\] {
-  width: 184px;
-}
 .uich-tw .w-\[190px\] {
   width: 190px;
 }
 .uich-tw .w-\[1px\] {
   width: 1px;
+}
+.uich-tw .w-\[200px\] {
+  width: 200px;
 }
 .uich-tw .w-\[300px\] {
   width: 300px;
@@ -639,29 +836,14 @@
 .uich-tw .w-\[34\%\] {
   width: 34%;
 }
-.uich-tw .w-\[36\%\] {
-  width: 36%;
-}
 .uich-tw .w-\[380px\] {
   width: 380px;
-}
-.uich-tw .w-\[42\%\] {
-  width: 42%;
 }
 .uich-tw .w-\[92vw\] {
   width: 92vw;
 }
-.uich-tw .w-\[min\(520px\2c 95vw\)\] {
-  width: min(520px, 95vw);
-}
-.uich-tw .w-\[min\(600px\2c 95vw\)\] {
-  width: min(600px, 95vw);
-}
 .uich-tw .w-\[min\(640px\2c 94\%\)\] {
   width: min(640px, 94%);
-}
-.uich-tw .w-\[min\(860px\2c 95vw\)\] {
-  width: min(860px, 95vw);
 }
 .uich-tw .w-auto {
   width: auto;
@@ -682,9 +864,6 @@
 .uich-tw .min-w-4 {
   min-width: 1rem;
 }
-.uich-tw .min-w-7 {
-  min-width: 1.75rem;
-}
 .uich-tw .min-w-8 {
   min-width: 2rem;
 }
@@ -694,11 +873,26 @@
 .uich-tw .min-w-\[10rem\] {
   min-width: 10rem;
 }
+.uich-tw .min-w-\[150px\] {
+  min-width: 150px;
+}
+.uich-tw .min-w-\[160px\] {
+  min-width: 160px;
+}
+.uich-tw .min-w-\[168px\] {
+  min-width: 168px;
+}
 .uich-tw .min-w-\[16px\] {
   min-width: 16px;
 }
 .uich-tw .min-w-\[180px\] {
   min-width: 180px;
+}
+.uich-tw .min-w-\[190px\] {
+  min-width: 190px;
+}
+.uich-tw .min-w-\[240px\] {
+  min-width: 240px;
 }
 .uich-tw .min-w-\[84px\] {
   min-width: 84px;
@@ -721,8 +915,14 @@
 .uich-tw .max-w-\[180px\] {
   max-width: 180px;
 }
+.uich-tw .max-w-\[240px\] {
+  max-width: 240px;
+}
 .uich-tw .max-w-\[280px\] {
   max-width: 280px;
+}
+.uich-tw .max-w-\[320px\] {
+  max-width: 320px;
 }
 .uich-tw .max-w-\[90vw\] {
   max-width: 90vw;
@@ -773,10 +973,6 @@
   --tw-translate-x: -50%;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
-.uich-tw .-translate-y-1\/2 {
-  --tw-translate-y: -50%;
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
 .uich-tw .translate-x-0 {
   --tw-translate-x: 0px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
@@ -799,10 +995,6 @@
 }
 .uich-tw .translate-y-\[-50\%\] {
   --tw-translate-y: -50%;
-  transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
-}
-.uich-tw .translate-y-\[calc\(-100\%-6px\)\] {
-  --tw-translate-y: calc(-100% - 6px);
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw .rotate-90 {
@@ -840,6 +1032,11 @@
      -moz-user-select: none;
           user-select: none;
 }
+.uich-tw .select-all {
+  -webkit-user-select: all;
+     -moz-user-select: all;
+          user-select: all;
+}
 .uich-tw .resize-none {
   resize: none;
 }
@@ -851,11 +1048,6 @@
 }
 .uich-tw .list-none {
   list-style-type: none;
-}
-.uich-tw .appearance-none {
-  -webkit-appearance: none;
-     -moz-appearance: none;
-          appearance: none;
 }
 .uich-tw .grid-cols-1 {
   grid-template-columns: repeat(1, minmax(0, 1fr));
@@ -874,6 +1066,9 @@
 }
 .uich-tw .flex-wrap {
   flex-wrap: wrap;
+}
+.uich-tw .place-items-center {
+  place-items: center;
 }
 .uich-tw .items-start {
   align-items: flex-start;
@@ -914,6 +1109,9 @@
 .uich-tw .gap-3 {
   gap: 0.75rem;
 }
+.uich-tw .gap-3\.5 {
+  gap: 0.875rem;
+}
 .uich-tw .gap-4 {
   gap: 1rem;
 }
@@ -922,6 +1120,9 @@
 }
 .uich-tw .gap-7 {
   gap: 1.75rem;
+}
+.uich-tw .gap-px {
+  gap: 1px;
 }
 .uich-tw .gap-x-2\.5 {
   -moz-column-gap: 0.625rem;
@@ -1032,14 +1233,8 @@
 .uich-tw .rounded-\[15px\] {
   border-radius: 15px;
 }
-.uich-tw .rounded-\[4px\] {
-  border-radius: 4px;
-}
-.uich-tw .rounded-\[6px\] {
-  border-radius: 6px;
-}
-.uich-tw .rounded-\[9px\] {
-  border-radius: 9px;
+.uich-tw .rounded-\[3px\] {
+  border-radius: 3px;
 }
 .uich-tw .rounded-\[inherit\] {
   border-radius: inherit;
@@ -1061,10 +1256,6 @@
 }
 .uich-tw .rounded-xl {
   border-radius: 0.75rem;
-}
-.uich-tw .rounded-l-md {
-  border-top-left-radius: calc(var(--radius) - 2px);
-  border-bottom-left-radius: calc(var(--radius) - 2px);
 }
 .uich-tw .rounded-r {
   border-top-right-radius: 0.25rem;
@@ -1093,17 +1284,11 @@
 .uich-tw .border-b {
   border-bottom-width: 1px;
 }
-.uich-tw .border-b-0 {
-  border-bottom-width: 0px;
-}
 .uich-tw .border-l {
   border-left-width: 1px;
 }
 .uich-tw .border-l-\[3px\] {
   border-left-width: 3px;
-}
-.uich-tw .border-r {
-  border-right-width: 1px;
 }
 .uich-tw .border-t {
   border-top-width: 1px;
@@ -1123,26 +1308,14 @@
 .uich-tw .border-\[\#b4603a\]\/20 {
   border-color: rgb(180 96 58 / 0.2);
 }
-.uich-tw .border-\[var\(--panel-line\)\] {
-  border-color: var(--panel-line);
-}
-.uich-tw .border-amber-500\/40 {
-  border-color: rgb(245 158 11 / 0.4);
-}
 .uich-tw .border-border {
   border-color: hsl(var(--border));
-}
-.uich-tw .border-border\/60 {
-  border-color: hsl(var(--border) / 0.6);
 }
 .uich-tw .border-destructive\/20 {
   border-color: hsl(var(--destructive) / 0.2);
 }
 .uich-tw .border-destructive\/30 {
   border-color: hsl(var(--destructive) / 0.3);
-}
-.uich-tw .border-destructive\/40 {
-  border-color: hsl(var(--destructive) / 0.4);
 }
 .uich-tw .border-destructive\/45 {
   border-color: hsl(var(--destructive) / 0.45);
@@ -1199,26 +1372,17 @@
 .uich-tw .bg-\[\#fbe0d0\]\/40 {
   background-color: rgb(251 224 208 / 0.4);
 }
-.uich-tw .bg-\[var\(--panel-bg\)\] {
-  background-color: var(--panel-bg);
+.uich-tw .bg-\[color\:var\(--panel-bg-4\2c \2026\)\] {
+  background-color: var(--panel-bg-4,…);
 }
-.uich-tw .bg-\[var\(--panel-bg-2\)\] {
-  background-color: var(--panel-bg-2);
+.uich-tw .bg-\[color\:var\(--rp-surface-raised\2c hsl\(var\(--muted\)\/0\.3\)\)\] {
+  background-color: var(--rp-surface-raised,hsl(var(--muted)/0.3));
 }
-.uich-tw .bg-\[var\(--panel-bg-4\)\] {
-  background-color: var(--panel-bg-4);
-}
-.uich-tw .bg-\[var\(--panel-line\)\] {
-  background-color: var(--panel-line);
-}
-.uich-tw .bg-\[var\(--text-hi\)\] {
-  background-color: var(--text-hi);
+.uich-tw .bg-\[var\(--uc-surface-overlay\)\] {
+  background-color: var(--uc-surface-overlay);
 }
 .uich-tw .bg-accent {
   background-color: hsl(var(--accent));
-}
-.uich-tw .bg-amber-500\/10 {
-  background-color: rgb(245 158 11 / 0.1);
 }
 .uich-tw .bg-background {
   background-color: hsl(var(--background));
@@ -1238,17 +1402,11 @@
 .uich-tw .bg-card\/90 {
   background-color: hsl(var(--card) / 0.9);
 }
-.uich-tw .bg-current {
-  background-color: currentColor;
-}
 .uich-tw .bg-destructive {
   background-color: hsl(var(--destructive));
 }
 .uich-tw .bg-destructive\/10 {
   background-color: hsl(var(--destructive) / 0.1);
-}
-.uich-tw .bg-destructive\/15 {
-  background-color: hsl(var(--destructive) / 0.15);
 }
 .uich-tw .bg-destructive\/5 {
   background-color: hsl(var(--destructive) / 0.05);
@@ -1294,9 +1452,6 @@
 }
 .uich-tw .bg-primary-foreground\/10 {
   background-color: hsl(var(--primary-foreground) / 0.1);
-}
-.uich-tw .bg-primary\/10 {
-  background-color: hsl(var(--primary) / 0.1);
 }
 .uich-tw .bg-primary\/20 {
   background-color: hsl(var(--primary) / 0.2);
@@ -1350,9 +1505,6 @@
 .uich-tw .p-0 {
   padding: 0px;
 }
-.uich-tw .p-0\.5 {
-  padding: 0.125rem;
-}
 .uich-tw .p-1 {
   padding: 0.25rem;
 }
@@ -1382,9 +1534,6 @@
 }
 .uich-tw .p-\[1px\] {
   padding: 1px;
-}
-.uich-tw .p-\[3px\] {
-  padding: 3px;
 }
 .uich-tw .px-0 {
   padding-left: 0px;
@@ -1430,10 +1579,6 @@
   padding-left: 2rem;
   padding-right: 2rem;
 }
-.uich-tw .py-0 {
-  padding-top: 0px;
-  padding-bottom: 0px;
-}
 .uich-tw .py-0\.5 {
   padding-top: 0.125rem;
   padding-bottom: 0.125rem;
@@ -1445,10 +1590,6 @@
 .uich-tw .py-1\.5 {
   padding-top: 0.375rem;
   padding-bottom: 0.375rem;
-}
-.uich-tw .py-10 {
-  padding-top: 2.5rem;
-  padding-bottom: 2.5rem;
 }
 .uich-tw .py-16 {
   padding-top: 4rem;
@@ -1474,6 +1615,10 @@
   padding-top: 1rem;
   padding-bottom: 1rem;
 }
+.uich-tw .py-5 {
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
+}
 .uich-tw .py-6 {
   padding-top: 1.5rem;
   padding-bottom: 1.5rem;
@@ -1481,9 +1626,6 @@
 .uich-tw .py-8 {
   padding-top: 2rem;
   padding-bottom: 2rem;
-}
-.uich-tw .pb-0 {
-  padding-bottom: 0px;
 }
 .uich-tw .pb-0\.5 {
   padding-bottom: 0.125rem;
@@ -1521,17 +1663,11 @@
 .uich-tw .pl-6 {
   padding-left: 1.5rem;
 }
-.uich-tw .pl-7 {
-  padding-left: 1.75rem;
-}
 .uich-tw .pl-8 {
   padding-left: 2rem;
 }
-.uich-tw .pl-\[26px\] {
-  padding-left: 26px;
-}
-.uich-tw .pr-0 {
-  padding-right: 0px;
+.uich-tw .pr-0\.5 {
+  padding-right: 0.125rem;
 }
 .uich-tw .pr-1 {
   padding-right: 0.25rem;
@@ -1539,14 +1675,8 @@
 .uich-tw .pr-2 {
   padding-right: 0.5rem;
 }
-.uich-tw .pr-2\.5 {
-  padding-right: 0.625rem;
-}
 .uich-tw .pr-4 {
   padding-right: 1rem;
-}
-.uich-tw .pr-6 {
-  padding-right: 1.5rem;
 }
 .uich-tw .pr-7 {
   padding-right: 1.75rem;
@@ -1566,9 +1696,6 @@
 .uich-tw .pt-1 {
   padding-top: 0.25rem;
 }
-.uich-tw .pt-1\.5 {
-  padding-top: 0.375rem;
-}
 .uich-tw .pt-2 {
   padding-top: 0.5rem;
 }
@@ -1586,9 +1713,6 @@
 }
 .uich-tw .text-center {
   text-align: center;
-}
-.uich-tw .text-right {
-  text-align: right;
 }
 .uich-tw .align-top {
   vertical-align: top;
@@ -1637,6 +1761,9 @@
 .uich-tw .text-\[9px\] {
   font-size: 9px;
 }
+.uich-tw .text-\[length\:var\(--uc-text-base\)\] {
+  font-size: var(--uc-text-base);
+}
 .uich-tw .text-base {
   font-size: 1rem;
   line-height: 1.5rem;
@@ -1681,6 +1808,10 @@
 .uich-tw .italic {
   font-style: italic;
 }
+.uich-tw .ordinal {
+  --tw-ordinal: ordinal;
+  font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
+}
 .uich-tw .tabular-nums {
   --tw-numeric-spacing: tabular-nums;
   font-variant-numeric: var(--tw-ordinal) var(--tw-slashed-zero) var(--tw-numeric-figure) var(--tw-numeric-spacing) var(--tw-numeric-fraction);
@@ -1697,17 +1828,11 @@
 .uich-tw .leading-snug {
   line-height: 1.375;
 }
-.uich-tw .leading-tight {
-  line-height: 1.25;
-}
 .uich-tw .tracking-\[-0\.35px\] {
   letter-spacing: -0.35px;
 }
 .uich-tw .tracking-\[-0\.4px\] {
   letter-spacing: -0.4px;
-}
-.uich-tw .tracking-\[0\.09em\] {
-  letter-spacing: 0.09em;
 }
 .uich-tw .tracking-tight {
   letter-spacing: -0.025em;
@@ -1740,21 +1865,14 @@
   --tw-text-opacity: 1;
   color: rgb(180 96 58 / var(--tw-text-opacity, 1));
 }
-.uich-tw .text-\[var\(--panel-bg\)\] {
-  color: var(--panel-bg);
+.uich-tw .text-\[var\(--uc-text\)\] {
+  color: var(--uc-text);
 }
-.uich-tw .text-\[var\(--text-hi\)\] {
-  color: var(--text-hi);
-}
-.uich-tw .text-\[var\(--text-mid\)\] {
-  color: var(--text-mid);
+.uich-tw .text-\[var\(--uc-text-subtle\)\] {
+  color: var(--uc-text-subtle);
 }
 .uich-tw .text-accent-foreground {
   color: hsl(var(--accent-foreground));
-}
-.uich-tw .text-amber-600 {
-  --tw-text-opacity: 1;
-  color: rgb(217 119 6 / var(--tw-text-opacity, 1));
 }
 .uich-tw .text-background {
   color: hsl(var(--background));
@@ -1789,6 +1907,9 @@
 .uich-tw .text-muted-foreground\/60 {
   color: hsl(var(--muted-foreground) / 0.6);
 }
+.uich-tw .text-muted-foreground\/80 {
+  color: hsl(var(--muted-foreground) / 0.8);
+}
 .uich-tw .text-popover-foreground {
   color: hsl(var(--popover-foreground));
 }
@@ -1820,26 +1941,20 @@
 .uich-tw .line-through {
   text-decoration-line: line-through;
 }
+.uich-tw .no-underline {
+  text-decoration-line: none;
+}
 .uich-tw .underline-offset-2 {
   text-underline-offset: 2px;
 }
 .uich-tw .underline-offset-4 {
   text-underline-offset: 4px;
 }
-.uich-tw .accent-\[var\(--text-hi\)\] {
-  accent-color: var(--text-hi);
-}
 .uich-tw .opacity-0 {
   opacity: 0;
 }
 .uich-tw .opacity-100 {
   opacity: 1;
-}
-.uich-tw .opacity-40 {
-  opacity: 0.4;
-}
-.uich-tw .opacity-45 {
-  opacity: 0.45;
 }
 .uich-tw .opacity-50 {
   opacity: 0.5;
@@ -1864,19 +1979,9 @@
   --tw-shadow-colored: 0 1px 3px 0 var(--tw-shadow-color), 0 1px 2px -1px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
-.uich-tw .shadow-2xl {
-  --tw-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
-  --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);
-  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
-}
 .uich-tw .shadow-\[0_4px_16px_rgba\(0\2c 0\2c 0\2c 0\.06\)\] {
   --tw-shadow: 0 4px 16px rgba(0,0,0,0.06);
   --tw-shadow-colored: 0 4px 16px var(--tw-shadow-color);
-  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
-}
-.uich-tw .shadow-\[0_8px_24px_rgba\(12\2c 14\2c 20\2c 0\.10\)\] {
-  --tw-shadow: 0 8px 24px rgba(12,14,20,0.10);
-  --tw-shadow-colored: 0 8px 24px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 .uich-tw .shadow-lg {
@@ -1961,9 +2066,6 @@
 }
 .uich-tw .filter {
   filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow);
-}
-.uich-tw .backdrop-filter {
-  backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia);
 }
 .uich-tw .transition {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;
@@ -2161,12 +2263,6 @@
 .uich-tw .file\:text-foreground::file-selector-button {
   color: hsl(var(--foreground));
 }
-.uich-tw .placeholder\:text-\[var\(--text-mid\)\]::-moz-placeholder {
-  color: var(--text-mid);
-}
-.uich-tw .placeholder\:text-\[var\(--text-mid\)\]::placeholder {
-  color: var(--text-mid);
-}
 .uich-tw .placeholder\:text-muted-foreground::-moz-placeholder {
   color: hsl(var(--muted-foreground));
 }
@@ -2176,10 +2272,6 @@
 .uich-tw .last\:border-0:last-child {
   border-width: 0px;
 }
-.uich-tw .focus-within\:outline-none:focus-within {
-  outline: 2px solid transparent;
-  outline-offset: 2px;
-}
 .uich-tw .focus-within\:ring-1:focus-within {
   --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
   --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
@@ -2188,26 +2280,8 @@
 .uich-tw .focus-within\:ring-ring:focus-within {
   --tw-ring-color: hsl(var(--ring));
 }
-.uich-tw .hover\:border-destructive:hover {
-  border-color: hsl(var(--destructive));
-}
-.uich-tw .hover\:border-foreground:hover {
-  border-color: hsl(var(--foreground));
-}
-.uich-tw .hover\:border-input:hover {
-  border-color: hsl(var(--input));
-}
-.uich-tw .hover\:border-ring:hover {
-  border-color: hsl(var(--ring));
-}
-.uich-tw .hover\:bg-\[var\(--panel-bg-3\)\]:hover {
-  background-color: var(--panel-bg-3);
-}
 .uich-tw .hover\:bg-accent:hover {
   background-color: hsl(var(--accent));
-}
-.uich-tw .hover\:bg-accent\/40:hover {
-  background-color: hsl(var(--accent) / 0.4);
 }
 .uich-tw .hover\:bg-accent\/50:hover {
   background-color: hsl(var(--accent) / 0.5);
@@ -2230,9 +2304,6 @@
 .uich-tw .hover\:bg-muted\/50:hover {
   background-color: hsl(var(--muted) / 0.5);
 }
-.uich-tw .hover\:bg-primary:hover {
-  background-color: hsl(var(--primary));
-}
 .uich-tw .hover\:bg-primary\/80:hover {
   background-color: hsl(var(--primary) / 0.8);
 }
@@ -2242,15 +2313,12 @@
 .uich-tw .hover\:bg-secondary\/80:hover {
   background-color: hsl(var(--secondary) / 0.8);
 }
-.uich-tw .hover\:bg-transparent:hover {
-  background-color: transparent;
-}
 .uich-tw .hover\:text-\[\#171717\]:hover {
   --tw-text-opacity: 1;
   color: rgb(23 23 23 / var(--tw-text-opacity, 1));
 }
-.uich-tw .hover\:text-\[var\(--text-hi\)\]:hover {
-  color: var(--text-hi);
+.uich-tw .hover\:text-\[var\(--uc-text-strong\)\]:hover {
+  color: var(--uc-text-strong);
 }
 .uich-tw .hover\:text-accent-foreground:hover {
   color: hsl(var(--accent-foreground));
@@ -2281,17 +2349,8 @@
   --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
-.uich-tw .focus\:border-solid:focus {
-  border-style: solid;
-}
-.uich-tw .focus\:border-ring:focus {
-  border-color: hsl(var(--ring));
-}
 .uich-tw .focus\:bg-accent:focus {
   background-color: hsl(var(--accent));
-}
-.uich-tw .focus\:bg-accent\/60:focus {
-  background-color: hsl(var(--accent) / 0.6);
 }
 .uich-tw .focus\:text-accent-foreground:focus {
   color: hsl(var(--accent-foreground));
@@ -2311,19 +2370,14 @@
   --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
 }
-.uich-tw .focus\:ring-2:focus {
-  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-}
 .uich-tw .focus\:ring-ring:focus {
   --tw-ring-color: hsl(var(--ring));
 }
-.uich-tw .focus\:ring-offset-2:focus {
-  --tw-ring-offset-width: 2px;
+.uich-tw .focus\:ring-offset-0:focus {
+  --tw-ring-offset-width: 0px;
 }
-.uich-tw .focus-visible\:border-\[var\(--panel-line-2\)\]:focus-visible {
-  border-color: var(--panel-line-2);
+.uich-tw .focus-visible\:opacity-100:focus-visible {
+  opacity: 1;
 }
 .uich-tw .focus-visible\:outline-none:focus-visible {
   outline: 2px solid transparent;
@@ -2339,19 +2393,11 @@
   --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(1px + var(--tw-ring-offset-width)) var(--tw-ring-color);
   box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
 }
-.uich-tw .focus-visible\:ring-2:focus-visible {
-  --tw-ring-offset-shadow: var(--tw-ring-inset) 0 0 0 var(--tw-ring-offset-width) var(--tw-ring-offset-color);
-  --tw-ring-shadow: var(--tw-ring-inset) 0 0 0 calc(2px + var(--tw-ring-offset-width)) var(--tw-ring-color);
-  box-shadow: var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow, 0 0 #0000);
-}
 .uich-tw .focus-visible\:ring-ring:focus-visible {
   --tw-ring-color: hsl(var(--ring));
 }
 .uich-tw .focus-visible\:ring-offset-0:focus-visible {
   --tw-ring-offset-width: 0px;
-}
-.uich-tw .focus-visible\:ring-offset-2:focus-visible {
-  --tw-ring-offset-width: 2px;
 }
 .uich-tw .focus-visible\:ring-offset-background:focus-visible {
   --tw-ring-offset-color: hsl(var(--background));
@@ -2437,9 +2483,6 @@
 .uich-tw .data-\[state\=open\]\:animate-accordion-down[data-state="open"] {
   animation: accordion-down 0.2s ease-out;
 }
-.uich-tw .data-\[state\=on\]\:border-transparent[data-state="on"] {
-  border-color: transparent;
-}
 .uich-tw .data-\[state\=unchecked\]\:border-muted-foreground\/40[data-state="unchecked"] {
   border-color: hsl(var(--muted-foreground) / 0.4);
 }
@@ -2448,12 +2491,6 @@
 }
 .uich-tw .data-\[state\=on\]\:bg-accent[data-state="on"] {
   background-color: hsl(var(--accent));
-}
-.uich-tw .data-\[state\=on\]\:bg-card[data-state="on"] {
-  background-color: hsl(var(--card));
-}
-.uich-tw .data-\[state\=on\]\:bg-foreground[data-state="on"] {
-  background-color: hsl(var(--foreground));
 }
 .uich-tw .data-\[state\=open\]\:bg-accent[data-state="open"] {
   background-color: hsl(var(--accent));
@@ -2473,12 +2510,6 @@
 .uich-tw .data-\[state\=on\]\:text-accent-foreground[data-state="on"] {
   color: hsl(var(--accent-foreground));
 }
-.uich-tw .data-\[state\=on\]\:text-background[data-state="on"] {
-  color: hsl(var(--background));
-}
-.uich-tw .data-\[state\=on\]\:text-foreground[data-state="on"] {
-  color: hsl(var(--foreground));
-}
 .uich-tw .data-\[state\=open\]\:text-accent-foreground[data-state="open"] {
   color: hsl(var(--accent-foreground));
 }
@@ -2487,11 +2518,6 @@
 }
 .uich-tw .data-\[disabled\]\:opacity-50[data-disabled] {
   opacity: 0.5;
-}
-.uich-tw .data-\[state\=on\]\:shadow-sm[data-state="on"] {
-  --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
-  box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
 .uich-tw .data-\[state\=open\]\:animate-in[data-state="open"] {
   animation-name: enter;
@@ -2546,10 +2572,6 @@
 }
 .uich-tw .data-\[state\=open\]\:slide-in-from-top-\[48\%\][data-state="open"] {
   --tw-enter-translate-y: -48%;
-}
-.uich-tw .dark\:text-amber-500:is(.dark *) {
-  --tw-text-opacity: 1;
-  color: rgb(245 158 11 / var(--tw-text-opacity, 1));
 }
 @media (min-width: 640px) {
   .uich-tw .sm\:ml-12 {
@@ -2662,12 +2684,6 @@
   width: 1rem;
   height: 1rem;
 }
-.uich-tw :is(.\[\&\>svg\]\:h-3>svg) {
-  height: 0.75rem;
-}
-.uich-tw :is(.\[\&\>svg\]\:w-3>svg) {
-  width: 0.75rem;
-}
 .uich-tw :is(.\[\&\>svg\]\:shrink-0>svg) {
   flex-shrink: 0;
 }
@@ -2677,14 +2693,6 @@
 }
 .uich-tw :is(.\[\&_svg\]\:pointer-events-none svg) {
   pointer-events: none;
-}
-.uich-tw :is(.\[\&_svg\]\:size-2\.5 svg) {
-  width: 0.625rem;
-  height: 0.625rem;
-}
-.uich-tw :is(.\[\&_svg\]\:size-3 svg) {
-  width: 0.75rem;
-  height: 0.75rem;
 }
 .uich-tw :is(.\[\&_svg\]\:size-3\.5 svg) {
   width: 0.875rem;
@@ -2779,7 +2787,11 @@
   --foreground: 0 0% 98%;
   --card: 240 10% 3.9%;
   --card-foreground: 0 0% 98%;
-  --popover: 240 10% 3.9%;
+  /* Elevated above --background (240 10% 3.9%) so popovers, menus and the
+     Add-class suggestion list read as a raised surface and are fully opaque
+     over the tab row — matches the Elementor dark skin, which already lifts
+     --popover off its background. (audit A10 / K7) */
+  --popover: 240 3.7% 15.9%;
   --popover-foreground: 0 0% 98%;
   --primary: 0 0% 98%;
   --primary-foreground: 240 5.9% 10%;
@@ -2799,77 +2811,6 @@
   --status-loop: 258 90% 66%;      /* violet-500 */
   --status-condition: 38 92% 50%;  /* amber-500 */
   --status-form: 142 71% 45%;      /* green-500 */
-}
-
-/*
- * ELEMENTOR SKIN (shadcn tokens), matches the EDITOR ONE (Elementor v4)
- * panel exactly. Values are the Editor One design tokens (--e-one-palette-*)
- * from the installed plugin (v4.1.4):
- *   light → elementor/assets/css/modules/editor-one/theme-light.css
- *   dark  → elementor/assets/css/modules/editor-one/theme-dark.css
- * Editor One uses translucent action/divider overlays rather than solid
- * greys; where a shadcn token must be a solid HSL (borders, hover/selected
- * surfaces), it carries the overlay composited over the panel background.
- * Light: bg #fff · txt #3f444b · hi #0c0d0e · tertiary #69727d · border
- *        #A7AAAD · divider #e0e0e0 · accent #f0abfc.
- * Dark : bg #1f2124 · txt #babfc5 · hi #fff · tertiary #9da5ae · disabled
- *        #515962 · divider≈#3a3c3e · selected≈#434547 · accent #f0abfc.
- * Accent is the Editor One pink primary (#f0abfc) with dark contrast text
- * (#0c0d0e). Applied via `.skin-elementor` on the same `.uich-tw` host that
- * carries `.dark`, so it composes with the light/dark toggle. Radius = 3px.
- */
-.uich-tw.skin-elementor {
-  --background: 0 0% 100%;         /* #ffffff background-default */
-  --foreground: 215 9% 27%;        /* #3f444b text-secondary */
-  --card: 0 0% 100%;
-  --card-foreground: 215 9% 27%;
-  --popover: 0 0% 100%;
-  --popover-foreground: 215 9% 27%;
-  --primary: 291 93% 83%;          /* #f0abfc primary-main */
-  --primary-foreground: 210 8% 5%; /* #0c0d0e primary-contrast-text */
-  --secondary: 0 0% 96%;           /* #f5f5f5 action-hover over #fff */
-  --secondary-foreground: 215 9% 27%;
-  --muted: 0 0% 96%;               /* #f5f5f5 */
-  --muted-foreground: 213 9% 45%;  /* #69727d text-tertiary */
-  --accent: 0 0% 92%;              /* #ebebeb action-selected over #fff */
-  --accent-foreground: 210 8% 5%;  /* #0c0d0e text-primary */
-  --destructive: 0 72% 51%;        /* #dc2626 error-main */
-  --destructive-foreground: 0 0% 100%;
-  --border: 0 0% 88%;              /* #e0e0e0 divider (rgba(0,0,0,.12)) */
-  --input: 210 3% 67%;             /* #A7AAAD border (control outlines) */
-  --ring: 291 93% 83%;             /* #f0abfc */
-  --radius: 6px;  /* Editor One: rounded-md controls = 4px, rounded-lg = 6px */
-  --status-data: 217 78% 53%;      /* #2563eb info-main */
-  --status-loop: 291 93% 83%;      /* #f0abfc primary-main */
-  --status-condition: 24 73% 42%;  /* #bb5b1d warning-main (light) */
-  --status-form: 158 86% 28%;      /* #0a875a success-main */
-}
-
-.uich-tw.skin-elementor.dark {
-  --background: 216 7% 13%;        /* #1f2124 background-default */
-  --foreground: 213 9% 75%;        /* #babfc5 text-secondary */
-  --card: 216 7% 13%;              /* #1f2124 */
-  --card-foreground: 213 9% 75%;
-  --popover: 210 5% 20%;           /* #313336 action-hover over #1f2124 */
-  --popover-foreground: 213 9% 75%;
-  --primary: 291 93% 83%;          /* #f0abfc primary-main */
-  --primary-foreground: 210 8% 5%; /* #0c0d0e primary-contrast-text */
-  --secondary: 210 5% 20%;         /* #313336 */
-  --secondary-foreground: 213 9% 75%;
-  --muted: 210 5% 20%;             /* #313336 */
-  --muted-foreground: 212 9% 65%;  /* #9da5ae text-tertiary */
-  --accent: 210 5% 27%;            /* #434547 action-selected over #1f2124 */
-  --accent-foreground: 0 0% 100%;  /* #ffffff text-primary */
-  --destructive: 0 72% 51%;        /* #dc2626 error-main */
-  --destructive-foreground: 0 0% 100%;
-  --border: 210 3% 24%;            /* #3a3c3e divider (rgba(255,255,255,.12)) */
-  --input: 210 5% 27%;             /* #434547 (rgba(255,255,255,.16)) */
-  --ring: 291 93% 83%;             /* #f0abfc */
-  --radius: 6px;  /* Editor One: rounded-md controls = 4px, rounded-lg = 6px */
-  --status-data: 217 78% 53%;      /* #2563eb info-main */
-  --status-loop: 291 93% 83%;      /* #f0abfc primary-main */
-  --status-condition: 38 92% 50%;  /* #f59e0b warning-main */
-  --status-form: 158 86% 28%;      /* #0a875a success-main */
 }
 
 /*
@@ -2909,10 +2850,6 @@
    base (--e-one-typography-fontFamily / fontSize). Deliberately kept on Roboto
    (the editor panel stays as-is); only the Brand skin follows the unified font
    above. Higher specificity than the base .uich-tw rule. */
-.uich-tw.skin-elementor {
-  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
-  font-size: 14px;
-}
 
 .uich-tw h1, .uich-tw h2, .uich-tw h3, .uich-tw h4, .uich-tw h5, .uich-tw h6,
 .uich-tw p, .uich-tw ul, .uich-tw ol, .uich-tw figure, .uich-tw blockquote {
@@ -2924,7 +2861,12 @@
   list-style: none;
 }
 
-.uich-tw button, .uich-tw input, .uich-tw optgroup, .uich-tw select, .uich-tw textarea {
+/* `:not(:where([data-uc]))` leaves the UiChemy design-system controls (the
+   right-side panel's components, see components/ui/ds/) to their own classes.
+   `:where()` adds no specificity, so this rule stays (0,1,1) for everything
+   else. Without it the reset's `background: transparent` and `font`/`color:
+   inherit` beat every DS class (0,1,0). */
+.uich-tw button:not(:where([data-uc])), .uich-tw input:not(:where([data-uc])), .uich-tw optgroup, .uich-tw select:not(:where([data-uc])), .uich-tw textarea:not(:where([data-uc])) {
   font: inherit;
   color: inherit;
   margin: 0;
@@ -2945,7 +2887,7 @@
   -webkit-appearance: none;
 }
 
-.uich-tw button:disabled {
+.uich-tw button:disabled:not(:where([data-uc])) {
   cursor: default;
 }
 
@@ -2963,197 +2905,1217 @@
   display: none;
 }
 
-/*
- * Composer SKIN TOKENS — the single source of the palette.
- *
- * Imported by BOTH bundles: the composer panel (index.jsx) and the canvas
- * (canvas-entry.js, which PHP enqueues into the Elementor preview). That shared
- * import is the whole reason this file exists.
- *
- * The on-canvas toolbar used to hard-code this palette as literals, because it
- * renders in a document these tokens never reached. Hand-copying is not the same
- * as matching: alongside the real values it grew a dozen invented in-between
- * shades — #f1f1f3, #2c2e33, #e6e6e9 — that appear nowhere in the panel. Panel,
- * dock and toolbar now read the SAME declarations, so a colour changed here
- * changes all three and they cannot drift apart again.
- *
- * Moved verbatim out of composer.css. No value was altered.
- */
+/* =============================================================================
+   UiChemy Create, Design System Tokens (Phase 1, isolated)
+   -----------------------------------------------------------------------------
+   SURFACE MODEL, components are surface-agnostic. They read semantic tokens
+   (surfaces, text, borders, ring, per-family fg/soft) whose VALUES are set by
+   the surface scope a component lives in:
 
-/* Elementor skin, dark variant (default; = Editor One "Dark" UI theme) */
-[data-uich-composer-skin="elementor"] {
-  /* AI mark in Elementor's own pink family — the same pair the canvas
-     selection chrome uses (ACCENT_LINE #d946ef, composer-box-handles.js). */
-  --ai-glyph-from: #f5d0fe;
-  --ai-glyph-to: #d946ef;
-  --bg-canvas: #0c0d0e;
-  /* background-paper (top chrome / outer) */
-  --bg-canvas-ink: #babfc5;
-  /* text-secondary */
-  --panel-bg: #1f2124;
-  /* background-default */
-  --panel-bg-2: #313336;
-  /* action-hover over panel */
-  --panel-bg-3: #434547;
-  /* action-selected over panel */
-  --panel-bg-4: #4b4d51;
-  /* action-focus+ / chip */
-  --panel-line: #3a3c3e;
-  /* divider (rgba(255,255,255,.12)) */
-  --panel-line-2: #434547;
-  /* stronger divider (rgba(255,255,255,.16)) */
-  --text-hi: #ffffff;
-  /* text-primary */
-  --uich-text: #babfc5;
-  /* text-secondary */
-  --text-mid: #9da5ae;
-  /* text-tertiary */
-  --text-dim: #515962;
-  /* text-disabled */
-  --accent-2: hsl(var(--primary));
-  --accent-rgb: 240, 171, 252;
-  /* #f0abfc primary-main */
-  --accent-bg: rgba(var(--accent-rgb), 0.22);
-  --brand-green: #0a875a;
-  /* success-main */
-  --uich-danger: #dc2626;
-  /* error-main */
-  --ok: #0a875a;
-  --warn: #f59e0b;
-  /* warning-main */
-  --radius: 6px;
-  /* Editor One: cards ~6px */
-  --radius-sm: 4px;
-  /* Editor One: inputs/controls 4px */
+     .uc-content            → light content   (current look, DEFAULT)
+     .uc-content[data-theme="dark"] → dark content (future, token change only)
+     .uc-chrome             → dark chrome     (fixed; sidebar/nav/rails)
+
+   `.uc-scope` and `.uc-portal` behave as light content, so existing usage is
+   unchanged and the light view is pixel-identical to before this restructure.
+
+   ISOLATION: all tokens are scoped under these classes (NOT :root). Nothing
+   here touches the existing globals/theme.
+   ========================================================================== */
+
+/* Brand typeface, bundled via webpack (relative paths resolve to
+   ../fonts/, emitted into build/ and URL-rewritten at build time so the
+   fonts load correctly from wp-content, not the server root). */
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:400; font-display:swap; src:url(fonts/ZalandoSans-Regular.bcfcc767.ttf) format("truetype"); }
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:500; font-display:swap; src:url(fonts/ZalandoSans-Medium.41051c31.ttf) format("truetype"); }
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:600; font-display:swap; src:url(fonts/ZalandoSans-SemiBold.d690e087.ttf) format("truetype"); }
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:700; font-display:swap; src:url(fonts/ZalandoSans-Bold.0ac5948b.ttf) format("truetype"); }
+
+/* =============================================================================
+   1. BASE, surface-INDEPENDENT tokens (identical on every surface).
+      Applies to every surface scope so the values are always present.
+   ========================================================================== */
+/* `:root` added (AI-creator port) so DS token VALUES resolve app-wide for
+   inline DS controls (buttons/inputs/triggers) WITHOUT importing the scope's
+   font/color/box-sizing reset, that stays under `.uc-*` only. Nothing in the
+   app references `--uc-*`, so these are inert for existing components. */
+:root,
+.uc-scope,
+.uc-content,
+.uc-chrome,
+.uc-portal {
+  /* ---- Brand + semantic SOLID fills + on-fill text (constant) ----------
+     ORANGE is back on the SOLID brand fill only, this paints the primary /
+     main-CTA buttons (tone="brand" solid). The brand -fg/-soft/-border/-glow
+     below stay NEUTRAL, so soft/outline/ghost brand controls, icon tints and
+     text remain monochrome. --uc-accent stays neutral (no purple). */
+  --uc-brand:   #FD6A35;  --uc-brand-on:   #FFFFFF;
+  --uc-success: #2EA343;  --uc-success-on: #FFFFFF;
+  --uc-danger:  #F65258;  --uc-danger-on:  #FFFFFF;
+  --uc-warning: #FFA940;  --uc-warning-on: #171717;
+  --uc-accent:  var(--uc-inverse-bg);  --uc-accent-on:  var(--uc-inverse-fg);
+
+  /* ---- Family hairline borders (translucent, work on any surface) ----- */
+  --uc-brand-border:   var(--uc-border);
+  --uc-success-border: rgba(46, 163, 67, 0.40);
+  --uc-danger-border:  rgba(246, 82, 88, 0.40);
+  --uc-warning-border: rgba(255, 169, 64, 0.42);
+  --uc-accent-border:  var(--uc-border);
+
+  /* ---- Hover / press glow washes (translucent, surface-agnostic) ------ */
+  --uc-brand-glow-hover:   rgba(128, 128, 128, 0.10); --uc-brand-glow-press:   rgba(128, 128, 128, 0.18);
+  --uc-success-glow-hover: rgba(46, 163, 67, 0.08);  --uc-success-glow-press: rgba(46, 163, 67, 0.16);
+  --uc-danger-glow-hover:  rgba(246, 82, 88, 0.08);  --uc-danger-glow-press:  rgba(246, 82, 88, 0.16);
+  --uc-warning-glow-hover: rgba(255, 169, 64, 0.10); --uc-warning-glow-press: rgba(255, 169, 64, 0.18);
+  --uc-accent-glow-hover:  rgba(128, 128, 128, 0.10); --uc-accent-glow-press:  rgba(128, 128, 128, 0.18);
+
+  /* ---- Inverse text (constant) ----------------------------------------- */
+  --uc-text-inverse: #FFFFFF;
+
+  /* ---- Semantic aliases (resolve per surface via the surface tokens) --- */
+  --uc-bg:        var(--uc-surface-base);
+  --uc-fg:        var(--uc-text-strong);
+  --uc-fg-muted:  var(--uc-text-muted);
+  --uc-card:      var(--uc-surface-raised);
+  --uc-card-fg:   var(--uc-text-strong);
+  --uc-muted:     var(--uc-surface-sunken);
+  --uc-elevated:  var(--uc-surface-overlay);
+
+  /* ---- Radius (UiChemy scale: name = pixel value; mirrors the styleguide
+         corner-radius set). Semantic aliases below keep components working. -- */
+  --uc-radius-0: 0;      --uc-radius-2: 2px;    --uc-radius-4: 4px;
+  --uc-radius-6: 6px;    --uc-radius-8: 8px;    --uc-radius-12: 12px;
+  --uc-radius-16: 16px;  --uc-radius-24: 24px;  --uc-radius-32: 32px;
+  --uc-radius-infinite: 9999px;
+  /* Semantic aliases → numeric scale (value-identical to before) */
+  --uc-radius-xs: var(--uc-radius-4);   --uc-radius-sm: var(--uc-radius-6);
+  --uc-radius-md: var(--uc-radius-8);   --uc-radius-lg: var(--uc-radius-12);
+  --uc-radius-xl: var(--uc-radius-16);  --uc-radius-pill: var(--uc-radius-infinite);
+
+  /* ---- Spacing (UiChemy scale: name = pixels) -------------------------- */
+  --uc-space-0: 0;     --uc-space-1: 1px;   --uc-space-2: 2px;   --uc-space-3: 3px;
+  --uc-space-4: 4px;   --uc-space-5: 5px;   --uc-space-6: 6px;   --uc-space-7: 7px;
+  --uc-space-8: 8px;   --uc-space-9: 9px;   --uc-space-10: 10px; --uc-space-11: 11px;
+  --uc-space-12: 12px; --uc-space-14: 14px; --uc-space-16: 16px; --uc-space-20: 20px;
+  --uc-space-24: 24px; --uc-space-28: 28px; --uc-space-32: 32px; --uc-space-36: 36px;
+  --uc-space-40: 40px; --uc-space-44: 44px; --uc-space-48: 48px;
+
+  /* ---- Typography ------------------------------------------------------ */
+  --uc-font-sans: "Zalando Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --uc-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --uc-text-3xs: 0.5rem;    --uc-text-2xs: 0.625rem;  --uc-text-xs: 0.75rem;
+  --uc-text-sm: 0.8125rem;  --uc-text-base: 0.875rem; --uc-text-md: 1rem;
+  --uc-text-lg: 1.125rem;   --uc-text-xl: 1.25rem;    --uc-text-2xl: 1.5rem;
+  --uc-text-3xl: 1.875rem;
+  /* --uc-weight-semibold is temporarily folded to Medium (500): no text renders
+     at 600 for now. Flip back to 600 here to restore SemiBold everywhere it's
+     used (Card / Alert / Dialog / Accordion titles, etc.). */
+  --uc-weight-regular: 400; --uc-weight-medium: 500;  --uc-weight-semibold: 500;
+  --uc-leading-tight: 1.2;  --uc-leading-snug: 1.35;  --uc-leading-normal: 1.5;
+  --uc-tracking-tight: -0.01em; --uc-tracking-normal: 0; --uc-tracking-wide: 0.02em;
+
+  /* ---- Elevation (neutral recipes; control-brand recolored to orange) --
+     Resting + hover surfaces are FLAT (ElevenLabs-style): definition comes
+     from the single hairline border, not a shadow. Only true overlays
+     (popovers/menus/modals = shadow-3/4/5) still float. */
+  --uc-shadow-1: none;
+  --uc-shadow-2: none;
+  --uc-shadow-3: 0 0 0 1px oklch(50% 0.01 285 / 0.06), 0 2px 4px -1px oklch(0% 0 0 / 0.05), 0 6px 14px -3px oklch(0% 0 0 / 0.08);
+  --uc-shadow-4: 0 0 0 1px oklch(50% 0.01 285 / 0.06), 0 6px 12px -4px oklch(0% 0 0 / 0.06), 0 14px 28px -6px oklch(0% 0 0 / 0.10);
+  --uc-shadow-5: 0 0 0 1px oklch(50% 0.01 285 / 0.06), 0 12px 24px -8px oklch(0% 0 0 / 0.08), 0 28px 56px -12px oklch(0% 0 0 / 0.14);
+  /* Filled controls (solid buttons): light top highlight + one soft drop.
+     Kept subtle, depth reads without heavy shadows. */
+  --uc-shadow-control:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.07),
+    0 2px 3px -1px rgba(0, 0, 0, 0.05);
+  /* Colored solids (brand/success/danger): neutral dark inner edge so it suits
+     any hue, plus a light top highlight and soft drop. */
+  --uc-shadow-control-brand:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.14),
+    0 1px 2px rgba(0, 0, 0, 0.09),
+    0 2px 3px -1px rgba(0, 0, 0, 0.06);
+  --uc-shadow-control-pressed: inset 0 1px 2px rgba(0, 0, 0, 0.14);
+  --uc-shadow-input: inset 0 1px 2px rgba(0, 0, 0, 0.05), inset 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  /* Raised secondary controls (outline buttons, select/menu triggers): a faint
+     top highlight and a whisper of drop. Edge comes from the component border. */
+  --uc-shadow-raised:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.10),
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 1px 3px -1px rgba(0, 0, 0, 0.04);
+  /* Very subtle gloss: faint light top → faint dark bottom. */
+  --uc-sheen: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.03));
+
+  /* ---- Control sizing -------------------------------------------------- */
+  --uc-control-h-sm: 1.75rem; --uc-control-h-md: 2rem; --uc-control-h-lg: 2.5rem;
+
+  /* ---- Motion ---------------------------------------------------------- */
+  --uc-dur-fast: 160ms; --uc-dur-base: 240ms; --uc-dur-slow: 340ms;
+  /* Appearance of popovers / overlays (tooltip, menu, select, dialog), a touch
+     slower than base so things ease in gracefully instead of flashing on. */
+  --uc-dur-enter: 300ms;
+  --uc-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --uc-ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --uc-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ---- Z-index --------------------------------------------------------- */
+  /* Dropdowns/selects/menus sit ABOVE dialogs (1250 > z-dialog 1200) so a Select
+     opened inside a modal renders on top instead of behind it. Tooltip stays highest. */
+  --uc-z-overlay: 1100; --uc-z-dialog: 1200; --uc-z-dropdown: 1250; --uc-z-tooltip: 1300;
 }
 
-[data-uich-composer-skin="elementor"][data-uich-composer-theme="light"] {
-  --bg-canvas: #f1f2f3;
-  /* outer canvas grey */
-  --bg-canvas-ink: #0c0d0e;
-  --panel-bg: #ffffff;
-  /* background-default */
-  --panel-bg-2: #f5f5f5;
-  /* action-hover over #fff */
-  --panel-bg-3: #ebebeb;
-  /* action-selected over #fff */
-  --panel-bg-4: #e0e0e0;
-  /* divider (rgba(0,0,0,.12)) */
-  --panel-line: #e0e0e0;
-  /* divider (rgba(0,0,0,.12)) */
-  --panel-line-2: #a7aaad;
-  /* border (control outlines) */
-  --text-hi: #0c0d0e;
-  /* text-primary */
-  --uich-text: #3f444b;
-  /* text-secondary */
-  --text-mid: #69727d;
-  /* text-tertiary */
-  --text-dim: #9da5ae;
-  /* text-disabled */
-  --accent-2: hsl(var(--primary));
-  --accent-rgb: 240, 171, 252;
-  /* #f0abfc primary-main */
-  --accent-bg: rgba(var(--accent-rgb), 0.14);
-  --brand-green: #0a875a;
-  /* success-main */
-  --uich-danger: #dc2626;
-  /* error-main */
-  --ok: #0a875a;
-  --warn: #bb5b1d;
-  /* warning-main (light) */
-  --radius: 6px;
-  /* Editor One: cards ~6px */
-  --radius-sm: 4px;
-  /* Editor One: inputs/controls 4px */
+/* =============================================================================
+   2. SURFACE, CONTENT (light). DEFAULT. Values identical to pre-restructure,
+      so the light view is unchanged. `.uc-scope` / `.uc-portal` map here too.
+   ========================================================================== */
+:root,
+.uc-scope,
+.uc-content,
+.uc-portal {
+  --uc-surface-sunken:  #EBEBEB;
+  --uc-surface-base:    #F4F4F4;
+  --uc-surface-raised:  #FFFFFF;
+  --uc-surface-overlay: rgba(255, 255, 255, 0.10);
+  --uc-surface-control: #FFFFFF;   /* secondary control fill (raised) */
+  /* The hover / highlight wash (menu rows, the sliding pill in Select and
+     Menu). SEPARATE from --uc-surface-control, which it used to borrow: that
+     token is a RAISED FILL, and the two values only coincide on a dark surface
+     where rgba(255,255,255,0.05) happens to read as both. On light, a raised
+     control is #FFFFFF — a white pill on a white menu, i.e. invisible — while
+     a hover wash has to be darker than what it sits on. Translucent so it
+     composites over whatever surface the menu uses. */
+  --uc-surface-hover: rgba(0, 0, 0, 0.04);
+
+  --uc-text-strong: #0A0A0A;
+  --uc-text:        #171717;
+  --uc-text-muted:  #737373;
+  --uc-text-subtle: #A3A3A3;
+
+  /* high-contrast inverse fill (B&W primary): dark on light content */
+  --uc-inverse-bg: #171717;
+  --uc-inverse-fg: #FFFFFF;
+
+  /* One soft, semi-transparent hairline (ElevenLabs uses rgba(0,0,0,0.1)).
+     Translucent so it composites correctly over white AND grey tiles. */
+  --uc-border-subtle: rgba(0, 0, 0, 0.055);
+  --uc-border:        rgba(0, 0, 0, 0.09);
+  --uc-border-strong: rgba(0, 0, 0, 0.14);
+  /* The HOVER border on controls — one step above --uc-border-strong, and a
+     BORDER value, not a text one. Every hover ring used --uc-text-subtle,
+     which on dark is ALSO #525252 (the two coincide there, so the mistake was
+     invisible — and the hover was in fact a no-op, resting and hover being the
+     same colour) but on light is #A3A3A3: roughly 36% black against a 14%
+     resting border, i.e. a hard outline snapping in instead of a step up. */
+  --uc-border-hover:  rgba(0, 0, 0, 0.22);
+  --uc-ring:          rgba(23, 23, 23, 0.40);
+
+  /* per-family foreground (readable on light). brand/accent = dark ink. */
+  --uc-brand-fg:   #171717;
+  --uc-success-fg: #0A842A;
+  --uc-danger-fg:  #D12D37;
+  --uc-warning-fg: #AA712B;
+  --uc-accent-fg:  #171717;
+
+  /* per-family soft tint backgrounds (opaque light tints). brand/accent = grey. */
+  --uc-brand-soft:   #F0F0F0;
+  --uc-success-soft: #E7FFE7;
+  --uc-danger-soft:  #FFF2EF;
+  --uc-warning-soft: #FFEDD8;
+  --uc-accent-soft:  #F0F0F0;
 }
 
-/* Gutenberg skin, dark variant (the block editor's own dark UI): the dark theme
-   applies to its own inverted chrome: #1e1e1e base, #2f2f2f raised.
+/* =============================================================================
+   3. SURFACE, CONTENT DARK (future). Token change only; no component rebuild.
+      Slightly lighter than chrome so content sits "above" the fixed chrome.
+   ========================================================================== */
+.uc-content[data-theme="dark"] {
+  --uc-surface-sunken:  #151515;
+  --uc-surface-base:    #1C1C1C;
+  --uc-surface-raised:  #242424;
+  --uc-surface-overlay: #2A2A2A;
+  --uc-surface-control: rgba(255, 255, 255, 0.05);  /* subtle lift, blends on dark */
 
-   NOTE, and worth remembering: this header's opening delimiter went missing when
-   the skin palettes were extracted into this file, which left a dangling closing
-   delimiter sitting right above the selector. That is a parse error, and a CSS
-   parser recovers from it by discarding the rule that follows — so this ENTIRE
-   token block was silently dead, and the Gutenberg skin inherited the :root
-   (UiChemy) palette instead: --accent-rgb measured 255,255,255 rather than
-   56,88,233, and --radius 0.4rem rather than 4px.
+  --uc-text-strong: #F5F5F5;
+  --uc-text:        #E5E5E5;
+  --uc-text-muted:  #A3A3A3;
+  --uc-text-subtle: #737373;
 
-   Never write the two-character comment terminator inside a comment body while
-   describing this, either. Doing so ends the comment early, turns the remaining
-   prose into garbage declarations, and drops the next rule for the very same
-   reason. Describe the delimiters in words. */
-[data-uich-composer-skin="gutenberg"] {
-  /* AI mark in wp-admin blue — #3858e9 is the same --wp-admin-theme-color
-     this skin already uses for --accent-rgb, plus a lighter step to run
-     the gradient from. */
-  --ai-glyph-from: #a8c4ff;
-  --ai-glyph-to: #3858e9;
-  --bg-canvas: #1e1e1e;
-  --bg-canvas-ink: #e0e0e0;
-  --panel-bg: #1e1e1e;
-  --panel-bg-2: #2f2f2f;
-  /* hover */
-  --panel-bg-3: #404040;
-  /* selected */
-  --panel-bg-4: #4a4a4a;
-  /* raised chip */
-  --panel-line: #404040;
-  --panel-line-2: #545454;
-  --text-hi: #ffffff;
-  --uich-text: #e0e0e0;
-  --text-mid: #949494;
-  --text-dim: #757575;
-  --accent-2: hsl(var(--primary));
-  --accent-rgb: 56, 88, 233;
-  /* #3858e9 --wp-admin-theme-color */
-  /* WP's ToggleGroupControl is a 2px-radius track with 2px items; the softer
-     9px/7px pill would be the one un-WordPress thing in a WordPress sidebar. */
-  --seg-radius: 4px;
-  --seg-radius-inner: 2px;
-  --accent-bg: rgba(var(--accent-rgb), 0.24);
-  --brand-green: #4ab866;
-  /* admin success */
-  --uich-danger: #cc1818;
-  /* admin error */
-  --ok: #4ab866;
-  --warn: #f0b849;
-  /* admin warning */
-  --radius: 4px;
-  /* WP popovers/menus = 4px */
-  --radius-sm: 2px;
-  /* WP controls = 2px */
+  /* inverse flips to light-on-dark so the B&W primary stays high-contrast */
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #1C1C1C;
+
+  --uc-border-subtle: #2E2E2E;
+  --uc-border:        #3D3D3D;
+  --uc-border-strong: #525252;
+  /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
+  --uc-border-hover:  #525252;
+  --uc-ring:          rgba(245, 245, 245, 0.55);
+
+  --uc-brand-fg:   #EDEDED;
+  --uc-success-fg: #A7EAAA;
+  --uc-danger-fg:  #FDC9C6;
+  --uc-warning-fg: #FFC680;
+  --uc-accent-fg:  #EDEDED;
+
+  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+  --uc-warning-soft: rgba(255, 169, 64, 0.22);
+  --uc-accent-soft:  rgba(255, 255, 255, 0.12);
 }
 
-[data-uich-composer-skin="gutenberg"][data-uich-composer-theme="light"] {
-  --bg-canvas: #f0f0f0;
-  /* the editor's canvas grey behind the content column */
-  --bg-canvas-ink: #1e1e1e;
-  --panel-bg: #ffffff;
-  --panel-bg-2: #f0f0f0;
-  /* hover */
-  --panel-bg-3: #e0e0e0;
-  /* selected */
-  --panel-bg-4: #dddddd;
-  --panel-line: #e0e0e0;
-  /* divider */
-  --panel-line-2: #949494;
-  /* control outline */
-  --text-hi: #1e1e1e;
-  --uich-text: #1e1e1e;
-  --text-mid: #757575;
-  --text-dim: #949494;
-  --accent-2: hsl(var(--primary));
-  --accent-rgb: 56, 88, 233;
-  /* #3858e9 */
-  --accent-bg: rgba(var(--accent-rgb), 0.08);
-  --brand-green: #4ab866;
-  --uich-danger: #cc1818;
-  --ok: #4ab866;
-  --warn: #f0b849;
-  --radius: 4px;
-  /* WP popovers/menus = 4px */
-  --radius-sm: 2px;
-  /* WP controls = 2px */
+/* =============================================================================
+   4. SURFACE, CHROME (dark, fixed). Values from the existing app dark sidebar
+      (#171717 / #202020, text-white / text-weakest, border-dark-weakest/default).
+   ========================================================================== */
+.uc-chrome {
+  --uc-surface-sunken:  #101010;
+  --uc-surface-base:    #171717;
+  --uc-surface-raised:  #202020;
+  --uc-surface-overlay: #242424;
+  --uc-surface-control: rgba(255, 255, 255, 0.05);  /* subtle lift, blends on dark */
+  /* Same value --uc-surface-control had, so dark is unchanged by the split. */
+  --uc-surface-hover: rgba(255, 255, 255, 0.05);
+
+  --uc-text-strong: #FFFFFF;
+  --uc-text:        #A3A3A3;
+  --uc-text-muted:  #737373;
+  --uc-text-subtle: #525252;
+
+  /* inverse flips to light-on-dark so the B&W primary stays high-contrast */
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #171717;
+
+  --uc-border-subtle: #333333;
+  --uc-border:        #404040;
+  --uc-border-strong: #525252;
+  /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
+  --uc-border-hover:  #525252;
+  --uc-ring:          rgba(245, 245, 245, 0.55);
+
+  --uc-brand-fg:   #EDEDED;
+  --uc-success-fg: #A7EAAA;
+  --uc-danger-fg:  #FDC9C6;
+  --uc-warning-fg: #FFC680;
+  --uc-accent-fg:  #EDEDED;
+
+  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+  --uc-warning-soft: rgba(255, 169, 64, 0.22);
+  --uc-accent-soft:  rgba(255, 255, 255, 0.12);
 }
 
+/* =============================================================================
+   4b. POPOVER, fixed dark scope for dropdowns (Select / Menu). Always dark in
+       every mode. Applied alongside `uc-portal` (base tokens + box-sizing).
+   ========================================================================== */
+.uc-pop-dark {
+  --uc-surface-sunken:  #141414;
+  --uc-surface-base:    #1A1A1A;
+  --uc-surface-raised:  #242424;
+  /* A dropdown must read as a LAYER above the panel. The old #1C1C1C sat
+     between the panel chrome (#171717) and its field surfaces (#202020/#242424),
+     so a dark list melted into the dark panel. #2E2E2E is clearly lighter than
+     every panel surface, and the stronger shadow below (soft dark drops that
+     actually show on dark, reused from the canvas dock bar) plus the .content
+     border give it a crisp, floating edge. [ui-ux blend fix] */
+  --uc-surface-overlay: #2E2E2E;
+  --uc-surface-control: rgba(255, 255, 255, 0.08);
+  /* Same value --uc-surface-control had here; a pop-up is already a layer up,
+     so its wash is a touch stronger than the panel's. */
+  --uc-surface-hover: rgba(255, 255, 255, 0.08);
+  --uc-shadow-4: 0 16px 44px -12px rgb(0 0 0 / 55%), 0 4px 12px -4px rgb(0 0 0 / 40%);
+
+  --uc-text-strong: #FFFFFF;
+  --uc-text:        #E5E5E5;
+  --uc-text-muted:  #A3A3A3;
+  --uc-text-subtle: #737373;
+
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #171717;
+
+  --uc-border-subtle: #2E2E2E;
+  --uc-border:        #3D3D3D;
+  --uc-border-strong: #525252;
+  /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
+  --uc-border-hover:  #525252;
+  --uc-ring:          rgba(245, 245, 245, 0.55);
+
+  --uc-brand-fg:   #EDEDED;  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-fg: #A7EAAA;  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-fg:  #FDC9C6;  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+  --uc-warning-fg: #FFC680;  --uc-warning-soft: rgba(255, 169, 64, 0.22);
+  --uc-accent-fg:  #EDEDED;  --uc-accent-soft:  rgba(255, 255, 255, 0.12);
+
+  color: var(--uc-text);
+}
+
+/* =============================================================================
+   5. BASELINES, each surface paints its own background + text.
+   ========================================================================== */
+.uc-scope,
+.uc-content,
+.uc-chrome {
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  line-height: var(--uc-leading-normal);
+  color: var(--uc-text);
+  background: var(--uc-surface-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+/* Portalled content mounts in <body>; carry font/tokens but no background. */
+.uc-portal {
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  line-height: var(--uc-leading-normal);
+  color: var(--uc-text);
+  -webkit-font-smoothing: antialiased;
+}
+.uc-scope *, .uc-scope *::before, .uc-scope *::after,
+.uc-content *, .uc-content *::before, .uc-content *::after,
+.uc-chrome *, .uc-chrome *::before, .uc-chrome *::after,
+.uc-portal *, .uc-portal *::before, .uc-portal *::after {
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uc-scope *, .uc-content *, .uc-chrome *, .uc-portal * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =============================================================================
+   UiChemy Create, COMPONENT tokens (per-component knobs)
+   -----------------------------------------------------------------------------
+   Per-component sizing/shape variables, editable from the internal DS editor
+   (tools/ds-editor). Each defaults to a GLOBAL token via var(), so out of the
+   box a component still follows the global scale, overriding one here changes
+   ONLY that component, not the whole system.
+
+   Loaded right after tokens.css (src/index.js), same surface scopes, so the
+   values resolve wherever the components render. The component CSS modules read
+   these with the original value as a var() fallback, so a missing/av value can
+   never break a component.
+   ========================================================================== */
+.uc-scope,
+.uc-content,
+.uc-chrome,
+.uc-portal {
+  /* ---- Button --------------------------------------------------------- */
+  --uc-btn-radius: var(--uc-radius-md);
+  --uc-btn-weight: var(--uc-weight-medium);
+  --uc-btn-h:      var(--uc-control-h-md);
+  --uc-btn-px:     var(--uc-space-16);
+
+  /* ---- Input ---------------------------------------------------------- */
+  --uc-input-radius: var(--uc-radius-md);
+  --uc-input-h:      var(--uc-control-h-md);
+  --uc-input-px:     var(--uc-space-12);
+
+  /* ---- Card ----------------------------------------------------------- */
+  --uc-card-radius: var(--uc-radius-lg);
+  --uc-card-pad:    var(--uc-space-20);
+
+  /* ---- Tabs (pill variant) -------------------------------------------- */
+  --uc-tab-track-bg:     #F2F2F2;   /* lighter track (was --uc-surface-sunken #EBEBEB) */
+  --uc-tab-track-stroke: none;      /* no hairline stroke around the track */
+  --uc-tab-track-radius: var(--uc-radius-md);
+  --uc-tab-track-pad:    3px;
+  --uc-tab-radius:       var(--uc-radius-sm);
+  --uc-tab-h:            26px;
+  --uc-tab-px:           var(--uc-space-12);
+}
+
+/* FloatingToolbar is a fixed dark overlay and also works outside a DS scope. */
+.uc-pop-dark {
+  --uc-toolbar-bg: var(--uc-surface-raised);
+  --uc-toolbar-hover-bg: var(--uc-surface-overlay);
+  --uc-toolbar-fg: var(--uc-text);
+  --uc-toolbar-border: var(--uc-border);
+  --uc-toolbar-height: 48px;
+  --uc-toolbar-action-size: 34px;
+  --uc-toolbar-dismiss-size: 44px;
+  --uc-toolbar-radius: var(--uc-radius-lg);
+  --uc-toolbar-action-radius: var(--uc-btn-radius);
+
+  /* Pill tabs inside a dark pop-up (e.g. the model picker's CLI | WP Connectors
+     strip). `.uc-portal` above pins the track to the light #F2F2F2, which
+     beats anything inherited from a dark panel, so re-point it to the dark
+     sunken well + hairline here. */
+  --uc-tab-track-bg:     var(--uc-surface-sunken);
+  --uc-tab-track-stroke: inset 0 0 0 1px var(--uc-border-subtle);
+}
+
+/* Button, raised, physically-lit control on uc- tokens. */
+
+.oDgO9tRe_mBUNaW0e6V8 {
+  --_h: var(--uc-btn-h, var(--uc-control-h-md));
+  --_px: var(--uc-btn-px, var(--uc-space-16));
+  --_fs: var(--uc-text-base);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--uc-space-8);
+  height: var(--_h);
+  padding: 0 var(--_px);
+  font-family: var(--uc-font-sans);
+  font-size: var(--_fs);
+  font-weight: var(--uc-btn-weight, var(--uc-weight-medium));
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  border: none;
+  border-radius: var(--uc-btn-radius, var(--uc-radius-md));
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  position: relative;
+  isolation: isolate;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    box-shadow var(--uc-dur-fast) var(--uc-ease-standard),
+    transform var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.oDgO9tRe_mBUNaW0e6V8:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 2px;
+}
+.oDgO9tRe_mBUNaW0e6V8:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+.oDgO9tRe_mBUNaW0e6V8:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ---- Sizes ---------------------------------------------------------------- */
+.qLkzuQUQ_X4w0fceh2CB { --_h: var(--uc-control-h-sm); --_px: var(--uc-space-12); --_fs: var(--uc-text-sm); }
+.NAPRKbEZKONQ8AdACBzs { --_h: var(--uc-btn-h, var(--uc-control-h-md)); --_px: var(--uc-btn-px, var(--uc-space-16)); --_fs: var(--uc-text-base); }
+.qeRuCFz3SPTfPQEz8Eur { --_h: var(--uc-control-h-lg); --_px: var(--uc-space-20); --_fs: var(--uc-text-md); }
+
+.GW0xiH4qJYyLFExAe7Cc { padding: 0; width: var(--_h); }
+
+/* ---- Variant: solid ------------------------------------------------------- */
+.nx448XS4JGEoBYKJ_Xeh {
+  color: var(--uc-brand-on);
+  background: var(--_fill, var(--uc-brand));
+  background-image: var(--uc-sheen);
+  box-shadow: var(--_shadow, var(--uc-shadow-control-brand));
+}
+.nx448XS4JGEoBYKJ_Xeh:hover:not(:disabled) { background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12)), var(--uc-sheen); }
+.nx448XS4JGEoBYKJ_Xeh:active:not(:disabled) {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)), var(--uc-sheen);
+  box-shadow: var(--uc-shadow-control-pressed);
+}
+
+/* neutral solid = the B&W PRIMARY: high-contrast inverse fill that flips per
+   surface (dark on light content, light on dark chrome/content). */
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4 {
+  color: var(--uc-inverse-fg);
+  background: var(--uc-inverse-bg);
+  box-shadow: var(--uc-shadow-control);
+}
+/* grey wash nudges black->lighter and white->darker, so hover reads on both */
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:hover:not(:disabled) {
+  background-image: linear-gradient(to bottom, rgba(128, 128, 128, 0.16), rgba(128, 128, 128, 0.16));
+}
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:active:not(:disabled) {
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.14));
+}
+
+/* ---- Variant: soft -------------------------------------------------------- */
+.lSxxR32yQ7uBGKoReA0d {
+  color: var(--_fg, var(--uc-brand-fg));
+  background: var(--_soft, var(--uc-brand-soft));
+  background-image: var(--uc-sheen);
+  box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)), var(--uc-shadow-1);
+}
+.lSxxR32yQ7uBGKoReA0d:hover:not(:disabled) { background-image: var(--uc-sheen), linear-gradient(var(--_glow, var(--uc-brand-glow-hover)), var(--_glow, var(--uc-brand-glow-hover))); }
+
+/* ---- Variant: outline (raised secondary) ---------------------------------- */
+.uEkFBKngy5ABC8BavrlF {
+  color: var(--_fg, var(--uc-brand-fg));
+  background: var(--uc-surface-control);
+  background-image: var(--uc-sheen);
+  box-shadow: inset 0 0 0 1px var(--_border, var(--uc-border-subtle)), var(--uc-shadow-raised);
+}
+.uEkFBKngy5ABC8BavrlF.P6iUGKQ9CuUmhTY4IDx4 { color: var(--uc-text-strong); }
+.uEkFBKngy5ABC8BavrlF:hover:not(:disabled) { background-image: var(--uc-sheen), linear-gradient(var(--_glow, var(--uc-brand-glow-hover)), var(--_glow, var(--uc-brand-glow-hover))); }
+
+/* ---- Variant: ghost ------------------------------------------------------- */
+.ZShdqkg6btw_9kcxTgYx {
+  color: var(--_fg, var(--uc-brand-fg));
+  background: transparent;
+}
+.ZShdqkg6btw_9kcxTgYx.P6iUGKQ9CuUmhTY4IDx4 { color: var(--uc-text); }
+.ZShdqkg6btw_9kcxTgYx:hover:not(:disabled) { background: var(--_glow, var(--uc-brand-glow-hover)); color: var(--uc-text-strong); }
+
+/* ---- Tones (feed the --_* channels the variants read) --------------------- */
+.BDHV_0n6wKsmpw3p3s1i   { --_fill: var(--uc-brand);   --_fg: var(--uc-brand-fg);   --_soft: var(--uc-brand-soft);   --_border: var(--uc-brand-border);   --_glow: var(--uc-brand-glow-hover);   --_shadow: var(--uc-shadow-control-brand); }
+.keLGBcvAq5oELzJZ2XbZ { --_fill: var(--uc-success); --_fg: var(--uc-success-fg); --_soft: var(--uc-success-soft); --_border: var(--uc-success-border); --_glow: var(--uc-success-glow-hover); --_shadow: var(--uc-shadow-control-brand); }
+.qM62Gv6j4BSYSajMwnqk  { --_fill: var(--uc-danger);  --_fg: var(--uc-danger-fg);  --_soft: var(--uc-danger-soft);  --_border: var(--uc-danger-border);  --_glow: var(--uc-danger-glow-hover);  --_shadow: var(--uc-shadow-control-brand); }
+.P6iUGKQ9CuUmhTY4IDx4 {
+  --_fg: var(--uc-text-strong);
+  --_soft: var(--uc-surface-sunken);
+  --_border: var(--uc-border-strong);
+  --_glow: rgba(128, 128, 128, 0.12);
+}
+
+/* ---- Loading -------------------------------------------------------------- */
+.pc70O1Y6HdzT607YK_OL { color: transparent !important; pointer-events: none; }
+.rtWcge6eoBiDmFoHo4gD {
+  position: absolute;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  color: var(--uc-brand-on);
+  animation: qUXtsmRZhV0_Rb8A9qFD 0.6s linear infinite;
+}
+.lSxxR32yQ7uBGKoReA0d .rtWcge6eoBiDmFoHo4gD, .uEkFBKngy5ABC8BavrlF .rtWcge6eoBiDmFoHo4gD, .ZShdqkg6btw_9kcxTgYx .rtWcge6eoBiDmFoHo4gD { color: var(--uc-text); }
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4 .rtWcge6eoBiDmFoHo4gD { color: var(--uc-inverse-fg); }
+@keyframes qUXtsmRZhV0_Rb8A9qFD { to { transform: rotate(360deg); } }
+
+/* ---- Surface: dark -------------------------------------------------------- *
+   `surface="dark"`, remaps the semantic tokens the variants read to the fixed
+   dark-chrome values (mirrors `.uc-chrome` in tokens.css). Lets a single Button
+   render correctly on the app's dark header / sidebar / rails WITHOUT needing a
+   `.uc-chrome` ancestor (the app chrome is styled with UiChemy's own app tokens, not the
+   DS scope). Orthogonal to variant + tone: every variant flips automatically,
+   solid-neutral becomes a white B&W primary, outline/ghost go light-on-dark,
+   brand stays orange. */
+.VnThCro2n02iRphzomVo {
+  --uc-surface-sunken:  #101010;
+  --uc-surface-control: rgba(255, 255, 255, 0.05);
+
+  --uc-text-strong: #FFFFFF;
+  --uc-text:        #A3A3A3;
+
+  /* B&W primary flips to a light fill with dark ink on dark chrome */
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #171717;
+
+  --uc-border-subtle: #333333;
+  --uc-border:        #404040;
+  --uc-border-strong: #525252;
+  --uc-brand-border:  var(--uc-border);
+  --uc-ring:          rgba(245, 245, 245, 0.55);
+
+  /* per-family fg/soft readable on dark */
+  --uc-brand-fg:   #EDEDED;  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-fg: #A7EAAA;  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-fg:  #FDC9C6;  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+}
+
+/* The always-dark chip: the floating canvas toolbar's standalone button as a
+   reusable control. Reads the SAME --uc-toolbar tokens (with the same literal
+   fallbacks), so the two stay identical; the component adds `uc-pop-dark`
+   alongside this class, which is what scopes those tokens to dark values on
+   any page theme. */
+.cOkswkXgGqdwukDtzxre {
+  background: var(--uc-toolbar-bg, var(--uc-surface-raised, #242424));
+  color: var(--uc-toolbar-fg, var(--uc-text, #F5F5F5));
+  box-shadow: inset 0 0 0 1px var(--uc-toolbar-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--uc-toolbar-radius, var(--uc-radius-lg, 12px));
+}
+.cOkswkXgGqdwukDtzxre:hover:not(:disabled) {
+  background: var(--uc-toolbar-hover-bg, var(--uc-surface-overlay, #2E2E2E));
+  color: var(--uc-toolbar-fg, var(--uc-text-strong, #FFFFFF));
+}
+.cOkswkXgGqdwukDtzxre:focus-visible {
+  outline: 2px solid var(--uc-ring, rgba(245, 245, 245, 0.55));
+  outline-offset: 2px;
+}
+
+/* Tabs, Radix behavior, uc- token look. Two variants: pill and underline.
+   The active marker is a single sliding indicator that animates between tabs. */
+.yUbZ9JN8Q6q_cxttzVQf { display: flex; flex-direction: column; gap: var(--uc-space-16); min-width: 0; max-width: 100%; } /* can shrink so its list scrolls */
+
+/* ---- pill (segmented) ----------------------------------------------------- */
+.c5fOPZJlD5q2gHovvEQh {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: var(--uc-tab-track-pad, 3px);
+  background: var(--uc-tab-track-bg, var(--uc-surface-sunken));
+  border-radius: var(--uc-tab-track-radius, var(--uc-radius-md));
+  box-shadow: var(--uc-tab-track-stroke, inset 0 0 0 1px var(--uc-border-subtle));
+  width: -moz-max-content;
+  width: max-content;
+}
+
+/* ---- sideways overflow (both variants) -------------------------------------
+   Too many / too wide tabs for the space: the list scrolls sideways (wheel,
+   trackpad, or the picked tab scrolling itself into view — Tabs.tsx) with NO
+   visible scrollbar, and labels are never squashed or clipped. The edge fade
+   widths are set from script only while there is more to scroll that way. */
+.c5fOPZJlD5q2gHovvEQh,
+.yhi1vngR1p2YuJVNnaDE {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--uc-tabs-fade-l, 0px), #000 calc(100% - var(--uc-tabs-fade-r, 0px)), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--uc-tabs-fade-l, 0px), #000 calc(100% - var(--uc-tabs-fade-r, 0px)), transparent 100%);
+}
+.c5fOPZJlD5q2gHovvEQh::-webkit-scrollbar,
+.yhi1vngR1p2YuJVNnaDE::-webkit-scrollbar { display: none; }
+/* A tab never shrinks below its own label (callers that stretch tabs with
+   flex:1 / min-width:0 still share the width when it fits). */
+.c5fOPZJlD5q2gHovvEQh > [role="tab"],
+.yhi1vngR1p2YuJVNnaDE > [role="tab"] { min-width: -moz-max-content !important; min-width: max-content !important; }
+.IiPxNJwR_you4cvPsbWF {
+  position: absolute;
+  top: var(--uc-tab-track-pad, 3px);
+  bottom: var(--uc-tab-track-pad, 3px);
+  left: 0;
+  width: 0;
+  opacity: 0;
+  border-radius: var(--uc-tab-radius, var(--uc-radius-sm));
+  background: var(--uc-surface-raised);
+  background-image: var(--uc-sheen);
+  box-shadow: var(--uc-shadow-control);
+  transition: transform var(--uc-dur-base) var(--uc-ease-emphasized),
+    width var(--uc-dur-base) var(--uc-ease-emphasized);
+  z-index: 0;
+  pointer-events: none;
+}
+.NcCLOdesrW3h0feW8Cqd {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  height: var(--uc-tab-h, 26px);
+  padding: 0 var(--uc-tab-px, var(--uc-space-12));
+  display: inline-flex;
+  align-items: center;
+  /* Centred, so a trigger stretched to share a full-width bar (flex: 1) keeps
+     its label in the middle instead of against its left edge. No effect on a
+     trigger sized to its content. */
+  justify-content: center;
+  gap: var(--uc-space-8);
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-medium);
+  /* One line always: a two-word label in a shared-width bar ("WP Connectors")
+     wrapped and spilled out of the fixed-height trigger. */
+  white-space: nowrap;
+  color: var(--uc-text-muted);
+  border-radius: var(--uc-tab-radius, var(--uc-radius-sm));
+  cursor: pointer;
+  transition: color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.NcCLOdesrW3h0feW8Cqd:hover { color: var(--uc-text-strong); }
+.NcCLOdesrW3h0feW8Cqd[data-state="active"] { color: var(--uc-text-strong); }
+.NcCLOdesrW3h0feW8Cqd:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.NcCLOdesrW3h0feW8Cqd:disabled { opacity: 0.5; cursor: not-allowed; }
+.sa8wAhUubaDeDz9m2lSy { height: 22px; padding: 0 var(--uc-space-8); font-size: var(--uc-text-sm); }
+.AXCzoGHV2zjSW04iuiPm { height: 32px; padding: 0 var(--uc-space-16); font-size: var(--uc-text-md); }
+/* icon-only pill trigger, square (width tracks the size's height via
+   aspect-ratio), no side padding, glyph centered. Pairs with `iconOnly` on
+   TabsTrigger for segmented icon toggles (e.g. a light/dark switch). */
+.e3ubPG9y4BJzwsrdHlEA { padding: 0; gap: 0; aspect-ratio: 1; justify-content: center; }
+
+/* ---- underline ------------------------------------------------------------ */
+.yhi1vngR1p2YuJVNnaDE {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-20);
+  /* drawn inside the box (was border-bottom) so the scrolling list doesn't clip
+     the active underline sitting on it */
+  box-shadow: inset 0 -1px 0 var(--uc-border);
+}
+.nAh0Gfr2zYUey0XGqts9 {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 0;
+  height: 2px;
+  opacity: 0;
+  border-radius: 2px;
+  background: var(--uc-text-strong); /* neutral underline, tab indicators aren't CTAs */
+  transition: transform var(--uc-dur-base) var(--uc-ease-emphasized),
+    width var(--uc-dur-base) var(--uc-ease-emphasized);
+  pointer-events: none;
+}
+.cC9aL4ulO5rxAtpAr4A0 {
+  all: unset;
+  box-sizing: border-box;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  /* Centred, so a trigger stretched to share a full-width bar (flex: 1) keeps
+     its label in the middle instead of against its left edge. No effect on a
+     trigger sized to its content. */
+  justify-content: center;
+  gap: var(--uc-space-8);
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-medium);
+  color: var(--uc-text-muted);
+  cursor: pointer;
+  transition: color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.cC9aL4ulO5rxAtpAr4A0:hover { color: var(--uc-text-strong); }
+.cC9aL4ulO5rxAtpAr4A0[data-state="active"] { color: var(--uc-brand-fg); }
+.cC9aL4ulO5rxAtpAr4A0:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.cC9aL4ulO5rxAtpAr4A0:disabled { opacity: 0.5; cursor: not-allowed; }
+.rkiDdr7DnTZzxeE4XWn2 { height: 30px; font-size: var(--uc-text-sm); }
+.PlObOj8t3yHaJNy9nwoe { height: 40px; font-size: var(--uc-text-md); }
+
+.DR_2eHes4dZNHfA9fRnL:focus-visible { outline: none; }
+
+/* ── Preflight-proofing: PADDING ONLY ────────────────────────────────────────
+   Tailwind's stock preflight ships inside the app's Tailwind root:
+
+     .uich-tw button, .uich-tw input, ... { ... margin: 0; padding: 0; }
+
+   That is (0,1,1); a CSS-module class is (0,1,0), so preflight strips the side
+   padding off every trigger. The control keeps its height (preflight does not
+   set height) and the labels end up touching — a half-styled strip.
+
+   Re-stating ONLY padding at (0,2,0) is enough to beat it.
+
+   Deliberately NOT doubling the whole rule: the base rules start with
+   `all: unset`, and callers style these triggers with utility classes of their
+   own (the Code tab's scopes use `flex-1 min-w-0 justify-center text-xs
+   font-semibold`, all (0,1,0)). Lifting `all: unset` above those made it reset
+   their `flex`, so four equal columns collapsed to content width and ran
+   together. Specificity here has to be raised one property at a time, never
+   across a rule that resets everything.
+   ------------------------------------------------------------------------- */
+.NcCLOdesrW3h0feW8Cqd.NcCLOdesrW3h0feW8Cqd { padding: 0 var(--uc-tab-px, var(--uc-space-12)); }
+.sa8wAhUubaDeDz9m2lSy.sa8wAhUubaDeDz9m2lSy { padding: 0 var(--uc-space-8); }
+.AXCzoGHV2zjSW04iuiPm.AXCzoGHV2zjSW04iuiPm { padding: 0 var(--uc-space-16); }
+.e3ubPG9y4BJzwsrdHlEA.e3ubPG9y4BJzwsrdHlEA { padding: 0; }
+
+/* Input, recessed field on uc- tokens. */
+.gf6IRPe9LovRo8vS3IAl {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+.jvLYLaG45SNM0t7oug2a {
+  width: 100%;
+  height: var(--uc-input-h, var(--uc-control-h-md));
+  padding: 0 var(--uc-input-px, var(--uc-space-12));
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-regular);
+  color: var(--uc-text-strong);
+  background: var(--uc-surface-overlay);
+  background-image: linear-gradient(to bottom, oklch(0% 0 0 / 0.02), transparent);
+  border: none;
+  border-radius: var(--uc-input-radius, var(--uc-radius-md));
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+  outline: none;
+}
+.jvLYLaG45SNM0t7oug2a::-moz-placeholder { color: var(--uc-text-subtle); }
+.jvLYLaG45SNM0t7oug2a::placeholder { color: var(--uc-text-subtle); }
+.jvLYLaG45SNM0t7oug2a:hover:not(:disabled):not(:focus) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+/* Focus = OFFSET brand ring: the field keeps its subtle inset border, then a
+   1px transparent gap (outline-offset shows the surface behind), then a thin 1px
+   brand outline sits OUTSIDE the field. Uses :focus so it shows on click +
+   keyboard. Kept thin (1px + 1px) so it reads as a single hairline ring, not a
+   thick double band. */
+.jvLYLaG45SNM0t7oug2a:focus {
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  outline: 1px solid var(--uc-brand);
+  outline-offset: 1px;
+}
+.jvLYLaG45SNM0t7oug2a:disabled {
+  color: var(--uc-text-subtle);
+  background: var(--uc-surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--uc-border);
+  cursor: not-allowed;
+}
+
+.haw52Sf_U1aNw5UG26i6 { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
+.l_6Te8jk6g9i2OYGVJQK { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+
+.ssewu8L6FxnF8mjD_c_D {
+  box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
+}
+.ssewu8L6FxnF8mjD_c_D:focus {
+  box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
+  outline: 1px solid var(--uc-danger);
+  outline-offset: 1px;
+}
+
+/* icon adornments */
+.fGN3tsXkL0HfDxLoHJ3b { padding-left: var(--uc-space-32); }
+.F7_NHLpEO7zGCxeHmEbl { padding-right: var(--uc-space-32); }
+.NPtEFuYEvwKDd0CQ2ZL4 {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  color: var(--uc-text-subtle);
+  pointer-events: none;
+}
+.Bcg2bwvX_INxmvsS4KTp { left: var(--uc-space-12); }
+.oFadrtuqYdL1WAYq7mGM { right: var(--uc-space-12); }
+
+/* field wrapper (label + hint) */
+.XrLNCTYM8KNOcisy0k1u { display: flex; flex-direction: column; gap: var(--uc-space-8); width: 100%; }
+._nx7MrQDNMenHelkZy99 { font-size: var(--uc-text-sm); font-weight: var(--uc-weight-medium); color: var(--uc-text-strong); }
+.tmMcxsM0Zke7mcbuxgiI { font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
+.C1A65qwuRNgkck1QS09Q { color: var(--uc-danger-fg); }
+
+/* Menu, Radix dropdown-menu behavior, uc- token look. Always-dark popover
+   with a sliding highlight that follows the active item. */
+.s3BFP6K6LYzVFAhoSOjx {
+  position: relative;
+  min-width: 200px;
+  background: var(--uc-surface-overlay);
+  border-radius: var(--uc-radius-md);
+  /* Border + shadow so the popover reads as its own floating layer and never
+     blends into a same-tone (dark) panel behind it. */
+  border: 1px solid var(--uc-border);
+  box-shadow: var(--uc-shadow-4);
+  padding: var(--uc-space-4);
+  z-index: var(--uc-z-dropdown);
+  animation: kqSucFY5pNg8mWWYTGqA var(--uc-dur-enter) var(--uc-ease-emphasized);
+}
+.SwLQKRnMsenTHHPtphsk {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  border-radius: var(--uc-radius-sm);
+  /* The HOVER wash, not a control fill — see --uc-surface-hover in tokens.css. */
+  background: var(--uc-surface-hover, var(--uc-surface-control));
+  /* transform is animated via the Web Animations API (see useSlidingHighlight);
+     only width/height use a CSS transition. */
+  transition: width var(--uc-dur-base) var(--uc-ease-emphasized),
+    height var(--uc-dur-base) var(--uc-ease-emphasized);
+  pointer-events: none;
+  z-index: 0;
+}
+.tPTLiYfuDUhQ80L7yDnk {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-8);
+  height: var(--uc-control-h-md);
+  padding: 0 var(--uc-space-12);
+  border-radius: var(--uc-radius-sm);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text);
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.bBCXPgA12Rh98ObefXMJ { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
+.UdzaD6XmSAvIuynP2LOO { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+.tPTLiYfuDUhQ80L7yDnk[data-highlighted] { color: var(--uc-text-strong); }
+.tPTLiYfuDUhQ80L7yDnk[data-disabled] { color: var(--uc-text-subtle); pointer-events: none; }
+.I3TPCu8NiLZDfkHiNUct { color: var(--uc-danger-fg); }
+.I3TPCu8NiLZDfkHiNUct[data-highlighted] { color: var(--uc-danger-fg); }
+.QBoqQMo13ZJMyLxqxRts { margin-left: auto; font-size: var(--uc-text-xs); color: var(--uc-text-subtle); font-family: var(--uc-font-mono); }
+.YEax7LE1yCq7o0eawNUV { padding: var(--uc-space-8) var(--uc-space-12) var(--uc-space-4); font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); letter-spacing: var(--uc-tracking-wide); text-transform: uppercase; color: var(--uc-text-subtle); }
+.bcfw649Ew7czzqqkT_G8 { height: 1px; background: var(--uc-border-subtle); margin: var(--uc-space-4) 0; }
+
+@keyframes kqSucFY5pNg8mWWYTGqA { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+/* Select, Radix behavior, uc- token look. */
+.e7F3s8Cpe8pIMhvl2kjH {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uc-space-8);
+  height: var(--uc-control-h-md);
+  min-width: 180px;
+  padding: 0 var(--uc-space-12);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text-strong);
+  background: var(--uc-surface-control);
+  background-image: var(--uc-sheen);
+  border-radius: var(--uc-radius-md);
+  box-shadow: inset 0 0 0 1px var(--uc-border-subtle), var(--uc-shadow-raised);
+  cursor: pointer;
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.e7F3s8Cpe8pIMhvl2kjH:hover:not(:focus-visible):not([data-state="open"]) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-raised); }
+/* Focus / open = OFFSET brand ring (matches the Input): subtle border kept,
+   then a 2px transparent gap, then the brand outline outside the trigger. */
+.e7F3s8Cpe8pIMhvl2kjH:focus-visible,
+.e7F3s8Cpe8pIMhvl2kjH[data-state="open"] {
+  box-shadow: inset 0 0 0 1px var(--uc-border-subtle), var(--uc-shadow-raised);
+  outline: 1px solid var(--uc-brand);
+  outline-offset: 1px;
+}
+.e7F3s8Cpe8pIMhvl2kjH[data-placeholder] { color: var(--uc-text-subtle); }
+.e7F3s8Cpe8pIMhvl2kjH:disabled { opacity: 0.5; cursor: not-allowed; }
+.RXwx8sg3STq8XWcaRIiM { color: var(--uc-text-muted); flex: none; }
+
+/* trigger sizes (md is the base above) */
+.A7XnIZMI5obBSBNATLZT { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
+.O7fvjNbDZA9xW0hUSAKe { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+
+.BZSeASQ2IO83EAmmFtBD {
+  min-width: var(--radix-select-trigger-width);
+  background: var(--uc-surface-overlay);
+  border-radius: var(--uc-radius-md);
+  /* Border + shadow so the list reads as its own floating layer and never
+     blends into a same-tone (dark) panel behind it. */
+  border: 1px solid var(--uc-border);
+  box-shadow: var(--uc-shadow-4);
+  padding: var(--uc-space-4);
+  z-index: var(--uc-z-dropdown);
+  overflow: hidden;
+  animation: cdjUAFtyJ3yGS3rj5qO1 var(--uc-dur-enter) var(--uc-ease-emphasized);
+}
+.umOYcecNSay6i1GVC_Oi { position: relative; }
+.w4hKpheBcjRW4WbnSQPQ {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  border-radius: var(--uc-radius-sm);
+  /* The HOVER wash, not a control fill — see --uc-surface-hover in tokens.css. */
+  background: var(--uc-surface-hover, var(--uc-surface-control));
+  /* transform is animated via the Web Animations API (see useSlidingHighlight);
+     only width/height use a CSS transition. */
+  transition: width var(--uc-dur-base) var(--uc-ease-emphasized),
+    height var(--uc-dur-base) var(--uc-ease-emphasized);
+  pointer-events: none;
+  z-index: 0;
+}
+._veB6PGMKZWelgCoOwZH {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  /* min-height, not height: an option with a description line (chat scope
+     "Widget / Page") was clipped to one row and overlapped the next. */
+  min-height: var(--uc-control-h-md);
+  padding: var(--uc-space-4, 4px) var(--uc-space-32) var(--uc-space-4, 4px) var(--uc-space-12);
+  border-radius: var(--uc-radius-sm);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text);
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  position: relative;
+  z-index: 1;
+}
+.lAdBRQUB75_wlMPT7wpF { min-height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); }
+.FRL9ZRUfTQvUhgXYhFjn { min-height: var(--uc-control-h-lg); font-size: var(--uc-text-md); }
+._veB6PGMKZWelgCoOwZH[data-highlighted] { color: var(--uc-text-strong); }
+._veB6PGMKZWelgCoOwZH[data-disabled] { color: var(--uc-text-subtle); pointer-events: none; }
+.K4s2DAYWscSzIFHHt98g { position: absolute; right: var(--uc-space-12); display: inline-flex; color: var(--uc-text-strong); }
+
+@keyframes cdjUAFtyJ3yGS3rj5qO1 { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+/* Popover, light raised surface, soft elevation. */
+.IgtxSpnrWCwpAiEUyVSV {
+  min-width: 200px;
+  background: var(--uc-surface-raised);
+  color: var(--uc-text);
+  border: 1px solid var(--uc-border-subtle);
+  border-radius: var(--uc-radius-md);
+  box-shadow: var(--uc-shadow-4);
+  padding: var(--uc-space-16);
+  font-size: var(--uc-text-base);
+  z-index: var(--uc-z-dropdown);
+  animation: IrisfxJ9u8Ano9jbOQyR var(--uc-dur-enter) var(--uc-ease-emphasized);
+}
+.IgtxSpnrWCwpAiEUyVSV:focus-visible { outline: none; }
+
+@keyframes IrisfxJ9u8Ano9jbOQyR { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+/* Tooltip, Radix behavior, uc- token look. */
+.zL8PtLvN_qxmBr9JJpNb {
+  background: var(--uc-text-strong);
+  color: var(--uc-text-inverse);
+  padding: var(--uc-space-5) var(--uc-space-12);
+  border-radius: var(--uc-radius-sm);
+  font-size: var(--uc-text-xs);
+  font-weight: var(--uc-weight-medium);
+  line-height: var(--uc-leading-tight);
+  max-width: 240px;
+  box-shadow: var(--uc-shadow-4);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  z-index: var(--uc-z-tooltip);
+  animation: WoWiPylS53SgKPqicqzK var(--uc-dur-enter) var(--uc-ease-emphasized);
+}
+.z1QfDdwojgYdst1stf84 { fill: var(--uc-text-strong); }
+
+@keyframes WoWiPylS53SgKPqicqzK {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* ScrollArea, thin token-styled scrollbars that fade in on hover. */
+.S6t0k8vIF2BgEmWoruVS { overflow: hidden; }
+.Ymb1tUEYhyCulKD4M2Kd { width: 100%; height: 100%; border-radius: inherit; }
+.gub_S62WoZUYFrtXAsps {
+  display: flex;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  touch-action: none;
+  padding: 2px;
+  background: transparent;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.gub_S62WoZUYFrtXAsps:hover { background: var(--uc-surface-sunken); }
+.gub_S62WoZUYFrtXAsps[data-orientation="vertical"] { width: 10px; }
+.gub_S62WoZUYFrtXAsps[data-orientation="horizontal"] { flex-direction: column; height: 10px; }
+.LRlTFNaG2bPn3AnQjljF {
+  flex: 1;
+  background: var(--uc-border-strong);
+  border-radius: var(--uc-radius-pill);
+  position: relative;
+}
+/* enlarge the invisible hit target so the thin thumb is easy to grab */
+.LRlTFNaG2bPn3AnQjljF::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+/* Separator, subtle hairline in either orientation. */
+.R8avrtTyuO0UDSY9TLVT { background: var(--uc-border-subtle); flex: none; }
+.R8avrtTyuO0UDSY9TLVT[data-orientation="horizontal"] { height: 1px; width: 100%; }
+.R8avrtTyuO0UDSY9TLVT[data-orientation="vertical"] { width: 1px; height: 100%; align-self: stretch; }
+
+/* Badge, compact status/label pill on uc- tokens. */
+.V_kpdXZsi07BrkW8mkNK {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-4);
+  height: 20px;
+  padding: 0 var(--uc-space-8);
+  border-radius: var(--uc-radius-pill);
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-xs);
+  font-weight: var(--uc-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+.uKPXqu7kkFVS2xBa9AEE { height: 24px; padding: 0 var(--uc-space-12); font-size: var(--uc-text-sm); }
+
+.pCK7hwfFSalZodp5bh2z {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+/* variants read the --_* tone channels */
+.LujE9zA0XWq7MG_G1pvY   { color: var(--_on, var(--uc-brand-on)); background: var(--_fill, var(--uc-brand)); background-image: var(--uc-sheen); box-shadow: var(--uc-shadow-1); }
+.VHma2GbfXrG07eyZL1Df    { color: var(--_fg, var(--uc-brand-fg)); background: var(--_soft, var(--uc-brand-soft)); }
+.yNf7ITzC0piY9ptVONoj { color: var(--_fg, var(--uc-brand-fg)); background: transparent; box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)); }
+
+.tUaDdUn93V7X81sgWiv7   { --_fill: var(--uc-brand);   --_on: var(--uc-brand-on);   --_fg: var(--uc-brand-fg);   --_soft: var(--uc-brand-soft);   --_border: var(--uc-brand-border); }
+.mL3Idfa5m7lUfaPAG188 { --_fill: var(--uc-success); --_on: var(--uc-success-on); --_fg: var(--uc-success-fg); --_soft: var(--uc-success-soft); --_border: var(--uc-success-border); }
+.NGzt4PZr82HJx6zD5oeP  { --_fill: var(--uc-danger);  --_on: var(--uc-danger-on);  --_fg: var(--uc-danger-fg);  --_soft: var(--uc-danger-soft);  --_border: var(--uc-danger-border); }
+.VF30PpmNX8Fbve0UeM9T { --_fill: var(--uc-warning); --_on: var(--uc-warning-on); --_fg: var(--uc-warning-fg); --_soft: var(--uc-warning-soft); --_border: var(--uc-warning-border); }
+.o39yUK028V2zERFldgoO  { --_fill: var(--uc-accent);  --_on: var(--uc-accent-on);  --_fg: var(--uc-accent-fg);  --_soft: var(--uc-accent-soft);  --_border: var(--uc-accent-border); }
+.yP65shMRVToyLTvM480a { --_fill: var(--uc-text); --_on: var(--uc-text-inverse); --_fg: var(--uc-text-muted); --_soft: var(--uc-surface-sunken); --_border: var(--uc-border-strong); }
+
+/* Accordion, token-driven, chevron rotates, height animates via Radix var. */
+.DFGr5k2eRrJnxwR8wIDu {
+  border-bottom: 1px solid var(--uc-border-subtle);
+}
+
+.GFKvYR3a72nGoScN0tFW {
+  margin: 0;
+  display: flex;
+}
+
+.tvcRj9RnfQDkmcI1jqe4 {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uc-space-12);
+  padding: var(--uc-space-16) var(--uc-space-4);
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-semibold);
+  color: var(--uc-text-strong);
+  cursor: pointer;
+}
+
+.tvcRj9RnfQDkmcI1jqe4:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 2px;
+  border-radius: var(--uc-radius-sm);
+}
+
+.kEKgCi8RUSQAuVKmrOgo {
+  flex: none;
+  color: var(--uc-text-muted);
+  transition: transform var(--uc-dur-base) var(--uc-ease-standard);
+}
+
+.tvcRj9RnfQDkmcI1jqe4[data-state="open"] .kEKgCi8RUSQAuVKmrOgo {
+  transform: rotate(180deg);
+}
+
+.Z8tltYrpVFnQ1kjmShck {
+  overflow: hidden;
+  font-size: var(--uc-text-base);
+  color: var(--uc-text-muted);
+}
+
+.Z8tltYrpVFnQ1kjmShck[data-state="open"] {
+  animation: C_plQPcmU7qNqKcQyRdB var(--uc-dur-base) var(--uc-ease-standard);
+}
+
+.Z8tltYrpVFnQ1kjmShck[data-state="closed"] {
+  animation: phgHywz15_vr7TB8HfOi var(--uc-dur-base) var(--uc-ease-standard);
+}
+
+.FeUPu6HLKbMSpMC925mj {
+  padding: 0 var(--uc-space-4) var(--uc-space-16);
+  line-height: var(--uc-leading-normal);
+}
+
+@keyframes C_plQPcmU7qNqKcQyRdB {
+  from {
+    height: 0;
+  }
+
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes phgHywz15_vr7TB8HfOi {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+
+  to {
+    height: 0;
+  }
+}

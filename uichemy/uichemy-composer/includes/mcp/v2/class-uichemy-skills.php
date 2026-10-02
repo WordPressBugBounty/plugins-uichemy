@@ -133,6 +133,10 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 							'description' => 'Build a WebGL / three.js section: mounting through the context owner, post-processing, and driving a shader from GSAP. Read before writing ANY 3D or shader code.',
 							'files'       => array( 'skills/webgl-and-3d.md' ),
 						),
+						'improve-page-speed'      => array(
+							'description' => 'Page-speed rules for generated sections (hero label, image preloads, fonts, no jQuery/Elementor dependencies). Read before generating the first section.',
+							'files'       => array( 'skills/improve-page-speed.md' ),
+						),
 						'appendix'        => array(
 							'description' => 'Reference appendix for the conversion pipeline.',
 							'files'       => array( 'skills/figma-to-wordpress/appendix.md' ),
@@ -156,6 +160,10 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 							'description' => 'Build a WebGL / three.js section: mounting through the context owner, post-processing, and driving a shader from GSAP. Read before writing ANY 3D or shader code.',
 							'files'       => array( 'skills/webgl-and-3d.md' ),
 						),
+						'improve-page-speed'     => array(
+							'description' => 'Page-speed rules for generated sections (hero label, image preloads, fonts, no jQuery/Elementor dependencies). Read before generating the first section.',
+							'files'       => array( 'skills/improve-page-speed.md' ),
+						),
 					),
 				),
 				'brief-to-wordpress'      => array(
@@ -174,6 +182,10 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 						'webgl'          => array(
 							'description' => 'Build a WebGL / three.js section: mounting through the context owner, post-processing, and driving a shader from GSAP. Read before writing ANY 3D or shader code.',
 							'files'       => array( 'skills/webgl-and-3d.md' ),
+						),
+						'improve-page-speed'     => array(
+							'description' => 'Page-speed rules for generated sections (hero label, image preloads, fonts, no jQuery/Elementor dependencies). Read before generating the first section.',
+							'files'       => array( 'skills/improve-page-speed.md' ),
 						),
 					),
 				),
@@ -222,6 +234,21 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 					'keywords'    => array( 'cpt', 'custom post type', 'custom field', 'custom fields', 'acf', 'advanced custom fields', 'jetengine', 'jet engine', 'taxonomy', 'field group', 'meta', 'meta box', 'repeater', 'relation', 'content model', 'schema' ),
 					'files'       => array( 'skills/custom-fields-and-cpt.md' ),
 					'additional_parts' => array(),
+				),
+				'improve-page-speed'              => array(
+					'description' => 'Rules for building UiChemy pages that load fast with the Fast Load setting, plus the Lighthouse tests to run. Read this when the user asks about page speed or Lighthouse, or when generating a page.',
+					'keywords'    => array( 'page speed', 'pagespeed', 'lighthouse', 'web-vitals', 'performance', 'fast load', 'speed', 'font', 'fonts', 'fcp', 'lcp', 'tbt', 'csp'),
+					'files'       => array( 'skills/improve-page-speed.md' ),
+					'additional_parts' => array(
+						'scope-decision' => array(
+							'description' => 'Decide whether a link, style, script or meta tag (for example Google Fonts) belongs at site level or page level.',
+							'files'       => array( 'skills/shared/scope-decision.md' ),
+						),
+						'animation'      => array(
+							'description' => 'The `uichemy_controller_bridge` animation contract - read before changing any section animation.',
+							'files'       => array( 'skills/motion-and-animation.md' ),
+						),
+					),
 				),
 			);
 		}

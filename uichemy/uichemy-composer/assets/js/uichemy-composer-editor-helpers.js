@@ -140,10 +140,20 @@
 		Object.keys(updates).forEach((settingKey) => {
 			const nextValue = updates[settingKey];
 
+			// Show the value in the control, but do NOT fire input/change on it.
+			//
+			// This is a MIRROR sync, not an edit: site code lives in a WordPress
+			// option, and each widget only carries a copy of it. Firing the
+			// control's events ran Elementor's settings command for every widget
+			// whose copy was a version behind — so merely selecting a section
+			// marked the document as changed, lit up Update, raised the "unsaved
+			// changes" prompt on leaving and queued an autosave, with nothing
+			// having been edited. The value still goes onto the settings model
+			// below, so a real save carries the fresh copy with it.
 			if (panelView && panelView.$el) {
 				const controlInput = panelView.$el.find(`[data-setting="${settingKey}"]`);
 				if (controlInput.length) {
-					controlInput.val(nextValue).trigger('input').trigger('change');
+					controlInput.val(nextValue);
 				}
 			}
 

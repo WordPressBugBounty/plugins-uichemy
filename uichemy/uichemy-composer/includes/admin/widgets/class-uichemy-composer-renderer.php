@@ -358,6 +358,11 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 				$output = strtr( $output, $protected_code );
 			}
 
+			// Lazy-load images that carry no loading attribute (front end only).
+			if ( ! $is_editor && class_exists( 'UiChemy_Fast_Load' ) ) {
+				$output = UiChemy_Fast_Load::optimize_images( $output, $uid );
+			}
+
 			// Inject standard-scope 3rd-party assets.
 			[ $deps_before, $deps_after ] = $this->build_standard_deps_output(
 				! empty( $settings['raw_deps_standard'] ) ? $settings['raw_deps_standard'] : '',
@@ -911,6 +916,74 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			return ( null === $restored ) ? $text : $restored;
 		}
 
+		/**
+		 * Public static entry point to scope a raw CSS block to a given selector.
+		 *
+		 * @param string $raw_css                Raw CSS source.
+		 * @param string $widget_scope_selector CSS selector to scope to.
+		 * @return string Scoped CSS.
+		 */
+		public static function scope_css_for_scope( $raw_css, $widget_scope_selector ) {
+			$raw_css  = self::decode_code_entities( (string) $raw_css );
+			$renderer = new self();
+			return $renderer->scope_css_to_widget( $raw_css, $widget_scope_selector );
+		}
+
+		/**
+		 * Wrap an Elementor Composer widget's author JS so it runs scoped to that
+		 * widget instance (shared by the widget's footer output and by the head
+		 * placement in UiChemy_Fast_Load, which has no widget object).
+		 *
+		 * @param string $raw_js    Author JavaScript.
+		 * @param string $widget_id Elementor element id.
+		 * @return string JS ready to emit, or '' when there is none.
+		 */
+		public static function elementor_js_runtime( $raw_js, $widget_id ) {
+			$raw_js = (string) $raw_js;
+			if ( '' === trim( $raw_js ) ) {
+				return '';
+			}
+
+			// Motion variables -> a values preamble plus plain property reads. A
+			// section with no motion block comes back byte-identical.
+			if ( class_exists( 'UiChemy_Motion' ) ) {
+				$raw_js = UiChemy_Motion::compile( $raw_js );
+			}
+
+			$scope_json = wp_json_encode( '.elementor-element-' . $widget_id );
+			$body_json  = wp_json_encode( $raw_js, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT );
+			if ( false === $scope_json || false === $body_json ) {
+				// Encoding failed — run the author JS unwrapped rather than dropping
+				// it, so the section still works (just without instance scoping).
+				return $raw_js;
+			}
+
+			// %1$s = scope selector, %2$s = JS body — both JSON-encoded safe literals.
+			$template = <<<'JS'
+(function(){
+  var SCOPE=%1$s, BODY=%2$s;
+  var root=null; try{ root=document.querySelector(SCOPE); }catch(e){}
+  var oQS=document.querySelector, oQSA=document.querySelectorAll,
+      owA=window.addEventListener, odA=document.addEventListener;
+  function fire(t,type,h){ try{ h.call(t,new Event(type)); }catch(e){ if(window.console&&window.console.error) window.console.error('[Composer JS]',e); } }
+  if(root){
+    document.querySelector=function(s){ var r=null; try{ r=root.querySelector(s); }catch(e){} return r||oQS.call(document,s); };
+    document.querySelectorAll=function(s){ var r=null; try{ r=root.querySelectorAll(s); }catch(e){} return (r&&r.length)?r:oQSA.call(document,s); };
+  }
+  window.addEventListener=function(type,h,o){ if(type==='load'||type==='DOMContentLoaded'){ fire(window,type,h); return; } owA.call(window,type,h,o); };
+  document.addEventListener=function(type,h,o){ if(type==='DOMContentLoaded'||type==='load'||type==='readystatechange'){ fire(document,type,h); return; } odA.call(document,type,h,o); };
+  try{ (new Function(BODY))(); }
+  catch(e){ if(window.console&&window.console.error) window.console.error('[Composer JS]',e); }
+  finally{
+    window.addEventListener=owA; document.addEventListener=odA;
+    document.querySelector=oQS; document.querySelectorAll=oQSA;
+  }
+})();
+JS;
+
+			return sprintf( $template, $scope_json, $body_json );
+		}
+
 		private function scope_css_to_widget( $raw_css, $widget_scope_selector ) {
 			$css   = trim( (string) $raw_css );
 			$scope = trim( (string) $widget_scope_selector );
@@ -919,7 +992,10 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			}
 
 			$scoped = $this->scope_css_block_to_widget( $css, $scope );
-			return $this->reorder_responsive_media_queries_to_end( $scoped );
+			$scoped = $this->reorder_responsive_media_queries_to_end( $scoped );
+
+			// Entrance animations must not start at opacity 0, or Chrome records no LCP.
+			return class_exists( 'UiChemy_Fast_Load' ) ? UiChemy_Fast_Load::lcp_safe_keyframes( $scoped ) : $scoped;
 		}
 
 		/**

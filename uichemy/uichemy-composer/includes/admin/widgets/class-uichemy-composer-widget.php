@@ -302,6 +302,24 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 				)
 			);
 
+			// Where this widget's CSS / JS is printed: '' = Normal (the long-standing
+			// output), 'head' = Before Head, 'body' = Before Body (end of the body).
+			$this->add_control(
+				'raw_css_placement',
+				array(
+					'type'    => \Elementor\Controls_Manager::HIDDEN,
+					'default' => '',
+				)
+			);
+
+			$this->add_control(
+				'raw_js_placement',
+				array(
+					'type'    => \Elementor\Controls_Manager::HIDDEN,
+					'default' => '',
+				)
+			);
+
 			$this->add_control(
 				'page_custom_code_head',
 				array(
@@ -975,6 +993,13 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 				}
 				$anchor = $dom->createElement( 'a' );
 				$anchor->setAttribute( 'href', $safe_url );
+				// Live-page editor only: mark the wrapper so the layer-path stamper
+				// (layer_path_stamp_script) can step over it. This <a> exists only
+				// in the rendered page, not in raw_html, so counting it would shift
+				// the path of everything inside and after it.
+				if ( class_exists( 'UiChemy_Composer_Enqueue' ) && UiChemy_Composer_Enqueue::$frontend_editor_active ) {
+					$anchor->setAttribute( 'data-uich-link-wrap', '1' );
+				}
 				$rel = array();
 				if ( '_blank' === $target ) {
 					$anchor->setAttribute( 'target', '_blank' );
@@ -1544,7 +1569,10 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 			}
 
 			$scoped = $this->scope_css_block_to_widget( $css, $scope );
-			return $this->reorder_responsive_media_queries_to_end( $scoped );
+			$scoped = $this->reorder_responsive_media_queries_to_end( $scoped );
+
+			// Entrance animations must not start at opacity 0, or Chrome records no LCP.
+			return class_exists( 'UiChemy_Fast_Load' ) ? UiChemy_Fast_Load::lcp_safe_keyframes( $scoped ) : $scoped;
 		}
 
 		/**
@@ -2885,6 +2913,48 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 		}
 
 		
+		/**
+		 * Inline script that stamps the section's elements with their layer paths.
+		 *
+		 * The composer panel maps a clicked element to its Layers entry by its
+		 * position in the markup. A section's own JS breaks that the moment it runs:
+		 * a text effect splits a heading into one span per letter, a WebGL scene
+		 * inserts its canvas, ScrollTrigger wraps a pinned block in `.pin-spacer`.
+		 * So the position is recorded up front as `data-uich-path`, and the panel
+		 * prefers it over counting.
+		 *
+		 * This runs as a parser-blocking inline script placed directly after the
+		 * section's markup, i.e. before any footer / deferred script has touched
+		 * it. (The Elementor editor stamps the same way from JS — see
+		 * composer-stamps.js — because scripts injected there have no
+		 * `document.currentScript`.)
+		 *
+		 * The walk MUST match parseHtmlToLayers() in composer-layer-tree.jsx: skip
+		 * SCRIPT/STYLE/TEMPLATE/NOSCRIPT/META/LINK/HEAD, and do not descend into
+		 * `<svg>` or `img[data-as="svg"]`.
+		 *
+		 * Only printed for a visitor the live-page editor loads for.
+		 *
+		 * @return string
+		 */
+		private static function layer_path_stamp_script() {
+			// Front-end-only nodes that are not in raw_html and must not take an index:
+			//   - the <a> wrap_element_links() puts around a linked element
+			//     (transparent: its child is stamped in its place);
+			//   - the hidden fields and honeypot Uich_Forms injects into a form.
+			return '<script>(function(s){try{var r=s&&s.parentNode;if(!r)return;'
+				. 'var K={SCRIPT:1,STYLE:1,TEMPLATE:1,NOSCRIPT:1,META:1,LINK:1,HEAD:1};'
+				. 'var w=function(n,b,k){var c=n.firstChild;for(;c;c=c.nextSibling){'
+				. 'if(c.nodeType!==1||K[c.tagName])continue;'
+				. 'if(c.hasAttribute("data-uich-link-wrap")){w(c,b,k);continue;}'
+				. 'if((c.tagName==="INPUT"&&(c.name||"").indexOf("_uich_")===0)||(c.classList&&c.classList.contains("uich-hp")))continue;'
+				. 'var p=b+"."+(k.i++);c.setAttribute("data-uich-path",p);'
+				. 'var t=c.tagName.toUpperCase();if(t==="SVG"||(t==="IMG"&&c.getAttribute("data-as")==="svg")){'
+				// Stale stamps saved inside an svg by an older build would answer to another element's path.
+				. 'var q=c.querySelectorAll("[data-uich-path]");for(var j=0;j<q.length;j++)q[j].removeAttribute("data-uich-path");continue;}w(c,p,{i:0});}};'
+				. 'w(r,"0",{i:0});}catch(e){}})(document.currentScript);</script>';
+		}
+
 		private function build_editor_js_runtime( $raw_js ) {
 			$raw_js = (string) $raw_js;
 			if ( '' === trim( $raw_js ) ) {
@@ -2920,10 +2990,47 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
   // Elementor replaces a widget's DOM on every edit, but ScrollTriggers bound to
   // the OLD node are not auto-removed — they pile up and fight the fresh ones. A
   // trigger whose element has left the document is dead by definition, so drop it.
+  //
+  // The same sweep answers a second question: did this repaint orphan ANOTHER
+  // section's work? Every trigger is tagged with the section whose run created it
+  // (`__uichW`, set after the run below and by the editor's own runner). A dead
+  // trigger owned by a different section means a shared script — one section
+  // animating the whole page — had bound it to the nodes this repaint threw away;
+  // a LIVE trigger this section owns but which sits outside it means this section
+  // IS that shared script. Either way the only clean state is every section fresh
+  // and run top to bottom, which the editor shell does on request (see
+  // softReloadComposerSections in composer-elementor.jsx).
+  //
+  // Every trigger this section's PREVIOUS run created is dropped too, wherever it
+  // sits. One bound to an element that survived the repaint — in another section,
+  // or on <body> — is not "dead" by the test above, so re-running the script used
+  // to add a second copy beside it: a section whose script animates the page
+  // gained one more trigger in every other section on each edit.
+  var orphaned=false, ownRoot=document.querySelector(SCOPE);
+  var SEC='.elementor-widget-uichemy-composer,.elementor-widget-composer,.elementor-widget-proton,.elementor-widget-uichemy-builder';
   if(window.ScrollTrigger&&window.ScrollTrigger.getAll){
     window.ScrollTrigger.getAll().forEach(function(st){
-      try{ if(st.trigger&&!document.contains(st.trigger)){ st.kill(); } }catch(e){}
+      try{
+        var el=st.trigger, live=!!(el&&document.contains(el));
+        if(el&&!live){
+          if(st.__uichW&&st.__uichW!==WID){ orphaned=true; }
+          st.kill();
+        } else if(st.__uichW===WID){
+          // In ANOTHER section: this section is the shared script (see above).
+          // On <body> or outside every section: just this script's own, redone below.
+          if(live&&ownRoot&&!ownRoot.contains(el)&&el.closest&&el.closest(SEC)){ orphaned=true; }
+          st.kill();
+        }
+      }catch(e){}
     });
+  }
+  // When the shell confirms a reload is coming, this section's script is NOT run
+  // here: the reload runs it again over fresh nodes, and a first run that loads a
+  // module would finish against the nodes the reload has since replaced — failing
+  // loudly and leaving a stray trigger behind.
+  var reloading=false;
+  if(orphaned&&!window.__uichSoftReloading){
+    try{ var shell=window.parent; if(shell&&shell.__uichComposerSoftReload){ reloading=shell.__uichComposerSoftReload()===true; } }catch(e){}
   }
   // WebGL contexts orphaned by the same re-render. Browsers ration these and drop
   // the oldest once the ceiling is reached, which reads as older sections going
@@ -2938,8 +3045,43 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
     var oSI=window.setInterval,oST=window.setTimeout,oRAF=window.requestAnimationFrame,
         owA=window.addEventListener,odA=document.addEventListener,
         oQS=document.querySelector,oQSA=document.querySelectorAll;
+    // ── Whose trigger is this? ──
+    // A trigger is tagged with the section whose script created it. Reading the
+    // list before and after the script's SYNCHRONOUS run is not enough: real
+    // sections wait first — `LIBS_READY.then(init)`, `setTimeout(init, 0)` — and
+    // build their animation in that callback, long after this function returned.
+    // Those triggers went untagged, so the sweep above could not tell that a
+    // repaint had orphaned them and the page was left half-initialised.
+    //
+    // So a callback the script registers through a promise or a timeout is run
+    // in a "zone": the same before/after tagging around it, and the same
+    // wrapping in force while it runs, so anything it schedules in turn is
+    // covered as well. rAF and event listeners are deliberately NOT zoned —
+    // GSAP captures requestAnimationFrame for its own ticker, and a listener
+    // has to stay removable by the function the author registered.
+    var PT=window.Promise&&window.Promise.prototype, oThen=PT&&PT.then;
+    function snapST(){ try{ return (window.ScrollTrigger&&window.ScrollTrigger.getAll)?window.ScrollTrigger.getAll().slice():null; }catch(e){ return null; } }
+    function tagNew(b){ try{ window.ScrollTrigger.getAll().forEach(function(st){ if(!st.__uichW&&b.indexOf(st)===-1){ st.__uichW=WID; } }); }catch(e){} }
+    function zone(f){
+      if(typeof f!=='function'){ return f; }
+      return function(){
+        var b=snapST(), sT=window.setTimeout, th=PT&&PT.then;
+        window.setTimeout=zST; if(PT){ PT.then=zThen; }
+        try{ return f.apply(this,arguments); }
+        finally{ window.setTimeout=sT; if(PT){ PT.then=th; } if(b){ tagNew(b); } }
+      };
+    }
+    function zST(f){
+      var a=Array.prototype.slice.call(arguments); a[0]=zone(f);
+      var i=oST.apply(window,a); R.timeouts.push(i);
+      // A self-rescheduling timeout would otherwise grow this list for ever.
+      if(R.timeouts.length>400){ R.timeouts.splice(0,200); }
+      return i;
+    }
+    function zThen(a,b){ return oThen.call(this,zone(a),zone(b)); }
     window.setInterval=function(f,t){var i=oSI(f,t);R.intervals.push(i);return i;};
-    window.setTimeout=function(f,t){var i=oST(f,t);R.timeouts.push(i);return i;};
+    window.setTimeout=zST;
+    if(PT){ PT.then=zThen; }
     window.requestAnimationFrame=function(f){var i=oRAF(f);R.rafs.push(i);return i;};
     window.addEventListener=function(type,h,o){
       if(type==='load'||type==='DOMContentLoaded'){fire(window,type,h);return;}
@@ -2958,18 +3100,48 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
     // this instance, so genuinely global queries still resolve.
     document.querySelector=function(s){var r=null;try{r=root.querySelector(s);}catch(e){}return r||oQS.call(document,s);};
     document.querySelectorAll=function(s){var r=null;try{r=root.querySelectorAll(s);}catch(e){}return (r&&r.length)?r:oQSA.call(document,s);};
+    var stBefore=null;
+    try{ if(window.ScrollTrigger&&window.ScrollTrigger.getAll){ stBefore=window.ScrollTrigger.getAll().slice(); } }catch(e){}
     try{ (new Function(BODY))(); }
     catch(e){ console.error('[Composer editor JS]',e); }
     finally{
       window.setInterval=oSI;window.setTimeout=oST;window.requestAnimationFrame=oRAF;
+      if(PT){ PT.then=oThen; }
       window.addEventListener=owA;document.addEventListener=odA;
       document.querySelector=oQS;document.querySelectorAll=oQSA;
     }
+    // Tag what this run created with its section (read by the sweep above), and
+    // put the list back in page order straight away so GSAP's own automatic
+    // refresh — which lands before the deferred one below — measures the
+    // sections under a re-created pin with its spacing already in place.
+    if(stBefore){
+      try{ window.ScrollTrigger.getAll().forEach(function(st){ if(!st.__uichW&&stBefore.indexOf(st)===-1){ st.__uichW=WID; } }); }catch(e){}
+      try{ if(window.ScrollTrigger.sort){ window.ScrollTrigger.sort(); } }catch(e){}
+    }
+    // A script that loads an ES module (`import(url)`) builds its animation while
+    // that module EVALUATES — not inside any callback of this script, so the zone
+    // above never sees it. For such a section, keep watching for a few seconds
+    // and claim the triggers that appear and that nobody else has tagged: every
+    // other section's are tagged the moment they are made, so what is left over
+    // while a module is loading is this section's.
+    if(stBefore&&/\bimport\s*\(/.test(BODY)){
+      var lateN=0, lateIv=oSI(function(){
+        lateN++;
+        try{ window.ScrollTrigger.getAll().forEach(function(st){ if(!st.__uichW&&stBefore.indexOf(st)===-1){ st.__uichW=WID; } }); }catch(e){}
+        if(lateN>=40){ clearInterval(lateIv); }
+      },200);
+      R.intervals.push(lateIv);
+    }
+    // sort() first: this run's triggers were just re-created, so they sit LAST in
+    // ScrollTrigger's list whatever their place on the page, and refresh() works
+    // through that list in order. A re-created pin would then add its spacing
+    // after everything below it had already been measured — the next section's
+    // animation started a whole pin-length early. sort() restores page order.
     if(window.ScrollTrigger&&window.ScrollTrigger.refresh){
-      oST(function(){ try{ window.ScrollTrigger.refresh(); }catch(e){} },150);
+      oST(function(){ try{ if(window.ScrollTrigger.sort){ window.ScrollTrigger.sort(); } window.ScrollTrigger.refresh(); }catch(e){} },150);
     }
   }
-  window.setTimeout(run,0);
+  if(!reloading){ window.setTimeout(run,0); }
 })();
 JS;
 
@@ -3007,49 +3179,7 @@ JS;
 		 * @return string Wrapped JS (no <script> wrapper), or '' when empty.
 		 */
 		private function build_frontend_js_runtime( $raw_js ) {
-			$raw_js = (string) $raw_js;
-			if ( '' === trim( $raw_js ) ) {
-				return '';
-			}
-
-			// Motion variables -> a values preamble plus plain property reads. A
-			// section with no motion block comes back byte-identical.
-			if ( class_exists( 'UiChemy_Motion' ) ) {
-				$raw_js = UiChemy_Motion::compile( $raw_js );
-			}
-
-			$scope_json = wp_json_encode( '.elementor-element-' . $this->get_id() );
-			$body_json  = wp_json_encode( $raw_js, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT );
-			if ( false === $scope_json || false === $body_json ) {
-				// Encoding failed — run the author JS unwrapped rather than dropping
-				// it, so the section still works (just without instance scoping).
-				return $raw_js;
-			}
-
-			// %1$s = scope selector, %2$s = JS body — both JSON-encoded safe literals.
-			$template = <<<'JS'
-(function(){
-  var SCOPE=%1$s, BODY=%2$s;
-  var root=null; try{ root=document.querySelector(SCOPE); }catch(e){}
-  var oQS=document.querySelector, oQSA=document.querySelectorAll,
-      owA=window.addEventListener, odA=document.addEventListener;
-  function fire(t,type,h){ try{ h.call(t,new Event(type)); }catch(e){ if(window.console&&window.console.error) window.console.error('[Composer JS]',e); } }
-  if(root){
-    document.querySelector=function(s){ var r=null; try{ r=root.querySelector(s); }catch(e){} return r||oQS.call(document,s); };
-    document.querySelectorAll=function(s){ var r=null; try{ r=root.querySelectorAll(s); }catch(e){} return (r&&r.length)?r:oQSA.call(document,s); };
-  }
-  window.addEventListener=function(type,h,o){ if(type==='load'||type==='DOMContentLoaded'){ fire(window,type,h); return; } owA.call(window,type,h,o); };
-  document.addEventListener=function(type,h,o){ if(type==='DOMContentLoaded'||type==='load'||type==='readystatechange'){ fire(document,type,h); return; } odA.call(document,type,h,o); };
-  try{ (new Function(BODY))(); }
-  catch(e){ if(window.console&&window.console.error) window.console.error('[Composer JS]',e); }
-  finally{
-    window.addEventListener=owA; document.addEventListener=odA;
-    document.querySelector=oQS; document.querySelectorAll=oQSA;
-  }
-})();
-JS;
-
-			return sprintf( $template, $scope_json, $body_json );
+			return \UiChemy_Composer_Renderer::elementor_js_runtime( $raw_js, $this->get_id() );
 		}
 
 		/**
@@ -3102,6 +3232,16 @@ JS;
 			$js = (string) $js;
 			if ( '' === trim( $js ) ) {
 				return;
+			}
+
+			// Fast Load defers third-party head libraries; run this JS after them.
+			if ( class_exists( 'UiChemy_Fast_Load' ) ) {
+				$js = UiChemy_Fast_Load::maybe_wrap_dom_ready( $js );
+			}
+
+			// Fast Load defers third-party head libraries; run this JS after them.
+			if ( class_exists( 'UiChemy_Fast_Load' ) ) {
+				$js = UiChemy_Fast_Load::maybe_wrap_dom_ready( $js );
 			}
 
 			$deps   = array_values( array_unique( array_filter( (array) $deps ) ) );
@@ -3438,8 +3578,21 @@ JS;
 				echo \UiChemy_Composer_Renderer::icon_font_guard();
 			}
 
+			if ( ! $is_editor && class_exists( 'UiChemy_Fast_Load' ) ) {
+				$output = UiChemy_Fast_Load::optimize_images( $output, $this->get_id() );
+			}
+
+			if ( ! $is_editor && class_exists( 'UiChemy_Fast_Load' ) ) {
+				$output = UiChemy_Fast_Load::optimize_images( $output, $this->get_id() );
+			}
+
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- raw_html markup is kses-filtered on save for users without unfiltered_html (Elementor pipeline); admins author it raw, mirroring core's Custom HTML block.
 			echo $output;
+
+			// Live-page editor only: stamp every element with its layer path.
+			if ( ! $is_editor && class_exists( 'UiChemy_Composer_Enqueue' ) && UiChemy_Composer_Enqueue::$frontend_editor_active ) {
+				echo self::layer_path_stamp_script(); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Static, self-authored <script> with no dynamic input.
+			}
 
 			// Stored raw_css is emitted unless a site opts out via
 			// uichemy/composer/allow_custom_code. Authoring CSS remains a Pro feature
@@ -3453,6 +3606,21 @@ JS;
 			$scoped_css = '' !== $css_source
 				? $this->scope_css_to_widget( $css_source, $widget_scope_selector )
 				: '';
+
+			// This section's own CSS was already printed in <head> (Fast Load critical
+			// CSS, or the section's 'Before Head' placement): don't print it again here.
+			// The synthesized global-typography CSS below is not part of that head
+			// output, so it still goes out.
+			if ( class_exists( 'UiChemy_Fast_Load' ) && UiChemy_Fast_Load::is_css_in_head( $this->get_id() ) ) {
+				$scoped_css = '';
+			}
+
+			// 'Before Body' placement: this section's own CSS is printed just before
+			// </body> instead of through the footer stylesheet (Normal).
+			if ( '' !== $scoped_css && 'body' === (string) ( $settings['raw_css_placement'] ?? '' ) && class_exists( 'UiChemy_Fast_Load' ) ) {
+				UiChemy_Fast_Load::queue_body_code( 'css', $this->get_id(), $scoped_css );
+				$scoped_css = '';
+			}
 
 			// Prepend synthesized CSS for referenced global typography classes so the
 			// widget's raw_css (emitted after) can still override it in the cascade.
@@ -3501,7 +3669,16 @@ JS;
 					// otherwise a duplicated section of the same template type would
 					// re-target the first instance and never initialise its own
 					// nodes (see build_frontend_js_runtime()).
-					$this->enqueue_inline_widget_js( $this->build_frontend_js_runtime( $settings['raw_js'] ), $script_deps );
+					// 'Before Head' placement prints the JS in <head> (see UiChemy_Fast_Load);
+					// everything else keeps the footer output.
+					if ( class_exists( 'UiChemy_Fast_Load' ) && UiChemy_Fast_Load::is_js_in_head( $this->get_id() ) ) {
+						// Printed in <head> already.
+					} elseif ( 'body' === (string) ( $settings['raw_js_placement'] ?? '' ) && class_exists( 'UiChemy_Fast_Load' ) ) {
+						// 'Before Body': printed just before </body>, after the other footer scripts.
+						UiChemy_Fast_Load::queue_body_code( 'js', $this->get_id(), $this->build_frontend_js_runtime( $settings['raw_js'] ) );
+					} else {
+						$this->enqueue_inline_widget_js( $this->build_frontend_js_runtime( $settings['raw_js'] ), $script_deps );
+					}
 				}
 			}
 

@@ -2677,7 +2677,7 @@ msgstr ""
 #. translators: %d: number of the user's own entries that will be removed.
 #: new-dashboard/build/composer.js:16
 #, js-format
-msgid "Replace cannot be undone from here. %d of your own entries are not in this file and will be removed — export first if you want a copy."
+msgid "Replace cannot be undone from here. %d of your own entries are not in this file and will be removed - export first if you want a copy."
 msgstr ""
 
 #: new-dashboard/build/composer.js:16
@@ -2914,7 +2914,7 @@ msgid "Download every variable, collection and class as one file"
 msgstr ""
 
 #: new-dashboard/build/composer.js:22
-msgid "Load globals from an exported file — you choose merge or replace"
+msgid "Load globals from an exported file - you choose merge or replace"
 msgstr ""
 
 #: new-dashboard/build/composer.js:22
@@ -3651,7 +3651,7 @@ msgid "Use a global value"
 msgstr ""
 
 #: new-dashboard/build/composer.js:37
-msgid "Needs a value typed in — use the full editor for now"
+msgid "Needs a value typed in - use the full editor for now"
 msgstr ""
 
 #: new-dashboard/build/composer.js:37
@@ -4264,7 +4264,7 @@ msgid "Run with"
 msgstr ""
 
 #: new-dashboard/build/composer.js:61
-msgid "#hero-3d — element that needs it"
+msgid "#hero-3d - element that needs it"
 msgstr ""
 
 #: new-dashboard/build/composer.js:61
@@ -4593,7 +4593,7 @@ msgid "Code"
 msgstr ""
 
 #: new-dashboard/build/composer.js:61
-msgid "This query was written by hand. The fields are frozen so nothing is dropped — edit it in Code, or rebuild it from the fields."
+msgid "This query was written by hand. The fields are frozen so nothing is dropped - edit it in Code, or rebuild it from the fields."
 msgstr ""
 
 #: new-dashboard/build/composer.js:61
@@ -4791,7 +4791,7 @@ msgid "Custom field rules"
 msgstr ""
 
 #: new-dashboard/build/composer.js:61
-msgid "Filter by a custom field — ACF, Meta Box or native meta."
+msgid "Filter by a custom field - ACF, Meta Box or native meta."
 msgstr ""
 
 #: new-dashboard/build/composer.js:61
@@ -4875,7 +4875,7 @@ msgid "Hand written, Visual fields frozen"
 msgstr ""
 
 #: new-dashboard/build/composer.js:61
-msgid "Incomplete — nothing written yet"
+msgid "Incomplete - nothing written yet"
 msgstr ""
 
 #: new-dashboard/build/composer.js:61
@@ -5289,7 +5289,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: new-dashboard/build/composer.js:70
-msgid "The section's motion block could not be rewritten — check it in the Code tab."
+msgid "The section's motion block could not be rewritten - check it in the Code tab."
 msgstr ""
 
 #: new-dashboard/build/composer.js:70
@@ -5317,7 +5317,7 @@ msgid "Scroll length"
 msgstr ""
 
 #: new-dashboard/build/composer.js:70
-msgid "This section's scroll end could not be wired up — add an `end` to it in the Code tab."
+msgid "This section's scroll end could not be wired up - add an `end` to it in the Code tab."
 msgstr ""
 
 #: new-dashboard/build/composer.js:70
@@ -5325,7 +5325,7 @@ msgid "That change could not be saved."
 msgstr ""
 
 #: new-dashboard/build/composer.js:70
-msgid "That section's motion block could not be rewritten — check it in the Code tab."
+msgid "That section's motion block could not be rewritten - check it in the Code tab."
 msgstr ""
 
 #: new-dashboard/build/composer.js:70
@@ -5365,7 +5365,7 @@ msgid "Play the timeline from the current scroll position"
 msgstr ""
 
 #: new-dashboard/build/composer.js:70
-msgid " — runs past the end of the page"
+msgid " - runs past the end of the page"
 msgstr ""
 
 #: new-dashboard/build/composer.js:70
@@ -5397,11 +5397,11 @@ msgid "No"
 msgstr ""
 
 #: new-dashboard/build/composer.js:70
-msgid "Written as fixed numbers — nothing declared to tune."
+msgid "Written as fixed numbers - nothing declared to tune."
 msgstr ""
 
 #: new-dashboard/build/composer.js:70
-msgid "No scroll-driven animation on this page yet. Animations that run on load are not shown here — this ruler measures scroll distance, and they do not happen along it."
+msgid "No scroll-driven animation on this page yet. Animations that run on load are not shown here - this ruler measures scroll distance, and they do not happen along it."
 msgstr ""
 
 #. translators: %s: short block id fragment used as a fallback block label.
@@ -6585,7 +6585,7 @@ msgid "The server stopped responding part-way through this step."
 msgstr ""
 
 #: new-dashboard/build/index.js:4
-msgid "The background worker was killed before it finished — usually a PHP memory limit or a hard process timeout on your host. Retry the step, and check the PHP error log if it happens again."
+msgid "The background worker was killed before it finished - usually a PHP memory limit or a hard process timeout on your host. Retry the step, and check the PHP error log if it happens again."
 msgstr ""
 
 #: new-dashboard/build/index.js:4
@@ -6593,7 +6593,7 @@ msgid "The server stopped part-way through this step."
 msgstr ""
 
 #: new-dashboard/build/index.js:4
-msgid "This is almost always a hosting limit rather than your design — PHP ran out of time or memory. Retry the step; if it keeps failing, raise max_execution_time and memory_limit (or ask your host to) and check the PHP error log."
+msgid "This is almost always a hosting limit rather than your design - PHP ran out of time or memory. Retry the step; if it keeps failing, raise max_execution_time and memory_limit (or ask your host to) and check the PHP error log."
 msgstr ""
 
 #: new-dashboard/build/index.js:4
@@ -8122,7 +8122,7 @@ msgid "Composer colours"
 msgstr ""
 
 #: new-dashboard/build/index.js:26
-msgid "Whether the composer panel uses UiChemy’s own palette or borrows the builder’s — Elementor pink, Gutenberg blue."
+msgid "Whether the composer panel uses UiChemy’s own palette or borrows the builder’s - Elementor pink, Gutenberg blue."
 msgstr ""
 
 #: new-dashboard/build/index.js:26

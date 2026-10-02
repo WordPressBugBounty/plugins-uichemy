@@ -256,26 +256,31 @@ body.elementor-editor-active .MuiPopover-root {
 .uichemy-composer-floating-panel select {
 	color-scheme: var(--uichemy-composer-color-scheme);
 }
-.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
-.uichemy-composer-floating-panel textarea,
+/* The shell's field skin below skips the right panel's UiChemy design-system
+   fields (`data-uc`, stamped by the DS Input / Textarea): they draw their own
+   inset border, fill, focus ring and placeholder, and these !important rules
+   would otherwise flatten every one of them. :where() keeps each selector at
+   its old specificity, so nothing changes for any other field. */
+.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])),
+.uichemy-composer-floating-panel textarea:not(:where([data-uc])),
 .uichemy-composer-floating-panel select {
 	background-color: var(--uichemy-composer-input-bg) !important;
 	color: var(--uichemy-composer-text-color) !important;
 	-webkit-text-fill-color: var(--uichemy-composer-text-color);
 }
-.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
-.uichemy-composer-floating-panel textarea,
+.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])),
+.uichemy-composer-floating-panel textarea:not(:where([data-uc])),
 .uichemy-composer-floating-panel select {
 	border: 1px solid var(--uichemy-composer-border-color) !important;
 	box-shadow: none !important;
 }
-.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):hover,
-.uichemy-composer-floating-panel textarea:hover,
+.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):hover,
+.uichemy-composer-floating-panel textarea:not(:where([data-uc])):hover,
 .uichemy-composer-floating-panel select:hover {
 	border-color: var(--uichemy-composer-accent-color) !important;
 }
 /* Composer panel owns its own input styling */
-.uichemy-composer-floating-panel .uich-composer-host input:not([type="checkbox"]):not([type="radio"]):not([type="color"]) {
+.uichemy-composer-floating-panel .uich-composer-host input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])) {
 	background-color: transparent !important;
 	border: 1px solid transparent !important;
 	outline: none !important;
@@ -307,49 +312,54 @@ body.elementor-editor-active .MuiPopover-root {
 	box-shadow: none !important;
 	min-height: unset;
 }
-.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]),
-.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):hover,
-.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus,
-.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus-visible {
+.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])),
+.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):hover,
+.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):focus,
+.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):focus-visible {
 	background-color: transparent !important;
 }
-.uichemy-composer-floating-panel .uich-composer-host input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus,
-.uichemy-composer-floating-panel .uich-composer-host input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus-visible {
+.uichemy-composer-floating-panel .uich-composer-host input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):focus,
+.uichemy-composer-floating-panel .uich-composer-host input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):focus-visible {
+	/* The shell's `…floating-panel input:focus` rule below paints
+	   --uichemy-composer-input-bg (#1b1e22 dark) on focus. Inside the composer
+	   the field BOX (.lin-box, .swatch-input, .sb-quad-cell) owns the fill, so
+	   the bare input painted a navy block over the left of the box. */
+	background-color: transparent !important;
 	border: 1px solid transparent !important;
 	outline: none !important;
 	box-shadow: none !important;
 }
-.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):hover {
+.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):hover {
 	border: 1px dashed var(--panel-line) !important;
 }
-.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus,
-.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus-visible {
+.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):focus,
+.uichemy-composer-floating-panel .uich-composer-host .add-class-inline input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):focus-visible {
 	border: 1px solid var(--accent) !important;
 	outline: none !important;
 	box-shadow: 0 0 0 2px rgba(75,34,204,0.18) !important;
 }
-.uichemy-composer-floating-panel input::placeholder,
-.uichemy-composer-floating-panel textarea::placeholder {
+.uichemy-composer-floating-panel input:not(:where([data-uc]))::placeholder,
+.uichemy-composer-floating-panel textarea:not(:where([data-uc]))::placeholder {
 	color: var(--uichemy-composer-text-muted) !important;
 	opacity: 0.58;
 }
-.smart-html-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus,
-.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):focus,
-.uichemy-composer-floating-panel textarea:focus,
+.smart-html-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):focus,
+.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):focus,
+.uichemy-composer-floating-panel textarea:not(:where([data-uc])):focus,
 .uichemy-composer-floating-panel select:focus {
 	background-color: var(--uichemy-composer-input-bg) !important;
 	border-color: var(--uichemy-composer-accent-color) !important;
 	outline: none !important;
 	box-shadow: none !important;
 }
-.smart-html-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):disabled,
-.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):disabled,
-.uichemy-composer-floating-panel textarea:disabled,
+.smart-html-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):disabled,
+.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc])):disabled,
+.uichemy-composer-floating-panel textarea:not(:where([data-uc])):disabled,
 .uichemy-composer-floating-panel select:disabled {
 	border-color: var(--uichemy-composer-border-color) !important;
 }
-.smart-html-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"])[readonly],
-.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"])[readonly] {
+.smart-html-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc]))[readonly],
+.uichemy-composer-floating-panel input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(:where([data-uc]))[readonly] {
 	border-color: var(--uichemy-composer-border-color) !important;
 	background-color: var(--uichemy-composer-input-bg) !important;
 }

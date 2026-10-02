@@ -555,6 +555,53 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 		}
 
 		/**
+		 * uichemy-composer/performance: the page-speed settings (Dashboard >
+		 * Performance) and where a section's CSS / JS is printed.
+		 *
+		 * Settings are site-wide switches; placement is per section, because it is a
+		 * setting of the Composer widget itself.
+		 *
+		 * @param array $arguments { action, action_parameters?: array }
+		 * @return array|WP_Error
+		 */
+		public static function execute_performance( $arguments ) {
+			list( $action, $params ) = self::unwrap_action( $arguments );
+
+			switch ( $action ) {
+				case 'list_performance_settings':
+					return class_exists( 'UiChemy_Fast_Load' ) ? UiChemy_Fast_Load::mcp_list() : new WP_Error( 'uich_mcp_error', 'Performance settings are not available.' );
+
+				case 'set_performance_setting':
+					if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
+						return new WP_Error( 'uich_mcp_error', 'Performance settings are not available.' );
+					}
+					$state = isset( $params['state'] ) ? strtolower( trim( (string) $params['state'] ) ) : '';
+					if ( empty( $params['setting'] ) || ! in_array( $state, array( 'enable', 'disable' ), true ) ) {
+						return new WP_Error( 'uich_mcp_error', 'Pass "setting" (see list-performance-settings) and "state": "enable" or "disable".' );
+					}
+					return UiChemy_Fast_Load::mcp_toggle( $params['setting'], 'enable' === $state );
+
+				case 'get_post_sections_code_placement':
+					if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
+						return new WP_Error( 'uich_mcp_error', 'Composer manager class not found.' );
+					}
+					return UiChemy_Composer_Manager::mcp_get_post_sections_code_placement( $params );
+
+				case 'set_post_sections_code_placement':
+					if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
+						return new WP_Error( 'uich_mcp_error', 'Composer manager class not found.' );
+					}
+					return UiChemy_Composer_Manager::mcp_set_post_sections_code_placement( $params );
+
+				case '':
+					return new WP_Error( 'uich_mcp_error', 'Missing "action". Valid: list-performance-settings, set-performance-setting, get-post-sections-code-placement, set-post-sections-code-placement.' );
+
+				default:
+					return new WP_Error( 'uich_mcp_error', 'Unknown action "' . $action . '". Valid: list-performance-settings, set-performance-setting, get-post-sections-code-placement, set-post-sections-code-placement.' );
+			}
+		}
+
+		/**
 		 * uichemy-composer/page — the content router bound to the `page` post type.
 		 *
 		 * @param array $arguments { action, action_parameters?, ...flat fallback }

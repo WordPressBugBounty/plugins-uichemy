@@ -55,8 +55,11 @@ belongs to: you still run the rubric above on the resulting `<link>`/`<script sr
 ```html
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap">
+<link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"></noscript>
 ```
+External stylesheet links (fonts etc.) use `rel="preload"` + `onload` + `<noscript>`, not plain `rel="stylesheet"`; see the `improve-page-speed` skill.
+
 
 Use raw `<link>` tags — do **not** wrap them in `<style>`. The composer storage layer preserves `<link>`/`<style>`/`<script>`/`<meta>` tags exactly when sent through MCP.
 

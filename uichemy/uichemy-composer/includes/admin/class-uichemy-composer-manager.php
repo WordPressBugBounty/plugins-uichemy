@@ -6542,6 +6542,53 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		}
 
 		/**
+		 * MCP: the CSS / JS placement of every section on a post, as a table.
+		 *
+		 * @param array $payload post_id, [builder].
+		 * @return array|\WP_Error
+		 */
+		public static function mcp_get_post_sections_code_placement( $payload ) {
+			$payload = is_array( $payload ) ? $payload : array();
+			$post_id = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
+			$builder = isset( $payload['builder'] ) ? (string) $payload['builder'] : '';
+			if ( ! $post_id ) {
+				return new \WP_Error( 'uich_invalid_post_id', 'Invalid post_id.' );
+			}
+
+			$driver = self::mcp_driver_for_post( $post_id, $builder, false );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
+			}
+
+			return UiChemy_Section_Ops::get_placement_table( $driver, $post_id );
+		}
+
+		/**
+		 * MCP: set where one section's CSS or JS is printed (before-head-end / before-body-end).
+		 *
+		 * @param array $payload post_id, section_index, type (css|js), placement, [builder].
+		 * @return array|\WP_Error
+		 */
+		public static function mcp_set_post_sections_code_placement( $payload ) {
+			$payload = is_array( $payload ) ? $payload : array();
+			$post_id = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
+			$builder = isset( $payload['builder'] ) ? (string) $payload['builder'] : '';
+			if ( ! $post_id ) {
+				return new \WP_Error( 'uich_invalid_post_id', 'Invalid post_id.' );
+			}
+			if ( ! isset( $payload['section_index'] ) || ! isset( $payload['type'] ) || ! isset( $payload['placement'] ) ) {
+				return new \WP_Error( 'uich_missing_param', 'Pass post_id, section_index, type (css or js) and placement (before-head-end or before-body-end).' );
+			}
+
+			$driver = self::mcp_driver_for_post( $post_id, $builder, true );
+			if ( is_wp_error( $driver ) ) {
+				return $driver;
+			}
+
+			return UiChemy_Section_Ops::set_table_placement( $driver, $post_id, (int) $payload['section_index'], $payload['type'], $payload['placement'] );
+		}
+
+		/**
 		 * Replace $find in $haystack treating runs of whitespace as elastic.
 		 *
 		 * Returns null unless there is EXACTLY ONE match - a tolerance that can

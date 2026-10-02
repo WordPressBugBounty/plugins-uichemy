@@ -446,6 +446,10 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				? wp_parse_args( (array) get_option( 'uichemy_white_label', array() ), self::white_label_defaults() )
 				: self::white_label_defaults();
 			$opts = wp_parse_args( (array) get_option( 'uichemy_settings', array() ), self::settings_defaults() );
+			// The switches that are Elementor's own settings show Elementor's live values.
+			if ( class_exists( 'UiChemy_Fast_Load' ) ) {
+				$opts = UiChemy_Fast_Load::with_synced( $opts );
+			}
 
 			return array(
 				'version'     => UICHEMY_VERSION,
@@ -495,6 +499,9 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 					'force_disable' => (int) $wl['force_disable'],
 				),
 				'settings'    => $opts,
+				// The performance switches the Performance screen lists, so the screen has
+				// no copy of the list of its own.
+				'performance' => class_exists( 'UiChemy_Fast_Load' ) ? UiChemy_Fast_Load::registry() : array(),
 				// Full config for the two screens that edit it. Those screens live
 				// only in Pro (WhiteLabel.jsx / RoleManager.jsx), so in Free these
 				// would ship to a page that renders the upsell instead and reads
@@ -527,8 +534,14 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 
 			if ( 'save_settings' === $type ) {
 				$raw   = isset( $_POST['settings'] ) ? json_decode( wp_unslash( $_POST['settings'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
-				$clean = self::sanitize_settings( is_array( $raw ) ? $raw : array() );
+				$raw   = is_array( $raw ) ? $raw : array();
+				$clean = self::sanitize_settings( $raw );
 				update_option( 'uichemy_settings', $clean );
+				if ( class_exists( 'UiChemy_Fast_Load' ) ) {
+					// Settings that are Elementor's own go to Elementor's options too.
+					UiChemy_Fast_Load::save_synced( $raw );
+					$clean = UiChemy_Fast_Load::with_synced( $clean );
+				}
 				wp_send_json_success( array( 'settings' => $clean ) );
 			}
 
@@ -660,7 +673,7 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 		 * @return array
 		 */
 		private static function settings_defaults() {
-			return array(
+			$defaults = array(
 				// One switch per builder. `enable_widget` used to sit here as a single
 				// flag, but nothing ever read it — the widget registered regardless.
 				// These three replace it and are actually enforced, in
@@ -686,7 +699,21 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				// user presses Save in the page toolbar; 'autosave' writes them ~800ms
 				// after each change. String value, special-cased in sanitize_settings().
 				'frontend_save_mode'     => 'manual',
+				// Fast load optimization (on by default): critical CSS for the first
+				// three sections in <head>, lazy images, no jQuery/Elementor assets on
+				// Composer-only pages. Front end, logged-out visitors only.
+				'enable_fast_load'       => 1,
 			);
+
+			// The individual performance switches, all on by default. The list lives in
+			// UiChemy_Fast_Load::registry() so adding one there adds it here too.
+			if ( class_exists( 'UiChemy_Fast_Load' ) ) {
+				foreach ( UiChemy_Fast_Load::option_defaults() as $key => $value ) {
+					$defaults[ $key ] = $value;
+				}
+			}
+
+			return $defaults;
 		}
 
 		/**
@@ -708,6 +735,13 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				if ( 'frontend_save_mode' === $key ) {
 					$v           = isset( $input[ $key ] ) ? sanitize_key( (string) $input[ $key ] ) : 'manual';
 					$out[ $key ] = in_array( $v, array( 'manual', 'autosave' ), true ) ? $v : 'manual';
+					continue;
+				}
+				// Fast Load switches: a save that does not mention one (an older cached
+				// dashboard script, a screen that has no control for it) keeps what is
+				// stored instead of switching it off. Absent in storage too means on.
+				if ( ( 'enable_fast_load' === $key || 0 === strpos( $key, 'perf_' ) ) && ! array_key_exists( $key, (array) $input ) ) {
+					$out[ $key ] = UiChemy_Fast_Load::opt( $key ) ? 1 : 0;
 					continue;
 				}
 				$out[ $key ] = empty( $input[ $key ] ) ? 0 : 1;

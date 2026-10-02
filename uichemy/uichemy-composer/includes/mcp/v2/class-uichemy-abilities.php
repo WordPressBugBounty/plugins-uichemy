@@ -786,6 +786,75 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		}
 
 		/**
+		 * Per-action schemas for uichemy-composer/performance.
+		 *
+		 * @return array<int,array>
+		 */
+		private static function performance_actions() {
+			$labels = array( '"performance-optimization" is the master switch for everything' );
+			$names = UiChemy_Fast_Load::setting_names();
+			foreach ( UiChemy_Fast_Load::registry() as $row ) {
+				if ( isset( $names[ $row['name'] ] ) ) {
+					$labels[] = sprintf( '"%s" (%s)', $row['name'], $row['label'] );
+				}
+			}
+			$setting       = array(
+				'type'        => 'string',
+				'enum'        => array_keys( UiChemy_Fast_Load::setting_names() ),
+				'description' => 'Which setting. ' . implode( '; ', $labels ) . '.',
+			);
+			$post_id       = array( 'type' => 'integer', 'description' => 'The post that holds the section.' );
+			$section_index = array( 'type' => 'integer', 'description' => '0-based section order from action="get-structure".' );
+
+			return array(
+				array(
+					'name'                     => 'list-performance-settings',
+					'description'              => 'List every performance setting with its current state ("enabled"), label, group and description. "active" says whether the master switch is on. Settings that are Elementor\'s own options say which one in "synced_with". Call this first to learn the setting names.',
+					'action_parameters_schema' => array(
+						'type'       => 'object',
+						'properties' => new stdClass(),
+						'required'   => array(),
+					),
+				),
+				array(
+					'name'                     => 'set-performance-setting',
+					'description'              => 'Turn one performance setting on or off. Disabling "performance-optimization" switches every optimization off at once and keeps the individual choices for when it is turned back on. Individual optimizations only run while it is on.',
+					'action_parameters_schema' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'setting' => $setting,
+							'state'   => array( 'type' => 'string', 'enum' => array( 'enable', 'disable' ), 'description' => '"enable" turns the setting on, "disable" turns it off.' ),
+						),
+						'required'   => array( 'setting', 'state' ),
+					),
+				),
+				array(
+					'name'                     => 'get-post-sections-code-placement',
+					'description'              => 'Table of where every section of a post prints its CSS and JS: one row per section with section_index, element_id, label, css, js (each "before-head-end" = before </head> or "before-body-end" = before </body>) and css_is_default / js_is_default. By default the first three sections\' CSS and JS are before-head-end; later sections\' CSS and JS are before-body-end. Read this before changing a placement.',
+					'action_parameters_schema' => array(
+						'type'       => 'object',
+						'properties' => array( 'post_id' => $post_id ),
+						'required'   => array( 'post_id' ),
+					),
+				),
+				array(
+					'name'                     => 'set-post-sections-code-placement',
+					'description'              => 'Set where one section prints its CSS or its JS. "before-head-end" prints before </head>, "before-body-end" before </body>, "default" resets it to the default for that section\'s position. Returns that section\'s row of the table. Elementor sections only.',
+					'action_parameters_schema' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'post_id'       => $post_id,
+							'section_index' => $section_index,
+							'type'          => array( 'type' => 'string', 'enum' => array( 'css', 'js' ), 'description' => 'Which code to move: the section\'s CSS or its JS.' ),
+							'placement'     => array( 'type' => 'string', 'enum' => array( 'before-head-end', 'before-body-end', 'default' ), 'description' => 'Where to print it.' ),
+						),
+						'required'   => array( 'post_id', 'section_index', 'type', 'placement' ),
+					),
+				),
+			);
+		}
+
+		/**
 		 * Per-action schemas for uichemy-composer/platform.
 		 *
 		 * @return array<int,array>
@@ -1516,6 +1585,34 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					array( 'UiChemy_MCP_V2_Router', 'execute_platform' ),
 					array( 'readonly' => false, 'destructive' => false, 'idempotent' => false ),
 					array( 'actions' => self::platform_actions() )
+				);
+			}
+
+			// performance — the page-speed switches and per-section CSS / JS placement.
+			if ( method_exists( 'UiChemy_MCP_V2_Router', 'execute_performance' ) && class_exists( 'UiChemy_Fast_Load' ) ) {
+				self::register_standalone_ability(
+					'uichemy-composer/performance',
+					'UiChemy Builder: Performance Settings',
+					'Page-speed settings for UiChemy pages (the Performance screen in the dashboard) and where a section\'s CSS and JS are printed.',
+					array(
+						'type'        => 'object',
+						'description' => self::contract() . ' SETTINGS: "list-performance-settings" lists every setting with its state ("performance-optimization" is the master switch; the others are individual optimizations); "set-performance-setting" turns one on or off with state "enable" or "disable". PLACEMENT: "get-post-sections-code-placement" shows where every section of a post prints its CSS and JS; "set-post-sections-code-placement" moves one section\'s CSS or JS to "before-head-end" (before </head>), "before-body-end" (before </body>) or "default". Defaults: the first three sections\' CSS and JS are before-head-end; later sections\' CSS and JS are before-body-end.',
+						'properties'  => array(
+							'action'            => array(
+								'type'        => 'string',
+								'enum'        => wp_list_pluck( self::performance_actions(), 'name' ),
+								'description' => 'Which operation to run.',
+							),
+							'action_parameters' => array(
+								'type'        => 'object',
+								'description' => 'The parameters for this action - check the "actions" key in meta for the accurate schema.',
+							),
+						),
+						'required'    => array( 'action' ),
+					),
+					array( 'UiChemy_MCP_V2_Router', 'execute_performance' ),
+					array( 'readonly' => false, 'destructive' => false, 'idempotent' => true ),
+					array( 'actions' => self::performance_actions() )
 				);
 			}
 

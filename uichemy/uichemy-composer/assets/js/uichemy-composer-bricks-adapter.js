@@ -137,7 +137,7 @@
 		var panel = document.getElementById( PANEL_ID );
 		if ( ! panel ) { return null; }
 		var label = TAB_LABELS[ t ] || t;
-		var buttons = panel.querySelectorAll( '.panel-tab' );
+		var buttons = panel.querySelectorAll( '.panel-tab, [role="tab"]' );
 		for ( var i = 0; i < buttons.length; i++ ) {
 			if ( buttons[ i ].textContent.trim().indexOf( label ) === 0 ) {
 				return buttons[ i ];
@@ -146,7 +146,9 @@
 		return null;
 	}
 	function isActive( btn ) {
-		return !! btn && ( ' ' + btn.className + ' ' ).indexOf( ' active ' ) !== -1;
+		// The tabs are DS Tabs now: the active one carries data-state="active",
+		// the older markup an `active` class.
+		return !! btn && ( btn.getAttribute( 'data-state' ) === 'active' || ( ' ' + btn.className + ' ' ).indexOf( ' active ' ) !== -1 );
 	}
 
 	// The panel has a SEPARATE `panelCollapsed` React state (composer-app.jsx),

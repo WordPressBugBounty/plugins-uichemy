@@ -12547,6 +12547,13 @@ class Uich_Webpage_Import {
 	 * @return string[] Option names that were repaired.
 	 */
 	protected function repair_missing_woocommerce_pages( array $map ) {
+		// Clearing an option we cannot then refill would be worse than leaving the
+		// stale ID: WooCommerce treats an empty shop page as "not set up" and the
+		// /shop/ URL disappears entirely.
+		if ( ! class_exists( 'WC_Install' ) || ! is_callable( array( 'WC_Install', 'create_pages' ) ) ) {
+			return array();
+		}
+
 		$dangling = array();
 		foreach ( array_unique( array_values( $map ) ) as $option ) {
 			$page_id = (int) get_option( $option );
@@ -12560,7 +12567,7 @@ class Uich_Webpage_Import {
 			}
 		}
 
-		if ( empty( $dangling ) || ! class_exists( 'WC_Install' ) || ! is_callable( array( 'WC_Install', 'create_pages' ) ) ) {
+		if ( empty( $dangling ) ) {
 			return $dangling;
 		}
 

@@ -57,8 +57,34 @@ if ( ! class_exists( 'UiChemy_Atomic_Globals' ) ) {
 			}
 
 			$repository = \Elementor\Modules\GlobalClasses\Global_Classes_Repository::make( $kit );
-			$order      = $repository->get_order();
-			$items      = array();
+
+			/*
+			 * Elementor 3.34 moved the reads off the repository.
+			 *
+			 * `get_order()` and `each_item()` used to answer on
+			 * Global_Classes_Repository itself. They now live on the
+			 * Global_Classes value object that `all()` returns, and the
+			 * repository exposes only context()/all()/put(). Calling the old
+			 * methods on 3.34+ is a FATAL — "Call to undefined method" — which
+			 * takes the whole Elementor editor down with a white screen,
+			 * because this runs while the editor scripts are being enqueued.
+			 *
+			 * `all()->get()` hands back exactly the array shape this method
+			 * returns, so the new path needs no assembly. The old path stays
+			 * for earlier builds; `method_exists` rather than a version check,
+			 * matching save_global_classes_array() below.
+			 */
+			if ( method_exists( $repository, 'all' ) ) {
+				$data = $repository->all()->get();
+
+				return array(
+					'items' => isset( $data['items'] ) && is_array( $data['items'] ) ? $data['items'] : array(),
+					'order' => isset( $data['order'] ) && is_array( $data['order'] ) ? $data['order'] : array(),
+				);
+			}
+
+			$order = $repository->get_order();
+			$items = array();
 
 			if ( ! empty( $order ) ) {
 				$repository->each_item(

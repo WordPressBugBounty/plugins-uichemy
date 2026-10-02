@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.2.3
+Stable tag: 5.2.4
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -157,15 +157,15 @@ Every other builder hands you a widget for each idea, and the one you need alway
 
 == 🔍 Our Other Products ==
 
-[🥇 The Plus Addons for Elementor](https://theplusaddons.com/?utm_source=wordpress&utm_medium=readmepage&utm_campaign=uichemy) — 120+ Elementor Widgets, Free Elementor Theme Builder & Templates
+[🥇 The Plus Addons for Elementor](https://theplusaddons.com/?utm_source=wordpress&utm_medium=readmepage&utm_campaign=uichemy) - 120+ Elementor Widgets, Free Elementor Theme Builder & Templates
 
-[🥇 Nexter Blocks](https://nexterwp.com/nexter-blocks/?utm_source=wordpress&utm_medium=readmepage&utm_campaign=uichemy) — 90+ Gutenberg Blocks, AI Website Builder, Popup Builder, Mega Menu, Form Builder & 1000+ Templates
+[🥇 Nexter Blocks](https://nexterwp.com/nexter-blocks/?utm_source=wordpress&utm_medium=readmepage&utm_campaign=uichemy) - 90+ Gutenberg Blocks, AI Website Builder, Popup Builder, Mega Menu, Form Builder & 1000+ Templates
 
-[🥇 Nexter Extension](https://nexterwp.com/nexter-extension/?utm_source=wordpress&utm_medium=readmepage&utm_campaign=uichemy) — 50+ Site Tools: Security, SMTP, Image Optimizer (WebP/AVIF), Theme Builder, Code Snippets, Performance
+[🥇 Nexter Extension](https://nexterwp.com/nexter-extension/?utm_source=wordpress&utm_medium=readmepage&utm_campaign=uichemy) - 50+ Site Tools: Security, SMTP, Image Optimizer (WebP/AVIF), Theme Builder, Code Snippets, Performance
 
-[🥇 NexterWP Theme](https://nexterwp.com/nexter-theme/?utm_source=wordpress&utm_medium=readmepage&utm_campaign=uichemy) — Ultra-light, FSE-ready starter theme. Zero jQuery
+[🥇 NexterWP Theme](https://nexterwp.com/nexter-theme/?utm_source=wordpress&utm_medium=readmepage&utm_campaign=uichemy) - Ultra-light, FSE-ready starter theme. Zero jQuery
 
-[🥇 WDesignKit](https://wdesignkit.com/?utm_source=wordpress&utm_medium=readmepage&utm_campaign=uichemy) — 1000+ Templates, Cloud Block Storage, Gutenberg & Elementor Builder
+[🥇 WDesignKit](https://wdesignkit.com/?utm_source=wordpress&utm_medium=readmepage&utm_campaign=uichemy) - 1000+ Templates, Cloud Block Storage, Gutenberg & Elementor Builder
 
 == Installation ==
 
@@ -260,9 +260,9 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 
 == Screenshots ==
 
-1. Introducing UiChemy : Build Anywhere, Own It In WordPress — start from Figma, a prompt or an AI build
+1. Introducing UiChemy : Build Anywhere, Own It In WordPress - start from Figma, a prompt or an AI build
 2. Figma to WordPress : Convert any Figma design into editable Elementor, Gutenberg and Bricks, with AI Express Mode
-3. AI Website Creator : Turn a client brief into a full WordPress site — Brief, Sitemap, Design, Export
+3. AI Website Creator : Turn a client brief into a full WordPress site - Brief, Sitemap, Design, Export
 4. AI to WordPress : Build from Claude, Cursor, Codex and Antigravity straight into WordPress
 5. Connect UiChemy MCP to Your AI Tool : Generate the connection, paste the config, and start building
 6. UiChemy Composer : AI First Visual Editor for WordPress, with per-widget slots and auto-scoped CSS
@@ -271,6 +271,12 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.2.4 = 2 October 2026
+- Added: Performance settings to help your website pages load faster.
+- Improved: Editor performance and design improvements.
+- Improved: Minor page speed improvements.
+- Fixed: Various minor bugs and stability improvements.
 
 = 5.2.3 = 30 September 2026
 - Improved: Editor performance improvements.

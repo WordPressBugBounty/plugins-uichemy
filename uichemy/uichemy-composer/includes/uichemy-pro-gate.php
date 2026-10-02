@@ -82,6 +82,19 @@ if ( ! function_exists( 'uichemy_composer_enabled' ) ) {
 	}
 }
 
+if ( ! function_exists( 'uichemy_fast_load_enabled' ) ) {
+	/**
+	 * Whether fast load optimization is enabled in Settings.
+	 *
+	 * @return bool
+	 */
+	function uichemy_fast_load_enabled() {
+		$opts = get_option( 'uichemy_settings', array() );
+		$on   = ! is_array( $opts ) || ! array_key_exists( 'enable_fast_load', $opts ) || ! empty( $opts['enable_fast_load'] );
+		return (bool) apply_filters( 'uichemy/perf/fast_load_enabled', $on );
+	}
+}
+
 /**
  * Safety net only — both uichemy.php and uichemy-pro.php define this before any
  * include runs. Kept guarded so it can never redeclare.
