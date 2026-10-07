@@ -36,18 +36,6 @@ if ( ! class_exists( 'Uich_ND_Auth' ) ) {
 
 	final class Uich_ND_Auth {
 
-		/**
-		 * UiChemy's own API host — the managed-plugin version manifest and the
-		 * install package (see Uich_ND_Settings::fetch_managed_versions_raw()
-		 * and Uich_ND_Installer::uichemy_zip_url()).
-		 *
-		 * Deliberately unrelated to authentication: both endpoints are public,
-		 * and neither has anything to do with the token store. It lives here
-		 * only because both callers already reference it from this class.
-		 */
-		// const API_BASE = 'http://localhost:8000';
-		const API_BASE = 'https://core.uichemy.com';
-
 		/** Clear the connected account. React's signOut() posts to this. */
 		const AJAX_LOGOUT  = 'uich_nd_sso_logout';
 		const NONCE_LOGOUT = 'uich_nd_sso_logout';

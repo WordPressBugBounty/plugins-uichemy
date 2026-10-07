@@ -136,10 +136,14 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		}
 
 		/**
-		 * Raw fetch of the full /plugins/versions payload from the UiChemy API,
-		 * with NO persistent cache — memoized only within the current request so
-		 * repeated reads on one page load don't refetch. This is what makes a
-		 * "check every time" read possible (see get_uichemy_latest).
+		 * Raw fetch of the full /api/plugins/versions payload from the UiChemy app
+		 * (UICH_WEBPAGE_APP_URL), with NO persistent cache — memoized only within
+		 * the current request so repeated reads on one page load don't refetch.
+		 * This is what makes a "check every time" read possible (see
+		 * get_uichemy_latest).
+		 *
+		 * Older builds call the UiChemy API's /plugins/versions instead, which is
+		 * left unchanged (its own hardcoded Pro release) for sites not yet updated.
 		 *
 		 * @return array  slug => array (e.g. [ 'latest_version' => '1.2.3' ]).
 		 */
@@ -151,8 +155,8 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 
 			$result = array();
 
-			$base = class_exists( 'Uich_ND_Auth' ) ? Uich_ND_Auth::API_BASE : 'https://core.uichemy.com';
-			$url  = rtrim( $base, '/' ) . '/plugins/versions';
+			$base = defined( 'UICH_WEBPAGE_APP_URL' ) ? UICH_WEBPAGE_APP_URL : 'https://app.uichemy.com';
+			$url  = rtrim( $base, '/' ) . '/api/plugins/versions';
 
 			$response = wp_remote_get(
 				$url,
@@ -178,9 +182,10 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 
 		/**
 		 * Latest versions of every managed plugin (uichemy + the wp.org-hosted
-		 * elementor / uichemy / nexter / wp), read fresh from the API. There's NO
-		 * WP-side persistent cache — the API already Redis-caches the wp.org
-		 * lookups (~1 hr), so a WP transient would only add duplicate staleness.
+		 * elementor / uichemy / nexter / wp), read fresh from the UiChemy app.
+		 * There's NO WP-side persistent cache — the app already Redis-caches the
+		 * wp.org lookups (~1 hr), so a WP transient would only add duplicate
+		 * staleness.
 		 * Memoized per request via fetch_managed_versions_raw().
 		 *
 		 * @return array  slug => array (e.g. [ 'latest_version' => '1.2.3' ]).
@@ -222,13 +227,14 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		}
 
 		/**
-		 * Latest published UiChemy Pro release (version + zip URL), from the API's
+		 * Latest published UiChemy Pro release (version + zip URL), from the app's
 		 * `uichemy_pro` entry. Pro is not on wordpress.org, so that entry is the only
-		 * place its version and package live; it is set manually on the API and read
-		 * fresh here (no persistent cache) so a release reflects immediately.
+		 * place its version and package live: it is the newest release uploaded in
+		 * the app's admin Downloads page, read fresh here (no persistent cache) so a
+		 * release reflects immediately.
 		 *
 		 * The version is reported through detect_uichemy_pro() for display; the
-		 * package itself is fetched through the API's /plugins/uichemy-pro/download
+		 * package itself is fetched through the app's /api/plugins/uichemy-pro/download
 		 * redirect (Uich_ND_Installer::uichemy_pro_zip_url) rather than this zip_url,
 		 * so the installer never hardcodes a host.
 		 *
@@ -401,7 +407,7 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 				$version = isset( $all[ $file ]['Version'] ) ? (string) $all[ $file ]['Version'] : '';
 			}
 
-			// Latest published Pro version, from the API's `uichemy_pro` entry. Only
+			// Latest published Pro version, from the app's `uichemy_pro` entry. Only
 			// looked up for a site that HAS Pro installed — an absent plugin has
 			// nothing to compare against, and the call is a remote request.
 			//

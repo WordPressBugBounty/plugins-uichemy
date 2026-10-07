@@ -159,6 +159,8 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'contentOnly'    => $access['contentOnly'],
 					'features'       => $access['features'],
 					'editorMode'     => $this->editor_mode(),
+					// Settings › Fonts uploads, so the Font Family list offers them.
+					'customFonts'    => class_exists( 'UiChemy_Fonts' ) ? UiChemy_Fonts::custom_font_names() : array(),
 					'postId'         => $this->current_editor_post_id(),
 					'builder'        => 'gutenberg',
 				)
@@ -500,6 +502,8 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'contentOnly'    => $access['contentOnly'],
 					'features'       => $access['features'],
 					'editorMode'     => $this->editor_mode(),
+					// Settings › Fonts uploads, so the Font Family list offers them.
+					'customFonts'    => class_exists( 'UiChemy_Fonts' ) ? UiChemy_Fonts::custom_font_names() : array(),
 					'postId'         => $this->current_editor_post_id(),
 					'builder'        => 'bricks',
 				)
@@ -956,6 +960,8 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'wpAgent'    => $this->get_wp_agent_config(),
 					'frontend'   => true,
 					'editorMode' => $this->editor_mode(),
+					// Settings › Fonts uploads, so the Font Family list offers them.
+					'customFonts' => class_exists( 'UiChemy_Fonts' ) ? UiChemy_Fonts::custom_font_names() : array(),
 					'isPro'       => uichemy_is_pro(),
 					'proUrl'      => uichemy_upgrade_url( 'composer' ),
 					'proFeatures' => $this->pro_feature_flags(),
@@ -1183,6 +1189,8 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'wpAgent'        => $wp_agent_config,
 					'panelHtml'      => $panel_html,
 					'editorMode'     => $this->editor_mode(),
+					// Settings › Fonts uploads, so the Font Family list offers them.
+					'customFonts'    => class_exists( 'UiChemy_Fonts' ) ? UiChemy_Fonts::custom_font_names() : array(),
 				)
 			);
 

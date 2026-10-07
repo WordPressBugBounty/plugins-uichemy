@@ -575,11 +575,10 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 					if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 						return new WP_Error( 'uich_mcp_error', 'Performance settings are not available.' );
 					}
-					$state = isset( $params['state'] ) ? strtolower( trim( (string) $params['state'] ) ) : '';
-					if ( empty( $params['setting'] ) || ! in_array( $state, array( 'enable', 'disable' ), true ) ) {
-						return new WP_Error( 'uich_mcp_error', 'Pass "setting" (see list-performance-settings) and "state": "enable" or "disable".' );
+					if ( empty( $params['setting'] ) || ( ! isset( $params['state'] ) && ! isset( $params['value'] ) ) ) {
+						return new WP_Error( 'uich_mcp_error', 'Pass "setting" (see list-performance-settings) and either "state" ("enable" or "disable", for a toggle) or "value" (for any other type).' );
 					}
-					return UiChemy_Fast_Load::mcp_toggle( $params['setting'], 'enable' === $state );
+					return UiChemy_Fast_Load::mcp_set( $params );
 
 				case 'get_post_sections_code_placement':
 					if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
@@ -594,11 +593,37 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 					return UiChemy_Composer_Manager::mcp_set_post_sections_code_placement( $params );
 
 				case '':
-					return new WP_Error( 'uich_mcp_error', 'Missing "action". Valid: list-performance-settings, set-performance-setting, get-post-sections-code-placement, set-post-sections-code-placement.' );
+					return new WP_Error( 'uich_mcp_error', 'Missing "action". Valid: ' . self::performance_action_list() . '.' );
 
 				default:
-					return new WP_Error( 'uich_mcp_error', 'Unknown action "' . $action . '". Valid: list-performance-settings, set-performance-setting, get-post-sections-code-placement, set-post-sections-code-placement.' );
+					/**
+					 * Lets another build answer an action it added through
+					 * `uichemy_performance_actions` (UiChemy Pro: optimising and
+					 * restoring images). Return null for actions that are not yours.
+					 *
+					 * @param array|WP_Error|null $result  Null until a handler answers.
+					 * @param string              $action  Action name, dashes turned to underscores.
+					 * @param array               $params  The action's parameters.
+					 */
+					$result = apply_filters( 'uichemy_performance_execute', null, $action, $params );
+					if ( null !== $result ) {
+						return $result;
+					}
+					return new WP_Error( 'uich_mcp_error', 'Unknown action "' . $action . '". Valid: ' . self::performance_action_list() . '.' );
 			}
+		}
+
+		/**
+		 * Every uichemy-composer/performance action, built-in and added.
+		 *
+		 * @return string
+		 */
+		private static function performance_action_list() {
+			$names = array( 'list-performance-settings', 'set-performance-setting', 'get-post-sections-code-placement', 'set-post-sections-code-placement' );
+			if ( class_exists( 'UiChemy_Abilities' ) && method_exists( 'UiChemy_Abilities', 'performance_extra_actions' ) ) {
+				$names = array_merge( $names, wp_list_pluck( UiChemy_Abilities::performance_extra_actions(), 'name' ) );
+			}
+			return implode( ', ', $names );
 		}
 
 		/**

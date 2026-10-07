@@ -248,7 +248,7 @@ site-wide vs page-level, and when shared CSS/JS should become a real file rather
 - If the source depends on some OTHER heavy external library (Swiper, Lottie, jQuery), tell the user it needs to be enqueued separately. Do NOT paste a CDN `<script>` into the widget. A small non-animation effect (count-up, marquee) is a few lines of vanilla — reimplement it, don't drop it (see "Page-global visuals" below for effects that span the whole page).
  - **That heavy library is not a dead end.** Upload the vendor `.js` from the project folder as a code file and reference it with a `<script src>`, loaded BEFORE the section JS that depends on it; the `scope-decision` part carries the rubric and the upload flow. If `uichemy-composer/code-file` is not in your ability list, fall back to asking the user to enqueue it.
 - Section with no JS → `js: ""`.
-- **Page speed:** before generating the first section read `uichemy-composer/read-skill` with `{ name: "code-to-wordpress", part: "improve-page-speed" }`.
+- **Page speed:** before generating the first section read `uichemy-composer/read-skill` with `{ name: "code-to-wordpress", part: "improve-performance" }`.
 
 ### Page-global visuals & behaviour (ambient backgrounds, scroll-reveal)
 
@@ -268,7 +268,7 @@ Some effects belong to the WHOLE page, not one section — a **fixed ambient bac
   ```
   `position:fixed; z-index:-1` puts it behind every section without touching any single widget. Keep the source's exact colours/timing.
 
-- **Page-level scroll-reveal** → reimplement as ONE dependency-free vanilla `IntersectionObserver` in `page_before_body`; add the source's `data-reveal` attribute onto section elements as you convert each section (**but never on the first three sections**, see the `improve-page-speed` part); put the transition CSS in `page_before_head` so it applies across every section:
+- **Page-level scroll-reveal** → reimplement as ONE dependency-free vanilla `IntersectionObserver` in `page_before_body`; add the source's `data-reveal` attribute onto section elements as you convert each section (**but never on the first three sections**, see the `improve-performance` part); put the transition CSS in `page_before_head` so it applies across every section:
   ```html
   <!-- page_before_body -->
   <script>

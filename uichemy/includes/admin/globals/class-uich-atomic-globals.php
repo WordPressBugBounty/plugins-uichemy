@@ -110,9 +110,8 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
 		 * sets the PREVIEW order. The Elementor v4 editor's "Design system → Classes"
 		 * panel reads the PREVIEW order, so classes we create/sync here would land on
 		 * the frontend yet stay invisible in the editor until something else resynced
-		 * preview. We therefore mirror order + labels into the preview context via
-		 * Elementor's own update_order_and_labels() (its !is_preview branch copies the
-		 * order to preview and clears per-id preview labels so they inherit).
+		 * preview, and the next editor save publishes that stale preview order and
+		 * deletes them. We therefore write order + labels into both contexts.
 		 */
 		private static function save_global_classes_array( array $new, array $old ): void {
 			if ( ! class_exists( '\Elementor\Modules\GlobalClasses\Global_Classes_Repository' ) ) {
@@ -139,6 +138,10 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
 					}
 				}
 				$repository->update_order_and_labels( $order, $labels );
+
+				if ( method_exists( $repository, 'set_preview' ) ) {
+					$repository->set_preview( true )->update_order_and_labels( $order, $labels );
+				}
 			}
 
 			\Elementor\Plugin::$instance->files_manager->clear_cache();
@@ -425,7 +428,7 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
 		);
 
 		public static function get_elementor_typo_classes(): array {
-			return self::get_classes_by_prefix(
+			$classes = self::get_classes_by_prefix(
 				'g-ut',
 				function ( array $variant ): ?array {
 					if ( empty( $variant['props'] ) ) {
@@ -441,7 +444,9 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
 
 						// Size props return "12px", string props return the value directly
 						if ( isset( $propData['value']['size'] ) && isset( $propData['value']['unit'] ) ) {
-							$typo_value[ $prop ] = $propData['value']['size'] . $propData['value']['unit'];
+							$typo_value[ $prop ] = 'custom' === $propData['value']['unit']
+								? (string) $propData['value']['size']
+								: $propData['value']['size'] . $propData['value']['unit'];
 						} else {
 							$typo_value[ $prop ] = $propData['value'] ?? $propData;
 						}
@@ -449,6 +454,13 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
 
 					return ! empty( $typo_value ) ? $typo_value : null;
 				}
+			);
+
+			return array_values(
+				array_filter(
+					$classes,
+					fn( $class ) => isset( $class['value']['desktop']['font-family'] ) || isset( $class['value']['desktop']['font-size'] )
+				)
 			);
 		}
 
@@ -460,6 +472,10 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
 					function ( array $bp, string $breakpoint ): array {
 						$props = array();
 						foreach ( $bp as $propName => $propValue ) {
+							if ( null === $propValue || '' === $propValue ) {
+								continue;
+							}
+
 							if ( in_array( $propName, Uich_Atomic_Globals::TYPO_SIZE_PROPS )
 								&& preg_match( '/(-?\d+(?:\.\d+)?)(px|em|rem|%|vh|vw)?/', $propValue, $m )
 							) {
@@ -480,9 +496,17 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
 										'unit' => $unit,
 									),
 								);
+							} elseif ( in_array( $propName, Uich_Atomic_Globals::TYPO_SIZE_PROPS ) ) {
+								$props[ $propName ] = array(
+									'$$type' => 'size',
+									'value'  => array(
+										'size' => (string) $propValue,
+										'unit' => 'custom',
+									),
+								);
 							} else {
 								$props[ $propName ] = array(
-									'$$type' => 'string',
+									'$$type' => 'font-family' === $propName ? 'font-family' : 'string',
 									'value'  => $propValue,
 								);
 							}

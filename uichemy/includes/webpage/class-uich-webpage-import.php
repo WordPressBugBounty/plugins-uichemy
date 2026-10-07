@@ -3490,6 +3490,16 @@ class Uich_Webpage_Import {
 			'widget_list'     => $widget_list,
 			'extensions_list' => $extensions_list,
 			'block_list'      => $block_list,
+			// How many posts the blog file actually holds. The caller lists its
+			// import steps before any file is downloaded, so without this it can
+			// only go by "the file exists" — and a project whose blog content
+			// came back empty still advertised a "Creating Blog Posts" step that
+			// had nothing to create.
+			'blog_posts'      => $this->count_blog_posts_in_files( $files ),
+			// Same story for the catalogue: the step list is built before any file
+			// is downloaded, so without a real count a project whose product file
+			// arrived empty still advertised a "Creating N Products" step.
+			'woo_products'    => $this->count_woo_products_in_files( $files ),
 		);
 	}
 
@@ -5058,6 +5068,24 @@ class Uich_Webpage_Import {
 			'product grid'        => 'product listing.json',
 			'products listing'    => 'product listing.json',
 			'product list'        => 'product listing.json',
+			'shop page'           => 'shop home.json',
+			/*
+			 * Product category, tag and brand archives are ONE template, not
+			 * three. WooCommerce renders all of them through the same product
+			 * archive, so a template per taxonomy would just be three designs
+			 * competing for one slot — and only the last imported would ever
+			 * show. They all resolve to the single product-taxonomy template.
+			 */
+			'product category'         => 'product listing.json',
+			'product categories'       => 'product listing.json',
+			'product cat'              => 'product listing.json',
+			'product category archive' => 'product listing.json',
+			'product tag'              => 'product listing.json',
+			'product tags'             => 'product listing.json',
+			'product tag archive'      => 'product listing.json',
+			'product brand'            => 'product listing.json',
+			'product brands'           => 'product listing.json',
+			'product brand archive'    => 'product listing.json',
 		);
 
 		return isset( $aliases[ $stem ] ) ? $aliases[ $stem ] : $stem . '.json';
@@ -5143,6 +5171,7 @@ class Uich_Webpage_Import {
 		$bucket_exempt = array( 'shop.json', 'shop home.json', 'product listing.json', 'product details.json' );
 
 		$theme_builder_files = array();
+		$claimed_keys        = array();
 		foreach ( array_keys( $files ) as $filename ) {
 			$key = $this->theme_builder_template_key( $filename );
 			if ( '' === $key || ! isset( $theme_builder_templates[ $key ] ) ) {
@@ -5155,6 +5184,24 @@ class Uich_Webpage_Import {
 				&& ! in_array( $key, $bucket_exempt, true ) ) {
 				continue;
 			}
+			/*
+			 * One template per context. An export can ship "Product Category",
+			 * "Product Tag" and "Product Brand" as three designs, but they all
+			 * belong to the same product archive — importing each would create
+			 * three templates for one slot, where only the last stays active and
+			 * the other two sit there as drafts nobody asked for.
+			 */
+			if ( isset( $claimed_keys[ $key ] ) ) {
+				$warnings[] = sprintf(
+					/* translators: 1: skipped filename, 2: filename already used for that context. */
+					__( '%1$s was not imported: %2$s already provides that template.', 'uichemy' ),
+					$filename,
+					$claimed_keys[ $key ]
+				);
+				continue;
+			}
+			$claimed_keys[ $key ] = $filename;
+
 			$config = $theme_builder_templates[ $key ];
 			// Title the template after the file when the designer named it something
 			// of their own, rather than renaming their "Product Single" to ours.
@@ -5428,6 +5475,94 @@ class Uich_Webpage_Import {
 	 * @param string $post_type  Post type slug.
 	 * @return WP_Post|null
 	 */
+	/**
+	 * The post an imported page should be written into.
+	 *
+	 * A re-import used to archive the existing page and create a new one, which
+	 * changed the post ID — and everything that referred to the page BY ID
+	 * stopped working: nav menu items vanished, the WooCommerce page settings
+	 * pointed at a draft, widgets and page-link fields went blank. Only the URL
+	 * survived, because the new page inherited the slug the archived one gave up.
+	 *
+	 * Writing into the SAME post keeps every one of those references intact. The
+	 * design that was there is not lost either: a revision is saved first, and
+	 * Elementor stores its own data per revision (its history module), so the
+	 * previous version is restorable from the page's History panel.
+	 *
+	 * @param string $page_title Page title.
+	 * @param string $post_type  Post type.
+	 * @return int|WP_Error Post ID to write the imported design into.
+	 */
+	protected function target_post_for_imported_page( $page_title, $post_type ) {
+		$existing = $this->get_published_post_by_exact_title( $page_title, $post_type );
+		if ( ! $existing ) {
+			// Nothing published, but an earlier run may have archived one. Reusing
+			// it keeps that page's ID and URL rather than minting a third copy.
+			$existing = $this->get_post_by_exact_title( $page_title, $post_type );
+		}
+
+		if ( $existing ) {
+			// Snapshot what is there before the import overwrites it.
+			wp_save_post_revision( $existing->ID );
+
+			$updated = wp_update_post(
+				array(
+					'ID'          => $existing->ID,
+					'post_title'  => $page_title,
+					'post_status' => 'publish',
+				),
+				true
+			);
+			if ( is_wp_error( $updated ) ) {
+				return $updated;
+			}
+
+			return (int) $existing->ID;
+		}
+
+		return wp_insert_post(
+			array(
+				'post_title'  => $page_title,
+				'post_name'   => sanitize_title( $page_title ),
+				'post_status' => 'publish',
+				'post_type'   => $post_type,
+				'post_author' => get_current_user_id() ? get_current_user_id() : 1,
+			),
+			true
+		);
+	}
+
+	/**
+	 * Published post with this exact title, or null.
+	 *
+	 * Separate from get_post_by_exact_title(), which matches ANY status: after an
+	 * old-style re-import a site can hold both an archived draft and the live
+	 * page under one title, and the live one is the one to keep writing to.
+	 *
+	 * @param string $page_title Page title.
+	 * @param string $post_type  Post type.
+	 * @return WP_Post|null
+	 */
+	protected function get_published_post_by_exact_title( $page_title, $post_type = 'page' ) {
+		if ( ! is_string( $page_title ) || '' === $page_title || ! is_string( $post_type ) || '' === $post_type ) {
+			return null;
+		}
+		$query = new WP_Query(
+			array(
+				'post_type'              => $post_type,
+				'title'                  => $page_title,
+				'post_status'            => 'publish',
+				'posts_per_page'         => 1,
+				'no_found_rows'          => true,
+				'ignore_sticky_posts'    => true,
+				'update_post_term_cache' => false,
+				'update_post_meta_cache' => false,
+			)
+		);
+
+		return empty( $query->posts ) ? null : $query->posts[0];
+	}
+
 	protected function get_post_by_exact_title( $page_title, $post_type = 'page' ) {
 		if ( ! is_string( $page_title ) || '' === $page_title || ! is_string( $post_type ) || '' === $post_type ) {
 			return null;
@@ -5459,20 +5594,7 @@ class Uich_Webpage_Import {
 	 * @return int|WP_Error Post ID.
 	 */
 	protected function create_or_update_gutenberg_wp_page( $page_title, $post_content, $post_type = 'page' ) {
-		$existing = $this->get_post_by_exact_title( $page_title, $post_type );
-		if ( $existing ) {
-			$this->draft_existing_post_for_reimport( $existing->ID, $post_type );
-		}
-
-		$post_id = wp_insert_post(
-			array(
-				'post_title'  => $page_title,
-				'post_name'   => sanitize_title( $page_title ),
-				'post_status' => 'publish',
-				'post_type'   => $post_type,
-				'post_author' => get_current_user_id() ? get_current_user_id() : 1,
-			)
-		);
+		$post_id = $this->target_post_for_imported_page( $page_title, $post_type );
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
 		}
@@ -5657,20 +5779,7 @@ class Uich_Webpage_Import {
 			return new WP_Error( 'IMPORT_ELEMENTOR_PAGE_INVALID_JSON', __( 'Invalid page JSON structure.', 'uichemy' ) );
 		}
 
-		$existing = $this->get_post_by_exact_title( $page_title, $post_type );
-		if ( $existing ) {
-			$this->draft_existing_post_for_reimport( $existing->ID, $post_type );
-		}
-
-		$post_id = wp_insert_post(
-			array(
-				'post_title'  => $page_title,
-				'post_name'   => sanitize_title( $page_title ),
-				'post_status' => 'publish',
-				'post_type'   => $post_type,
-				'post_author' => get_current_user_id() ? get_current_user_id() : 1,
-			)
-		);
+		$post_id = $this->target_post_for_imported_page( $page_title, $post_type );
 		if ( is_wp_error( $post_id ) ) {
 			return $post_id;
 		}
@@ -6009,7 +6118,9 @@ class Uich_Webpage_Import {
 			}
 			if ( 'product_taxonomy' === $rule ) {
 				$tax_rules = array();
-				foreach ( array( 'product_cat', 'product_tag' ) as $tax ) {
+				// product_brand is WooCommerce's own brand taxonomy (core since 9.4);
+				// it renders through the same product archive as categories and tags.
+				foreach ( array( 'product_cat', 'product_tag', 'product_brand' ) as $tax ) {
 					if ( taxonomy_exists( $tax ) ) {
 						$tax_rules[] = array( 'match' => 'include', 'type' => 'taxonomy', 'taxonomy' => $tax, 'term' => 0 );
 					}
@@ -12473,6 +12584,53 @@ class Uich_Webpage_Import {
 	 *
 	 * @return array Report of what was set / skipped.
 	 */
+	/**
+	 * Turn on Cash on delivery so the imported store can actually take an order.
+	 *
+	 * A store with no payment method enabled cannot complete checkout at all —
+	 * WooCommerce shows "there are no payment methods available", which reads as
+	 * a broken checkout rather than an unconfigured one. COD is the one gateway
+	 * that needs no account, no keys and no setup, so it is what makes the
+	 * imported store demonstrable out of the box.
+	 *
+	 * Written through the gateway's own update_option() where possible, so
+	 * WooCommerce stores it exactly as its settings screen would and the rest of
+	 * the gateway's configuration is left untouched.
+	 *
+	 * @return array { enabled: bool, status: string }
+	 */
+	protected function ensure_woocommerce_cod_enabled() {
+		if ( ! class_exists( 'WooCommerce' ) ) {
+			return array( 'enabled' => false, 'status' => 'woocommerce-inactive' );
+		}
+
+		$settings = get_option( 'woocommerce_cod_settings' );
+		$settings = is_array( $settings ) ? $settings : array();
+
+		if ( isset( $settings['enabled'] ) && 'yes' === $settings['enabled'] ) {
+			return array( 'enabled' => true, 'status' => 'already-enabled' );
+		}
+
+		if ( class_exists( 'WC_Gateway_COD' ) ) {
+			try {
+				$gateway = new WC_Gateway_COD();
+				$gateway->update_option( 'enabled', 'yes' );
+			} catch ( \Throwable $e ) {
+				// Fall through to the direct write below.
+				$settings['enabled'] = 'yes';
+				update_option( 'woocommerce_cod_settings', $settings );
+			}
+		} else {
+			$settings['enabled'] = 'yes';
+			update_option( 'woocommerce_cod_settings', $settings );
+		}
+
+		$saved = get_option( 'woocommerce_cod_settings' );
+		$ok    = is_array( $saved ) && isset( $saved['enabled'] ) && 'yes' === $saved['enabled'];
+
+		return array( 'enabled' => $ok, 'status' => $ok ? 'enabled' : 'failed' );
+	}
+
 	protected function apply_woocommerce_page_settings() {
 		$report = array( 'set' => array(), 'skipped' => array() );
 
@@ -12554,26 +12712,59 @@ class Uich_Webpage_Import {
 			return array();
 		}
 
-		$dangling = array();
+		$dangling   = array();
+		$republished = array();
 		foreach ( array_unique( array_values( $map ) ) as $option ) {
 			$page_id = (int) get_option( $option );
 			if ( ! $page_id ) {
 				continue; // Never set is WooCommerce's business, not ours.
 			}
 			$page = get_post( $page_id );
-			if ( ! $page || 'page' !== $page->post_type || 'trash' === $page->post_status ) {
+
+			/*
+			 * A page that still exists but sits in draft is the common case after
+			 * a "Reset previous content before import" run, and handing it to
+			 * WC_Install::create_pages() does NOT fix it: wc_create_page() counts
+			 * any status outside pending/trash/future/auto-draft as "valid page
+			 * already in place", so it re-points the option at the same draft and
+			 * returns. The page has to be published here, and publishing the one
+			 * that is already wired up also keeps every menu link, internal link
+			 * and shortcode that pointed at that ID working.
+			 */
+			if ( $page && 'page' === $page->post_type && in_array( $page->post_status, array( 'draft', 'pending', 'private' ), true ) ) {
+				$restored = wp_update_post(
+					array(
+						'ID'          => $page_id,
+						'post_status' => 'publish',
+					),
+					true
+				);
+				if ( ! is_wp_error( $restored ) && $restored ) {
+					clean_post_cache( $page_id );
+					$republished[] = $option;
+					continue;
+				}
+			}
+
+			/*
+			 * Anything else that is not a PUBLISHED page really is dangling: the
+			 * post is gone, trashed, or is no longer a page at all. Clearing the
+			 * option lets WooCommerce's own installer build a replacement with the
+			 * slug, content and shortcodes it expects.
+			 */
+			if ( ! $page || 'page' !== $page->post_type || 'publish' !== $page->post_status ) {
 				delete_option( $option );
 				$dangling[] = $option;
 			}
 		}
 
-		if ( empty( $dangling ) ) {
-			return $dangling;
+		if ( ! empty( $dangling ) ) {
+			WC_Install::create_pages();
 		}
 
-		WC_Install::create_pages();
-
-		return $dangling;
+		// Both paths change which page a store URL resolves to, so the caller's
+		// rewrite flush has to run for a republished shop page as well.
+		return array_values( array_unique( array_merge( $dangling, $republished ) ) );
 	}
 
 	/**
@@ -12659,8 +12850,9 @@ class Uich_Webpage_Import {
 		// one REST call at a time, so this is the first point at which the whole
 		// set exists. Both helpers no-op without WooCommerce.
 		$woo = array(
-			'pages'  => $this->apply_woocommerce_page_settings(),
-			'coupon' => $this->ensure_woocommerce_coupon(),
+			'pages'   => $this->apply_woocommerce_page_settings(),
+			'coupon'  => $this->ensure_woocommerce_coupon(),
+			'payment' => $this->ensure_woocommerce_cod_enabled(),
 		);
 
 		$this->cleanup_stale_import_options();
@@ -12796,11 +12988,32 @@ class Uich_Webpage_Import {
 			)
 		);
 
+		// WooCommerce's functional pages are infrastructure, not design content.
+		// Drafting Shop / Cart / Checkout / My Account breaks the store outright:
+		// the page stays in the woocommerce_*_page_id option, wc_create_page()
+		// treats a draft as "valid page already in place" and re-points at it
+		// without publishing, so /shop/ and checkout 404 for every customer while
+		// the settings screen still looks correctly filled in. A re-import that
+		// ships one of these as a real page updates it in place anyway, so there
+		// is nothing to gain by drafting them first.
+		$protected_ids = array();
+		foreach ( array_unique( array_values( $this->woocommerce_page_option_map() ) ) as $wc_option ) {
+			$wc_page_id = (int) get_option( $wc_option );
+			if ( $wc_page_id > 0 ) {
+				$protected_ids[ $wc_page_id ] = true;
+			}
+		}
+
 		$moved          = 0;
+		$skipped_wc     = 0;
 		$disabled_nxt   = false;
 		foreach ( $ids as $post_id ) {
 			$post_id = (int) $post_id;
 			if ( $post_id <= 0 || ! current_user_can( 'edit_post', $post_id ) ) {
+				continue;
+			}
+			if ( isset( $protected_ids[ $post_id ] ) ) {
+				$skipped_wc++;
 				continue;
 			}
 			$this_type      = get_post_type( $post_id );
@@ -12870,10 +13083,11 @@ class Uich_Webpage_Import {
 
 		return rest_ensure_response(
 			array(
-				'success'  => true,
-				'moved'    => $moved,
-				'disabled' => $disabled,
-				'types'    => $post_types,
+				'success'        => true,
+				'moved'          => $moved,
+				'disabled'       => $disabled,
+				'kept_woo_pages' => $skipped_wc,
+				'types'          => $post_types,
 			)
 		);
 	}
@@ -14429,6 +14643,42 @@ class Uich_Webpage_Import {
 			}
 			$coupon->save();
 		}
+	}
+
+	/**
+	 * How many blog posts the downloaded blog file actually contains.
+	 *
+	 * @param array $files Map of stored filename => decoded file.
+	 * @return int Post count; 0 when the file is absent or carries no posts.
+	 */
+	/**
+	 * How many products the downloaded catalogue actually contains.
+	 *
+	 * @param array $files Map of stored filename => decoded file.
+	 * @return int Product count; 0 when the file is absent or carries none.
+	 */
+	protected function count_woo_products_in_files( array $files ) {
+		$key = $this->find_file_key( $files, self::WOO_PRODUCT_FILE );
+		if ( null === $key || ! is_array( $files[ $key ] ) ) {
+			return 0;
+		}
+		$products = isset( $files[ $key ]['products'] ) && is_array( $files[ $key ]['products'] )
+			? $files[ $key ]['products']
+			: array();
+
+		return count( $products );
+	}
+
+	protected function count_blog_posts_in_files( array $files ) {
+		$key = $this->find_file_key( $files, 'blog-post-content.json' );
+		if ( null === $key || ! is_array( $files[ $key ] ) ) {
+			return 0;
+		}
+		$posts = isset( $files[ $key ]['posts'] ) && is_array( $files[ $key ]['posts'] )
+			? $files[ $key ]['posts']
+			: array();
+
+		return count( $posts );
 	}
 
 	protected function create_single_blog_post( array $post_data ) {

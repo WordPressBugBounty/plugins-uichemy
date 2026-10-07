@@ -791,25 +791,22 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		 * @return array<int,array>
 		 */
 		private static function performance_actions() {
-			$labels = array( '"performance-optimization" is the master switch for everything' );
-			$names = UiChemy_Fast_Load::setting_names();
-			foreach ( UiChemy_Fast_Load::registry() as $row ) {
-				if ( isset( $names[ $row['name'] ] ) ) {
-					$labels[] = sprintf( '"%s" (%s)', $row['name'], $row['label'] );
-				}
+			$labels = array();
+			foreach ( UiChemy_Fast_Load::mcp_list( 'schema' )['settings'] as $row ) {
+				$labels[] = sprintf( '"%s" (%s, %s)', $row['setting'], $row['label'], isset( $row['type'] ) ? $row['type'] : 'toggle' );
 			}
 			$setting       = array(
 				'type'        => 'string',
-				'enum'        => array_keys( UiChemy_Fast_Load::setting_names() ),
-				'description' => 'Which setting. ' . implode( '; ', $labels ) . '.',
+				'enum'        => UiChemy_Fast_Load::mcp_setting_names(),
+				'description' => 'Which setting. "performance-optimization" is the master switch for the optimizations and elementor groups. ' . implode( '; ', $labels ) . '.',
 			);
 			$post_id       = array( 'type' => 'integer', 'description' => 'The post that holds the section.' );
 			$section_index = array( 'type' => 'integer', 'description' => '0-based section order from action="get-structure".' );
 
-			return array(
+			$actions = array(
 				array(
 					'name'                     => 'list-performance-settings',
-					'description'              => 'List every performance setting with its current state ("enabled"), label, group and description. "active" says whether the master switch is on. Settings that are Elementor\'s own options say which one in "synced_with". Call this first to learn the setting names.',
+					'description'              => 'List every performance setting with its label, group, type, description and current state: "enabled" for a toggle, "value" for anything else (a choice lists its "choices"). "active" says whether the master switch is on. Settings that are Elementor\'s own options say which one in "synced_with". Call this first to learn the setting names and types.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => new stdClass(),
@@ -818,14 +815,15 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				),
 				array(
 					'name'                     => 'set-performance-setting',
-					'description'              => 'Turn one performance setting on or off. Disabling "performance-optimization" switches every optimization off at once and keeps the individual choices for when it is turned back on. Individual optimizations only run while it is on.',
+					'description'              => 'Change one performance setting: a toggle takes "state", any other type takes "value". Disabling "performance-optimization" switches every optimization in the optimizations and elementor groups off at once and keeps the individual choices for when it is turned back on; those only run while it is on.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => array(
 							'setting' => $setting,
-							'state'   => array( 'type' => 'string', 'enum' => array( 'enable', 'disable' ), 'description' => '"enable" turns the setting on, "disable" turns it off.' ),
+							'state'   => array( 'type' => 'string', 'enum' => array( 'enable', 'disable' ), 'description' => 'Toggles only. "enable" turns the setting on, "disable" turns it off.' ),
+							'value'   => array( 'type' => array( 'string', 'integer', 'array' ), 'description' => 'Every type but toggle: a choice takes one of its "choices", a number an integer, a list an array of strings (it replaces the whole list).' ),
 						),
-						'required'   => array( 'setting', 'state' ),
+						'required'   => array( 'setting' ),
 					),
 				),
 				array(
@@ -852,6 +850,46 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					),
 				),
 			);
+
+			return array_merge( $actions, self::performance_extra_actions() );
+		}
+
+		/**
+		 * The image optimisation / Google Fonts sentence of the performance
+		 * ability's description: where they live when a build provides them,
+		 * otherwise where the user finds the features.
+		 *
+		 * @return string
+		 */
+		private static function performance_pro_note() {
+			$names = wp_list_pluck( self::performance_extra_actions(), 'name' );
+			if ( $names ) {
+				return ' IMAGES AND FONTS (UiChemy Pro): the image optimisation settings (group "images": on/off, format WebP / AVIF / Smart, compression, resizing, auto-convert of new uploads) and how Google Fonts load (group "fonts": from Google, self-hosted or off; display swap) are rows of list-performance-settings, changed with set-performance-setting. They do not depend on "performance-optimization". Acting on the existing library - actions: "' . implode( '", "', $names ) . '".';
+			}
+			return ' NOT HERE: image optimisation (compress images, convert to WebP / AVIF / Smart, bulk optimise, restore originals) and how Google Fonts load (self-host, display swap, disable) are UiChemy Pro settings on the Performance screen (its Images and Fonts pages). No action reads or changes them; when the user asks for either, tell them where to switch it on instead of working around it.';
+		}
+
+		/**
+		 * Actions another build adds to uichemy-composer/performance. UiChemy Pro
+		 * adds optimising and restoring images here (its settings are rows of
+		 * list-performance-settings), so the feature rides this ability instead of
+		 * registering its own. Each entry takes the
+		 * same shape as the built-in actions (name, description,
+		 * action_parameters_schema); the matching handler answers
+		 * `uichemy_performance_execute` in UiChemy_MCP_V2_Router::execute_performance().
+		 *
+		 * @return array<int,array>
+		 */
+		public static function performance_extra_actions() {
+			/**
+			 * Filters the extra uichemy-composer/performance actions.
+			 *
+			 * @param array<int,array> $actions Action schemas.
+			 */
+			$extra = apply_filters( 'uichemy_performance_actions', array() );
+			return is_array( $extra ) ? array_values( array_filter( $extra, static function ( $a ) {
+				return is_array( $a ) && ! empty( $a['name'] );
+			} ) ) : array();
 		}
 
 		/**
@@ -1596,7 +1634,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'Page-speed settings for UiChemy pages (the Performance screen in the dashboard) and where a section\'s CSS and JS are printed.',
 					array(
 						'type'        => 'object',
-						'description' => self::contract() . ' SETTINGS: "list-performance-settings" lists every setting with its state ("performance-optimization" is the master switch; the others are individual optimizations); "set-performance-setting" turns one on or off with state "enable" or "disable". PLACEMENT: "get-post-sections-code-placement" shows where every section of a post prints its CSS and JS; "set-post-sections-code-placement" moves one section\'s CSS or JS to "before-head-end" (before </head>), "before-body-end" (before </body>) or "default". Defaults: the first three sections\' CSS and JS are before-head-end; later sections\' CSS and JS are before-body-end.',
+						'description' => self::contract() . ' SETTINGS: "list-performance-settings" lists every setting with its state ("performance-optimization" is the master switch; the others are individual optimizations); "set-performance-setting" changes one, a toggle with state "enable" or "disable", anything else with "value". PLACEMENT: "get-post-sections-code-placement" shows where every section of a post prints its CSS and JS; "set-post-sections-code-placement" moves one section\'s CSS or JS to "before-head-end" (before </head>), "before-body-end" (before </body>) or "default". Defaults: the first three sections\' CSS and JS are before-head-end; later sections\' CSS and JS are before-body-end.' . self::performance_pro_note(),
 						'properties'  => array(
 							'action'            => array(
 								'type'        => 'string',
@@ -1611,7 +1649,8 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 						'required'    => array( 'action' ),
 					),
 					array( 'UiChemy_MCP_V2_Router', 'execute_performance' ),
-					array( 'readonly' => false, 'destructive' => false, 'idempotent' => true ),
+					// Added actions (UiChemy Pro's optimise-images) are not idempotent.
+					array( 'readonly' => false, 'destructive' => false, 'idempotent' => ! self::performance_extra_actions() ),
 					array( 'actions' => self::performance_actions() )
 				);
 			}

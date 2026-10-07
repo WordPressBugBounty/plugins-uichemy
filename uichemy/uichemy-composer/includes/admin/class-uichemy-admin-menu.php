@@ -499,6 +499,8 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 					'force_disable' => (int) $wl['force_disable'],
 				),
 				'settings'    => $opts,
+				'fonts'       => class_exists( 'UiChemy_Fonts' ) ? UiChemy_Fonts::dashboard_payload() : null,
+				'imageOpt'    => class_exists( 'UiChemy_Image_Optimizer_Boot' ) ? UiChemy_Image_Optimizer_Boot::dashboard_payload() : null,
 				// The performance switches the Performance screen lists, so the screen has
 				// no copy of the list of its own.
 				'performance' => class_exists( 'UiChemy_Fast_Load' ) ? UiChemy_Fast_Load::registry() : array(),

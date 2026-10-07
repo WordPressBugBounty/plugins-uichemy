@@ -1,4 +1,156 @@
 /*
+ * Isolation — keep the host page's CSS out of the composer's UI.
+ * ════════════════════════════════════════════════════════════════════════════
+ * The panel does not render in a page of its own. It mounts inside whatever
+ * WordPress, the theme and every other active plugin have already styled, and
+ * those stylesheets load with no knowledge of us. Two things leak across that
+ * boundary, and both have produced "a colour I never chose appeared on hover /
+ * on the active tab" reports:
+ *
+ *   1. CUSTOM PROPERTIES. Ours and theirs share one inheritance tree. A theme
+ *      that sets `--primary` or `--accent` on `:root` reaches every one of our
+ *      elements unless we redeclare that name closer to them. We DO redeclare
+ *      the shadcn set on `.uich-tw`, so those are covered — but a name we only
+ *      ever CONSUME (always with a `var(--x, fallback)`) has no declaration of
+ *      ours anywhere, so the page's value is the one that wins.
+ *
+ *      Verified in the wild: a site's own UiChemy Globals print ~70 variables
+ *      onto `:root` — among them `--primary`, `--secondary`, `--accent` and a
+ *      whole `--uc-*` family, which is the design system's own prefix.
+ *
+ *   2. ELEMENT SELECTORS. A rule like `a:hover { color: #ff5a6e }` in a theme
+ *      reset carries specificity (0,1,1) and matches our markup directly. Any
+ *      bare element we render inherits it.
+ *
+ * Both are closed below. Nothing here changes how the panel looks on its own;
+ * it only stops someone else's stylesheet from changing it.
+ */
+
+/* ── 1 · Custom properties we consume but never declare ────────────────────
+ *
+ * `initial` on a custom property is the precise tool for this: it makes the
+ * name "guaranteed-invalid", i.e. exactly as if nobody had ever declared it.
+ * So `var(--x, fallback)` still resolves to its authored fallback — every one
+ * of these is always read WITH a fallback — while the page's value can no
+ * longer reach us. Setting a real value instead would have silently become a
+ * second source of truth for each of them.
+ *
+ * Deliberately NOT reset here:
+ *   · --radix-*            Radix writes these inline on its own content.
+ *   · --wp-admin-theme-color   borrowed from WP core on purpose.
+ *   · --uich-dock-w, --uich-gb-dock-w/-top, --uich-bricks-dock-w, --uich-mtl-h,
+ *     --uich-sx, --uich-tools-w
+ *                          the panel's own JS writes these on <html>/<body>,
+ *                          ABOVE this scope — they have to inherit inwards.
+ *   · --uichemy-composer-*  declared by our own editor-panel stylesheet.
+ */
+:is(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp
+) {
+  /* Single letters and bare words — the likeliest collisions of all. */
+  --c: initial;
+  --x: initial;
+  --hc: initial;
+  --gw-c: initial;
+  --token: initial;
+  --text-strong: initial;
+  --cafe-espresso: initial;
+
+  /* Per-element animation/measurement values, written inline by our own JS.
+     Inline still wins for the element that owns it; this only stops a page
+     value standing in for the frame before that JS runs. */
+  --_d: initial;
+  --_delay: initial;
+  --_dt-max-h: initial;
+  --seg-h: initial;
+  --seg-o: initial;
+  --seg-w: initial;
+  --seg-x: initial;
+  --tab-bar-o: initial;
+  --tab-bar-w: initial;
+  --tab-bar-x: initial;
+  --rp-box-gap: initial;
+  --rp-box-pad: initial;
+
+  /* Design-system names we read but define elsewhere (or not at all). The
+     `--uc-` prefix is NOT ours alone — UiChemy Globals emit `--uc-*` too. */
+  --uc-brand-lighter: initial;
+  --uc-control-h-xs: initial;
+  --uc-focus-ring: initial;
+  --uc-global: initial;
+  --uc-tabs-fade-l: initial;
+  --uc-tabs-fade-r: initial;
+  --uc-text-default: initial;
+}
+
+/* ── 2 · Element-selector leaks ("button:hover") ───────────────────────
+ *
+ * The one that reaches furthest. Nexter prints this INLINE (handle
+ * `nexter-style-inline-css`, which is why it never turns up in a file scan):
+ *
+ *     button:hover, button:focus, input[type="submit"]:hover, .button:focus, …
+ *       { background: var(--nxt-link-hover-color, #ff5a6e);
+ *         border-color: var(--nxt-link-hover-color, #ff5a6e); }
+ *
+ * `button:hover` is (0,1,1) and matches every button we render. Our Tailwind
+ * utilities compile to `.uich-tw .bg-x` → (0,2,0) and already outrank it, and so
+ * do our own `.thing:hover` rules — but a design-system component styled by a
+ * single CSS-module class is (0,1,0), so the theme wins and the control turns
+ * red under the pointer.
+ *
+ * SPECIFICITY IS THE WHOLE DESIGN HERE. This block is pinned to exactly (0,2,0):
+ * the host list is `:is()` (0,1,0), the elements are `:where()` (0,0,0), and the
+ * state is `:is()` (0,1,0). That lands it
+ *
+ *     above  the theme at (0,1,1)                        → the red is gone
+ *     level  with our own `.thing:hover` rules (0,2,0)   → a TIE
+ *
+ * and a tie is decided by source order. This file is imported before every
+ * component stylesheet, so each component keeps its own hover look and only the
+ * controls that never asked for one are reset. Adding a class to the selector,
+ * or swapping a `:where()` for an `:is()`, would push this to (0,2,1) and start
+ * flattening our own hover states — don't. The host list is classes ONLY for the
+ * same reason: `:is()` takes the HIGHEST specificity of its arguments, so one id
+ * in there (`#uichemy-composer-floating-panel`) would silently make the whole
+ * rule (1,1,0). The drawer shell is covered anyway — the panel it wraps carries
+ * `.uich-composer-host` and `.uich-tw`.
+ *
+ * Only the two properties the theme actually sets are reverted. `color` is left
+ * alone for buttons (reverting it would hand them the UA's `buttontext` on a
+ * dark panel) and taken back only on links, where a themed hover colour is the
+ * other classic leak.
+ */
+:is(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp
+)
+  :where(a, button, input, select, textarea, .button, .menu-toggle):is(:hover, :focus, :focus-visible, :focus-within, :active) {
+  background: none;
+  border-color: revert;
+}
+
+/* Links additionally take their colour back — `a:hover { color: … }` sits in
+   almost every theme reset. Same (0,2,0), same tie-break. */
+:is(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp
+)
+  :where(a):is(:hover, :focus, :focus-visible, :active) {
+  color: inherit;
+  text-decoration: none;
+}
+
+/*
  * Composer THEME TOKENS — the single source of the palette.
  *
  * Imported by BOTH bundles: the composer panel (index.jsx) and the canvas
@@ -818,6 +970,9 @@ body[data-theme="light"],
 .uich-tw .w-\[176px\] {
   width: 176px;
 }
+.uich-tw .w-\[184px\] {
+  width: 184px;
+}
 .uich-tw .w-\[190px\] {
   width: 190px;
 }
@@ -923,6 +1078,9 @@ body[data-theme="light"],
 }
 .uich-tw .max-w-\[320px\] {
   max-width: 320px;
+}
+.uich-tw .max-w-\[640px\] {
+  max-width: 640px;
 }
 .uich-tw .max-w-\[90vw\] {
   max-width: 90vw;
@@ -1360,6 +1518,10 @@ body[data-theme="light"],
 .uich-tw .bg-\[\#0e7c6b\]\/\[0\.06\] {
   background-color: rgb(14 124 107 / 0.06);
 }
+.uich-tw .bg-\[\#171717\] {
+  --tw-bg-opacity: 1;
+  background-color: rgb(23 23 23 / var(--tw-bg-opacity, 1));
+}
 .uich-tw .bg-\[\#171717\]\/10 {
   background-color: rgb(23 23 23 / 0.1);
 }
@@ -1410,9 +1572,6 @@ body[data-theme="light"],
 }
 .uich-tw .bg-destructive\/5 {
   background-color: hsl(var(--destructive) / 0.05);
-}
-.uich-tw .bg-destructive\/\[0\.04\] {
-  background-color: hsl(var(--destructive) / 0.04);
 }
 .uich-tw .bg-foreground {
   background-color: hsl(var(--foreground));
@@ -1642,6 +1801,9 @@ body[data-theme="light"],
 .uich-tw .pb-2\.5 {
   padding-bottom: 0.625rem;
 }
+.uich-tw .pb-24 {
+  padding-bottom: 6rem;
+}
 .uich-tw .pb-4 {
   padding-bottom: 1rem;
 }
@@ -1704,9 +1866,6 @@ body[data-theme="light"],
 }
 .uich-tw .pt-3\.5 {
   padding-top: 0.875rem;
-}
-.uich-tw .pt-5 {
-  padding-top: 1.25rem;
 }
 .uich-tw .text-left {
   text-align: right;
@@ -1906,9 +2065,6 @@ body[data-theme="light"],
 }
 .uich-tw .text-muted-foreground\/60 {
   color: hsl(var(--muted-foreground) / 0.6);
-}
-.uich-tw .text-muted-foreground\/80 {
-  color: hsl(var(--muted-foreground) / 0.8);
 }
 .uich-tw .text-popover-foreground {
   color: hsl(var(--popover-foreground));
@@ -2163,6 +2319,9 @@ body[data-theme="light"],
 }
 .uich-tw .ease-out {
   animation-timing-function: cubic-bezier(0, 0, 0.2, 1);
+}
+.uich-tw .\!running {
+  animation-play-state: running !important;
 }
 .uich-tw .running {
   animation-play-state: running;
@@ -3882,6 +4041,10 @@ body[data-theme="light"],
   padding: var(--uc-space-4);
   z-index: var(--uc-z-dropdown);
   overflow: hidden;
+  /* Never taller than the room Radix measured beside the trigger (minus the
+     collision padding), so a long list scrolls inside instead of running off
+     the screen. The viewport is the flex child Radix scrolls. */
+  max-height: var(--radix-select-content-available-height);
   animation: cdjUAFtyJ3yGS3rj5qO1 var(--uc-dur-enter) var(--uc-ease-emphasized);
 }
 .umOYcecNSay6i1GVC_Oi { position: relative; }

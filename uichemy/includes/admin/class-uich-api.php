@@ -648,8 +648,8 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				// TextDomain rather than the fixed-path plugin-status route.
 				'uichemy'       => $this->uich_build_uichemy_status(),
 				// UiChemy Pro — the premium plugin, REQUIRED for the AI flow. Not on
-				// wordpress.org either: it is installed from the API's
-				// /plugins/uichemy-pro/download package and detected by filename, so it
+				// wordpress.org either: it is installed from the app's
+				// /api/plugins/uichemy-pro/download package and detected by filename, so it
 				// gets its own struct rather than the fixed-path plugin-status route.
 				'uichemy_pro'   => $this->uich_build_uichemy_pro_status(),
 			);
@@ -746,8 +746,8 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * (slug/installed/active/version + latest/update) so the UI can treat it the
 		 * same way as the managed plugins.
 		 *
-		 * Update check follows the SAME API-first path as the plugins: the UiChemy
-		 * API's /plugins/versions (which fetches the theme's wp.org version and
+		 * Update check follows the SAME app-first path as the plugins: the UiChemy
+		 * app's /api/plugins/versions (which fetches the theme's wp.org version and
 		 * Redis-caches it) via get_managed_latest('nexter_theme'); if the API has
 		 * no value we fall back to WP's own `update_themes` transient.
 		 *

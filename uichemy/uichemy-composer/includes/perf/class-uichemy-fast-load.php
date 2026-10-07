@@ -104,22 +104,6 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 					'desc'  => __( 'Puts the CSS of the header and first sections in <head>, so the top of the page shows at once.', 'uichemy' ),
 				),
 				array(
-					'name'  => 'remove-js',
-					'key'   => 'perf_remove_js',
-					'group' => 'optimizations',
-					'tag'   => __( 'JS', 'uichemy' ),
-					'label' => __( 'Remove unused JavaScript', 'uichemy' ),
-					'desc'  => __( 'Removes jQuery and Elementor scripts on pages built only with Composer widgets.', 'uichemy' ),
-				),
-				array(
-					'name'  => 'defer-js',
-					'key'   => 'perf_defer_js',
-					'group' => 'optimizations',
-					'tag'   => __( 'JS', 'uichemy' ),
-					'label' => __( 'Defer third-party scripts', 'uichemy' ),
-					'desc'  => __( 'Loads library scripts (GSAP, Lenis…) without blocking the page.', 'uichemy' ),
-				),
-				array(
 					'name'  => 'lazy-images',
 					'key'   => 'perf_images',
 					'group' => 'optimizations',
@@ -135,6 +119,14 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 					'label' => __( 'LCP-safe entrance animations', 'uichemy' ),
 					'desc'  => __( 'Starts fade-in animations at 1% opacity, so PageSpeed can measure LCP.', 'uichemy' ),
 				),
+				array(
+					'name'  => 'disable-emojis',
+					'key'   => 'perf_disable_emojis',
+					'group' => 'optimizations',
+					'tag'   => __( 'Scripts', 'uichemy' ),
+					'label' => __( 'Disable Emojis script', 'uichemy' ),
+					'desc'  => __( 'Stops the WordPress emoji detection script and its styles. Emojis still show through the browser\'s own fonts.', 'uichemy' ),
+				),
 				// ---- Elementor Optimisations: Elementor's own assets. They only apply to pages
 				// built from Composer widgets alone; a page with any native Elementor widget
 				// keeps all of them.
@@ -143,23 +135,31 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 					'key'   => 'perf_elementor_css',
 					'group' => 'elementor',
 					'tag'   => __( 'CSS', 'uichemy' ),
-					'label' => __( 'Elementor CSS', 'uichemy' ),
-					'desc'  => __( 'Stops Elementor\'s CSS on pages that have no Elementor widgets.', 'uichemy' ),
+					'label' => __( 'Disable CSS', 'uichemy' ),
+					'desc'  => __( 'Stops the CSS on pages that have no Elementor widgets.', 'uichemy' ),
+				),
+				array(
+					'name'  => 'remove-js',
+					'key'   => 'perf_remove_js',
+					'group' => 'elementor',
+					'tag'   => __( 'JS', 'uichemy' ),
+					'label' => __( 'Remove unused JavaScript', 'uichemy' ),
+					'desc'  => __( 'Removes jQuery and the scripts on pages that have no Elementor widgets.', 'uichemy' ),
 				),
 				array(
 					'name'  => 'elementor-fonts',
 					'key'   => 'perf_elementor_fonts',
 					'group' => 'elementor',
 					'tag'   => __( 'Fonts', 'uichemy' ),
-					'label' => __( 'Disable Elementor Google Fonts', 'uichemy' ),
-					'desc'  => __( 'Stops Elementor loading Google Fonts.', 'uichemy' ),
+					'label' => __( 'Disable Google Fonts', 'uichemy' ),
+					'desc'  => __( 'Stops Google Fonts from loading.', 'uichemy' ),
 					// This switch IS Elementor's setting (single source of truth): on = Disable.
 					'sync'  => array_merge( self::SYNC['perf_elementor_fonts'], array( 'where' => __( 'Elementor > Settings > Advanced > Google Fonts', 'uichemy' ) ) ),
 				),
 				array(
 					'name'      => 'elementor-font-display',
 					// Only meaningful while Elementor loads Google Fonts: the dashboard hides
-					// this row when "Disable Elementor Google Fonts" is on.
+					// this row when "Disable Google Fonts" is on.
 					'hide_when' => array( 'perf_elementor_fonts' => 1 ),
 					'key'       => 'perf_elementor_font_display',
 					'group'     => 'elementor',
@@ -181,7 +181,7 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 					'key'   => 'perf_elementor_icons',
 					'group' => 'elementor',
 					'tag'   => __( 'Icons', 'uichemy' ),
-					'label' => __( 'Elementor icons (eicons)', 'uichemy' ),
+					'label' => __( 'Disable eicons', 'uichemy' ),
 					'desc'  => __( 'Stops the eicons font, unless a section uses an eicon.', 'uichemy' ),
 				),
 				array(
@@ -189,8 +189,8 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 					'key'   => 'perf_font_awesome',
 					'group' => 'elementor',
 					'tag'   => __( 'Icons', 'uichemy' ),
-					'label' => __( 'Skip Font Awesome 4 support', 'uichemy' ),
-					'desc'  => __( 'Stops Elementor\'s Font Awesome files, unless a section uses them.', 'uichemy' ),
+					'label' => __( 'Disable Font Awesome 4 support', 'uichemy' ),
+					'desc'  => __( 'Stops the Font Awesome files, unless a section uses them.', 'uichemy' ),
 					// This switch IS Elementor's setting (single source of truth): on = No.
 					'sync'  => array_merge( self::SYNC['perf_font_awesome'], array( 'where' => __( 'Elementor > Settings > Advanced > Load Font Awesome 4 Support', 'uichemy' ) ) ),
 				),
@@ -199,8 +199,8 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 					'key'   => 'perf_elementor_assets',
 					'group' => 'elementor',
 					'tag'   => __( 'Assets', 'uichemy' ),
-					'label' => __( 'Other Elementor assets', 'uichemy' ),
-					'desc'  => __( 'Stops Elementor\'s slider, animation, lightbox and gallery CSS.', 'uichemy' ),
+					'label' => __( 'Disable other assets', 'uichemy' ),
+					'desc'  => __( 'Stops the slider, animation, lightbox and gallery CSS.', 'uichemy' ),
 				),
 			);
 			return self::$registry_cache;
@@ -238,14 +238,6 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 		 * @var bool
 		 */
 		private static $buffering = false;
-
-		/**
-		 * Whether third-party head libraries were switched to defer on this request.
-		 * Widget JS then waits for DOMContentLoaded so it still runs after them.
-		 *
-		 * @var bool
-		 */
-		private static $libs_deferred = false;
 
 		/**
 		 * Number of images already left eager in header/hero sections.
@@ -380,9 +372,68 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			add_action( 'wp_footer', array( __CLASS__, 'print_body_placed_code' ), 9999 );
 
 			// Buffer everything printed in <head> so Google Fonts stylesheets can be made
-			// non-blocking and third-party library <script> tags deferred.
+			// non-blocking (see optimize_head_html()).
 			add_action( 'wp_head', array( __CLASS__, 'start_head_buffer' ), 0 );
 			add_action( 'wp_head', array( __CLASS__, 'end_head_buffer' ), 9999 );
+
+			// Remove WordPress's emoji detection script and styles. Runs on `init`
+			// (before any wp_head output), so the actions are gone before they print.
+			add_action( 'init', array( __CLASS__, 'maybe_disable_emojis' ), 5 );
+		}
+
+		/**
+		 * Remove the WordPress emoji detection script, styles and resource hints when
+		 * the "Disable Emojis script" optimization (and the master switch) are on.
+		 *
+		 * Emojis themselves keep rendering through the browser's own fonts; only the
+		 * JavaScript polyfill WordPress loads for them is dropped.
+		 *
+		 * @return void
+		 */
+		public static function maybe_disable_emojis() {
+			if ( ! self::is_enabled() || ! self::opt( 'perf_disable_emojis' ) ) {
+				return;
+			}
+
+			// Detection script (front end, admin and embeds).
+			remove_action( 'wp_head', 'print_emoji_detection_script', 7 );
+			remove_action( 'admin_print_scripts', 'print_emoji_detection_script' );
+			remove_action( 'embed_head', 'print_emoji_detection_script' );
+
+			// Emoji styles. WordPress 6.4+ enqueues them on wp_enqueue_scripts /
+			// enqueue_embed_scripts; older versions printed them on *_print_styles.
+			// Remove from every hook so this works across WordPress versions.
+			remove_action( 'wp_enqueue_scripts', 'wp_enqueue_emoji_styles' );
+			remove_action( 'admin_print_scripts', 'wp_enqueue_emoji_styles' );
+			remove_action( 'enqueue_embed_scripts', 'wp_enqueue_emoji_styles' );
+			remove_action( 'wp_print_styles', 'print_emoji_styles' );
+			remove_action( 'admin_print_styles', 'print_emoji_styles' );
+
+			remove_filter( 'the_content_feed', 'wp_staticize_emoji' );
+			remove_filter( 'comment_text_rss', 'wp_staticize_emoji' );
+			remove_filter( 'wp_mail', 'wp_staticize_emoji_for_email' );
+
+			// Drop the emoji plugin from TinyMCE in the classic editor.
+			add_filter(
+				'tiny_mce_plugins',
+				static function ( $plugins ) {
+					return is_array( $plugins ) ? array_diff( $plugins, array( 'wpemoji' ) ) : array();
+				}
+			);
+
+			// Remove the dns-prefetch resource hint for the emoji CDN.
+			add_filter(
+				'wp_resource_hints',
+				static function ( $urls, $relation_type ) {
+					if ( 'dns-prefetch' === $relation_type ) {
+						$emoji_svg_url = apply_filters( 'emoji_svg_url', 'https://s.w.org/images/core/emoji/2/svg/' );
+						$urls          = array_diff( $urls, array( $emoji_svg_url ) );
+					}
+					return $urls;
+				},
+				10,
+				2
+			);
 		}
 
 		/**
@@ -548,42 +599,162 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 		/**
 		 * MCP: every performance setting with its current state.
 		 *
-		 * Includes the master switch and each on/off registry entry, with the label,
-		 * group and description a client needs to explain it. The choice setting
-		 * (Google Fonts load) is a dashboard control and is not listed here.
+		 * Includes the master switch and each registry entry, with the label, group
+		 * and description a client needs to explain it. On/off entries are
+		 * `type: toggle` with "enabled"; choice entries are `type: choice` with
+		 * "value" and "choices". Another build (UiChemy Pro: image optimisation and
+		 * Google Fonts) appends its own rows through `uichemy_performance_settings`.
 		 *
+		 * @param string $context "list" for a real listing (rows may carry live
+		 *                        extras such as library totals), "schema" when only
+		 *                        the names and types are needed.
 		 * @return array{active:bool,settings:array<int,array>}
 		 */
-		public static function mcp_list() {
+		public static function mcp_list( $context = 'list' ) {
 			$rows = array(
 				array(
 					'setting'     => 'performance-optimization',
 					'label'       => __( 'Performance Optimization', 'uichemy' ),
 					'group'       => 'master',
+					'type'        => 'toggle',
 					'enabled'     => self::opt( 'enable_fast_load' ),
-					'description' => __( 'Master switch for every optimization below.', 'uichemy' ),
+					'description' => __( 'Master switch for every optimization in the "optimizations" and "elementor" groups.', 'uichemy' ),
 				),
 			);
 			foreach ( self::registry() as $row ) {
-				if ( ! self::is_toggle( $row ) ) {
+				$item = array(
+					'setting' => $row['name'],
+					'label'   => $row['label'],
+					'group'   => $row['group'],
+				);
+				if ( self::is_toggle( $row ) ) {
+					$item['type']    = 'toggle';
+					$item['enabled'] = self::opt( $row['key'] );
+				} elseif ( 'select' === $row['type'] && ! empty( $row['choices'] ) ) {
+					$item['type']    = 'choice';
+					$item['value']   = self::choice_value( $row['key'] );
+					$item['choices'] = wp_list_pluck( $row['choices'], 'value' );
+				} else {
 					continue;
 				}
-				$item = array(
-					'setting'     => $row['name'],
-					'label'       => $row['label'],
-					'group'       => $row['group'],
-					'enabled'     => self::opt( $row['key'] ),
-					'description' => $row['desc'],
-				);
+				$item['description'] = $row['desc'];
 				if ( ! empty( $row['sync'] ) ) {
 					$item['synced_with'] = $row['sync']['where'];
 				}
 				$rows[] = $item;
 			}
+
+			/**
+			 * Filters the rows of list-performance-settings. Each added row takes the
+			 * same shape (setting, label, group, type, description, and "enabled" for
+			 * a toggle or "value" for anything else); set-performance-setting hands
+			 * the row's setting to `uichemy_performance_set_setting`.
+			 *
+			 * @param array<int,array> $rows    The rows so far.
+			 * @param string           $context "list" or "schema".
+			 */
+			$extra = apply_filters( 'uichemy_performance_settings', array(), $context );
+			foreach ( is_array( $extra ) ? $extra : array() as $row ) {
+				if ( is_array( $row ) && ! empty( $row['setting'] ) ) {
+					$rows[] = $row;
+				}
+			}
+
 			return array(
 				'active'   => self::is_enabled(),
 				'settings' => $rows,
 			);
+		}
+
+		/**
+		 * Every setting name set-performance-setting accepts, ours and added.
+		 *
+		 * @return string[]
+		 */
+		public static function mcp_setting_names() {
+			return wp_list_pluck( self::mcp_list( 'schema' )['settings'], 'setting' );
+		}
+
+		/**
+		 * MCP: change one performance setting. A toggle takes "state" (enable /
+		 * disable); any other type takes "value".
+		 *
+		 * @param array $params { setting, state?, value? }.
+		 * @return array|WP_Error The setting's new state.
+		 */
+		public static function mcp_set( $params ) {
+			$params  = is_array( $params ) ? $params : array();
+			$setting = isset( $params['setting'] ) ? sanitize_key( str_replace( '_', '-', (string) $params['setting'] ) ) : '';
+			$state   = isset( $params['state'] ) ? strtolower( trim( (string) $params['state'] ) ) : '';
+			if ( '' !== $state && ! in_array( $state, array( 'enable', 'disable' ), true ) ) {
+				return new WP_Error( 'uich_mcp_error', '"state" must be "enable" or "disable".' );
+			}
+
+			$names = self::setting_names();
+			if ( isset( $names[ $setting ] ) ) {
+				if ( '' === $state ) {
+					return new WP_Error( 'uich_mcp_error', sprintf( '"%s" is a toggle: pass "state": "enable" or "disable".', $setting ) );
+				}
+				return self::mcp_toggle( $setting, 'enable' === $state );
+			}
+
+			foreach ( self::registry() as $row ) {
+				if ( $row['name'] !== $setting || self::is_toggle( $row ) ) {
+					continue;
+				}
+				$allowed = wp_list_pluck( $row['choices'], 'value' );
+				$value   = isset( $params['value'] ) && is_scalar( $params['value'] ) ? sanitize_key( (string) $params['value'] ) : '';
+				if ( ! in_array( $value, $allowed, true ) ) {
+					return new WP_Error( 'uich_mcp_error', sprintf( '"%s" takes "value": one of %s.', $setting, implode( ', ', $allowed ) ) );
+				}
+				if ( isset( self::SYNC[ $row['key'] ] ) ) {
+					self::save_synced( array( $row['key'] => $value ) );
+				} else {
+					$opts = get_option( 'uichemy_settings', array() );
+					$opts = is_array( $opts ) ? $opts : array();
+
+					$opts[ $row['key'] ] = $value;
+					update_option( 'uichemy_settings', $opts );
+				}
+				$out = array(
+					'setting' => $setting,
+					'value'   => self::choice_value( $row['key'] ),
+					'active'  => self::is_enabled(),
+				);
+				if ( ! self::is_enabled() ) {
+					$out['note'] = 'Saved, but performance-optimization is off, so nothing runs until it is enabled.';
+				}
+				return $out;
+			}
+
+			/**
+			 * Lets another build change a setting it added through
+			 * `uichemy_performance_settings`. Return null for settings that are not yours.
+			 *
+			 * @param array|WP_Error|null $result  Null until a handler answers.
+			 * @param string              $setting Setting name.
+			 * @param array               $params  { setting, state?, value? }.
+			 */
+			$result = apply_filters( 'uichemy_performance_set_setting', null, $setting, $params );
+			if ( null !== $result ) {
+				return $result;
+			}
+			return new WP_Error( 'uich_unknown_setting', sprintf( 'Unknown performance setting "%s". Valid: %s.', $setting, implode( ', ', self::mcp_setting_names() ) ) );
+		}
+
+		/**
+		 * Current value of a choice setting.
+		 *
+		 * @param string $key Option key.
+		 * @return string
+		 */
+		private static function choice_value( $key ) {
+			$synced = self::synced_values();
+			if ( isset( $synced[ $key ] ) ) {
+				return (string) $synced[ $key ];
+			}
+			$opts = get_option( 'uichemy_settings', array() );
+			return is_array( $opts ) && isset( $opts[ $key ] ) ? (string) $opts[ $key ] : '';
 		}
 
 		/**
@@ -593,13 +764,8 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 		 * @param bool   $enabled New state.
 		 * @return array|WP_Error The setting's new state.
 		 */
-		public static function mcp_toggle( $setting, $enabled ) {
-			$setting = sanitize_key( str_replace( '_', '-', (string) $setting ) );
-			$names   = self::setting_names();
-			if ( ! isset( $names[ $setting ] ) ) {
-				return new WP_Error( 'uich_unknown_setting', sprintf( 'Unknown performance setting "%s". Valid: %s.', $setting, implode( ', ', array_keys( $names ) ) ) );
-			}
-			$key = $names[ $setting ];
+		private static function mcp_toggle( $setting, $enabled ) {
+			$key = self::setting_names()[ $setting ];
 			if ( isset( self::SYNC[ $key ] ) ) {
 				// This switch is an Elementor setting: change Elementor's option.
 				self::save_synced( array( $key => $enabled ? 1 : 0 ) );
@@ -1099,7 +1265,7 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			}
 
 			// Core block-editor CSS is dead weight on a page with no blocks. It is part of
-			// the Elementor CSS switch (it is what that setting has always removed).
+			// the "Disable CSS" switch (it is what that setting has always removed).
 			if ( $on['css'] && ! has_blocks() ) {
 				wp_dequeue_style( 'wp-block-library' );
 				wp_dequeue_style( 'wp-block-library-theme' );
@@ -1186,7 +1352,7 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 		}
 
 		/**
-		 * Make Google Fonts stylesheets non-blocking and defer third-party scripts.
+		 * Make Google Fonts stylesheets non-blocking (when the filter below allows it).
 		 *
 		 * @param string $html Markup printed by wp_head.
 		 * @return string
@@ -1220,118 +1386,7 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 				$html
 			);
 
-			// 2. Third-party library scripts: defer (document order is preserved).
-			if ( self::opt( 'perf_defer_js' ) && self::defer_is_safe() ) {
-				$site_host = wp_parse_url( home_url(), PHP_URL_HOST );
-				$count     = 0;
-				$html      = preg_replace_callback(
-					'#<script\b([^>]*)>#i',
-					static function ( $m ) use ( $site_host, &$count ) {
-						$attrs = $m[1];
-						if ( ! preg_match( '#\bsrc=([\'"])(https?:)?//([^/\'"]+)#i', $attrs, $src ) ) {
-							return $m[0];
-						}
-						$src_host = preg_replace( '#:\d+$#', '', $src[3] );
-						if ( strtolower( $src_host ) === strtolower( (string) $site_host )
-							|| preg_match( '#\b(defer|async|nomodule)\b#i', $attrs )
-							|| preg_match( '#\btype=([\'"])module\1#i', $attrs ) ) {
-							return $m[0];
-						}
-						$count++;
-						return '<script' . $attrs . ' defer>';
-					},
-					$html
-				);
-				if ( $count > 0 ) {
-					self::$libs_deferred = true;
-				}
-			}
-
 			return $html;
-		}
-
-		/**
-		 * Deferring a head library is only safe when nothing inline needs it
-		 * before DOMContentLoaded. UiChemy's own widget JS is handled by
-		 * maybe_wrap_dom_ready(); hand-written inline <script> blocks in the Composer
-		 * site/page custom-code boxes are not ours to rewrite, so their presence
-		 * turns the deferral off.
-		 *
-		 * @return bool
-		 */
-		private static function defer_is_safe() {
-			$blob = '';
-			if ( class_exists( 'UiChemy_Composer_Manager' ) && method_exists( 'UiChemy_Composer_Manager', 'get_site_custom_code_option' ) ) {
-				$site = UiChemy_Composer_Manager::get_site_custom_code_option();
-				$blob .= ( $site['head'] ?? '' ) . ( $site['footer'] ?? '' );
-			}
-
-			$post_id = (int) get_queried_object_id();
-			if ( $post_id ) {
-				$raw  = get_post_meta( $post_id, '_elementor_data', true );
-				$tree = is_string( $raw ) && '' !== $raw ? json_decode( $raw, true ) : null;
-				if ( is_array( $tree ) ) {
-					$blob .= self::collect_custom_code( $tree );
-				}
-			}
-
-			$safe = true;
-			if ( preg_match_all( '#<script\b([^>]*)>(.*?)</script>#is', $blob, $found, PREG_SET_ORDER ) ) {
-				foreach ( $found as $sc ) {
-					$is_classic = ! preg_match( '#\btype=([\'"])(?!text/javascript\1)#i', $sc[1] );
-					if ( $is_classic && '' !== trim( $sc[2] ) && ! preg_match( '#\bsrc=#i', $sc[1] ) ) {
-						$safe = false;
-						break;
-					}
-				}
-			}
-
-			/**
-			 * Filter whether third-party head libraries may be deferred.
-			 *
-			 * @param bool $safe Computed result.
-			 */
-			return (bool) apply_filters( 'uichemy/perf/defer_head_libraries', $safe );
-		}
-
-		/**
-		 * Concatenate every *custom_code* string setting found in an Elementor tree.
-		 *
-		 * @param array $nodes Elementor element tree.
-		 * @return string
-		 */
-		private static function collect_custom_code( array $nodes ) {
-			$out = '';
-			foreach ( $nodes as $node ) {
-				if ( ! is_array( $node ) ) {
-					continue;
-				}
-				if ( ! empty( $node['settings'] ) && is_array( $node['settings'] ) ) {
-					foreach ( $node['settings'] as $key => $val ) {
-						if ( is_string( $val ) && false !== strpos( (string) $key, 'custom_code' ) ) {
-							$out .= $val;
-						}
-					}
-				}
-				if ( ! empty( $node['elements'] ) && is_array( $node['elements'] ) ) {
-					$out .= self::collect_custom_code( $node['elements'] );
-				}
-			}
-			return $out;
-		}
-
-		/**
-		 * Wrap widget JS so it runs on DOMContentLoaded when head libraries were
-		 * deferred; otherwise return it untouched.
-		 *
-		 * @param string $js Widget JS.
-		 * @return string
-		 */
-		public static function maybe_wrap_dom_ready( $js ) {
-			if ( ! self::$libs_deferred ) {
-				return $js;
-			}
-			return "(function(){function r(){\n" . $js . "\n}if(document.readyState==='loading'){document.addEventListener('DOMContentLoaded',r);}else{r();}})();";
 		}
 
 		/**
@@ -1696,9 +1751,7 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			if ( 'css' === $item['kind'] ) {
 				echo "\n<style id=\"uich-body-css-" . $id . "\">\n" . $item['code'] . "\n</style>\n";
 			} else {
-				// Same rule as every other widget script: when head libraries were deferred,
-				// wait for DOMContentLoaded so they have run first.
-				echo "\n<script id=\"uich-body-js-" . $id . "\">\n" . self::maybe_wrap_dom_ready( $item['code'] ) . "\n</script>\n";
+				echo "\n<script id=\"uich-body-js-" . $id . "\">\n" . $item['code'] . "\n</script>\n";
 			}
 			// phpcs:enable
 		}

@@ -160,7 +160,7 @@ Payload:
 <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" onload="this.onload=null;this.rel='stylesheet'">
 <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap"></noscript>
 ```
-External stylesheet links (fonts etc.) use `rel="preload"` + `onload` + `<noscript>`, not plain `rel="stylesheet"`; see the `improve-page-speed` skill.
+External stylesheet links (fonts etc.) use `rel="preload"` + `onload` + `<noscript>`, not plain `rel="stylesheet"`; see the `improve-performance` skill.
 
 
 Save: `post_id`, `elementor_link`, `preview_link` → `pipelineState`.

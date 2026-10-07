@@ -26,21 +26,6 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		const ELEMENTOR_WPORG_URL = 'https://wordpress.org/plugins/elementor/';
 		const BRICKS_BUY_URL      = 'https://bricksbuilder.io/';
 
-		/**
-		 * UiChemy install package — resolved from the UiChemy API rather than a
-		 * hardcoded URL, so the published zip can move without a plugin update.
-		 *
-		 * `{API_BASE}/plugins/uichemy/download` 302-redirects to the currently
-		 * hosted package; WP's upgrader follows the redirect transparently.
-		 * Overridable at runtime via the `uich_uichemy_zip_url` filter.
-		 *
-		 * @return string
-		 */
-		private static function uichemy_zip_url() {
-			$base = class_exists( 'Uich_ND_Auth' ) ? Uich_ND_Auth::API_BASE : 'http://localhost:8000';
-			return rtrim( $base, '/' ) . '/plugins/uichemy/download';
-		}
-
 		public static function boot() {
 			// Self-heal on every admin request: a site provisioned by seeding
 			// `active_plugins` directly (e.g. via REST) never runs Elementor's
@@ -257,12 +242,12 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		/* ---------- UiChemy (Composer widget + MCP) ---------- */
 
 		/**
-		 * One-click install + activate for the UiChemy plugin.
+		 * One-click activate for UiChemy (the Composer widget + MCP).
 		 *
-		 * Flow:
-		 *   active            → already_active (noop).
-		 *   installed/inactive → activate in-process (WP-Admin fallback on throw).
-		 *   not installed     → download the hosted zip, install, then activate.
+		 * UiChemy is bundled inside this plugin, so it is always installed and
+		 * never has a separate update (detect_uichemy() reports bundled). The REST
+		 * route stays for the dashboard and the Figma Site Check, which still call
+		 * it: it answers already_active, or activates the located file.
 		 *
 		 * @return array|WP_Error
 		 */
@@ -272,109 +257,18 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 			}
 
 			$file = Uich_ND_Settings::find_uichemy_file();
-
-			// Already present.
-			if ( $file ) {
-				// An update is available (installed < API latest) → overwrite-install
-				// the newer package and restore its active state. install_uichemy()
-				// is the single endpoint behind both the WP dashboard and the Figma
-				// "Update" button, so the update path lives here too.
-				$detect = Uich_ND_Settings::detect_uichemy();
-				if ( ! empty( $detect['update_available'] ) ) {
-					return self::update_uichemy( $file );
-				}
-
-				if ( is_plugin_active( $file ) ) {
-					return self::uichemy_payload( 'already_active', __( 'UiChemy is already active.', 'uichemy' ) );
-				}
-				return self::activate_uichemy_file( $file );
-			}
-
-			// Not installed → pull the hosted package (via the API redirect) and install it.
-			$zip_url = (string) apply_filters( 'uich_uichemy_zip_url', self::uichemy_zip_url() );
-			if ( '' === trim( $zip_url ) ) {
-				return new WP_Error( 'uichemy_no_zip', __( 'UiChemy download URL is not configured.', 'uichemy' ), array( 'status' => 500 ) );
-			}
-
-			$installed = self::install_plugin_from_zip( $zip_url );
-			if ( is_wp_error( $installed ) ) {
-				return $installed;
-			}
-
-			// Locate the freshly unpacked plugin (folder name comes from the zip).
-			$file = Uich_ND_Settings::find_uichemy_file();
 			if ( ! $file ) {
 				return new WP_Error(
-					'uichemy_post_install_missing',
-					__( 'UiChemy was installed but could not be located. Activate it from the Plugins screen.', 'uichemy' ),
+					'uichemy_missing',
+					__( 'UiChemy could not be located. Activate it from the Plugins screen.', 'uichemy' ),
 					array( 'status' => 500 )
 				);
 			}
 
+			if ( is_plugin_active( $file ) ) {
+				return self::uichemy_payload( 'already_active', __( 'UiChemy is already active.', 'uichemy' ) );
+			}
 			return self::activate_uichemy_file( $file );
-		}
-
-		/**
-		 * Update an already-installed UiChemy to the latest hosted package.
-		 *
-		 * UiChemy isn't on wp.org and its zip can unpack to a version-specific
-		 * folder name, so we can't rely on WP's in-place upgrader (which keys off
-		 * the wp.org update transient and a stable folder). Instead we deactivate,
-		 * delete the old copy, install the fresh zip, then reactivate if it was
-		 * active before — a clean-slate replace that works regardless of folder
-		 * naming.
-		 *
-		 * @param string $file Currently-installed UiChemy plugin file.
-		 * @return array|WP_Error
-		 */
-		private static function update_uichemy( $file ) {
-			require_once ABSPATH . 'wp-admin/includes/file.php';
-			require_once ABSPATH . 'wp-admin/includes/plugin.php';
-
-			$zip_url = (string) apply_filters( 'uich_uichemy_zip_url', self::uichemy_zip_url() );
-			if ( '' === trim( $zip_url ) ) {
-				return new WP_Error( 'uichemy_no_zip', __( 'UiChemy download URL is not configured.', 'uichemy' ), array( 'status' => 500 ) );
-			}
-
-			$was_active = is_plugin_active( $file );
-
-			// Deactivate before deleting so no stale hooks fire mid-swap.
-			if ( $was_active ) {
-				deactivate_plugins( $file, true );
-			}
-
-			// Remove the old install (the whole plugin folder).
-			$deleted = delete_plugins( array( $file ) );
-			if ( is_wp_error( $deleted ) ) {
-				return $deleted;
-			}
-			if ( false === $deleted ) {
-				return new WP_Error( 'uichemy_delete_failed', __( 'Could not remove the old UiChemy before updating.', 'uichemy' ), array( 'status' => 500 ) );
-			}
-
-			// Install the fresh package.
-			$installed = self::install_plugin_from_zip( $zip_url );
-			if ( is_wp_error( $installed ) ) {
-				return $installed;
-			}
-
-			// Re-locate the plugin (its folder name may differ between versions)
-			// so detect_uichemy() reflects the freshly-installed state. No cache
-			// to flush — versions are read fresh from the API each request.
-			$file = Uich_ND_Settings::find_uichemy_file();
-			if ( ! $file ) {
-				return new WP_Error(
-					'uichemy_post_update_missing',
-					__( 'UiChemy was updated but could not be located. Activate it from the Plugins screen.', 'uichemy' ),
-					array( 'status' => 500 )
-				);
-			}
-
-			// Restore the previous active state.
-			if ( $was_active ) {
-				return self::activate_uichemy_file( $file, 'updated', __( 'UiChemy updated to the latest version.', 'uichemy' ) );
-			}
-			return self::uichemy_payload( 'updated', __( 'UiChemy updated to the latest version.', 'uichemy' ) );
 		}
 
 		/**
@@ -420,14 +314,16 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		/* ---------- UiChemy Pro (premium plugin, installed from a zip) ---------- */
 
 		/**
-		 * UiChemy Pro install package — resolved from the UiChemy API instead of a
-		 * hardcoded URL, exactly like uichemy_zip_url() does for the free build.
+		 * UiChemy Pro install package — resolved from the UiChemy app instead of a
+		 * hardcoded URL.
 		 *
-		 * `{API_BASE}/plugins/uichemy-pro/download` 302-redirects to the currently
-		 * published package; WP's upgrader follows the redirect transparently (see
-		 * download_package_to_temp). The version behind that redirect is the
-		 * `uichemy_pro` entry of `/plugins/versions`, which is where the Pro release
-		 * is managed — so moving the hosted zip never needs a plugin update.
+		 * `{UICH_WEBPAGE_APP_URL}/api/plugins/uichemy-pro/download` 302-redirects to
+		 * the newest release uploaded in the app's admin Downloads page; WP's
+		 * upgrader follows the redirect transparently (see download_package_to_temp).
+		 * The version behind that redirect is the `uichemy_pro` entry of
+		 * `/api/plugins/versions` — so a new Pro release never needs a plugin update.
+		 * (Older builds use the UiChemy API's /plugins/uichemy-pro/download, which
+		 * is left unchanged for sites not yet updated.)
 		 *
 		 * The filter is the only override, and it exists for the case the endpoint
 		 * can't cover: a URL that has to be built at runtime (a per-site token, a
@@ -439,13 +335,13 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		 * @return string Empty string when the filter clears it.
 		 */
 		private static function uichemy_pro_zip_url() {
-			$base = class_exists( 'Uich_ND_Auth' ) ? Uich_ND_Auth::API_BASE : 'http://localhost:8000';
-			$url  = rtrim( $base, '/' ) . '/plugins/uichemy-pro/download';
+			$base = defined( 'UICH_WEBPAGE_APP_URL' ) ? UICH_WEBPAGE_APP_URL : 'https://app.uichemy.com';
+			$url  = rtrim( $base, '/' ) . '/api/plugins/uichemy-pro/download';
 
 			/**
 			 * Filter the UiChemy Pro download URL.
 			 *
-			 * @param string $url The API download endpoint, or '' to disable the flow.
+			 * @param string $url The app download endpoint, or '' to disable the flow.
 			 */
 			return trim( (string) apply_filters( 'uich_uichemy_pro_zip_url', $url ) );
 		}
@@ -533,8 +429,7 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		/**
 		 * Update an already-installed UiChemy Pro to the latest published package.
 		 *
-		 * OVERWRITE-installs, and never deletes first — that is the whole point of
-		 * this method existing separately from update_uichemy(). `delete_plugins()`
+		 * OVERWRITE-installs, and never deletes first. `delete_plugins()`
 		 * runs each plugin's uninstall routine (uninstall.php / the uninstall hook)
 		 * before removing its folder, which on a premium plugin can drop the licence
 		 * key and any Pro settings stored in its own options. `overwrite_package`
@@ -749,11 +644,12 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		 * EVERY redirect hop, so a compromised or MITM'd 302 cannot point the
 		 * download — which is then installed as live plugin code — at an internal
 		 * host (loopback, LAN, cloud metadata). That transport rejects private hosts
-		 * and non-standard ports, which a local dev API base (http://localhost:8000)
-		 * legitimately uses, so a URL that wp_http_validate_url() rejects keeps the
-		 * plain transport (the base is a trusted configured constant, not request
-		 * input). In production the base is https://core.uichemy.com, so the safe
-		 * path is taken and the whole redirect chain is validated.
+		 * and non-standard ports, which a local dev app (UICH_WEBPAGE_APP_URL set to
+		 * http://localhost:3000) legitimately uses, so a URL that
+		 * wp_http_validate_url() rejects keeps the plain transport (the base is a
+		 * trusted configured constant, not request input). In production the base
+		 * is https://app.uichemy.com, so the safe path is taken and the whole
+		 * redirect chain is validated.
 		 *
 		 * @param string $url
 		 * @return string|WP_Error  Temp file path, or WP_Error on failure.

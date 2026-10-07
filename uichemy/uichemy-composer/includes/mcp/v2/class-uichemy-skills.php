@@ -133,9 +133,9 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 							'description' => 'Build a WebGL / three.js section: mounting through the context owner, post-processing, and driving a shader from GSAP. Read before writing ANY 3D or shader code.',
 							'files'       => array( 'skills/webgl-and-3d.md' ),
 						),
-						'improve-page-speed'      => array(
-							'description' => 'Page-speed rules for generated sections (hero label, image preloads, fonts, no jQuery/Elementor dependencies). Read before generating the first section.',
-							'files'       => array( 'skills/improve-page-speed.md' ),
+						'improve-performance'      => array(
+							'description' => 'Performance rules for generated sections (hero label, image preloads, fonts, no jQuery/Elementor dependencies), plus image optimisation and Google Fonts loading. Read before generating the first section.',
+							'files'       => array( 'skills/improve-performance.md' ),
 						),
 						'appendix'        => array(
 							'description' => 'Reference appendix for the conversion pipeline.',
@@ -160,9 +160,9 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 							'description' => 'Build a WebGL / three.js section: mounting through the context owner, post-processing, and driving a shader from GSAP. Read before writing ANY 3D or shader code.',
 							'files'       => array( 'skills/webgl-and-3d.md' ),
 						),
-						'improve-page-speed'     => array(
-							'description' => 'Page-speed rules for generated sections (hero label, image preloads, fonts, no jQuery/Elementor dependencies). Read before generating the first section.',
-							'files'       => array( 'skills/improve-page-speed.md' ),
+						'improve-performance'     => array(
+							'description' => 'Performance rules for generated sections (hero label, image preloads, fonts, no jQuery/Elementor dependencies), plus image optimisation and Google Fonts loading. Read before generating the first section.',
+							'files'       => array( 'skills/improve-performance.md' ),
 						),
 					),
 				),
@@ -183,9 +183,9 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 							'description' => 'Build a WebGL / three.js section: mounting through the context owner, post-processing, and driving a shader from GSAP. Read before writing ANY 3D or shader code.',
 							'files'       => array( 'skills/webgl-and-3d.md' ),
 						),
-						'improve-page-speed'     => array(
-							'description' => 'Page-speed rules for generated sections (hero label, image preloads, fonts, no jQuery/Elementor dependencies). Read before generating the first section.',
-							'files'       => array( 'skills/improve-page-speed.md' ),
+						'improve-performance'     => array(
+							'description' => 'Performance rules for generated sections (hero label, image preloads, fonts, no jQuery/Elementor dependencies), plus image optimisation and Google Fonts loading. Read before generating the first section.',
+							'files'       => array( 'skills/improve-performance.md' ),
 						),
 					),
 				),
@@ -235,10 +235,10 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 					'files'       => array( 'skills/custom-fields-and-cpt.md' ),
 					'additional_parts' => array(),
 				),
-				'improve-page-speed'              => array(
-					'description' => 'Rules for building UiChemy pages that load fast with the Fast Load setting, plus the Lighthouse tests to run. Read this when the user asks about page speed or Lighthouse, or when generating a page.',
-					'keywords'    => array( 'page speed', 'pagespeed', 'lighthouse', 'web-vitals', 'performance', 'fast load', 'speed', 'font', 'fonts', 'fcp', 'lcp', 'tbt', 'csp'),
-					'files'       => array( 'skills/improve-page-speed.md' ),
+				'improve-performance'              => array(
+					'description' => 'Make UiChemy pages fast: the Performance settings (Fast Load), image optimisation (WebP / AVIF) and how Google Fonts load (self-hosted, swap, off), the rules for building fast sections, and the Lighthouse tests to run. Read this when the user asks about performance, page speed, Lighthouse, optimising images or fonts, or when generating a page.',
+					'keywords'    => array( 'page speed', 'pagespeed', 'lighthouse', 'web-vitals', 'performance', 'fast load', 'speed', 'font', 'fonts', 'fcp', 'lcp', 'tbt', 'csp', 'image optimisation', 'image optimization', 'optimise images', 'compress images', 'webp', 'avif', 'google fonts', 'self-host fonts', 'self hosted fonts', 'display swap', 'gdpr fonts' ),
+					'files'       => array( 'skills/improve-performance.md' ),
 					'additional_parts' => array(
 						'scope-decision' => array(
 							'description' => 'Decide whether a link, style, script or meta tag (for example Google Fonts) belongs at site level or page level.',
@@ -400,6 +400,16 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 				}
 			}
 			$part = isset( $arguments['part'] ) ? trim( (string) $arguments['part'] ) : '';
+
+			// Renamed skill / part: answer the old name so a client that cached it
+			// still gets the document instead of an "unknown skill" error.
+			$renamed = array( 'improve-page-speed' => 'improve-performance' );
+			if ( isset( $renamed[ $name ] ) ) {
+				$name = $renamed[ $name ];
+			}
+			if ( isset( $renamed[ $part ] ) ) {
+				$part = $renamed[ $part ];
+			}
 
 			$skills = self::all();
 

@@ -3234,16 +3234,6 @@ JS;
 				return;
 			}
 
-			// Fast Load defers third-party head libraries; run this JS after them.
-			if ( class_exists( 'UiChemy_Fast_Load' ) ) {
-				$js = UiChemy_Fast_Load::maybe_wrap_dom_ready( $js );
-			}
-
-			// Fast Load defers third-party head libraries; run this JS after them.
-			if ( class_exists( 'UiChemy_Fast_Load' ) ) {
-				$js = UiChemy_Fast_Load::maybe_wrap_dom_ready( $js );
-			}
-
 			$deps   = array_values( array_unique( array_filter( (array) $deps ) ) );
 			sort( $deps );
 			// One handle per distinct dependency set, so sections needing nothing keep
