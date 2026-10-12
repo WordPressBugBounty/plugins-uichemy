@@ -120,7 +120,7 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_REST' ) ) {
 		 */
 		public static function handle_get_active( $request ) {
 			if ( ! class_exists( 'UiChemy_Template_CPT' ) || ! class_exists( 'UiChemy_Template_Store' ) ) {
-				return new WP_Error( 'uichemy_tb_missing', 'Theme Builder is not initialised.', array( 'status' => 500 ) );
+				return new WP_Error( 'uichemy_tb_missing', __( 'Theme Builder is not initialised.', 'uichemy' ), array( 'status' => 500 ) );
 			}
 
 			$render = self::truthy( $request->get_param( 'render' ) );
@@ -139,7 +139,11 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_REST' ) ) {
 					}
 					return new WP_Error(
 						'uichemy_tb_bad_type',
-						'Unknown template type. Must be one of: ' . implode( ', ', UiChemy_Template_CPT::allowed_types() ) . '.',
+						sprintf(
+							/* translators: %s: comma-separated list of allowed template types. */
+							__( 'Unknown template type. Must be one of: %s.', 'uichemy' ),
+							implode( ', ', UiChemy_Template_CPT::allowed_types() )
+						),
 						array( 'status' => 400 )
 					);
 				}

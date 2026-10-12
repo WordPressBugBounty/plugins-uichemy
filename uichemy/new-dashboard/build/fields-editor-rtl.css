@@ -1,0 +1,4278 @@
+/* =============================================================================
+   UiChemy Create, Design System Tokens (Phase 1, isolated)
+   -----------------------------------------------------------------------------
+   SURFACE MODEL, components are surface-agnostic. They read semantic tokens
+   (surfaces, text, borders, ring, per-family fg/soft) whose VALUES are set by
+   the surface scope a component lives in:
+
+     .uc-content            → light content   (current look, DEFAULT)
+     .uc-content[data-theme="dark"] → dark content (future, token change only)
+     .uc-chrome             → dark chrome     (fixed; sidebar/nav/rails)
+
+   `.uc-scope` and `.uc-portal` behave as light content, so existing usage is
+   unchanged and the light view is pixel-identical to before this restructure.
+
+   ISOLATION: all tokens are scoped under these classes (NOT :root). Nothing
+   here touches the existing globals/theme.
+   ========================================================================== */
+
+/* Brand typeface, bundled via webpack (relative paths resolve to
+   ../fonts/, emitted into build/ and URL-rewritten at build time so the
+   fonts load correctly from wp-content, not the server root). */
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:400; font-display:swap; src:url(fonts/ZalandoSans-Regular.bcfcc767.ttf) format("truetype"); }
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:500; font-display:swap; src:url(fonts/ZalandoSans-Medium.41051c31.ttf) format("truetype"); }
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:600; font-display:swap; src:url(fonts/ZalandoSans-SemiBold.d690e087.ttf) format("truetype"); }
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:700; font-display:swap; src:url(fonts/ZalandoSans-Bold.0ac5948b.ttf) format("truetype"); }
+
+/* =============================================================================
+   1. BASE, surface-INDEPENDENT tokens (identical on every surface).
+      Applies to every surface scope so the values are always present.
+   ========================================================================== */
+/* `:root` added (AI-creator port) so DS token VALUES resolve app-wide for
+   inline DS controls (buttons/inputs/triggers) WITHOUT importing the scope's
+   font/color/box-sizing reset, that stays under `.uc-*` only. Nothing in the
+   app references `--uc-*`, so these are inert for existing components. */
+:root,
+.uc-scope,
+.uc-content,
+.uc-chrome,
+.uc-portal {
+  /* ---- Brand + semantic SOLID fills + on-fill text (constant) ----------
+     ORANGE is back on the SOLID brand fill only, this paints the primary /
+     main-CTA buttons (tone="brand" solid). The brand -fg/-soft/-border/-glow
+     below stay NEUTRAL, so soft/outline/ghost brand controls, icon tints and
+     text remain monochrome. --uc-accent stays neutral (no purple). */
+  --uc-brand:   #FD6A35;  --uc-brand-on:   #FFFFFF;
+  --uc-success: #2EA343;  --uc-success-on: #FFFFFF;
+  --uc-danger:  #F65258;  --uc-danger-on:  #FFFFFF;
+  --uc-warning: #FFA940;  --uc-warning-on: #171717;
+  --uc-accent:  var(--uc-inverse-bg);  --uc-accent-on:  var(--uc-inverse-fg);
+
+  /* ---- Family hairline borders (translucent, work on any surface) ----- */
+  --uc-brand-border:   var(--uc-border);
+  --uc-success-border: rgba(46, 163, 67, 0.40);
+  --uc-danger-border:  rgba(246, 82, 88, 0.40);
+  --uc-warning-border: rgba(255, 169, 64, 0.42);
+  --uc-accent-border:  var(--uc-border);
+
+  /* ---- Hover / press glow washes (translucent, surface-agnostic) ------ */
+  --uc-brand-glow-hover:   rgba(128, 128, 128, 0.10); --uc-brand-glow-press:   rgba(128, 128, 128, 0.18);
+  --uc-success-glow-hover: rgba(46, 163, 67, 0.08);  --uc-success-glow-press: rgba(46, 163, 67, 0.16);
+  --uc-danger-glow-hover:  rgba(246, 82, 88, 0.08);  --uc-danger-glow-press:  rgba(246, 82, 88, 0.16);
+  --uc-warning-glow-hover: rgba(255, 169, 64, 0.10); --uc-warning-glow-press: rgba(255, 169, 64, 0.18);
+  --uc-accent-glow-hover:  rgba(128, 128, 128, 0.10); --uc-accent-glow-press:  rgba(128, 128, 128, 0.18);
+
+  /* ---- Inverse text (constant) ----------------------------------------- */
+  --uc-text-inverse: #FFFFFF;
+
+  /* ---- Semantic aliases (resolve per surface via the surface tokens) --- */
+  --uc-bg:        var(--uc-surface-base);
+  --uc-fg:        var(--uc-text-strong);
+  --uc-fg-muted:  var(--uc-text-muted);
+  --uc-card:      var(--uc-surface-raised);
+  --uc-card-fg:   var(--uc-text-strong);
+  --uc-muted:     var(--uc-surface-sunken);
+  --uc-elevated:  var(--uc-surface-overlay);
+
+  /* ---- Radius (UiChemy scale: name = pixel value; mirrors the styleguide
+         corner-radius set). Semantic aliases below keep components working. -- */
+  --uc-radius-0: 0;      --uc-radius-2: 2px;    --uc-radius-4: 4px;
+  --uc-radius-6: 6px;    --uc-radius-8: 8px;    --uc-radius-12: 12px;
+  --uc-radius-16: 16px;  --uc-radius-24: 24px;  --uc-radius-32: 32px;
+  --uc-radius-infinite: 9999px;
+  /* Semantic aliases → numeric scale (value-identical to before) */
+  --uc-radius-xs: var(--uc-radius-4);   --uc-radius-sm: var(--uc-radius-6);
+  --uc-radius-md: var(--uc-radius-8);   --uc-radius-lg: var(--uc-radius-12);
+  --uc-radius-xl: var(--uc-radius-16);  --uc-radius-pill: var(--uc-radius-infinite);
+
+  /* ---- Spacing (UiChemy scale: name = pixels) -------------------------- */
+  --uc-space-0: 0;     --uc-space-1: 1px;   --uc-space-2: 2px;   --uc-space-3: 3px;
+  --uc-space-4: 4px;   --uc-space-5: 5px;   --uc-space-6: 6px;   --uc-space-7: 7px;
+  --uc-space-8: 8px;   --uc-space-9: 9px;   --uc-space-10: 10px; --uc-space-11: 11px;
+  --uc-space-12: 12px; --uc-space-14: 14px; --uc-space-16: 16px; --uc-space-20: 20px;
+  --uc-space-24: 24px; --uc-space-28: 28px; --uc-space-32: 32px; --uc-space-36: 36px;
+  --uc-space-40: 40px; --uc-space-44: 44px; --uc-space-48: 48px;
+
+  /* ---- Typography ------------------------------------------------------ */
+  --uc-font-sans: "Zalando Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --uc-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --uc-text-3xs: 0.5rem;    --uc-text-2xs: 0.625rem;  --uc-text-xs: 0.75rem;
+  /* 11px: compact meta / dense-panel text (list meta, inspector hints, code gutter). */
+  --uc-text-11: 0.6875rem;
+  --uc-text-sm: 0.8125rem;  --uc-text-base: 0.875rem; --uc-text-md: 1rem;
+  --uc-text-lg: 1.125rem;   --uc-text-xl: 1.25rem;    --uc-text-2xl: 1.5rem;
+  --uc-text-3xl: 1.875rem;
+  /* --uc-weight-semibold is temporarily folded to Medium (500): no text renders
+     at 600 for now. Flip back to 600 here to restore SemiBold everywhere it's
+     used (Card / Alert / Dialog / Accordion titles, etc.). */
+  --uc-weight-regular: 400; --uc-weight-medium: 500;  --uc-weight-semibold: 500;
+  --uc-leading-tight: 1.2;  --uc-leading-snug: 1.35;  --uc-leading-normal: 1.5;
+  --uc-tracking-tight: -0.01em; --uc-tracking-normal: 0; --uc-tracking-wide: 0.02em;
+
+  /* ---- Elevation (neutral recipes; control-brand recolored to orange) --
+     Resting + hover surfaces are FLAT (ElevenLabs-style): definition comes
+     from the single hairline border, not a shadow. Only true overlays
+     (popovers/menus/modals = shadow-3/4/5) still float. */
+  --uc-shadow-1: none;
+  --uc-shadow-2: none;
+  --uc-shadow-3: 0 0 0 1px oklch(50% 0.01 285 / 0.06), 0 2px 4px -1px oklch(0% 0 0 / 0.05), 0 6px 14px -3px oklch(0% 0 0 / 0.08);
+  --uc-shadow-4: 0 0 0 1px oklch(50% 0.01 285 / 0.06), 0 6px 12px -4px oklch(0% 0 0 / 0.06), 0 14px 28px -6px oklch(0% 0 0 / 0.10);
+  --uc-shadow-5: 0 0 0 1px oklch(50% 0.01 285 / 0.06), 0 12px 24px -8px oklch(0% 0 0 / 0.08), 0 28px 56px -12px oklch(0% 0 0 / 0.14);
+  /* Filled controls (solid buttons): light top highlight + one soft drop.
+     Kept subtle, depth reads without heavy shadows. */
+  --uc-shadow-control:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.07),
+    0 2px 3px -1px rgba(0, 0, 0, 0.05);
+  /* Colored solids (brand/success/danger): neutral dark inner edge so it suits
+     any hue, plus a light top highlight and soft drop. */
+  --uc-shadow-control-brand:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.14),
+    0 1px 2px rgba(0, 0, 0, 0.09),
+    0 2px 3px -1px rgba(0, 0, 0, 0.06);
+  --uc-shadow-control-pressed: inset 0 1px 2px rgba(0, 0, 0, 0.14);
+  --uc-shadow-input: inset 0 1px 2px rgba(0, 0, 0, 0.05), inset 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  /* Raised secondary controls (outline buttons, select/menu triggers): a faint
+     top highlight and a whisper of drop. Edge comes from the component border. */
+  --uc-shadow-raised:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.10),
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 1px 3px -1px rgba(0, 0, 0, 0.04);
+  /* Very subtle gloss: faint light top → faint dark bottom. */
+  --uc-sheen: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.03));
+
+  /* ---- Control sizing -------------------------------------------------- */
+  --uc-control-h-sm: 1.75rem; --uc-control-h-md: 2rem; --uc-control-h-lg: 2.5rem;
+
+  /* ---- Motion ---------------------------------------------------------- */
+  --uc-dur-fast: 160ms; --uc-dur-base: 240ms; --uc-dur-slow: 340ms;
+  /* Appearance of popovers / overlays (tooltip, menu, select, dialog), a touch
+     slower than base so things ease in gracefully instead of flashing on. */
+  --uc-dur-enter: 300ms;
+  --uc-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --uc-ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --uc-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ---- Z-index --------------------------------------------------------- */
+  /* Dropdowns/selects/menus sit ABOVE dialogs (1250 > z-dialog 1200) so a Select
+     opened inside a modal renders on top instead of behind it. Tooltip stays highest. */
+  --uc-z-overlay: 1100; --uc-z-dialog: 1200; --uc-z-dropdown: 1250; --uc-z-tooltip: 1300;
+}
+
+/* =============================================================================
+   2. SURFACE, CONTENT (light). DEFAULT. Values identical to pre-restructure,
+      so the light view is unchanged. `.uc-scope` / `.uc-portal` map here too.
+   ========================================================================== */
+:root,
+.uc-scope,
+.uc-content,
+.uc-portal {
+  --uc-surface-sunken:  #EBEBEB;
+  --uc-surface-base:    #F4F4F4;
+  --uc-surface-raised:  #FFFFFF;
+  --uc-surface-overlay: rgba(255, 255, 255, 0.10);
+  --uc-surface-control: #FFFFFF;   /* secondary control fill (raised) */
+  /* The hover / highlight wash (menu rows, the sliding pill in Select and
+     Menu). SEPARATE from --uc-surface-control, which it used to borrow: that
+     token is a RAISED FILL, and the two values only coincide on a dark surface
+     where rgba(255,255,255,0.05) happens to read as both. On light, a raised
+     control is #FFFFFF — a white pill on a white menu, i.e. invisible — while
+     a hover wash has to be darker than what it sits on. Translucent so it
+     composites over whatever surface the menu uses. */
+  --uc-surface-hover: rgba(0, 0, 0, 0.04);
+
+  --uc-text-strong: #0A0A0A;
+  --uc-text:        #171717;
+  --uc-text-muted:  #737373;
+  --uc-text-subtle: #A3A3A3;
+
+  /* high-contrast inverse fill (B&W primary): dark on light content */
+  --uc-inverse-bg: #171717;
+  --uc-inverse-fg: #FFFFFF;
+
+  /* One soft, semi-transparent hairline (ElevenLabs uses rgba(0,0,0,0.1)).
+     Translucent so it composites correctly over white AND grey tiles. */
+  --uc-border-subtle: rgba(0, 0, 0, 0.055);
+  --uc-border:        rgba(0, 0, 0, 0.09);
+  --uc-border-strong: rgba(0, 0, 0, 0.14);
+  /* The HOVER border on controls — one step above --uc-border-strong, and a
+     BORDER value, not a text one. Every hover ring used --uc-text-subtle,
+     which on dark is ALSO #525252 (the two coincide there, so the mistake was
+     invisible — and the hover was in fact a no-op, resting and hover being the
+     same colour) but on light is #A3A3A3: roughly 36% black against a 14%
+     resting border, i.e. a hard outline snapping in instead of a step up. */
+  --uc-border-hover:  rgba(0, 0, 0, 0.22);
+  --uc-ring:          rgba(23, 23, 23, 0.40);
+
+  /* per-family foreground (readable on light). brand/accent = dark ink. */
+  --uc-brand-fg:   #171717;
+  --uc-success-fg: #0A842A;
+  --uc-danger-fg:  #D12D37;
+  --uc-warning-fg: #AA712B;
+  --uc-accent-fg:  #171717;
+
+  /* per-family soft tint backgrounds (opaque light tints). brand/accent = grey. */
+  --uc-brand-soft:   #F0F0F0;
+  --uc-success-soft: #E7FFE7;
+  --uc-danger-soft:  #FFF2EF;
+  --uc-warning-soft: #FFEDD8;
+  --uc-accent-soft:  #F0F0F0;
+}
+
+/* =============================================================================
+   3. SURFACE, CONTENT DARK (future). Token change only; no component rebuild.
+      Slightly lighter than chrome so content sits "above" the fixed chrome.
+   ========================================================================== */
+.uc-content[data-theme="dark"] {
+  --uc-surface-sunken:  #151515;
+  --uc-surface-base:    #1C1C1C;
+  --uc-surface-raised:  #242424;
+  --uc-surface-overlay: #2A2A2A;
+  --uc-surface-control: rgba(255, 255, 255, 0.05);  /* subtle lift, blends on dark */
+
+  --uc-text-strong: #F5F5F5;
+  --uc-text:        #E5E5E5;
+  --uc-text-muted:  #A3A3A3;
+  --uc-text-subtle: #737373;
+
+  /* inverse flips to light-on-dark so the B&W primary stays high-contrast */
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #1C1C1C;
+
+  --uc-border-subtle: #2E2E2E;
+  --uc-border:        #3D3D3D;
+  --uc-border-strong: #525252;
+  /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
+  --uc-border-hover:  #525252;
+  --uc-ring:          rgba(245, 245, 245, 0.55);
+
+  --uc-brand-fg:   #EDEDED;
+  --uc-success-fg: #A7EAAA;
+  --uc-danger-fg:  #FDC9C6;
+  --uc-warning-fg: #FFC680;
+  --uc-accent-fg:  #EDEDED;
+
+  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+  --uc-warning-soft: rgba(255, 169, 64, 0.22);
+  --uc-accent-soft:  rgba(255, 255, 255, 0.12);
+}
+
+/* =============================================================================
+   4. SURFACE, CHROME (dark, fixed). Values from the existing app dark sidebar
+      (#171717 / #202020, text-white / text-weakest, border-dark-weakest/default).
+   ========================================================================== */
+.uc-chrome {
+  --uc-surface-sunken:  #101010;
+  --uc-surface-base:    #171717;
+  --uc-surface-raised:  #202020;
+  --uc-surface-overlay: #242424;
+  --uc-surface-control: rgba(255, 255, 255, 0.05);  /* subtle lift, blends on dark */
+  /* Same value --uc-surface-control had, so dark is unchanged by the split. */
+  --uc-surface-hover: rgba(255, 255, 255, 0.05);
+
+  --uc-text-strong: #FFFFFF;
+  --uc-text:        #A3A3A3;
+  --uc-text-muted:  #737373;
+  --uc-text-subtle: #525252;
+
+  /* inverse flips to light-on-dark so the B&W primary stays high-contrast */
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #171717;
+
+  --uc-border-subtle: #333333;
+  --uc-border:        #404040;
+  --uc-border-strong: #525252;
+  /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
+  --uc-border-hover:  #525252;
+  --uc-ring:          rgba(245, 245, 245, 0.55);
+
+  --uc-brand-fg:   #EDEDED;
+  --uc-success-fg: #A7EAAA;
+  --uc-danger-fg:  #FDC9C6;
+  --uc-warning-fg: #FFC680;
+  --uc-accent-fg:  #EDEDED;
+
+  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+  --uc-warning-soft: rgba(255, 169, 64, 0.22);
+  --uc-accent-soft:  rgba(255, 255, 255, 0.12);
+}
+
+/* =============================================================================
+   4b. POPOVER, fixed dark scope for dropdowns (Select / Menu). Always dark in
+       every mode. Applied alongside `uc-portal` (base tokens + box-sizing).
+   ========================================================================== */
+.uc-pop-dark {
+  --uc-surface-sunken:  #141414;
+  --uc-surface-base:    #1A1A1A;
+  --uc-surface-raised:  #242424;
+  /* A dropdown must read as a LAYER above the panel. The old #1C1C1C sat
+     between the panel chrome (#171717) and its field surfaces (#202020/#242424),
+     so a dark list melted into the dark panel. #2E2E2E is clearly lighter than
+     every panel surface, and the stronger shadow below (soft dark drops that
+     actually show on dark, reused from the canvas dock bar) plus the .content
+     border give it a crisp, floating edge. [ui-ux blend fix] */
+  --uc-surface-overlay: #2E2E2E;
+  --uc-surface-control: rgba(255, 255, 255, 0.08);
+  /* Same value --uc-surface-control had here; a pop-up is already a layer up,
+     so its wash is a touch stronger than the panel's. */
+  --uc-surface-hover: rgba(255, 255, 255, 0.08);
+  --uc-shadow-4: 0 16px 44px -12px rgb(0 0 0 / 55%), 0 4px 12px -4px rgb(0 0 0 / 40%);
+
+  --uc-text-strong: #FFFFFF;
+  --uc-text:        #E5E5E5;
+  --uc-text-muted:  #A3A3A3;
+  --uc-text-subtle: #737373;
+
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #171717;
+
+  --uc-border-subtle: #2E2E2E;
+  --uc-border:        #3D3D3D;
+  --uc-border-strong: #525252;
+  /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
+  --uc-border-hover:  #525252;
+  --uc-ring:          rgba(245, 245, 245, 0.55);
+
+  --uc-brand-fg:   #EDEDED;  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-fg: #A7EAAA;  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-fg:  #FDC9C6;  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+  --uc-warning-fg: #FFC680;  --uc-warning-soft: rgba(255, 169, 64, 0.22);
+  --uc-accent-fg:  #EDEDED;  --uc-accent-soft:  rgba(255, 255, 255, 0.12);
+
+  color: var(--uc-text);
+}
+
+/* =============================================================================
+   5. BASELINES, each surface paints its own background + text.
+   ========================================================================== */
+.uc-scope,
+.uc-content,
+.uc-chrome {
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  line-height: var(--uc-leading-normal);
+  color: var(--uc-text);
+  background: var(--uc-surface-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+/* Portalled content mounts in <body>; carry font/tokens but no background. */
+.uc-portal {
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  line-height: var(--uc-leading-normal);
+  color: var(--uc-text);
+  -webkit-font-smoothing: antialiased;
+}
+.uc-scope *, .uc-scope *::before, .uc-scope *::after,
+.uc-content *, .uc-content *::before, .uc-content *::after,
+.uc-chrome *, .uc-chrome *::before, .uc-chrome *::after,
+.uc-portal *, .uc-portal *::before, .uc-portal *::after {
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uc-scope *, .uc-content *, .uc-chrome *, .uc-portal * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =============================================================================
+   UiChemy Create, COMPONENT tokens (per-component knobs)
+   -----------------------------------------------------------------------------
+   Per-component sizing/shape variables, editable from the internal DS editor
+   (tools/ds-editor). Each defaults to a GLOBAL token via var(), so out of the
+   box a component still follows the global scale, overriding one here changes
+   ONLY that component, not the whole system.
+
+   Loaded right after tokens.css (src/index.js), same surface scopes, so the
+   values resolve wherever the components render. The component CSS modules read
+   these with the original value as a var() fallback, so a missing/av value can
+   never break a component.
+   ========================================================================== */
+.uc-scope,
+.uc-content,
+.uc-chrome,
+.uc-portal {
+  /* ---- Button --------------------------------------------------------- */
+  --uc-btn-radius: var(--uc-radius-md);
+  --uc-btn-weight: var(--uc-weight-medium);
+  --uc-btn-h:      var(--uc-control-h-md);
+  --uc-btn-px:     var(--uc-space-16);
+
+  /* ---- Input ---------------------------------------------------------- */
+  --uc-input-radius: var(--uc-radius-md);
+  --uc-input-h:      var(--uc-control-h-md);
+  --uc-input-px:     var(--uc-space-12);
+
+  /* ---- Card ----------------------------------------------------------- */
+  --uc-card-radius: var(--uc-radius-lg);
+  --uc-card-pad:    var(--uc-space-20);
+
+  /* ---- Tabs (pill variant) -------------------------------------------- */
+  --uc-tab-track-bg:     #F2F2F2;   /* lighter track (was --uc-surface-sunken #EBEBEB) */
+  --uc-tab-track-stroke: none;      /* no hairline stroke around the track */
+  --uc-tab-track-radius: var(--uc-radius-md);
+  --uc-tab-track-pad:    3px;
+  --uc-tab-radius:       var(--uc-radius-sm);
+  --uc-tab-h:            26px;
+  --uc-tab-px:           var(--uc-space-12);
+}
+
+/* FloatingToolbar is a fixed dark overlay and also works outside a DS scope. */
+.uc-pop-dark {
+  --uc-toolbar-bg: var(--uc-surface-raised);
+  --uc-toolbar-hover-bg: var(--uc-surface-overlay);
+  --uc-toolbar-fg: var(--uc-text);
+  --uc-toolbar-border: var(--uc-border);
+  --uc-toolbar-height: 48px;
+  --uc-toolbar-action-size: 34px;
+  --uc-toolbar-dismiss-size: 44px;
+  --uc-toolbar-radius: var(--uc-radius-lg);
+  --uc-toolbar-action-radius: var(--uc-btn-radius);
+
+  /* Pill tabs inside a dark pop-up (e.g. the model picker's CLI | WP Connectors
+     strip). `.uc-portal` above pins the track to the light #F2F2F2, which
+     beats anything inherited from a dark panel, so re-point it to the dark
+     sunken well + hairline here. */
+  --uc-tab-track-bg:     var(--uc-surface-sunken);
+  --uc-tab-track-stroke: inset 0 0 0 1px var(--uc-border-subtle);
+}
+
+/*
+ * Layout for the DS controls inside WordPress field-group boxes. The controls themselves are DS
+ * components (styled by their own modules); this only arranges them and the few compositions the
+ * DS has no single component for (media picker, link row, repeater rows). Every value is a uc- token.
+ *
+ * Layout rule: every control fills its cell, the full row unless the field has a Width setting
+ * (the grid maths lives in uich-gf-style.css). The section itself is capped, so full width stays a
+ * comfortable form width.
+ */
+
+/* The DS scope paints its base surface; here the controls sit on WordPress's white box, the way they
+   sit on white cards in the dashboard (DS inputs are a translucent wash over what is behind them). */
+.uich-gf-ds.uc-scope { min-width: 0; background: transparent; font-family: var(--uc-font-sans); color: var(--uc-text-strong); }
+
+/* ── The cell ──────────────────────────────────────────────────────────────── */
+
+.uich-gf-ds-cell { min-width: 0; }
+/* On / off in a settings row: the state text, then the control at the right edge. */
+.uich-gf-labels-left > .uich-gf-wrap-true_false .uich-gf-ds-bool { flex-direction: row-reverse; color: var(--uc-text-muted); }
+
+/* The PHP label and help text, brought in line with DS Label / hint. */
+.uich-gf-row-ds > label.uich-gf-label,
+.uich-gf-row-ds > .uich-gf-label-col > label.uich-gf-label {
+	font-family: var(--uc-font-sans, inherit);
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--uc-text-strong);
+}
+.uich-gf-row-ds .uich-gf-instruction { margin: 0; font-size: 12px; line-height: 1.45; color: var(--uc-text-muted); }
+.uich-gf-row-ds .uich-gf-input-wrap > .uich-gf-instruction,
+.uich-gf-row-ds .uich-gf-field-error { margin: 6px 0 0; }
+.uich-gf-row-ds .uich-gf-field-error { font-size: 12px; color: var(--uc-danger); }
+
+/* The value inputs that carry the POST data. WordPress's forms.css gives checkbox / radio inputs a
+   display value, which beats the `hidden` attribute, so they must be hidden explicitly. */
+.uich-gf-ds input[hidden],
+.uich-gf-ds select[hidden] { display: none !important; }
+
+/* ── Selects ───────────────────────────────────────────────────────────────── */
+
+.uich-gf-ds .uich-gf-ds-select,
+.uich-gf-ds .uich-gf-ds-multi { width: 100%; min-width: 0; }
+.uich-gf-ds-chips { display: flex; flex-wrap: wrap; gap: var(--uc-space-4); min-width: 0; }
+.uich-gf-ds-multi[class] { height: auto; min-height: var(--uc-control-h-md); padding-block: var(--uc-space-4); }
+
+.uich-gf-ds-pop[class] { box-sizing: border-box; min-width: var(--radix-popover-trigger-width); padding: var(--uc-space-4); }
+.uich-gf-ds-pop__search { padding: var(--uc-space-4) var(--uc-space-4) var(--uc-space-6); }
+.uich-gf-ds-pop__list { max-height: 260px; overflow-y: auto; }
+.uich-gf-ds-pop__opt { display: flex; align-items: center; gap: var(--uc-space-8); padding: var(--uc-space-6) var(--uc-space-8); border-radius: var(--uc-radius-6); font-size: var(--uc-text-sm); cursor: pointer; }
+.uich-gf-ds-pop__opt:hover { background: rgba(255, 255, 255, 0.08); }
+.uich-gf-ds-pop__empty { margin: 0; padding: var(--uc-space-10); font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
+
+/* ── Checkbox / radio lists, true / false ──────────────────────────────────── */
+
+.uich-gf-ds-choices { display: flex; flex-direction: column; gap: var(--uc-space-8); }
+.uich-gf-ds-choices.is-row { flex-direction: row; flex-wrap: wrap; gap: var(--uc-space-8) var(--uc-space-20); }
+.uich-gf-ds-choice { display: inline-flex; align-items: center; gap: var(--uc-space-8); width: -moz-fit-content; width: fit-content; font-size: var(--uc-text-sm); color: var(--uc-text-strong); cursor: pointer; }
+/* "Select all" heads the list: a hairline sets it apart from the choices it controls. */
+.uich-gf-ds-choice--all { font-weight: var(--uc-weight-medium); }
+.uich-gf-ds-choices:not(.is-row) > .uich-gf-ds-choice--all { width: 100%; max-width: 240px; padding-bottom: var(--uc-space-8); border-bottom: 1px solid var(--uc-border-subtle); }
+.uich-gf-ds-bool { min-height: var(--uc-control-h-sm); }
+
+/* ── Range: slider + number box ────────────────────────────────────────────── */
+
+/* The DS input is `width: 100%` at [class] strength, hence the [class]. */
+.uich-gf-ds-range { display: flex; align-items: center; gap: var(--uc-space-12); height: var(--uc-control-h-md); }
+.uich-gf-ds-range > :first-child { flex: 1 1 auto; min-width: 0; }
+.uich-gf-ds-range .uich-gf-ds-range__num[class] { flex: none; width: 88px; }
+
+/* ── Colour ────────────────────────────────────────────────────────────────── */
+
+.uich-gf-ds-swatch { position: relative; display: block; width: 18px; height: 18px; border-radius: var(--uc-radius-4); box-shadow: inset 0 0 0 1px var(--uc-border); overflow: hidden; }
+.uich-gf-ds-swatch input[type="color"] { position: absolute; inset: -4px; width: calc(100% + 8px); height: calc(100% + 8px); padding: 0; border: 0; opacity: 0; cursor: pointer; }
+
+/* ── Date / time: one icon (the DS one, on the left); the field opens the picker ── */
+
+.uich-gf-ds-date::-webkit-calendar-picker-indicator { display: none; }
+.uich-gf-ds-date { cursor: pointer; }
+
+/*
+ * ── Image / file / link ───────────────────────────────────────────────────────
+ * The anatomy of the DS FileUpload: an empty, compact zone (icon · text · button), then a file row
+ * (thumb or glyph · name and details · actions).
+ */
+.uich-gf-ds-zone {
+	display: flex;
+	align-items: center;
+	gap: var(--uc-space-12);
+	min-width: 0;
+	padding: var(--uc-space-12);
+	border-radius: var(--uc-radius-md);
+	border: 1px dashed var(--uc-border-strong);
+	/* The inputs' own fill (not FileUpload's sunken grey): an empty field reads like its neighbours. */
+	background: var(--uc-surface-overlay);
+	cursor: pointer;
+	transition: border-color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.uich-gf-ds-zone:hover { border-color: var(--uc-text-subtle); }
+.uich-gf-ds-zone:focus-within { border-color: var(--uc-text-muted); }
+.uich-gf-ds-zone__icon {
+	flex: none; display: grid; place-items: center; width: 32px; height: 32px;
+	border-radius: var(--uc-radius-pill); background: var(--uc-surface-raised);
+	box-shadow: inset 0 0 0 1px var(--uc-border-subtle); color: var(--uc-text-muted);
+}
+.uich-gf-ds-zone__text { flex: 1 1 auto; display: flex; flex-direction: column; gap: var(--uc-space-2); min-width: 0; }
+.uich-gf-ds-zone__title { font-size: var(--uc-text-sm); font-weight: var(--uc-weight-medium); line-height: var(--uc-leading-snug); color: var(--uc-text-strong); }
+.uich-gf-ds-zone__hint { font-size: var(--uc-text-xs); line-height: var(--uc-leading-snug); color: var(--uc-text-muted); }
+
+.uich-gf-ds-file {
+	display: flex;
+	align-items: center;
+	gap: var(--uc-space-12);
+	min-width: 0;
+	/* The empty zone's padding, so choosing a file swaps one for the other without a jump. */
+	padding: var(--uc-space-12) var(--uc-space-12) var(--uc-space-12) var(--uc-space-8);
+	border-radius: var(--uc-radius-md);
+	background: var(--uc-surface-raised);
+	box-shadow: inset 0 0 0 1px var(--uc-border);
+}
+.uich-gf-ds-file__icon {
+	flex: none; display: grid; place-items: center; width: 32px; height: 32px;
+	border-radius: var(--uc-radius-sm); background: var(--uc-surface-sunken); color: var(--uc-text-muted);
+}
+.uich-gf-ds-file__thumb { flex: none; display: block; width: 32px; height: 32px; border-radius: var(--uc-radius-sm); -o-object-fit: cover; object-fit: cover; background: var(--uc-surface-sunken); }
+/* An image field is about the picture: a larger preview. */
+.uich-gf-ds-file.is-image .uich-gf-ds-file__thumb { width: 56px; height: 56px; }
+.uich-gf-ds-file__meta { flex: 1 1 auto; display: flex; flex-direction: column; gap: var(--uc-space-2); min-width: 0; }
+.uich-gf-ds-file__name,
+.uich-gf-ds-file__sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.uich-gf-ds-file__name { font-size: var(--uc-text-sm); font-weight: var(--uc-weight-medium); color: var(--uc-text-strong); }
+.uich-gf-ds-file__sub { font-size: var(--uc-text-xs); line-height: var(--uc-leading-snug); color: var(--uc-text-muted); }
+.uich-gf-ds-file__sub a { color: inherit; text-decoration: none; }
+.uich-gf-ds-file__sub a:hover { color: var(--uc-text-strong); text-decoration: underline; }
+.uich-gf-ds-file__actions { flex: none; display: flex; align-items: center; gap: var(--uc-space-4); }
+
+/* Set link: drawn like a filled DS input (same fill, ring, radius and height as .shell). */
+.uich-gf-ds-linkrow {
+	display: flex;
+	align-items: center;
+	gap: var(--uc-space-8);
+	min-width: 0;
+	height: var(--uc-input-h, var(--uc-control-h-md));
+	padding: 0 var(--uc-input-px, var(--uc-space-12)) 0 var(--uc-space-4);
+	border-radius: var(--uc-input-radius, var(--uc-radius-md));
+	background: var(--uc-surface-overlay);
+	box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+	/* The inputs' own size: a set link reads as a filled field. */
+	font-size: var(--uc-text-base);
+}
+.uich-gf-ds-linkrow__icon { flex: none; display: inline-flex; color: var(--uc-text-muted); }
+.uich-gf-ds-linkrow__text { flex: 1 1 auto; display: flex; align-items: baseline; gap: var(--uc-space-8); min-width: 0; white-space: nowrap; }
+.uich-gf-ds-linkrow__title { flex: none; max-width: 50%; overflow: hidden; text-overflow: ellipsis; font-weight: var(--uc-weight-medium); color: var(--uc-text-strong); }
+.uich-gf-ds-linkrow__url { min-width: 0; font-size: var(--uc-text-sm); overflow: hidden; text-overflow: ellipsis; color: var(--uc-text-muted); text-decoration: none; }
+.uich-gf-ds-linkrow__url:hover { color: var(--uc-text-strong); text-decoration: underline; }
+.uich-gf-ds-linkrow__flag { flex: none; font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
+.uich-gf-ds-linkrow__actions { flex: none; display: flex; align-items: center; gap: var(--uc-space-2); }
+
+/* Empty link: a select-shaped trigger, icon and placeholder side by side. */
+.uich-gf-ds-link-empty[class] { width: 100%; }
+.uich-gf-ds-link-empty > span:first-child { display: inline-flex; align-items: center; gap: var(--uc-space-8); }
+.uich-gf-ds-linkpop[class] { width: 320px; padding: 0; }
+.uich-gf-ds-linkpop__body { display: flex; flex-direction: column; gap: var(--uc-space-6); padding: var(--uc-space-12); }
+.uich-gf-ds-linkpop__body .uich-gf-ds-choice { margin-top: var(--uc-space-4); }
+.uich-gf-ds-linkpop__foot { display: flex; justify-content: space-between; gap: var(--uc-space-8); padding: var(--uc-space-10) var(--uc-space-12); border-top: 1px solid var(--uc-border-subtle); }
+
+/* ── Repeater: a card per row; inside, the same grid as the box ────────────── */
+
+.uich-gf-ds-rep { display: flex; flex-direction: column; gap: var(--uc-space-8); }
+.uich-gf-ds-rep__row { border-radius: var(--uc-radius-md); background: var(--uc-surface-raised); box-shadow: inset 0 0 0 1px var(--uc-border); }
+.uich-gf-ds-rep__head { display: flex; align-items: center; justify-content: space-between; gap: var(--uc-space-8); height: 40px; padding: 0 var(--uc-space-14) 0 var(--uc-space-6); border-bottom: 1px solid var(--uc-border-subtle); }
+.uich-gf-ds-rep__num { font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); color: var(--uc-text-muted); }
+.uich-gf-ds-rep__tools { display: inline-flex; gap: var(--uc-space-2); }
+.uich-gf-ds-rep__fields { display: flex; flex-wrap: wrap; gap: var(--uc-space-16) var(--uich-gf-gap-x, 16px); padding: var(--uc-space-14); }
+.uich-gf-ds-rep__field { display: flex; flex-direction: column; gap: var(--uc-space-6); flex: 1 1 100%; min-width: 0; }
+.uich-gf-ds-rep__field.uich-gf-has-width { flex: 0 0 calc(var(--uich-gf-w) * 1% - (100 - var(--uich-gf-w)) * var(--uich-gf-gap-x, 16px) / 100); }
+@container uich-gf (max-width: 560px) {
+	.uich-gf-ds-rep__field.uich-gf-has-width { flex-basis: 100%; }
+}
+.uich-gf-ds-rep__foot { display: flex; align-items: center; gap: var(--uc-space-10); }
+.uich-gf-ds-help { margin: 0; font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
+.uich-gf-ds-req { color: var(--uc-danger); }
+
+/* ── Pickers: post object, page link, user (searchable, in the dark DS dropdown) ── */
+
+.uich-gf-ds-ellipsis { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+button.uich-gf-ds-pop__opt {
+	all: unset;
+	box-sizing: border-box;
+	display: flex; align-items: center; justify-content: space-between; gap: var(--uc-space-8);
+	width: 100%; padding: var(--uc-space-6) var(--uc-space-8);
+	border-radius: var(--uc-radius-6); font-size: var(--uc-text-sm); cursor: pointer;
+}
+button.uich-gf-ds-pop__opt:hover,
+button.uich-gf-ds-pop__opt:focus-visible { background: rgba(255, 255, 255, 0.08); }
+button.uich-gf-ds-pop__opt[aria-selected="true"] { font-weight: var(--uc-weight-medium); }
+.uich-gf-ds-pop__opt.is-muted { color: var(--uc-text-muted); }
+.uich-gf-ds-pop__group {
+	margin: var(--uc-space-8) 0 var(--uc-space-2); padding: 0 var(--uc-space-8);
+	font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); color: var(--uc-text-muted);
+}
+.uich-gf-ds-pop__empty { display: flex; align-items: center; gap: var(--uc-space-6); }
+.uich-gf-ds-pop__more {
+	all: unset; box-sizing: border-box; display: block; width: 100%;
+	padding: var(--uc-space-8); text-align: center; border-radius: var(--uc-radius-6);
+	font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); color: var(--uc-text-muted); cursor: pointer;
+}
+.uich-gf-ds-pop__more:hover,
+.uich-gf-ds-pop__more:focus-visible { color: var(--uc-text-strong); background: rgba(255, 255, 255, 0.08); }
+
+/* A long term list scrolls instead of pushing the box down. */
+.uich-gf-ds-scrollbox { max-height: 232px; overflow-y: auto; padding: var(--uc-space-10) var(--uc-space-12); border-radius: var(--uc-radius-md); box-shadow: inset 0 0 0 1px var(--uc-border); }
+
+/* Password: the show / hide button sits in the field's trailing slot. */
+.uich-gf-ds-password[class] { padding-left: var(--uc-space-2); }
+
+/* ── Relationship ──────────────────────────────────────────────────────────── */
+
+.uich-gf-ds-rel { display: flex; flex-direction: column; gap: var(--uc-space-8); min-width: 0; }
+.uich-gf-ds-rel__bar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--uc-space-8); }
+.uich-gf-ds-rel__search { flex: 1 1 240px; min-width: 0; }
+.uich-gf-ds-rel__pt[class],
+.uich-gf-ds-rel__tax[class] { flex: 0 0 auto; width: 200px; }
+.uich-gf-ds-rel__cols { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--uich-gf-gap-x, 16px); }
+@container uich-gf (max-width: 560px) {
+	.uich-gf-ds-rel__cols { grid-template-columns: minmax(0, 1fr); }
+}
+.uich-gf-ds-rel__col { display: flex; flex-direction: column; min-width: 0; border-radius: var(--uc-radius-md); background: var(--uc-surface-raised); box-shadow: inset 0 0 0 1px var(--uc-border); overflow: hidden; }
+.uich-gf-ds-rel__head {
+	display: flex; align-items: center; justify-content: space-between; gap: var(--uc-space-8);
+	height: 36px; padding: 0 var(--uc-space-12); border-bottom: 1px solid var(--uc-border-subtle);
+	font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); color: var(--uc-text-muted);
+}
+.uich-gf-ds-rel__count { color: var(--uc-text-muted); }
+.uich-gf-ds-rel__list { height: 240px; overflow-y: auto; padding: var(--uc-space-4); }
+.uich-gf-ds-rel__list .uich-gf-ds-pop__empty { padding: var(--uc-space-10) var(--uc-space-8); }
+.uich-gf-ds-rel__list .uich-gf-ds-pop__more { color: var(--uc-text-muted); }
+.uich-gf-ds-rel__list .uich-gf-ds-pop__more:hover { color: var(--uc-text-strong); background: var(--uc-surface-sunken); }
+.uich-gf-ds-rel__item {
+	box-sizing: border-box;
+	display: flex; align-items: center; gap: var(--uc-space-8);
+	width: 100%; min-height: 32px; padding: var(--uc-space-4) var(--uc-space-8);
+	border: 0; border-radius: var(--uc-radius-6); background: none;
+	font: inherit; font-size: var(--uc-text-sm); color: var(--uc-text-strong); text-align: right;
+}
+button.uich-gf-ds-rel__item { cursor: pointer; }
+button.uich-gf-ds-rel__item > svg { flex: none; margin-right: auto; color: var(--uc-text-subtle); opacity: 0; }
+button.uich-gf-ds-rel__item:hover:not(:disabled),
+button.uich-gf-ds-rel__item:focus-visible { background: var(--uc-surface-sunken); }
+button.uich-gf-ds-rel__item:hover:not(:disabled) > svg,
+button.uich-gf-ds-rel__item:focus-visible > svg { opacity: 1; }
+button.uich-gf-ds-rel__item:focus-visible { outline: 1px solid var(--uc-brand); outline-offset: -1px; }
+button.uich-gf-ds-rel__item:disabled { cursor: default; color: var(--uc-text-subtle); }
+button.uich-gf-ds-rel__item.is-picked > svg { opacity: 1; color: var(--uc-text-muted); }
+.uich-gf-ds-rel__item.is-selected { padding-left: var(--uc-space-2); }
+.uich-gf-ds-rel__item.is-selected:hover { background: var(--uc-surface-sunken); }
+.uich-gf-ds-rel__tools { flex: none; display: inline-flex; margin-right: auto; opacity: 0; }
+.uich-gf-ds-rel__item.is-selected:hover .uich-gf-ds-rel__tools,
+.uich-gf-ds-rel__item.is-selected:focus-within .uich-gf-ds-rel__tools { opacity: 1; }
+.uich-gf-ds-rel__thumb { flex: none; display: grid; place-items: center; width: 24px; height: 24px; border-radius: var(--uc-radius-4); -o-object-fit: cover; object-fit: cover; background: var(--uc-surface-sunken); color: var(--uc-text-subtle); }
+
+/*
+ * ── On / off fields as setting rows ───────────────────────────────────────────
+ * Label and help on the left, the switch or checkbox on the right, in a bordered row; consecutive
+ * full-width ones join into one list with hairlines between (the settings-list pattern). The row's
+ * padding is the grid gutter, so the outline is a pseudo-element inset by that gutter.
+ */
+@supports (grid-template-rows: subgrid) {
+	.uich-gf-metabox > .uich-gf-row-ds.uich-gf-labels-top:has(> .uich-gf-wrap-true_false) {
+		--_inset-x: calc(var(--uich-gf-gap-x, 16px) / 2);
+		--_inset-b: var(--uich-gf-gap-y, 24px);
+		position: relative;
+		grid-template-rows: auto auto;
+		grid-template-columns: minmax(0, 1fr) auto;
+		align-content: center;
+		-moz-column-gap: var(--uc-space-16);
+		     column-gap: var(--uc-space-16);
+		min-height: 56px;
+		padding: var(--uc-space-12) calc(var(--_inset-x) + var(--uc-space-16)) calc(var(--_inset-b) + var(--uc-space-12));
+	}
+	.uich-gf-metabox > .uich-gf-row-ds.uich-gf-labels-top:has(> .uich-gf-wrap-true_false)::before {
+		content: "";
+		position: absolute;
+		inset: 0 var(--_inset-x) var(--_inset-b);
+		border: 1px solid var(--uc-border);
+		border-radius: var(--uc-radius-md);
+		pointer-events: none;
+	}
+	.uich-gf-metabox > .uich-gf-row-ds.uich-gf-labels-top:has(> .uich-gf-wrap-true_false) > label.uich-gf-label { grid-row: 1; grid-column: 1; align-self: end; }
+	.uich-gf-metabox > .uich-gf-row-ds.uich-gf-labels-top:has(> .uich-gf-wrap-true_false) > .uich-gf-instruction { grid-row: 2; grid-column: 1; margin: 2px 0 0; }
+	.uich-gf-metabox > .uich-gf-row-ds.uich-gf-labels-top:has(> .uich-gf-wrap-true_false) > .uich-gf-input-wrap { grid-row: 1 / span 2; grid-column: 2; align-self: center; margin: 0; }
+	/* No help text: the label alone, centred on the control. */
+	.uich-gf-metabox > .uich-gf-row-ds.uich-gf-labels-top:has(> .uich-gf-wrap-true_false):not(:has(> .uich-gf-instruction)) > label.uich-gf-label { grid-row: 1 / span 2; align-self: center; }
+	/* The text that names the state reads first, the control sits at the row's right edge. */
+	.uich-gf-metabox > .uich-gf-row-ds.uich-gf-labels-top:has(> .uich-gf-wrap-true_false) .uich-gf-ds-bool { flex-direction: row-reverse; color: var(--uc-text-muted); }
+
+	/* Consecutive full-width ones: one list. */
+	.uich-gf-metabox > .uich-gf-row-ds.uich-gf-labels-top:not(.uich-gf-has-width):has(> .uich-gf-wrap-true_false):has(+ .uich-gf-row-ds.uich-gf-labels-top:not(.uich-gf-has-width):not(.uich-gf-cond-hidden) > .uich-gf-wrap-true_false) {
+		--_inset-b: 0px;
+	}
+	.uich-gf-metabox > .uich-gf-row-ds.uich-gf-labels-top:not(.uich-gf-has-width):has(> .uich-gf-wrap-true_false):has(+ .uich-gf-row-ds.uich-gf-labels-top:not(.uich-gf-has-width):not(.uich-gf-cond-hidden) > .uich-gf-wrap-true_false)::before {
+		border-bottom: 0;
+		border-bottom-right-radius: 0;
+		border-bottom-left-radius: 0;
+	}
+	.uich-gf-metabox > .uich-gf-row-ds.uich-gf-labels-top:not(.uich-gf-has-width):has(> .uich-gf-wrap-true_false) + .uich-gf-row-ds.uich-gf-labels-top:not(.uich-gf-has-width):has(> .uich-gf-wrap-true_false)::before {
+		border-top-color: var(--uc-border-subtle);
+		border-top-right-radius: 0;
+		border-top-left-radius: 0;
+	}
+}
+
+/* Repeater sub-fields: the same 8px from label to control as the box's own rows. */
+.uich-gf-ds-rep__field { gap: var(--uich-gf-label-gap, 8px); }
+
+/* Right after a reorder: the moved post stays highlighted with its buttons; other rows keep their
+   buttons off (and unclickable) until the pointer moves. */
+.uich-gf-ds-rel__item.is-selected.is-moved { background: var(--uc-surface-sunken); }
+.uich-gf-ds-rel__item.is-selected.is-moved .uich-gf-ds-rel__tools { opacity: 1; }
+.uich-gf-ds-rel__list.is-moving .uich-gf-ds-rel__item.is-selected:not(.is-moved):hover { background: none; }
+.uich-gf-ds-rel__list.is-moving .uich-gf-ds-rel__item.is-selected:not(.is-moved) .uich-gf-ds-rel__tools { opacity: 0; pointer-events: none; }
+
+/* Button, raised, physically-lit control on uc- tokens. */
+
+.oDgO9tRe_mBUNaW0e6V8 {
+  --_h: var(--uc-btn-h, var(--uc-control-h-md));
+  --_px: var(--uc-btn-px, var(--uc-space-16));
+  --_fs: var(--uc-text-base);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--uc-space-8);
+  height: var(--_h);
+  padding: 0 var(--_px);
+  font-family: var(--uc-font-sans);
+  font-size: var(--_fs);
+  font-weight: var(--uc-btn-weight, var(--uc-weight-medium));
+  line-height: 1;
+  white-space: nowrap;
+  text-decoration: none;
+  border: none;
+  border-radius: var(--uc-btn-radius, var(--uc-radius-md));
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  position: relative;
+  isolation: isolate;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    box-shadow var(--uc-dur-fast) var(--uc-ease-standard),
+    transform var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.oDgO9tRe_mBUNaW0e6V8:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 2px;
+}
+.oDgO9tRe_mBUNaW0e6V8:active:not(:disabled) {
+  transform: translateY(0.5px);
+}
+.oDgO9tRe_mBUNaW0e6V8:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* ---- Sizes ---------------------------------------------------------------- */
+.qLkzuQUQ_X4w0fceh2CB { --_h: var(--uc-control-h-sm); --_px: var(--uc-space-12); --_fs: var(--uc-text-sm); }
+.NAPRKbEZKONQ8AdACBzs { --_h: var(--uc-btn-h, var(--uc-control-h-md)); --_px: var(--uc-btn-px, var(--uc-space-16)); --_fs: var(--uc-text-base); }
+.qeRuCFz3SPTfPQEz8Eur { --_h: var(--uc-control-h-lg); --_px: var(--uc-space-20); --_fs: var(--uc-text-md); }
+
+.GW0xiH4qJYyLFExAe7Cc { padding: 0; width: var(--_h); }
+
+/* ---- Variant: solid ------------------------------------------------------- */
+.nx448XS4JGEoBYKJ_Xeh {
+  color: var(--uc-brand-on);
+  background: var(--_fill, var(--uc-brand));
+  background-image: var(--uc-sheen);
+  box-shadow: var(--_shadow, var(--uc-shadow-control-brand));
+}
+.nx448XS4JGEoBYKJ_Xeh:hover:not(:disabled) { background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12)), var(--uc-sheen); }
+.nx448XS4JGEoBYKJ_Xeh:active:not(:disabled) {
+  background-image: linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)), var(--uc-sheen);
+  box-shadow: var(--uc-shadow-control-pressed);
+}
+
+/* neutral solid = the B&W PRIMARY: high-contrast inverse fill that flips per
+   surface (dark on light content, light on dark chrome/content). */
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4 {
+  color: var(--uc-inverse-fg);
+  background: var(--uc-inverse-bg);
+  box-shadow: var(--uc-shadow-control);
+}
+/* grey wash nudges black->lighter and white->darker, so hover reads on both */
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:hover:not(:disabled) {
+  background-image: linear-gradient(to bottom, rgba(128, 128, 128, 0.16), rgba(128, 128, 128, 0.16));
+}
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:active:not(:disabled) {
+  background-image: linear-gradient(to bottom, rgba(0, 0, 0, 0.14), rgba(0, 0, 0, 0.14));
+}
+
+/* ---- Variant: soft -------------------------------------------------------- */
+.lSxxR32yQ7uBGKoReA0d {
+  color: var(--_fg, var(--uc-brand-fg));
+  background: var(--_soft, var(--uc-brand-soft));
+  background-image: var(--uc-sheen);
+  box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)), var(--uc-shadow-1);
+}
+.lSxxR32yQ7uBGKoReA0d:hover:not(:disabled) { background-image: var(--uc-sheen), linear-gradient(var(--_glow, var(--uc-brand-glow-hover)), var(--_glow, var(--uc-brand-glow-hover))); }
+
+/* ---- Variant: outline (raised secondary) ---------------------------------- */
+.uEkFBKngy5ABC8BavrlF {
+  color: var(--_fg, var(--uc-brand-fg));
+  background: var(--uc-surface-control);
+  background-image: var(--uc-sheen);
+  box-shadow: inset 0 0 0 1px var(--_border, var(--uc-border-subtle)), var(--uc-shadow-raised);
+}
+.uEkFBKngy5ABC8BavrlF.P6iUGKQ9CuUmhTY4IDx4 { color: var(--uc-text-strong); }
+.uEkFBKngy5ABC8BavrlF:hover:not(:disabled) { background-image: var(--uc-sheen), linear-gradient(var(--_glow, var(--uc-brand-glow-hover)), var(--_glow, var(--uc-brand-glow-hover))); }
+
+/* ---- Variant: ghost ------------------------------------------------------- */
+.ZShdqkg6btw_9kcxTgYx {
+  color: var(--_fg, var(--uc-brand-fg));
+  background: transparent;
+}
+.ZShdqkg6btw_9kcxTgYx.P6iUGKQ9CuUmhTY4IDx4 { color: var(--uc-text); }
+.ZShdqkg6btw_9kcxTgYx:hover:not(:disabled) { background: var(--_glow, var(--uc-brand-glow-hover)); color: var(--uc-text-strong); }
+
+/* ---- Tones (feed the --_* channels the variants read) --------------------- */
+.BDHV_0n6wKsmpw3p3s1i   { --_fill: var(--uc-brand);   --_fg: var(--uc-brand-fg);   --_soft: var(--uc-brand-soft);   --_border: var(--uc-brand-border);   --_glow: var(--uc-brand-glow-hover);   --_shadow: var(--uc-shadow-control-brand); }
+.keLGBcvAq5oELzJZ2XbZ { --_fill: var(--uc-success); --_fg: var(--uc-success-fg); --_soft: var(--uc-success-soft); --_border: var(--uc-success-border); --_glow: var(--uc-success-glow-hover); --_shadow: var(--uc-shadow-control-brand); }
+.qM62Gv6j4BSYSajMwnqk  { --_fill: var(--uc-danger);  --_fg: var(--uc-danger-fg);  --_soft: var(--uc-danger-soft);  --_border: var(--uc-danger-border);  --_glow: var(--uc-danger-glow-hover);  --_shadow: var(--uc-shadow-control-brand); }
+.P6iUGKQ9CuUmhTY4IDx4 {
+  --_fg: var(--uc-text-strong);
+  --_soft: var(--uc-surface-sunken);
+  --_border: var(--uc-border-strong);
+  --_glow: rgba(128, 128, 128, 0.12);
+}
+
+/* ---- As a link (asChild <a>) --------------------------------------------- *
+   wp-admin styles `a:hover, a:active` (blue text) and `a:focus` (blue text + a
+   2px blue box-shadow) at 0,1,1, which out-ranks the variant colours and
+   shadows above (0,1,0). Re-assert them for anchors so a link button looks
+   exactly like the button it is in every state. */
+a.nx448XS4JGEoBYKJ_Xeh:is(:hover, :focus, :active, :visited) { color: var(--uc-brand-on); }
+a.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :active, :visited) { color: var(--uc-inverse-fg); }
+a.lSxxR32yQ7uBGKoReA0d:is(:hover, :focus, :active, :visited),
+a.uEkFBKngy5ABC8BavrlF:is(:hover, :focus, :active, :visited) { color: var(--_fg, var(--uc-brand-fg)); }
+a.uEkFBKngy5ABC8BavrlF.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :active, :visited) { color: var(--uc-text-strong); }
+a.ZShdqkg6btw_9kcxTgYx:is(:focus, :active, :visited) { color: var(--_fg, var(--uc-brand-fg)); }
+a.ZShdqkg6btw_9kcxTgYx.P6iUGKQ9CuUmhTY4IDx4:is(:focus, :active, :visited) { color: var(--uc-text); }
+a.nx448XS4JGEoBYKJ_Xeh:focus { box-shadow: var(--_shadow, var(--uc-shadow-control-brand)); }
+a.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:focus { box-shadow: var(--uc-shadow-control); }
+a.lSxxR32yQ7uBGKoReA0d:focus { box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)), var(--uc-shadow-1); }
+a.uEkFBKngy5ABC8BavrlF:focus { box-shadow: inset 0 0 0 1px var(--_border, var(--uc-border-subtle)), var(--uc-shadow-raised); }
+a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
+
+/* ---- Loading -------------------------------------------------------------- */
+.pc70O1Y6HdzT607YK_OL { color: transparent !important; pointer-events: none; }
+.rtWcge6eoBiDmFoHo4gD {
+  position: absolute;
+  width: 1em;
+  height: 1em;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  color: var(--uc-brand-on);
+  animation: qUXtsmRZhV0_Rb8A9qFD 0.6s linear infinite;
+}
+.lSxxR32yQ7uBGKoReA0d .rtWcge6eoBiDmFoHo4gD, .uEkFBKngy5ABC8BavrlF .rtWcge6eoBiDmFoHo4gD, .ZShdqkg6btw_9kcxTgYx .rtWcge6eoBiDmFoHo4gD { color: var(--uc-text); }
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4 .rtWcge6eoBiDmFoHo4gD { color: var(--uc-inverse-fg); }
+@keyframes qUXtsmRZhV0_Rb8A9qFD { to { transform: rotate(-360deg); } }
+
+/* ---- Surface: dark -------------------------------------------------------- *
+   `surface="dark"`, remaps the semantic tokens the variants read to the fixed
+   dark-chrome values (mirrors `.uc-chrome` in tokens.css). Lets a single Button
+   render correctly on the app's dark header / sidebar / rails WITHOUT needing a
+   `.uc-chrome` ancestor (the app chrome is styled with UiChemy's own app tokens, not the
+   DS scope). Orthogonal to variant + tone: every variant flips automatically,
+   solid-neutral becomes a white B&W primary, outline/ghost go light-on-dark,
+   brand stays orange. */
+.VnThCro2n02iRphzomVo {
+  --uc-surface-sunken:  #101010;
+  --uc-surface-control: rgba(255, 255, 255, 0.05);
+
+  --uc-text-strong: #FFFFFF;
+  --uc-text:        #A3A3A3;
+
+  /* B&W primary flips to a light fill with dark ink on dark chrome */
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #171717;
+
+  --uc-border-subtle: #333333;
+  --uc-border:        #404040;
+  --uc-border-strong: #525252;
+  --uc-brand-border:  var(--uc-border);
+  --uc-ring:          rgba(245, 245, 245, 0.55);
+
+  /* per-family fg/soft readable on dark */
+  --uc-brand-fg:   #EDEDED;  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-fg: #A7EAAA;  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-fg:  #FDC9C6;  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+}
+
+/* The always-dark chip: the floating canvas toolbar's standalone button as a
+   reusable control. Reads the SAME --uc-toolbar tokens (with the same literal
+   fallbacks), so the two stay identical; the component adds `uc-pop-dark`
+   alongside this class, which is what scopes those tokens to dark values on
+   any page theme. */
+.cOkswkXgGqdwukDtzxre {
+  background: var(--uc-toolbar-bg, var(--uc-surface-raised, #242424));
+  color: var(--uc-toolbar-fg, var(--uc-text, #F5F5F5));
+  box-shadow: inset 0 0 0 1px var(--uc-toolbar-border, rgba(255, 255, 255, 0.08));
+  border-radius: var(--uc-toolbar-radius, var(--uc-radius-lg, 12px));
+}
+.cOkswkXgGqdwukDtzxre:hover:not(:disabled) {
+  background: var(--uc-toolbar-hover-bg, var(--uc-surface-overlay, #2E2E2E));
+  color: var(--uc-toolbar-fg, var(--uc-text-strong, #FFFFFF));
+}
+.cOkswkXgGqdwukDtzxre:focus-visible {
+  outline: 2px solid var(--uc-ring, rgba(245, 245, 245, 0.55));
+  outline-offset: 2px;
+}
+
+.VDCgP2TXcbIH83qTz1iU {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-8, 8px);
+  font-family: var(--uc-font-sans, system-ui, sans-serif);
+  font-size: var(--uc-text-base, 14px);
+  color-scheme: dark;
+  pointer-events: none;
+}
+
+.wcjtBjSJwTWRpPftzjvQ,
+.Dki1FM4eHY9MKK_GAGym,
+.j4Axbcky5LgpsKgn4WAb {
+  background: var(--uc-toolbar-bg, var(--uc-surface-raised, #242424));
+  border: 1px solid var(--uc-toolbar-border, var(--uc-border, #3d3d3d));
+  box-shadow: 0 16px 44px -12px rgb(0 0 0 / 48%), 0 4px 12px -4px rgb(0 0 0 / 32%);
+}
+
+.wcjtBjSJwTWRpPftzjvQ {
+  pointer-events: auto;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-4, 4px);
+  height: var(--uc-toolbar-height, 48px);
+  padding: 0 var(--uc-space-6, 6px);
+  /* A soft rectangle, not a pill: one step above the buttons it holds so the
+     corners stay concentric (button 8 + ~7px inset ≈ 12). */
+  border-radius: var(--uc-toolbar-radius, var(--uc-radius-lg, 12px));
+  overflow: visible;
+}
+
+.Nt2ipeZvcBNJCdMb5cZ_,
+.Dki1FM4eHY9MKK_GAGym {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+/* Actions share the global Button radius; the ✕ matches the bar beside it. */
+.Nt2ipeZvcBNJCdMb5cZ_ { border-radius: var(--uc-toolbar-action-radius, var(--uc-btn-radius, var(--uc-radius-md, 8px))); }
+.Dki1FM4eHY9MKK_GAGym { border-radius: var(--uc-toolbar-radius, var(--uc-radius-lg, 12px)); }
+
+.Nt2ipeZvcBNJCdMb5cZ_ {
+  position: relative;
+  flex: none;
+  /* Fixed size — the dock magnification was removed. */
+  width: var(--uc-toolbar-action-size, 34px);
+  height: var(--uc-toolbar-action-size, 34px);
+  border: 0;
+  background: transparent;
+  color: var(--uc-toolbar-fg, var(--uc-text, #e5e5e5));
+  /* The active pill slides between buttons on this transition. */
+  transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+  /* Selected look = the DS dark gradient button: a dark fill with the sheen
+     gradient on top and a hairline stroke + raised shadow. The gradient is a
+     background-IMAGE, so it also survives the composer's theme button-paint
+     guard (which only zeroes background-color). Defined once, reused by every
+     :active rule below so the host-reset guards stay in sync. */
+  --uc-tb-active-bg:
+    var(--uc-sheen, linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.03))),
+    var(--uc-surface-sunken, #171717);
+  --uc-tb-active-ring:
+    inset 0 0 0 1px var(--uc-border-strong, #525252),
+    var(--uc-shadow-raised, 0 1px 2px rgba(0, 0, 0, 0.30));
+}
+
+.Nt2ipeZvcBNJCdMb5cZ_:hover,
+.Dki1FM4eHY9MKK_GAGym:hover {
+  background: var(--uc-toolbar-hover-bg, var(--uc-surface-overlay, #2a2a2a));
+  color: var(--uc-text-strong, #fff);
+}
+
+.Nt2ipeZvcBNJCdMb5cZ_:focus-visible,
+.Dki1FM4eHY9MKK_GAGym:focus-visible {
+  outline: 2px solid var(--uc-ring, #f5f5f5);
+  outline-offset: 2px;
+}
+
+/* Selected = a dark, inset "stroked" button (the global dark icon button look),
+   not a light disc. The stroke is the visible part; the fill sits a touch below
+   the bar so it reads as pressed-in. */
+.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ {
+  background: var(--uc-tb-active-bg);
+  box-shadow: var(--uc-tb-active-ring);
+  color: var(--uc-text-strong, #fff);
+}
+.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:hover {
+  background: var(--uc-tb-active-bg);
+}
+
+/* A disabled action says so under the pointer. `default` read as "this button
+   simply does nothing" — the arrow never changes, so a press that was ignored
+   looked like a press that was missed. */
+.Nt2ipeZvcBNJCdMb5cZ_:disabled,
+.Nt2ipeZvcBNJCdMb5cZ_:disabled:hover {
+  opacity: 1;
+  color: var(--uc-text-muted, #a3a3a3);
+  background: transparent;
+  cursor: not-allowed;
+}
+
+/* Active AND disabled is work in progress — Save during a flush is the case
+   this exists for. `progress` was the old choice and it is the wrong signal
+   here: it means "busy, but you may still interact", while the button is in
+   fact refusing the click. Saves are also short, so a cursor that only reads
+   as a brief flicker told the user nothing. */
+.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:disabled,
+.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:disabled:hover {
+  background: var(--uc-tb-active-bg);
+  box-shadow: var(--uc-tb-active-ring);
+  color: var(--uc-text-strong, #fff);
+  cursor: not-allowed;
+}
+
+.Nt2ipeZvcBNJCdMb5cZ_ svg,
+.Dki1FM4eHY9MKK_GAGym svg {
+  width: auto !important;
+  height: auto !important;
+  color: inherit !important;
+  stroke: currentColor !important;
+  fill: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+  max-width: none !important;
+  max-height: none !important;
+  display: block;
+}
+
+.vPZZP6vGHUVlSQhkRpOh {
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--uc-space-2, 2px);
+  background: var(--uc-toolbar-border, var(--uc-border, #3d3d3d));
+}
+
+.jLW95_rgGsGmyK7hLMfr::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  left: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--uc-toolbar-indicator, var(--uc-brand, #fd6a35));
+  box-shadow: 0 0 0 1.5px var(--uc-toolbar-bg, var(--uc-surface-raised, #242424));
+  pointer-events: none;
+}
+
+.Dki1FM4eHY9MKK_GAGym {
+  pointer-events: auto;
+  flex: none;
+  width: var(--uc-toolbar-dismiss-size, 44px);
+  height: var(--uc-toolbar-dismiss-size, 44px);
+  color: var(--uc-toolbar-fg, var(--uc-text, #e5e5e5));
+  transition: background-color 150ms ease, color 150ms ease, transform 100ms ease;
+}
+.Dki1FM4eHY9MKK_GAGym:active { transform: scale(.94); }
+/* The ✕ is a <button> that paints its own surface, and hosts reset button
+   backgrounds above this module's weight (the composer's
+   `.uich-tw [type='button']` is 0,2,0, its hover reset 0,3,0), which left it
+   transparent: a white disc over a light canvas. Out-rank them so it stays the
+   same dark surface as the bar. */
+.VDCgP2TXcbIH83qTz1iU .Dki1FM4eHY9MKK_GAGym.Dki1FM4eHY9MKK_GAGym { background: var(--uc-toolbar-bg, var(--uc-surface-raised, #242424)); }
+.VDCgP2TXcbIH83qTz1iU .Dki1FM4eHY9MKK_GAGym.Dki1FM4eHY9MKK_GAGym:hover {
+  background: var(--uc-toolbar-hover-bg, var(--uc-surface-overlay, #2a2a2a));
+  color: var(--uc-text-strong, #fff);
+}
+/* Same guard for the actions: the host's hover/focus reset (0,3,0) cleared
+   their hover wash and could clear the selected fill while focused. Disabled
+   actions stay out of the hover rule, as in `.action:disabled:hover` above;
+   `.active` comes last so a selected action keeps its fill under the pointer. */
+.VDCgP2TXcbIH83qTz1iU .Nt2ipeZvcBNJCdMb5cZ_.Nt2ipeZvcBNJCdMb5cZ_:not(:disabled):hover {
+  background: var(--uc-toolbar-hover-bg, var(--uc-surface-overlay, #2a2a2a));
+  color: var(--uc-text-strong, #fff);
+}
+.VDCgP2TXcbIH83qTz1iU .Nt2ipeZvcBNJCdMb5cZ_.Nt2ipeZvcBNJCdMb5cZ_:disabled { color: var(--uc-text-muted, #a3a3a3); }
+.VDCgP2TXcbIH83qTz1iU .Nt2ipeZvcBNJCdMb5cZ_.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ,
+.VDCgP2TXcbIH83qTz1iU .Nt2ipeZvcBNJCdMb5cZ_.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:disabled:hover {
+  background: var(--uc-tb-active-bg);
+  box-shadow: var(--uc-tb-active-ring);
+  color: var(--uc-text-strong, #fff);
+}
+.VDCgP2TXcbIH83qTz1iU .Nt2ipeZvcBNJCdMb5cZ_.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:not(:disabled):hover {
+  background: var(--uc-tb-active-bg);
+  box-shadow: var(--uc-tb-active-ring);
+}
+.Dki1FM4eHY9MKK_GAGym svg { width: 16px !important; height: 16px !important; }
+
+.j4Axbcky5LgpsKgn4WAb {
+  pointer-events: none;
+  z-index: var(--uc-z-tooltip, 1300);
+  padding: 5px 9px;
+  border-radius: var(--uc-radius-sm, 6px);
+  color: var(--uc-text-strong, #fff);
+  font-size: 11.5px;
+  font-weight: var(--uc-weight-medium, 500);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Nt2ipeZvcBNJCdMb5cZ_ { width: var(--uc-toolbar-action-size, 34px); height: var(--uc-toolbar-action-size, 34px); }
+}
+
+/* Badge, compact status/label pill on uc- tokens. */
+.V_kpdXZsi07BrkW8mkNK {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-4);
+  height: 20px;
+  padding: 0 var(--uc-space-8);
+  border-radius: var(--uc-radius-pill);
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-xs);
+  font-weight: var(--uc-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+}
+.uKPXqu7kkFVS2xBa9AEE { height: 24px; padding: 0 var(--uc-space-12); font-size: var(--uc-text-sm); }
+
+.pCK7hwfFSalZodp5bh2z {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  flex: none;
+}
+
+/* variants read the --_* tone channels */
+.LujE9zA0XWq7MG_G1pvY   { color: var(--_on, var(--uc-brand-on)); background: var(--_fill, var(--uc-brand)); background-image: var(--uc-sheen); box-shadow: var(--uc-shadow-1); }
+.VHma2GbfXrG07eyZL1Df    { color: var(--_fg, var(--uc-brand-fg)); background: var(--_soft, var(--uc-brand-soft)); }
+.yNf7ITzC0piY9ptVONoj { color: var(--_fg, var(--uc-brand-fg)); background: transparent; box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)); }
+
+.tUaDdUn93V7X81sgWiv7   { --_fill: var(--uc-brand);   --_on: var(--uc-brand-on);   --_fg: var(--uc-brand-fg);   --_soft: var(--uc-brand-soft);   --_border: var(--uc-brand-border); }
+.mL3Idfa5m7lUfaPAG188 { --_fill: var(--uc-success); --_on: var(--uc-success-on); --_fg: var(--uc-success-fg); --_soft: var(--uc-success-soft); --_border: var(--uc-success-border); }
+.NGzt4PZr82HJx6zD5oeP  { --_fill: var(--uc-danger);  --_on: var(--uc-danger-on);  --_fg: var(--uc-danger-fg);  --_soft: var(--uc-danger-soft);  --_border: var(--uc-danger-border); }
+.VF30PpmNX8Fbve0UeM9T { --_fill: var(--uc-warning); --_on: var(--uc-warning-on); --_fg: var(--uc-warning-fg); --_soft: var(--uc-warning-soft); --_border: var(--uc-warning-border); }
+.o39yUK028V2zERFldgoO  { --_fill: var(--uc-accent);  --_on: var(--uc-accent-on);  --_fg: var(--uc-accent-fg);  --_soft: var(--uc-accent-soft);  --_border: var(--uc-accent-border); }
+.yP65shMRVToyLTvM480a { --_fill: var(--uc-text); --_on: var(--uc-text-inverse); --_fg: var(--uc-text-muted); --_soft: var(--uc-surface-sunken); --_border: var(--uc-border-strong); }
+
+/* Chip, a compact 24px token (class, tag, filter) on uc- tokens.
+   default: control fill · selected: inverse fill · global: brand dot + tint. */
+
+.dkuafg1vJUVqJAA8prO1 {
+  --_bg: var(--uc-surface-control);
+  --_fg: var(--uc-text);
+  --_bg-hover: var(--uc-accent-glow-press);
+  --_fg-hover: var(--uc-text-strong);
+  display: inline-flex;
+  align-items: center;
+  max-width: 100%;
+  min-width: 0;
+  height: 24px;
+  padding: 0 var(--uc-space-6);
+  gap: var(--uc-space-4);
+  border-radius: var(--uc-radius-sm);
+  background: var(--_bg);
+  color: var(--_fg);
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-xs);
+  font-weight: var(--uc-weight-medium);
+  line-height: 1;
+  white-space: nowrap;
+  vertical-align: middle;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.EKxcdtpSMR8k2cwA3cy1 { padding: 0 var(--uc-space-6) 0 var(--uc-space-4); }
+
+/* Hover only reads as "you can press this" on an interactive chip. */
+.xOj45s6spWvhZhnGkRuH:hover:not(.MwZDAwgAq4mwAT97YYKm) {
+  background: var(--_bg-hover);
+  color: var(--_fg-hover);
+}
+
+/* Global: a site-wide item. Brand tint + brand-light text. */
+.G1683YigkGsqcE775uVk {
+  --_bg: color-mix(in srgb, var(--uc-brand) 16%, transparent);
+  --_fg: var(--uc-brand-lighter, color-mix(in srgb, var(--uc-brand) 62%, #FFFFFF));
+  --_bg-hover: color-mix(in srgb, var(--uc-brand) 24%, transparent);
+  --_fg-hover: var(--uc-brand-lighter, color-mix(in srgb, var(--uc-brand) 62%, #FFFFFF));
+}
+
+/* Selected: the one in use. Wins over tone (the dot keeps the brand). */
+.wRcViTjkcDISfjPnGCjY {
+  --_bg: var(--uc-inverse-bg);
+  --_fg: var(--uc-inverse-fg);
+  --_bg-hover: var(--uc-inverse-bg);
+  --_fg-hover: var(--uc-inverse-fg);
+}
+
+.MwZDAwgAq4mwAT97YYKm { opacity: 0.5; }
+
+/* Body: plain span, or a reset button filling the chip. */
+.SLS9DjQ9FaEvVca0mwIQ {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-4);
+  min-width: 0;
+  height: 100%;
+  color: inherit;
+  font: inherit;
+  line-height: 1;
+}
+button.SLS9DjQ9FaEvVca0mwIQ { cursor: pointer; }
+button.SLS9DjQ9FaEvVca0mwIQ:disabled { cursor: not-allowed; }
+
+/* Keyboard focus on the body rings the whole chip, like DS Button. */
+.dkuafg1vJUVqJAA8prO1:has(> .SLS9DjQ9FaEvVca0mwIQ:focus-visible) {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 2px;
+}
+
+.KsPukWp_lS34bP9Bhvkk {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ZdJPimnPYuyPNaJrtdUw {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+.ZdJPimnPYuyPNaJrtdUw :where(svg) { width: 12px; height: 12px; }
+
+.N14lWZIJ6G95w0Ct8fAd {
+  width: 5px;
+  height: 5px;
+  flex: none;
+  border-radius: var(--uc-radius-pill);
+  background: var(--uc-brand);
+}
+
+/* The x: a 16px hit area, quiet until hovered. */
+.AcH3FeQtLa6i3762DulQ {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--uc-radius-xs);
+  color: inherit;
+  opacity: 0.6;
+  cursor: pointer;
+  transition: opacity var(--uc-dur-fast) var(--uc-ease-standard),
+    background var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.AcH3FeQtLa6i3762DulQ:hover:not(:disabled) {
+  opacity: 1;
+  background: var(--uc-accent-glow-hover);
+}
+.AcH3FeQtLa6i3762DulQ:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 1px;
+}
+.AcH3FeQtLa6i3762DulQ:disabled { cursor: not-allowed; }
+
+/* Select, Radix behavior, uc- token look. */
+.e7F3s8Cpe8pIMhvl2kjH {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uc-space-8);
+  height: var(--uc-control-h-md);
+  min-width: 180px;
+  padding: 0 var(--uc-space-12);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text-strong);
+  background: var(--uc-surface-control);
+  background-image: var(--uc-sheen);
+  border-radius: var(--uc-radius-md);
+  box-shadow: inset 0 0 0 1px var(--uc-border-subtle), var(--uc-shadow-raised);
+  cursor: pointer;
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.e7F3s8Cpe8pIMhvl2kjH:hover:not(:focus-visible):not([data-state="open"]) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-raised); }
+/* Focus / open = OFFSET brand ring (matches the Input): subtle border kept,
+   then a 2px transparent gap, then the brand outline outside the trigger. */
+.e7F3s8Cpe8pIMhvl2kjH:focus-visible,
+.e7F3s8Cpe8pIMhvl2kjH[data-state="open"] {
+  box-shadow: inset 0 0 0 1px var(--uc-border-subtle), var(--uc-shadow-raised);
+  outline: 1px solid var(--uc-brand);
+  outline-offset: 1px;
+}
+.e7F3s8Cpe8pIMhvl2kjH[data-placeholder] { color: var(--uc-text-subtle); }
+.e7F3s8Cpe8pIMhvl2kjH:disabled { opacity: 0.5; cursor: not-allowed; }
+/* The chevron is the one DS icon that sits inside a WRAPPER (Radix renders
+   SelectPrimitive.Icon as a <span>), so the svg inside it is inline and sits on
+   that span's text baseline, which leaves descender space below it and pushes
+   the glyph above the trigger's centre. `display: block` collapses that line box. */
+.RXwx8sg3STq8XWcaRIiM { color: var(--uc-text-muted); flex: none; }
+.RXwx8sg3STq8XWcaRIiM svg { display: block; }
+
+/* trigger sizes (md is the base above) */
+.A7XnIZMI5obBSBNATLZT { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
+.O7fvjNbDZA9xW0hUSAKe { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+
+.BZSeASQ2IO83EAmmFtBD {
+  min-width: var(--radix-select-trigger-width);
+  background: var(--uc-surface-overlay);
+  border-radius: var(--uc-radius-md);
+  /* Border + shadow so the list reads as its own floating layer and never
+     blends into a same-tone (dark) panel behind it. */
+  border: 1px solid var(--uc-border);
+  box-shadow: var(--uc-shadow-4);
+  padding: var(--uc-space-4);
+  z-index: var(--uc-z-dropdown);
+  overflow: hidden;
+  /* Never taller than the room Radix measured beside the trigger (minus the
+     collision padding), so a long list scrolls inside instead of running off
+     the screen. The viewport is the flex child Radix scrolls. */
+  max-height: var(--radix-select-content-available-height);
+  animation: cdjUAFtyJ3yGS3rj5qO1 var(--uc-dur-enter) var(--uc-ease-emphasized);
+}
+.umOYcecNSay6i1GVC_Oi { position: relative; }
+.w4hKpheBcjRW4WbnSQPQ {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  border-radius: var(--uc-radius-sm);
+  /* The HOVER wash, not a control fill — see --uc-surface-hover in tokens.css. */
+  background: var(--uc-surface-hover, var(--uc-surface-control));
+  /* transform is animated via the Web Animations API (see useSlidingHighlight);
+     only width/height use a CSS transition. */
+  transition: width var(--uc-dur-base) var(--uc-ease-emphasized),
+    height var(--uc-dur-base) var(--uc-ease-emphasized);
+  pointer-events: none;
+  z-index: 0;
+}
+._veB6PGMKZWelgCoOwZH {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  /* min-height, not height: an option with a description line (chat scope
+     "Widget / Page") was clipped to one row and overlapped the next. */
+  min-height: var(--uc-control-h-md);
+  padding: var(--uc-space-4, 4px) var(--uc-space-12) var(--uc-space-4, 4px) var(--uc-space-32);
+  border-radius: var(--uc-radius-sm);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text);
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  position: relative;
+  z-index: 1;
+}
+.lAdBRQUB75_wlMPT7wpF { min-height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); }
+.FRL9ZRUfTQvUhgXYhFjn { min-height: var(--uc-control-h-lg); font-size: var(--uc-text-md); }
+._veB6PGMKZWelgCoOwZH[data-highlighted] { color: var(--uc-text-strong); }
+._veB6PGMKZWelgCoOwZH[data-disabled] { color: var(--uc-text-subtle); pointer-events: none; }
+.K4s2DAYWscSzIFHHt98g { position: absolute; left: var(--uc-space-12); display: inline-flex; color: var(--uc-text-strong); }
+
+@keyframes cdjUAFtyJ3yGS3rj5qO1 { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+
+/* Menu, Radix dropdown-menu behavior, uc- token look. Always-dark popover
+   with a sliding highlight that follows the active item. */
+.s3BFP6K6LYzVFAhoSOjx {
+  position: relative;
+  min-width: 200px;
+  background: var(--uc-surface-overlay);
+  border-radius: var(--uc-radius-md);
+  /* Border + shadow so the popover reads as its own floating layer and never
+     blends into a same-tone (dark) panel behind it. */
+  border: 1px solid var(--uc-border);
+  box-shadow: var(--uc-shadow-4);
+  padding: var(--uc-space-4);
+  z-index: var(--uc-z-dropdown);
+  animation: kqSucFY5pNg8mWWYTGqA var(--uc-dur-enter) var(--uc-ease-emphasized);
+}
+.SwLQKRnMsenTHHPtphsk {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  border-radius: var(--uc-radius-sm);
+  /* The HOVER wash, not a control fill — see --uc-surface-hover in tokens.css. */
+  background: var(--uc-surface-hover, var(--uc-surface-control));
+  /* transform is animated via the Web Animations API (see useSlidingHighlight);
+     only width/height use a CSS transition. */
+  transition: width var(--uc-dur-base) var(--uc-ease-emphasized),
+    height var(--uc-dur-base) var(--uc-ease-emphasized);
+  pointer-events: none;
+  z-index: 0;
+}
+.tPTLiYfuDUhQ80L7yDnk {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-8);
+  height: var(--uc-control-h-md);
+  padding: 0 var(--uc-space-12);
+  border-radius: var(--uc-radius-sm);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text);
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.bBCXPgA12Rh98ObefXMJ { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
+.UdzaD6XmSAvIuynP2LOO { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+.tPTLiYfuDUhQ80L7yDnk[data-highlighted] { color: var(--uc-text-strong); }
+.tPTLiYfuDUhQ80L7yDnk[data-disabled] { color: var(--uc-text-subtle); pointer-events: none; }
+.I3TPCu8NiLZDfkHiNUct { color: var(--uc-danger-fg); }
+.I3TPCu8NiLZDfkHiNUct[data-highlighted] { color: var(--uc-danger-fg); }
+.QBoqQMo13ZJMyLxqxRts { margin-right: auto; font-size: var(--uc-text-xs); color: var(--uc-text-subtle); font-family: var(--uc-font-mono); }
+.YEax7LE1yCq7o0eawNUV { padding: var(--uc-space-8) var(--uc-space-12) var(--uc-space-4); font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); letter-spacing: var(--uc-tracking-wide); text-transform: uppercase; color: var(--uc-text-subtle); }
+.bcfw649Ew7czzqqkT_G8 { height: 1px; background: var(--uc-border-subtle); margin: var(--uc-space-4) 0; }
+
+@keyframes kqSucFY5pNg8mWWYTGqA { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+/* Breadcrumb, a one-line path on uc- tokens. Folds the middle into "…". */
+
+.fGmSJ5HIYlspfdvWSljx {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  overflow: hidden;
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-xs);
+  line-height: 16px;
+}
+
+.pt513ihn0bW4UIaIhPq3 {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tIIwE00AlnH6G1H0ScDD {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  min-width: 0;
+  margin: 0;
+}
+/* The outermost level gives way (truncates) before anything else. */
+.xiBUVESeJuZt4uizOZtR { flex: 0 1 auto; }
+.fIenfnGCBeClCczjIY_U { flex: none; }
+
+.RLvwIRYHgDfAMUuukUPA {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+  padding: 0 var(--uc-space-2);
+  color: var(--uc-text-subtle);
+}
+
+.YrBwlMYp6KZPkbSefsXF {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-2);
+  min-width: 0;
+  max-width: 100%;
+  padding: var(--uc-space-2) var(--uc-space-4);
+  border-radius: var(--uc-radius-sm);
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-xs);
+  font-weight: var(--uc-weight-regular);
+  line-height: 16px;
+  color: var(--uc-text-muted);
+  white-space: nowrap;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+button.YrBwlMYp6KZPkbSefsXF { cursor: pointer; }
+button.YrBwlMYp6KZPkbSefsXF:hover:not(:disabled),
+button.YrBwlMYp6KZPkbSefsXF[data-state="open"] {
+  background: var(--uc-surface-control);
+  color: var(--uc-text-strong);
+}
+button.YrBwlMYp6KZPkbSefsXF:disabled { cursor: default; }
+button.YrBwlMYp6KZPkbSefsXF:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 1px;
+}
+.YrBwlMYp6KZPkbSefsXF :where(svg) { flex: none; }
+
+.rvpWB8OQLlL07rTK4eAW {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wjuYRop3OFfK200gdz7m {
+  color: var(--uc-text-strong);
+  font-weight: var(--uc-weight-medium);
+}
+
+.wsj7Z__MfXcwvAsPIFyz { padding: var(--uc-space-2) var(--uc-space-4); }
+
+.TAE5h8Zh4DKgpjaWZBCp {
+  display: inline-flex;
+  align-items: center;
+  flex: none;
+}
+
+/* Off-screen, out-of-flow copy used only for measuring. */
+.PthUA855WhHTBupEyLYa {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  visibility: hidden;
+  pointer-events: none;
+  white-space: nowrap;
+}
+.PthUA855WhHTBupEyLYa > * { flex: none; }
+
+/* AgentThinking, pixel-glyph + rotating shimmer label on uc- tokens.
+   Monochrome by default; `.brand` lights the glyph in brand orange. */
+
+.Ruxou27KB2ffUChUVK9l {
+  --_cell: 4px;
+  --_gap: 2px;
+  --_fs: var(--uc-text-base);
+  --_glyph: var(--uc-text-muted);
+  --_ink: var(--uc-text-muted);
+  --_hi: var(--uc-text-strong);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-10);
+  min-width: 0;
+  font-family: var(--uc-font-sans);
+  font-size: var(--_fs);
+  font-weight: var(--uc-weight-medium);
+  line-height: var(--uc-leading-snug);
+  color: var(--_ink);
+}
+.VFbDU55AXu0UbJu2pt8g { --_cell: 3px; --_gap: 2px; --_fs: var(--uc-text-sm); gap: var(--uc-space-8); }
+.JZHgZd3JBkPX2d7FAGKX { --_cell: 4px; --_gap: 2px; --_fs: var(--uc-text-base); }
+.oGZvaE8n9VHVQJPDC01g { --_cell: 5px; --_gap: 3px; --_fs: var(--uc-text-md); gap: var(--uc-space-12); }
+
+.jmXOk6lWhwNtl3iP49d0 { --_glyph: var(--uc-brand); }
+
+/* ---- 3×3 pixel glyph ------------------------------------------------------ */
+.UeduOQiV4A1t8ocLEW4k {
+  flex: none;
+  display: grid;
+  grid-template-columns: repeat(3, var(--_cell));
+  grid-auto-rows: var(--_cell);
+  gap: var(--_gap);
+}
+.n2Npnap_KixC1WpYyRrq {
+  border-radius: 1px;
+  background: var(--_glyph);
+  opacity: 0.14;
+  animation: ENK02LXEiwJEdCIqqDAk 1.2s var(--uc-ease-standard) infinite;
+  animation-delay: calc(var(--_d, 0) * 120ms);
+}
+@keyframes ENK02LXEiwJEdCIqqDAk {
+  0%, 100% { opacity: 0.14; }
+  35%      { opacity: 1; }
+  60%      { opacity: 0.4; }
+}
+
+/* ---- Label ---------------------------------------------------------------- */
+.VXY62ALYZACpx7ZixgvU {
+  position: relative;
+  display: inline-flex;
+  min-width: 0;
+  overflow: hidden;
+}
+.EGw2q3zOpCAzBBAay63j {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  animation: oQbxKVPdIyuH3s62gi9x var(--uc-dur-slow) var(--uc-ease-emphasized) both;
+}
+@keyframes oQbxKVPdIyuH3s62gi9x {
+  from { opacity: 0; transform: translateY(6px); filter: blur(3px); }
+  to   { opacity: 1; transform: none;            filter: blur(0); }
+}
+
+/* Light sweep: a narrow highlight band slides across muted text. */
+.UnnGImZUa828Da8pO1RA {
+  color: transparent;
+  background-image: linear-gradient(
+    -100deg,
+    var(--_ink) 0%,
+    var(--_ink) 38%,
+    var(--_hi) 50%,
+    var(--_ink) 62%,
+    var(--_ink) 100%
+  );
+  background-size: 250% 100%;
+  background-position: 0% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  animation:
+    oQbxKVPdIyuH3s62gi9x var(--uc-dur-slow) var(--uc-ease-emphasized) both,
+    rKB3qYwKdxGzfOoqF5_o 2.2s linear infinite;
+}
+@keyframes rKB3qYwKdxGzfOoqF5_o {
+  from { background-position: 0% 0; }
+  to   { background-position: 250% 0; }
+}
+
+/* Reduced motion: static glyph (diagonal pattern), no sweep, no slide.
+   `animation: none` (not a 0.01ms duration) so infinite loops don't flicker. */
+@media (prefers-reduced-motion: reduce) {
+  .n2Npnap_KixC1WpYyRrq, .EGw2q3zOpCAzBBAay63j, .UnnGImZUa828Da8pO1RA { animation: none !important; }
+  .n2Npnap_KixC1WpYyRrq { opacity: 0.35; }
+  .n2Npnap_KixC1WpYyRrq:nth-child(1), .n2Npnap_KixC1WpYyRrq:nth-child(5), .n2Npnap_KixC1WpYyRrq:nth-child(9) { opacity: 1; }
+  .UnnGImZUa828Da8pO1RA { color: var(--_ink); background: none; }
+}
+
+/* AgentProgress, collapsible AI task list on uc- tokens.
+   Chrome is monochrome; brand orange is reserved for the progress ring and the
+   running spinner. Done / failed use the success / danger families. */
+
+.VYgaFAoqHM3fvfC0MqmY {
+  --_fs: var(--uc-text-base);
+  --_fs-detail: var(--uc-text-xs);
+  --_icon: 16px;
+  --_row: 28px;
+  --_pad: var(--uc-space-12);
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-width: 0;
+  padding: var(--uc-space-8) var(--_pad);
+  font-family: var(--uc-font-sans);
+  font-size: var(--_fs);
+  line-height: var(--uc-leading-snug);
+  color: var(--uc-text);
+  background: var(--uc-surface-raised);
+  border-radius: var(--uc-card-radius, var(--uc-radius-lg));
+  box-shadow: inset 0 0 0 1px var(--uc-border-subtle);
+}
+.Tq2txU5So_VlPiKtW0h3 { --_fs: var(--uc-text-sm); --_fs-detail: var(--uc-text-2xs); --_icon: 14px; --_row: 24px; --_pad: var(--uc-space-10); }
+.URmmVYEC5OTcMd_Gv_1H { --_fs: var(--uc-text-base); }
+
+/* ---- Header --------------------------------------------------------------- */
+.Cj_0umszAys8WcFJ0cf6 {
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-8);
+  min-height: var(--_row);
+}
+.a8izpO6Wfz31RRqmPHZi {
+  flex: none;
+  width: var(--_icon);
+  height: var(--_icon);
+  transform: rotate(90deg);
+}
+.a8izpO6Wfz31RRqmPHZi.aNJ5vl9zOqZafCcQRTeF { animation: cLfjTCMZVuKa2G49eilh 1.2s linear infinite; }
+.iCNmw2Vz5E1_3VYz2Zrr { fill: none; stroke: var(--uc-border); stroke-width: 2.25; }
+.PhTSTBA2P_q9bjwzx9Co {
+  fill: none;
+  stroke: var(--uc-brand);
+  stroke-width: 2.25;
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--uc-dur-slow) var(--uc-ease-emphasized);
+}
+.vVTeHnjnh7tWQGbo7xpk { flex: 1; min-width: 0; display: flex; overflow: hidden; }
+.q89u_ytvNrsZtJlYTErM {
+  display: block;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--uc-text-muted);
+  font-weight: var(--uc-weight-medium);
+  animation: u7F0ywrl_p71XvtGyTGj var(--uc-dur-base) var(--uc-ease-emphasized) both;
+}
+@keyframes u7F0ywrl_p71XvtGyTGj {
+  from { opacity: 0; transform: translateY(4px); filter: blur(2px); }
+  to   { opacity: 1; transform: none;            filter: blur(0); }
+}
+
+.Ey0yXRTBQTLyy5SBSzTD {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--uc-control-h-sm);
+  height: var(--uc-control-h-sm);
+  margin-left: calc(var(--uc-space-4) * -1);
+  padding: 0;
+  border: none;
+  border-radius: var(--uc-radius-sm);
+  background: transparent;
+  color: var(--uc-text-muted);
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.Ey0yXRTBQTLyy5SBSzTD:hover { background: var(--uc-brand-glow-hover); color: var(--uc-text-strong); }
+.Ey0yXRTBQTLyy5SBSzTD:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.HVCoF1pwO_OtMb9h4Pzw { transition: transform var(--uc-dur-base) var(--uc-ease-emphasized); transform: rotate(90deg); }
+.Mtp7TzZZm4KZ4eXPIuA5 .HVCoF1pwO_OtMb9h4Pzw { transform: rotate(0deg); }
+
+/* ---- Collapsible body (grid-rows 0fr → 1fr, no height measuring) --------- */
+.taCmXnplSvoTmAahZcli {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  visibility: hidden;
+  transition: grid-template-rows var(--uc-dur-slow) var(--uc-ease-emphasized),
+    opacity var(--uc-dur-base) var(--uc-ease-standard),
+    visibility 0s linear var(--uc-dur-slow);
+}
+.Mtp7TzZZm4KZ4eXPIuA5 .taCmXnplSvoTmAahZcli {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  visibility: visible;
+  transition: grid-template-rows var(--uc-dur-slow) var(--uc-ease-emphasized),
+    opacity var(--uc-dur-base) var(--uc-ease-standard),
+    visibility 0s;
+}
+.rffL9A1I8HNSQfoJj22L { min-height: 0; overflow: hidden; }
+
+.OtfqzXuHjBci7eGWjX70 {
+  list-style: none;
+  margin: 0;
+  padding: var(--uc-space-4) 0 var(--uc-space-2);
+  display: flex;
+  flex-direction: column;
+  gap: var(--uc-space-8);
+}
+
+/* ---- Step row ------------------------------------------------------------- */
+.SK6elGn5lBp9jjrQ_fb1 {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--uc-space-8);
+  min-height: var(--_row);
+  padding: calc((var(--_row) - var(--_icon)) / 2) 0;
+  animation: MEVElb14VFvg87yd_h3V var(--uc-dur-enter) var(--uc-ease-emphasized) both;
+}
+@keyframes MEVElb14VFvg87yd_h3V {
+  from { opacity: 0; transform: translateY(-4px); filter: blur(4px); }
+  to   { opacity: 1; transform: none;             filter: blur(0); }
+}
+
+._2RHZiquFACCZe_VnXz5 {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: var(--_icon);
+  height: var(--_icon);
+  animation: jMgCwYdRe71JJo1YmeHm var(--uc-dur-base) var(--uc-ease-emphasized) both;
+}
+._2RHZiquFACCZe_VnXz5 svg { display: block; }
+@keyframes jMgCwYdRe71JJo1YmeHm {
+  from { opacity: 0; transform: scale(0.7) rotate(15deg); }
+  to   { opacity: 1; transform: none; }
+}
+
+.dDRK7Ec6F9VwFGZylusx {
+  width: calc(var(--_icon) - 4px);
+  height: calc(var(--_icon) - 4px);
+  border-radius: var(--uc-radius-pill);
+  box-shadow: inset 0 0 0 1.5px var(--uc-border-strong);
+}
+.W59ZJy97gG2m7bcjy8V9 {
+  width: calc(var(--_icon) - 3px);
+  height: calc(var(--_icon) - 3px);
+  border-radius: var(--uc-radius-pill);
+  border: 1.75px solid var(--uc-border);
+  border-top-color: var(--uc-brand);
+  border-left-color: var(--uc-brand);
+  animation: cLfjTCMZVuKa2G49eilh 0.8s linear infinite;
+}
+@keyframes cLfjTCMZVuKa2G49eilh { to { transform: rotate(-360deg); } }
+
+.XFpovdiu3bEgePu0I4Z9 { display: flex; flex-direction: column; gap: 1px; min-width: 0; flex: 1; }
+.j_OIjg6D38gDYpeDmSRq { min-width: 0; overflow-wrap: anywhere; transition: color var(--uc-dur-base) var(--uc-ease-standard); }
+.g4L6QzDFcC7MZScKix65 {
+  font-size: var(--_fs-detail);
+  color: var(--uc-text-subtle);
+  overflow-wrap: anywhere;
+}
+
+.QxoyCzW1O9e6tdMDA9qF .j_OIjg6D38gDYpeDmSRq { color: var(--uc-text-muted); }
+.wsOFOFmVKHOjCkJt_w15 .j_OIjg6D38gDYpeDmSRq { color: var(--uc-text-strong); font-weight: var(--uc-weight-medium); }
+.pJzflIII9LIPni4QyYRI ._2RHZiquFACCZe_VnXz5         { color: var(--uc-success-fg); }
+.pJzflIII9LIPni4QyYRI .j_OIjg6D38gDYpeDmSRq    { color: var(--uc-text-muted); }
+.qAd3qOzEMHSz_39gC0iD ._2RHZiquFACCZe_VnXz5       { color: var(--uc-danger-fg); }
+.qAd3qOzEMHSz_39gC0iD .j_OIjg6D38gDYpeDmSRq  { color: var(--uc-text-strong); }
+.qAd3qOzEMHSz_39gC0iD .g4L6QzDFcC7MZScKix65     { color: var(--uc-danger-fg); }
+
+/* ---- Running text --------------------------------------------------------- */
+.tMTiQ9Lk0lSUQGfjfMtJ {
+  color: var(--uc-text-strong) !important;
+}
+.q89u_ytvNrsZtJlYTErM.tMTiQ9Lk0lSUQGfjfMtJ {
+  animation: u7F0ywrl_p71XvtGyTGj var(--uc-dur-base) var(--uc-ease-emphasized) both;
+}
+
+.vLCefXaCrRd1K0_Ub_8u {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Reduced motion: no loops (animation:none, not 0.01ms, so they don't flicker),
+   spinner becomes a static brand quarter-ring, collapse is instant. */
+@media (prefers-reduced-motion: reduce) {
+  .SK6elGn5lBp9jjrQ_fb1, ._2RHZiquFACCZe_VnXz5, .q89u_ytvNrsZtJlYTErM, .W59ZJy97gG2m7bcjy8V9, .a8izpO6Wfz31RRqmPHZi.aNJ5vl9zOqZafCcQRTeF { animation: none !important; }
+  .taCmXnplSvoTmAahZcli, .Mtp7TzZZm4KZ4eXPIuA5 .taCmXnplSvoTmAahZcli, .HVCoF1pwO_OtMb9h4Pzw, .PhTSTBA2P_q9bjwzx9Co { transition: none; }
+}
+
+/* The light turns by animating the gradient's ANGLE, not the element: rotating
+   the element spun the whole rectangle around its centre, so on a wide composer
+   the outline swung off the box. Browsers without @property show a still light. */
+@property --uc-loader-angle { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+
+.SwLkaegxMxOqXA8ts7t2 { --_radius: var(--uc-radius-xl); --_speed: 4s; position: relative; isolation: isolate; border-radius: var(--_radius); font-family: var(--uc-font-sans); }
+.m3CqgIhWsihpUA_bhR9j { position: relative; z-index: 1; border-radius: inherit; }
+/* Border light ONLY — no bloom outside the box (Jay, 2026-09-29): the light is
+   masked to a 2px band on the edge and nothing paints beyond it. */
+.nO2G50fv0tAsRx59gLjB { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; opacity: 0; transition: opacity var(--uc-dur-slow) var(--uc-ease-standard); z-index: 2; padding: 2px; background: conic-gradient(from var(--uc-loader-angle), transparent 0deg 205deg, var(--uc-brand-glow-hover) 225deg, var(--uc-brand) 275deg, var(--uc-brand-on) 288deg, var(--uc-brand) 298deg, transparent 322deg); -webkit-mask: linear-gradient(var(--uc-inverse-bg) 0 0) content-box, linear-gradient(var(--uc-inverse-bg) 0 0); -webkit-mask-composite: xor; -webkit-mask: linear-gradient(var(--uc-inverse-bg) 0 0) content-box, linear-gradient(var(--uc-inverse-bg) 0 0); mask: linear-gradient(var(--uc-inverse-bg) 0 0) content-box, linear-gradient(var(--uc-inverse-bg) 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+.WE1BzjxfZpSMBw3chEyI .nO2G50fv0tAsRx59gLjB { opacity: 1; animation: gFuY2iD0P0P2NTMIplz2 var(--_speed) linear infinite; }
+@keyframes gFuY2iD0P0P2NTMIplz2 { to { --uc-loader-angle: 360deg; } }
+
+/* Ring: overlays a box that already exists. Sits over the parent's border
+   (inset by the measured border width) with the parent's own outer radius. */
+.QFDuwsFZRgaJUo5pXokK { --_speed: 4s; --_radius: 0px; --_edge: 0px; position: absolute; inset: calc(var(--_edge) * -1); z-index: 3; border-radius: var(--_radius); pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) { .nO2G50fv0tAsRx59gLjB { animation: none !important; transition: none; } }
+
+/* ComposerAttachments, file / image tiles above the prompt, uc- tokens only.
+   Surface-agnostic: reads semantic tokens so it works on .uc-content (light)
+   and .uc-chrome / dark content alike. Brand orange = upload progress only. */
+
+.XHbXFVM8mAj9MvyFKMpn {
+  --_tile-h: 52px;
+  --_icon-box: 36px;
+  --_name-w: 148px;
+  list-style: none;
+  margin: 0;
+  /* room for the × that pokes out of the top-right corner */
+  padding: var(--uc-space-6) var(--uc-space-2) var(--uc-space-2) var(--uc-space-6);
+  display: flex;
+  gap: var(--uc-space-8);
+  overflow-x: auto;
+  overflow-y: visible;
+  scrollbar-width: none;
+  font-family: var(--uc-font-sans);
+}
+.XHbXFVM8mAj9MvyFKMpn::-webkit-scrollbar { display: none; }
+.BpIVdgTZpiEQzqgKq3cG { --_tile-h: 44px; --_icon-box: 30px; --_name-w: 120px; }
+
+/* ---- Tile ----------------------------------------------------------------- */
+.zsawzVlkQXeF_UU8Muf7 {
+  position: relative;
+  flex: none;
+  height: var(--_tile-h);
+  border-radius: var(--uc-radius-md);
+  background: var(--uc-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--uc-border);
+  animation: a64ECf2Bms1O153dypC_ var(--uc-dur-slow) var(--uc-ease-emphasized) both;
+  animation-delay: var(--_delay, 0ms);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.zsawzVlkQXeF_UU8Muf7:hover { box-shadow: inset 0 0 0 1px var(--uc-border-strong); }
+.dFuUUiw6mnWk1kDCAWz7 { width: var(--_tile-h); }
+
+.mfBCoPNjKCk_5ETidUxg {
+  animation: lqF7ND1uivmZJWlMAqql var(--uc-dur-base) var(--uc-ease-exit) both;
+  animation-delay: 0ms;
+  pointer-events: none;
+}
+
+@keyframes a64ECf2Bms1O153dypC_ {
+  from { opacity: 0; transform: translateY(6px) scale(0.92); filter: blur(2px); }
+  to   { opacity: 1; transform: none; filter: none; }
+}
+@keyframes lqF7ND1uivmZJWlMAqql {
+  from { opacity: 1; transform: none; }
+  to   { opacity: 0; transform: scale(0.88); }
+}
+
+/* ---- Body (button when clickable, plain box otherwise) --------------------- */
+.KAi8AUq4Hf5OD4nrKEz1 {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-8);
+  height: 100%;
+  width: 100%;
+  padding: 0 var(--uc-space-8) 0 var(--uc-space-12);
+  border-radius: inherit;
+  overflow: hidden;
+  position: relative;
+}
+.dFuUUiw6mnWk1kDCAWz7 .KAi8AUq4Hf5OD4nrKEz1 { padding: 0; }
+.sLmXh0jjsJYpM2kX1e3i { cursor: pointer; }
+.sLmXh0jjsJYpM2kX1e3i:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+
+.V1fs3YomWrX1BqqTURwf {
+  flex: none;
+  width: var(--_icon-box);
+  height: var(--_icon-box);
+  display: grid;
+  place-items: center;
+  border-radius: var(--uc-radius-sm);
+  background: var(--uc-surface-sunken);
+  color: var(--uc-text-muted);
+}
+.V1fs3YomWrX1BqqTURwf svg { display: block; }
+
+.h2PjKt5PNjtK1JlHtpga {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uc-space-2);
+  min-width: 0;
+  max-width: var(--_name-w);
+}
+.I3GYPlDdwHQ4z_3OkzkK {
+  font-size: var(--uc-text-sm);
+  font-weight: var(--uc-weight-medium);
+  line-height: var(--uc-leading-tight);
+  color: var(--uc-text-strong);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ey7ePQueHRHD3gdFyvhA {
+  font-size: var(--uc-text-xs);
+  line-height: var(--uc-leading-tight);
+  color: var(--uc-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.BpIVdgTZpiEQzqgKq3cG .I3GYPlDdwHQ4z_3OkzkK { font-size: var(--uc-text-xs); }
+.BpIVdgTZpiEQzqgKq3cG .ey7ePQueHRHD3gdFyvhA { font-size: var(--uc-text-2xs); }
+
+/* ---- Image tile ----------------------------------------------------------- */
+.qjsnsI1oRybcPnA1AeXd {
+  display: block;
+  width: 100%;
+  height: 100%;
+  -o-object-fit: cover;
+     object-fit: cover;
+  border-radius: inherit;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.dFuUUiw6mnWk1kDCAWz7::after {
+  /* hairline drawn OVER the photo so light images keep an edge */
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 1px var(--uc-border);
+  pointer-events: none;
+}
+.YsISbRyS56pL9rh0uDMA {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: inherit;
+  background: rgba(0, 0, 0, 0.48);
+  color: var(--uc-text-inverse);
+  font-size: var(--uc-text-xs);
+  font-weight: var(--uc-weight-medium);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---- Upload progress (brand = progress) ----------------------------------- */
+.nHM00u9Rnv9OgvIWccHU {
+  position: absolute;
+  right: var(--uc-space-8);
+  left: var(--uc-space-8);
+  bottom: var(--uc-space-4);
+  height: 2px;
+  border-radius: var(--uc-radius-pill);
+  background: var(--uc-border);
+  overflow: hidden;
+  pointer-events: none;
+}
+.dFuUUiw6mnWk1kDCAWz7 .nHM00u9Rnv9OgvIWccHU { right: var(--uc-space-4); left: var(--uc-space-4); background: rgba(255, 255, 255, 0.28); }
+.RjSHr05QilO5RlIScuOQ {
+  display: block;
+  height: 100%;
+  background: var(--uc-brand);
+  transform-origin: right center;
+  transition: transform var(--uc-dur-base) var(--uc-ease-standard);
+}
+
+/* ---- Error ---------------------------------------------------------------- */
+.CnzVKC5hs_OgPvNdGHh6 { box-shadow: inset 0 0 0 1px var(--uc-danger-border); }
+.CnzVKC5hs_OgPvNdGHh6:hover { box-shadow: inset 0 0 0 1px var(--uc-danger); }
+.CnzVKC5hs_OgPvNdGHh6 .V1fs3YomWrX1BqqTURwf { background: var(--uc-danger-soft); color: var(--uc-danger-fg); }
+.CnzVKC5hs_OgPvNdGHh6 .ey7ePQueHRHD3gdFyvhA { color: var(--uc-danger-fg); }
+.CnzVKC5hs_OgPvNdGHh6.dFuUUiw6mnWk1kDCAWz7 .YsISbRyS56pL9rh0uDMA { background: rgba(0, 0, 0, 0.56); color: var(--uc-danger); }
+
+/* ---- Remove × ------------------------------------------------------------- */
+.pxdWVmbs6ykhk1YC6d1A {
+  all: unset;
+  box-sizing: border-box;
+  position: absolute;
+  top: calc(var(--uc-space-6) * -1);
+  left: calc(var(--uc-space-6) * -1);
+  width: 18px;
+  height: 18px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--uc-radius-pill);
+  background: var(--uc-inverse-bg);
+  color: var(--uc-inverse-fg);
+  box-shadow: 0 0 0 2px var(--uc-surface-base);
+  cursor: pointer;
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity var(--uc-dur-fast) var(--uc-ease-standard),
+    transform var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.pxdWVmbs6ykhk1YC6d1A svg { display: block; }
+.zsawzVlkQXeF_UU8Muf7:hover .pxdWVmbs6ykhk1YC6d1A,
+.zsawzVlkQXeF_UU8Muf7:focus-within .pxdWVmbs6ykhk1YC6d1A,
+.pxdWVmbs6ykhk1YC6d1A:focus-visible { opacity: 1; transform: none; }
+.pxdWVmbs6ykhk1YC6d1A:hover { background-image: linear-gradient(rgba(128, 128, 128, 0.2), rgba(128, 128, 128, 0.2)); }
+.pxdWVmbs6ykhk1YC6d1A:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+/* touch: no hover, so keep × visible */
+@media (hover: none) {
+  .pxdWVmbs6ykhk1YC6d1A { opacity: 1; transform: none; }
+}
+
+.dq_fOJZpQP3V1PmUbHS6 { width: 100%; min-width: 0; padding: var(--uc-space-16); border: 1px solid var(--uc-border); border-radius: var(--uc-radius-lg); background: var(--uc-surface-raised); color: var(--uc-text); font: var(--uc-text-sm)/var(--uc-leading-normal) var(--uc-font-sans); }
+.sS8FFn1Sz_oHQAFe5hwR { display: flex; align-items: center; gap: var(--uc-space-8); width: 100%; padding: 0; border: 0; background: transparent; color: var(--uc-text-strong); font: inherit; text-align: right; cursor: pointer; }
+.sS8FFn1Sz_oHQAFe5hwR strong { margin-right: auto; font-weight: var(--uc-weight-medium); white-space: nowrap; }
+.sS8FFn1Sz_oHQAFe5hwR:focus-visible, .P4Sv8mBSTJ9BN3FrPqmq summary:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 3px; border-radius: var(--uc-radius-sm); }
+.BeaqPihgHPFqX0soev_8 { color: var(--uc-text-muted); transition: transform var(--uc-dur-fast); }
+.kig_gfgNFXyxObkvtssV { transform: rotate(-180deg); }
+.tLHnbZAvjYG9mz8FQOKP { color: var(--uc-text-muted); font-weight: var(--uc-weight-regular); }
+.OOM2aReNFd3ii5TQBheO, .txLndy2oRQ4UL3wVNkr8 { display: flex; width: 100%; height: 8px; margin-top: var(--uc-space-10); overflow: hidden; border-radius: var(--uc-radius-pill); background: var(--uc-surface-sunken); }
+.oNcXf0K_cqdHpgpkiR3A { min-width: 0; height: 100%; background: var(--uc-brand); }
+.oNcXf0K_cqdHpgpkiR3A[data-tone="1"] { background: var(--uc-text-strong); }
+.oNcXf0K_cqdHpgpkiR3A[data-tone="2"] { background: var(--uc-text-muted); }
+.oNcXf0K_cqdHpgpkiR3A[data-tone="3"] { background: var(--uc-border-strong); }
+.Gto0LFm4TYjpMKwSxOC_ { display: grid; gap: var(--uc-space-2); margin-top: var(--uc-space-12); padding-top: var(--uc-space-12); border-top: 1px solid var(--uc-border-subtle); }
+.CXoX22ucIuEMeJq9jxuZ { display: grid; grid-template-columns: 1fr auto 52px; gap: var(--uc-space-12); align-items: center; min-height: 26px; }
+.CXoX22ucIuEMeJq9jxuZ > :last-child { text-align: left; }
+.jBaoVynA3TFyqj6rRvSe { display: inline-flex; align-items: center; gap: var(--uc-space-8); min-width: 0; }
+.RWsQUMmv1NsPzNbJBvic { width: 7px; height: 7px; flex: none; border-radius: var(--uc-radius-pill); background: var(--uc-brand); }
+.RWsQUMmv1NsPzNbJBvic[data-tone="1"] { background: var(--uc-text-strong); }
+.RWsQUMmv1NsPzNbJBvic[data-tone="2"] { background: var(--uc-text-muted); }
+.RWsQUMmv1NsPzNbJBvic[data-tone="3"], .RWsQUMmv1NsPzNbJBvic[data-deferred] { background: var(--uc-border-strong); }
+.P4Sv8mBSTJ9BN3FrPqmq { border-top: 1px solid var(--uc-border-subtle); padding-top: var(--uc-space-8); }
+.P4Sv8mBSTJ9BN3FrPqmq summary { cursor: pointer; color: var(--uc-text-strong); }
+.P4Sv8mBSTJ9BN3FrPqmq summary span { float: left; color: var(--uc-text-muted); }
+.e0jQt6MFNB9am0l0o2Co { display: flex; justify-content: space-between; padding: var(--uc-space-6) var(--uc-space-20) var(--uc-space-2) 0; color: var(--uc-text-muted); }
+.kIK0qk3awsLrpfHfk7SK { display: grid; gap: var(--uc-space-12); margin-top: var(--uc-space-16); padding-top: var(--uc-space-16); border-top: 1px solid var(--uc-border); }
+.GawNuQmGYmHdq1ay2Xhu { color: var(--uc-text-strong); font-weight: var(--uc-weight-medium); }
+.bKDP6ocaVNyJ3iuxGX2u { display: flex; gap: var(--uc-space-6); align-items: baseline; }
+.bKDP6ocaVNyJ3iuxGX2u .tLHnbZAvjYG9mz8FQOKP { margin-right: auto; font-size: var(--uc-text-xs); text-align: left; }
+.bKDP6ocaVNyJ3iuxGX2u strong { font-weight: var(--uc-weight-medium); min-width: 32px; text-align: left; }
+.txLndy2oRQ4UL3wVNkr8 { height: 5px; margin-top: var(--uc-space-6); }
+.txLndy2oRQ4UL3wVNkr8 span { height: 100%; border-radius: inherit; background: var(--uc-brand); }
+@media (max-width: 420px) { .bKDP6ocaVNyJ3iuxGX2u { flex-wrap: wrap; } .bKDP6ocaVNyJ3iuxGX2u .tLHnbZAvjYG9mz8FQOKP { width: 100%; order: 3; margin: 0; text-align: right; } }
+
+.z9I6_0fBleFO8KpAD1N_ { width: 100%; max-width: 560px; padding: var(--uc-space-20); border: 1px solid var(--uc-border); border-radius: var(--uc-radius-xl); background: var(--uc-surface-raised); color: var(--uc-text); font: var(--uc-text-base)/var(--uc-leading-normal) var(--uc-font-sans); }
+.gIVJdx7SMgdyEIVfNdB8 { position: relative; margin-bottom: var(--uc-space-16); }
+.Hvg74HVFMvznYyeahb5q { color: var(--uc-brand); font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); }
+.xwMnfA2Hb1z8_XNGv15J { margin: var(--uc-space-6) 0 0; color: var(--uc-text-strong); font-size: var(--uc-text-lg); font-weight: var(--uc-weight-semibold); line-height: var(--uc-leading-snug); }
+.TvGJzDIlLBpFdq9hhUUf { position: absolute; top: 0; left: 0; display: grid; place-items: center; width: 24px; height: 24px; border: 0; border-radius: var(--uc-radius-sm); background: transparent; color: var(--uc-text-muted); font-size: var(--uc-text-xl); cursor: pointer; }
+.TvGJzDIlLBpFdq9hhUUf:hover { background: var(--uc-surface-base); }
+.r77tlnmvrDoNq2XWX8QF { display: grid; gap: var(--uc-space-8); }
+.CNZCkuzyQJH61lcDSP0q, .Vjv5mXkeX8qTsXIyLu5J { display: flex; align-items: center; gap: var(--uc-space-12); width: 100%; min-height: 52px; padding: var(--uc-space-10) var(--uc-space-12); border: 1px solid var(--uc-border); border-radius: var(--uc-radius-md); background: var(--uc-surface-base); color: var(--uc-text); font: inherit; text-align: right; }
+.CNZCkuzyQJH61lcDSP0q { cursor: pointer; }
+.CNZCkuzyQJH61lcDSP0q:hover { border-color: var(--uc-border-strong); }
+.Ymfh428zq7VIGnXbyrFZ { background: var(--uc-surface-raised); border-color: var(--uc-text-strong); }
+.CNZCkuzyQJH61lcDSP0q:focus-visible, .TvGJzDIlLBpFdq9hhUUf:focus-visible, .t5BqedHoimvsjiDhPWEQ:focus-visible, .Vjv5mXkeX8qTsXIyLu5J input:focus-visible, .Vjv5mXkeX8qTsXIyLu5J textarea:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.V3YIcrKcH9kLZx2qAJQ5 { display: grid; place-items: center; flex: none; width: 20px; height: 20px; border: 1px solid var(--uc-border-strong); border-radius: var(--uc-radius-sm); color: var(--uc-inverse-fg); font-size: var(--uc-text-xs); }
+.Ymfh428zq7VIGnXbyrFZ .V3YIcrKcH9kLZx2qAJQ5 { background: var(--uc-inverse-bg); border-color: var(--uc-inverse-bg); }
+.dnIz2SLGrQaUtfjndeVI { border-radius: var(--uc-radius-md); color: var(--uc-text-muted); }
+.Ymfh428zq7VIGnXbyrFZ .dnIz2SLGrQaUtfjndeVI { color: var(--uc-inverse-fg); }
+.af9HvLoJYud5ct0B_NHH { display: grid; gap: var(--uc-space-2); }
+.af9HvLoJYud5ct0B_NHH strong { color: var(--uc-text-strong); font-weight: var(--uc-weight-medium); }
+.af9HvLoJYud5ct0B_NHH small { color: var(--uc-text-muted); font-size: var(--uc-text-xs); }
+.Vjv5mXkeX8qTsXIyLu5J { flex-wrap: wrap; }
+.Vjv5mXkeX8qTsXIyLu5J label { flex: none; font-weight: var(--uc-weight-medium); }
+.Vjv5mXkeX8qTsXIyLu5J input { flex: 1; min-width: 120px; border: 0; background: transparent; color: var(--uc-text-strong); font: inherit; outline: none; }
+.Vjv5mXkeX8qTsXIyLu5J input::-moz-placeholder { color: var(--uc-text-subtle); }
+.Vjv5mXkeX8qTsXIyLu5J input::placeholder { color: var(--uc-text-subtle); }
+.DzKM_ukyGdRDYpqvxeRT { align-items: stretch; flex-direction: column; }
+.Vjv5mXkeX8qTsXIyLu5J textarea { display: block; width: 100%; min-height: 94px; resize: vertical; border: 0; background: transparent; color: var(--uc-text-strong); font: inherit; outline: none; }
+.Vjv5mXkeX8qTsXIyLu5J textarea::-moz-placeholder { color: var(--uc-text-subtle); }
+.Vjv5mXkeX8qTsXIyLu5J textarea::placeholder { color: var(--uc-text-subtle); }
+.Bep6sVp7v786hhvepiIS { display: grid; gap: var(--uc-space-16); margin-top: var(--uc-space-20); padding-top: var(--uc-space-16); border-top: 1px solid var(--uc-border-subtle); }
+.i1KFi51e9bEQ5q8tyP1S { display: flex; gap: var(--uc-space-6); flex-wrap: wrap; }
+.t5BqedHoimvsjiDhPWEQ { padding: var(--uc-space-4) var(--uc-space-10); border: 1px solid var(--uc-border); border-radius: var(--uc-radius-pill); background: transparent; color: var(--uc-text-muted); font: var(--uc-text-xs) var(--uc-font-sans); cursor: pointer; }
+.t5BqedHoimvsjiDhPWEQ.bXvQpiECQV0RSDc3pOT5 { color: var(--uc-text-strong); }
+.t5BqedHoimvsjiDhPWEQ.gRstizjHYRrBwJqZI3kZ { color: var(--uc-inverse-fg); background: var(--uc-inverse-bg); border-color: var(--uc-inverse-bg); }
+.lIfFm2QqMGgCS7GmnkGB { display: flex; justify-content: flex-end; gap: var(--uc-space-8); }
+@media (max-width: 480px) { .z9I6_0fBleFO8KpAD1N_ { padding: var(--uc-space-16); } }
+
+/* FileUpload, drop zone + controlled per-file progress list on uc- tokens. */
+.msU_6_J3YLQyAYKPSTCR {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uc-space-8);
+  font-family: var(--uc-font-sans);
+  min-width: 0;
+}
+
+/* ---- Drop zone ------------------------------------------------------------ */
+.U1jJ1Q9nwbgHRq_ZDqKt {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--uc-space-12);
+  padding: var(--uc-space-28) var(--uc-space-20);
+  text-align: center;
+  border-radius: var(--uc-radius-lg);
+  border: 1px dashed var(--uc-border-strong);
+  background: var(--uc-surface-sunken);
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    border-color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.U1jJ1Q9nwbgHRq_ZDqKt:hover { border-color: var(--uc-border-hover, var(--uc-text-subtle)); }
+.U1jJ1Q9nwbgHRq_ZDqKt:focus-within { border-color: var(--uc-text-muted); }
+
+/* drag-over: the one place brand orange appears, it's the "drop target live" cue */
+.dlgClP1umXRwX2vjuboM,
+.dlgClP1umXRwX2vjuboM:hover {
+  border-style: solid;
+  border-color: var(--uc-brand);
+  background: var(--uc-brand-soft);
+}
+.dlgClP1umXRwX2vjuboM .Rflf4tTUVzMoJtJnQWFH { color: var(--uc-brand); background: var(--uc-surface-raised); }
+.Sj5D_pADZLmXkx2laU6f { border-color: var(--uc-danger-border); }
+.NNJ5v8lXP4T_PTeMS0tg { opacity: 0.5; cursor: not-allowed; }
+.NNJ5v8lXP4T_PTeMS0tg:hover { border-color: var(--uc-border-strong); }
+
+.Rflf4tTUVzMoJtJnQWFH {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  border-radius: var(--uc-radius-pill);
+  background: var(--uc-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--uc-border-subtle);
+  color: var(--uc-text-muted);
+  transition: color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.Rflf4tTUVzMoJtJnQWFH svg { display: block; }
+.tWN94bq4sqhhM0lQOXiM { display: flex; flex-direction: column; gap: var(--uc-space-2); min-width: 0; }
+.HPMBESrqe1dA9g4daFlB {
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-medium);
+  color: var(--uc-text-strong);
+  line-height: var(--uc-leading-snug);
+}
+.pKp0j3J_gfeNBvSDN9qZ {
+  font-size: var(--uc-text-xs);
+  color: var(--uc-text-muted);
+  line-height: var(--uc-leading-snug);
+}
+.xpBPTogCEFBGfYV1hLBW {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* compact: one row, icon · text · button */
+.jbNiOeuqY43T9E8ubV1K .U1jJ1Q9nwbgHRq_ZDqKt {
+  flex-direction: row;
+  justify-content: flex-start;
+  text-align: right;
+  gap: var(--uc-space-12);
+  padding: var(--uc-space-12);
+  border-radius: var(--uc-radius-md);
+}
+.jbNiOeuqY43T9E8ubV1K .Rflf4tTUVzMoJtJnQWFH { width: 32px; height: 32px; }
+.jbNiOeuqY43T9E8ubV1K .tWN94bq4sqhhM0lQOXiM { flex: 1; }
+.jbNiOeuqY43T9E8ubV1K .HPMBESrqe1dA9g4daFlB { font-size: var(--uc-text-sm); }
+
+/* ---- Validation errors ---------------------------------------------------- */
+.cq095j8gtAEej5JrlVpX {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--uc-space-4);
+}
+.TpXwK_eBQDJGnCmvF7tL {
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-6);
+  font-size: var(--uc-text-xs);
+  color: var(--uc-danger-fg);
+}
+.TpXwK_eBQDJGnCmvF7tL svg { flex: none; }
+
+/* ---- File list ------------------------------------------------------------ */
+.ykBvbEsWoR5gIt49sWLm {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--uc-space-6);
+}
+.F_Xozuhj17usruQfFt3T {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-12);
+  padding: var(--uc-space-10) var(--uc-space-12) var(--uc-space-10) var(--uc-space-8);
+  border-radius: var(--uc-radius-md);
+  background: var(--uc-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--uc-border-subtle);
+}
+.R694LZu5b5UuhMaJzrUA { box-shadow: inset 0 0 0 1px var(--uc-danger-border); }
+
+.dLdB7eblI39oNrhlHMVw {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--uc-radius-sm);
+  background: var(--uc-surface-sunken);
+  color: var(--uc-text-muted);
+}
+.dLdB7eblI39oNrhlHMVw svg { display: block; }
+.R694LZu5b5UuhMaJzrUA .dLdB7eblI39oNrhlHMVw { background: var(--uc-danger-soft); color: var(--uc-danger-fg); }
+
+.qYh7r3nhieaf46FE0TwS { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--uc-space-2); }
+.PzM9vjup5pIgU8duk1aU { display: flex; align-items: center; gap: var(--uc-space-8); min-width: 0; }
+.pSbUI1Tzxh_dvFi0MSep {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--uc-text-sm);
+  font-weight: var(--uc-weight-medium);
+  color: var(--uc-text-strong);
+}
+.UQ0GaayxB1VRvcfmCwTs {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--uc-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--uc-text-muted);
+}
+.UQ0GaayxB1VRvcfmCwTs svg { display: block; }
+.wP8UoWtl2mKs5LgOoMx8 .UQ0GaayxB1VRvcfmCwTs { color: var(--uc-success-fg); }
+.R694LZu5b5UuhMaJzrUA .UQ0GaayxB1VRvcfmCwTs { color: var(--uc-danger-fg); }
+.ylW7Zb6ZY4tkbhc4KM7o { font-size: var(--uc-text-xs); color: var(--uc-text-muted); line-height: var(--uc-leading-snug); }
+.R694LZu5b5UuhMaJzrUA .ylW7Zb6ZY4tkbhc4KM7o { color: var(--uc-danger-fg); }
+
+.L6bQ8IOpwe6v8x8ZkmIk {
+  position: relative;
+  display: block;
+  height: 4px;
+  margin-top: var(--uc-space-4);
+  border-radius: var(--uc-radius-pill);
+  background: var(--uc-surface-sunken);
+  overflow: hidden;
+}
+.CmIwEDTMwo0AhEdZ45Yf {
+  display: block;
+  height: 100%;
+  width: 0;
+  border-radius: inherit;
+  background: var(--uc-brand);
+  transition: width var(--uc-dur-base) var(--uc-ease-standard);
+}
+.yL87FIKwLkOFNP2S6ABR .CmIwEDTMwo0AhEdZ45Yf {
+  width: 35%;
+  animation: gc4uv7AYi3UsaQGyBaKV 1.2s var(--uc-ease-standard) infinite;
+}
+@keyframes gc4uv7AYi3UsaQGyBaKV {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(-300%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .yL87FIKwLkOFNP2S6ABR .CmIwEDTMwo0AhEdZ45Yf { animation: none; width: 100%; opacity: 0.5; }
+}
+
+.u2YXhdhTRB1fZKeHG8ax { flex: none; display: flex; align-items: center; gap: var(--uc-space-2); color: var(--uc-text-muted); }
+
+.b7uYFOYmMWXsyebyR_yr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Announcement, dismissible product-news banner on uc- tokens. */
+.PstpQ1DA1wLxAGJfNwZv {
+  --_bg: var(--uc-surface-raised);
+  --_border: var(--uc-border-subtle);
+  --_icon-bg: var(--uc-surface-sunken);
+  --_icon-fg: var(--uc-text-muted);
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--uc-space-12);
+  font-family: var(--uc-font-sans);
+  color: var(--uc-text);
+  background: var(--_bg);
+  box-shadow: inset 0 0 0 1px var(--_border);
+  border-radius: var(--uc-radius-lg);
+  min-width: 0;
+}
+
+/* ---- Tones ---------------------------------------------------------------- */
+.PsXLoRXApIizwXjG9VgY { /* defaults above */ }
+/* brand: faint orange wash mixed from tokens, orange glyph. Chrome stays B&W. */
+.aC1CJdWrNcDcYGq0K0zD {
+  --_bg: color-mix(in srgb, var(--uc-brand) 7%, var(--uc-surface-raised));
+  --_border: color-mix(in srgb, var(--uc-brand) 28%, transparent);
+  --_icon-bg: color-mix(in srgb, var(--uc-brand) 14%, transparent);
+  --_icon-fg: var(--uc-brand);
+}
+
+/* ---- Layout: banner (boxed) ----------------------------------------------- */
+.H030Q74XFMUkbnSFiq4c { padding: var(--uc-space-16); }
+.H030Q74XFMUkbnSFiq4c.lirdBEMMV41dxBb6WDHs { padding-left: var(--uc-space-44); }
+
+.UcHFooVSCtW8kLov7tJn {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--uc-radius-md);
+  background: var(--_icon-bg);
+  color: var(--_icon-fg);
+}
+.UcHFooVSCtW8kLov7tJn svg { display: block; }
+
+.zcGujxyF0PiWyrJQHmWY { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: var(--uc-space-4); }
+.zipddIiCYKTyK3F4tF0V { display: flex; align-items: center; flex-wrap: wrap; gap: var(--uc-space-8); min-height: 20px; }
+.Pwd40KuaNkivPUA8GukI { flex: none; }
+.QmXrnxKFe_hSvaLxJiwk {
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-semibold);
+  color: var(--uc-text-strong);
+  line-height: var(--uc-leading-snug);
+}
+.lp6B7_SPG8Zt5iNXvuKc {
+  margin: 0;
+  font-size: var(--uc-text-sm);
+  color: var(--uc-text-muted);
+  line-height: var(--uc-leading-normal);
+}
+.PELryDn0wfLgMzYqLYP5 { display: flex; gap: var(--uc-space-8); margin-top: var(--uc-space-8); }
+.ZtIlpLVeD_5kr8NsQ0wy { flex: none; }
+
+.CPG8glEWSydwX17GvWHA { position: absolute; top: var(--uc-space-10); left: var(--uc-space-10); }
+
+/* ---- Layout: bar (slim strip, one line) ----------------------------------- */
+.uq4TMme0YSl0cC3N117P {
+  align-items: center;
+  gap: var(--uc-space-10);
+  padding: var(--uc-space-6) var(--uc-space-12) var(--uc-space-6) var(--uc-space-8);
+  border-radius: var(--uc-radius-md);
+  min-height: var(--uc-control-h-lg);
+}
+.uq4TMme0YSl0cC3N117P .UcHFooVSCtW8kLov7tJn { width: auto; height: auto; background: none; }
+.uq4TMme0YSl0cC3N117P .zcGujxyF0PiWyrJQHmWY { flex-direction: row; align-items: center; }
+.uq4TMme0YSl0cC3N117P .zipddIiCYKTyK3F4tF0V { flex-wrap: nowrap; min-width: 0; }
+.uq4TMme0YSl0cC3N117P .QmXrnxKFe_hSvaLxJiwk { font-size: var(--uc-text-sm); white-space: nowrap; }
+.uq4TMme0YSl0cC3N117P .lp6B7_SPG8Zt5iNXvuKc {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.uq4TMme0YSl0cC3N117P .CPG8glEWSydwX17GvWHA { position: static; flex: none; }
+
+@media (max-width: 560px) {
+  .uq4TMme0YSl0cC3N117P { flex-wrap: wrap; }
+  .uq4TMme0YSl0cC3N117P .zcGujxyF0PiWyrJQHmWY { flex-basis: calc(100% - 40px); }
+  .uq4TMme0YSl0cC3N117P .lp6B7_SPG8Zt5iNXvuKc { white-space: normal; }
+}
+
+/* StatCard, KPI tile on uc- tokens. */
+.wTXfymiijXz5qS__cOLl {
+  position: relative;
+  --_pad: var(--uc-card-pad, var(--uc-space-20));
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  font-family: var(--uc-font-sans);
+  background: var(--uc-surface-raised);
+  border-radius: var(--uc-card-radius, var(--uc-radius-lg));
+  box-shadow: inset 0 0 0 1px var(--uc-border-subtle);
+  overflow: hidden;
+}
+.iaw6abx3aQKv6km_ai9_ { --_pad: var(--uc-space-16); }
+
+.Dt9V6LkGqFg2UO_ySqwB { display: flex; flex-direction: column; gap: var(--uc-space-4); padding: var(--_pad); min-width: 0; }
+.oe0DRKql2OJUrebfHCzM { display: flex; align-items: center; justify-content: space-between; gap: var(--uc-space-8); min-height: 20px; }
+.mxzavouzzI9PWt1KlqQ7 {
+  font-size: var(--uc-text-sm);
+  font-weight: var(--uc-weight-medium);
+  color: var(--uc-text-muted);
+  line-height: var(--uc-leading-snug);
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ziTtEgt70GeFCJD1Mj8S { flex: none; display: inline-flex; color: var(--uc-text-subtle); }
+.ziTtEgt70GeFCJD1Mj8S svg { display: block; }
+
+.XuCe0oEKCgoB9n19sNSa { display: flex; align-items: center; flex-wrap: wrap; gap: var(--uc-space-8); margin-top: var(--uc-space-4); }
+.XjkL0eKqqJBF4Z19mJOY {
+  font-size: var(--uc-text-3xl);
+  font-weight: var(--uc-weight-semibold);
+  line-height: var(--uc-leading-tight);
+  letter-spacing: var(--uc-tracking-tight);
+  font-variant-numeric: tabular-nums;
+  color: var(--uc-text-strong);
+}
+.iaw6abx3aQKv6km_ai9_ .XjkL0eKqqJBF4Z19mJOY { font-size: var(--uc-text-2xl); }
+
+/* delta chip: soft status pill */
+.o8MpIAqBjyHr6EKUUfOK {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-2);
+  height: 20px;
+  padding: 0 var(--uc-space-4) 0 var(--uc-space-6);
+  border-radius: var(--uc-radius-pill);
+  font-size: var(--uc-text-xs);
+  font-weight: var(--uc-weight-medium);
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+  white-space: nowrap;
+}
+.o8MpIAqBjyHr6EKUUfOK svg { display: block; }
+.C680uOqvdkVsoqinDF5g { color: var(--uc-success-fg); background: var(--uc-success-soft); }
+.fNXwv957Xe6LiO9Kt6k1  { color: var(--uc-danger-fg);  background: var(--uc-danger-soft); }
+.iLC6zcjnQ3eln8zXYaWt { color: var(--uc-text-muted); background: var(--uc-surface-sunken); }
+
+.cDEviRgxFnJOiAk93Q8Q { font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
+
+.E5u3QQcEyVB8HgScpONz { margin-top: var(--uc-space-12); min-width: 0; }
+
+.IIUWBFMy_emvXSI8HEtc {
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-8);
+  padding: var(--uc-space-10) var(--_pad);
+  border-top: 1px solid var(--uc-border-subtle);
+  background: var(--uc-surface-base);
+  font-size: var(--uc-text-sm);
+  color: var(--uc-text-muted);
+}
+
+/* ---- Sparkline ------------------------------------------------------------ */
+.lP6epHl82bpqJi9GOrx4 { display: block; width: 100%; overflow: visible; }
+.vKM0KAgk4Vz3TNpwtQGx   { color: var(--uc-brand); }
+.GkAKs68RXwFfm3lenoyw { color: var(--uc-text-strong); }
+.i5rhHtnASxvjRW8GTlAr { color: var(--uc-success); }
+.Be_gzy2qtVijiIRSJpgJ  { color: var(--uc-danger); }
+
+.l0WpCxkwRdKNVWFjnRXc {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* Checkbox, Radix behavior, uc- token look. */
+.ZsR9sqwfzVcmwaXHIwSy {
+  all: unset;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--uc-radius-xs);
+  background: var(--uc-surface-overlay);
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+  flex: none;
+}
+.ZsR9sqwfzVcmwaXHIwSy:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+
+/* sizes (md is the base above) */
+.vyVkHT0YI1gHMSVEHao4 { width: 16px; height: 16px; }
+.vyVkHT0YI1gHMSVEHao4 .SwSppHLv4LP3zWjmqPow svg { width: 11px; height: 11px; }
+.uKg1vRELSSRQZ7BboSMO { width: 22px; height: 22px; border-radius: var(--uc-radius-sm); }
+.uKg1vRELSSRQZ7BboSMO .SwSppHLv4LP3zWjmqPow svg { width: 15px; height: 15px; }
+.ZsR9sqwfzVcmwaXHIwSy[data-state="checked"],
+.ZsR9sqwfzVcmwaXHIwSy[data-state="indeterminate"] {
+  background: var(--uc-inverse-bg);
+  box-shadow: var(--uc-shadow-control);
+}
+.ZsR9sqwfzVcmwaXHIwSy:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.ZsR9sqwfzVcmwaXHIwSy:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.SwSppHLv4LP3zWjmqPow { display: grid; place-items: center; color: var(--uc-inverse-fg); }
+.SwSppHLv4LP3zWjmqPow svg { display: block; }
+
+/* Skeleton, sunken base with a token-derived shimmer sweep. */
+.zxxAPin_sfKRFpe7UiHV {
+  background: var(--uc-surface-sunken);
+  border-radius: var(--uc-radius-sm);
+  position: relative;
+  overflow: hidden;
+}
+.zxxAPin_sfKRFpe7UiHV::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(100%);
+  background: linear-gradient(
+    -90deg,
+    transparent,
+    color-mix(in oklab, var(--uc-surface-raised) 60%, transparent),
+    transparent
+  );
+  animation: r0WdISumM1X5LyRmRtNw 1.5s infinite;
+}
+@keyframes r0WdISumM1X5LyRmRtNw { 100% { transform: translateX(-100%); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .zxxAPin_sfKRFpe7UiHV::after { animation: none; }
+}
+
+.yEJs5QXPLapCPsshQBkk { min-width: 0; overflow: hidden; border: 1px solid var(--uc-border); border-radius: var(--uc-radius-lg); background: var(--uc-surface-raised); color: var(--uc-text); font: var(--uc-text-base)/var(--uc-leading-normal) var(--uc-font-sans); }
+.aD0KgBd5020_t5Ry44HD { max-height: var(--_dt-max-h, none); overflow: auto; }
+.P1iFPRfrn5mhmaT8I5fi { width: 100%; border-collapse: separate; border-spacing: 0; text-align: right; }
+.p1OcIeEt04ODGPgSDiZu { position: sticky; top: 0; z-index: 1; height: 44px; padding: 0 var(--uc-space-16); border-bottom: 1px solid var(--uc-border); background: var(--uc-surface-base); color: var(--uc-text-muted); font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); white-space: nowrap; }
+.p1OcIeEt04ODGPgSDiZu[data-align="right"], .RSo5LcwISMAqjoLVrEdK[data-align="right"] { text-align: left; }
+.p1OcIeEt04ODGPgSDiZu[data-align="center"], .RSo5LcwISMAqjoLVrEdK[data-align="center"] { text-align: center; }
+.rc484h29ydinlvSFOI7o { display: inline-flex; align-items: center; gap: var(--uc-space-6); margin: 0 calc(var(--uc-space-6) * -1); padding: var(--uc-space-6); border: 0; border-radius: var(--uc-radius-sm); background: transparent; color: inherit; font: inherit; cursor: pointer; }
+.rc484h29ydinlvSFOI7o:hover, .rc484h29ydinlvSFOI7o[data-sorted] { color: var(--uc-text-strong); background: var(--uc-surface-control); }
+.rc484h29ydinlvSFOI7o:focus-visible, .HTPa8bSzbgF95fmzuSEQ:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: -2px; }
+.DV3qSnxnWzisuybjmwLp { display: inline-flex; color: var(--uc-text-subtle); }
+.HTPa8bSzbgF95fmzuSEQ { background: var(--uc-surface-raised); }
+.HTPa8bSzbgF95fmzuSEQ:not(:last-child) .RSo5LcwISMAqjoLVrEdK { border-bottom: 1px solid var(--uc-border-subtle); }
+.HTPa8bSzbgF95fmzuSEQ:hover, .HTPa8bSzbgF95fmzuSEQ[data-selected] { background: var(--uc-surface-base); }
+.HTPa8bSzbgF95fmzuSEQ[data-clickable] { cursor: pointer; }
+.RSo5LcwISMAqjoLVrEdK { height: 52px; padding: var(--uc-space-8) var(--uc-space-16); vertical-align: middle; color: var(--uc-text-strong); }
+.xmta_yCnVH4uynSMwqTW .p1OcIeEt04ODGPgSDiZu { height: 36px; padding-inline: var(--uc-space-12); }
+.xmta_yCnVH4uynSMwqTW .RSo5LcwISMAqjoLVrEdK { height: 42px; padding: var(--uc-space-6) var(--uc-space-12); font-size: var(--uc-text-sm); }
+.TNS6pjkg9Faf828OO45O { width: 44px; padding-left: 0; }
+.vAe12QDbXfZjIEufCr0D { vertical-align: middle; }
+.M5vdoIiyc9PW08txIvvG { width: 48px; text-align: left; }
+.BTTRqId2fZASftRecCzz { margin-right: auto; }
+._YtbiIJZavYSsqTTTk_3 { width: var(--uc-control-h-sm); height: var(--uc-control-h-sm); }
+.sEJgX7bVkoeehfhC5pbz { display: flex; align-items: end; flex-wrap: wrap; gap: var(--uc-space-12); padding: var(--uc-space-16); border-bottom: 1px solid var(--uc-border-subtle); }
+.YeqfZRRFbFEI7ipZEGbQ { display: flex; flex-direction: column; gap: var(--uc-space-2); margin-left: auto; }
+.bsPzHbijk9QkpQkTXIZ3 { color: var(--uc-text-muted); font-size: var(--uc-text-xs); }
+.YRUjdwZHv556XUMducpD { color: var(--uc-text-strong); font-size: var(--uc-text-lg); font-weight: var(--uc-weight-semibold); }
+.lgozRbeNpOWdiWdLjBc7 { display: flex; align-items: center; flex-wrap: wrap; gap: var(--uc-space-8); }
+.fhXKmCeo6X7S0RXWsStS { max-width: 100%; }
+.hKkCt_gy6JlxE7QoeNoL { display: flex; align-items: center; justify-content: space-between; gap: var(--uc-space-8); min-height: 44px; padding: var(--uc-space-6) var(--uc-space-16); border-bottom: 1px solid var(--uc-border); background: var(--uc-brand-soft); }
+.HgrKC2Ct5qus7K0x29fA { font-weight: var(--uc-weight-medium); }
+.vyoXz7jlZkrRsHvB0xBd { display: flex; align-items: center; gap: var(--uc-space-8); }
+.dngagCL_FTcR_YBeYZb_ { padding: var(--uc-space-12) var(--uc-space-16); border-top: 1px solid var(--uc-border-subtle); }
+.Qw2lZRHrWMlMBwtkf07n { padding: var(--uc-space-40) var(--uc-space-16); text-align: center; }
+.u6XzbxPBqa4k9kVbCzmy { display: grid; justify-items: center; gap: var(--uc-space-8); }
+.CTDiOvwaPKtYDk4hqcV6 { display: grid; place-items: center; width: 40px; height: 40px; border-radius: var(--uc-radius-lg); background: var(--uc-surface-base); color: var(--uc-text-muted); }
+.YAPmLwGruxVKxcvq4Xbg { color: var(--uc-text-strong); font-weight: var(--uc-weight-medium); }
+.zxjh3K_KiERBdwUwK8bZ { color: var(--uc-text-muted); font-size: var(--uc-text-sm); }
+.bv1MAbkCtghu1Wigb7nx { margin-top: var(--uc-space-4); }
+.kUO4uLAAHL9YyegvEVHf { height: 16px; max-width: 100%; }
+.WNY31xuZDQlt6ulq7BeL { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 620px) { .lgozRbeNpOWdiWdLjBc7 { width: 100%; } .P1iFPRfrn5mhmaT8I5fi { min-width: 600px; } }
+
+/* Pagination, range summary + Previous / numbers / Next on uc- tokens.
+   Monochrome: the current page is a raised chip (like a selected Tab), never
+   brand orange, orange is reserved for brand marks and progress. */
+.agtrpweUsQ0rZSyc2kQR {
+  --_h: var(--uc-control-h-md);
+  --_fs: var(--uc-text-sm);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uc-space-12);
+  flex-wrap: wrap;
+  font-family: var(--uc-font-sans);
+}
+.wbUyJThECMtU9Sb2C7Lw { --_h: var(--uc-control-h-sm); --_fs: var(--uc-text-xs); }
+
+.i9U3RMf3CL7uj5QPpZDp,
+.Yob7U43_326lmww7ovdE {
+  font-size: var(--uc-text-xs);
+  color: var(--uc-text-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.koMUzIL5SmPeZ4Ooq2w5 {
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-4);
+  margin-right: auto;
+}
+
+.FIjhQdDoEE5n25FKqeZh {
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-2);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.FIjhQdDoEE5n25FKqeZh > li { margin: 0; }
+
+/* shared button reset for step + page buttons */
+.XJtaK82NzzZ1vOwQciiZ,
+.tN1o4PixjbTLkx8najpK {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--uc-space-4);
+  height: var(--_h);
+  font-family: var(--uc-font-sans);
+  font-size: var(--_fs);
+  font-weight: var(--uc-weight-medium);
+  line-height: 1;
+  color: var(--uc-text-muted);
+  border-radius: var(--uc-radius-md);
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  font-variant-numeric: tabular-nums;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard),
+    box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.XJtaK82NzzZ1vOwQciiZ { padding: 0 var(--uc-space-8); }
+.xvG8xsUI93_IatLdzFwx { padding-right: var(--uc-space-6); }
+.bFzqFCxHrqPmNBq92FQ6 { padding-left: var(--uc-space-6); }
+.tN1o4PixjbTLkx8najpK { min-width: var(--_h); padding: 0 var(--uc-space-6); }
+
+.XJtaK82NzzZ1vOwQciiZ:hover:not(:disabled),
+.tN1o4PixjbTLkx8najpK:hover:not(:disabled):not([data-active]) {
+  background: var(--uc-surface-sunken);
+  color: var(--uc-text-strong);
+}
+.XJtaK82NzzZ1vOwQciiZ:focus-visible,
+.tN1o4PixjbTLkx8najpK:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 2px;
+}
+.XJtaK82NzzZ1vOwQciiZ:disabled,
+.tN1o4PixjbTLkx8najpK:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* current page: raised neutral chip */
+.tN1o4PixjbTLkx8najpK[data-active] {
+  background: var(--uc-surface-raised);
+  color: var(--uc-text-strong);
+  box-shadow: var(--uc-shadow-control);
+  cursor: default;
+}
+.tN1o4PixjbTLkx8najpK[data-active]:disabled { opacity: 1; }
+
+.qKcAQhrBJnUQSViU2HbT {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: calc(var(--_h) * 0.75);
+  height: var(--_h);
+  font-size: var(--_fs);
+  color: var(--uc-text-subtle);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+
+/* Narrow viewports: keep the arrows, drop the words (buttons keep an
+   aria-label, so the accessible name survives). */
+@media (max-width: 480px) {
+  .WroaF1AGrs5fF7KSEJPk { display: none; }
+  .i9U3RMf3CL7uj5QPpZDp { flex-basis: 100%; }
+}
+
+.sXE8s4ZjMrDiEVtOdc59 { position: fixed; inset: 0; z-index: var(--uc-z-overlay); background: rgba(0,0,0,.48); backdrop-filter: blur(3px); }
+.H5sGA_SIeILO_YEf9BmA { position: fixed; z-index: var(--uc-z-dialog); top: 50%; right: 50%; transform: translate(50%, -50%); display: flex; flex-direction: column; width: min(760px, calc(100vw - 32px)); max-height: min(660px, calc(100vh - 32px)); overflow: hidden; border: 1px solid var(--uc-border); border-radius: var(--uc-radius-xl); background: var(--uc-surface-raised); color: var(--uc-text); box-shadow: var(--uc-shadow-5); font: var(--uc-text-base)/var(--uc-leading-normal) var(--uc-font-sans); }
+.QHFed55WKF0niiH2OhJw { display: flex; align-items: center; justify-content: space-between; min-height: 56px; padding: 0 var(--uc-space-20); border-bottom: 1px solid var(--uc-border); }
+.hGmBnNuFzeY49lKTwRgi { margin: 0; color: var(--uc-text-strong); font-size: var(--uc-text-md); font-weight: var(--uc-weight-semibold); }
+.ukwllj8S9j0fMoTmoPMv { width: 28px; height: 28px; border: 0; border-radius: var(--uc-radius-sm); background: transparent; color: var(--uc-text-muted); font-size: var(--uc-text-xl); cursor: pointer; }
+.ukwllj8S9j0fMoTmoPMv:hover { background: var(--uc-surface-base); }
+.FxesF5DiwLpWw69_utw5 { display: grid; grid-template-columns: 180px minmax(0, 1fr); min-height: 0; flex: 1; }
+.ukcwciyVp1TlW8ddmfEm { display: flex; flex-direction: column; gap: var(--uc-space-4); padding: var(--uc-space-16) var(--uc-space-10); border-left: 1px solid var(--uc-border); background: var(--uc-surface-base); }
+.CWhnBvraxYIslBF4TTi0 { width: 100%; min-height: 36px; padding: 0 var(--uc-space-12); border: 0; border-radius: var(--uc-radius-md); background: transparent; color: var(--uc-text-muted); font: inherit; text-align: right; cursor: pointer; }
+.CWhnBvraxYIslBF4TTi0:hover { background: var(--uc-surface-control); color: var(--uc-text-strong); }
+.CWhnBvraxYIslBF4TTi0.ZmuvZV141z8XAVs9KF4p { background: var(--uc-surface-raised); color: var(--uc-text-strong); font-weight: var(--uc-weight-medium); box-shadow: inset -3px 0 var(--uc-brand); }
+.ukwllj8S9j0fMoTmoPMv:focus-visible, .CWhnBvraxYIslBF4TTi0:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.vZQ50m78TXFm4JqqDfDi { display: flex; flex-direction: column; min-width: 0; min-height: 0; overflow: auto; }
+.kf9Rl9dHvU9QOi0XR8mi { padding: var(--uc-space-24) var(--uc-space-24) var(--uc-space-16); border-bottom: 1px solid var(--uc-border-subtle); }
+.kf9Rl9dHvU9QOi0XR8mi h2 { margin: 0 0 var(--uc-space-4); color: var(--uc-text-strong); font-size: var(--uc-text-xl); font-weight: var(--uc-weight-semibold); }
+.kf9Rl9dHvU9QOi0XR8mi p { margin: 0; color: var(--uc-text-muted); }
+.GpHZQnt1T1jaSAHMiOMg { display: grid; align-content: start; gap: var(--uc-space-16); flex: 1; padding: var(--uc-space-24); }
+.ZUO5FCnI8pMlC8cdT2PA { display: flex; justify-content: flex-end; padding: var(--uc-space-16) var(--uc-space-24); border-top: 1px solid var(--uc-border-subtle); }
+.vd4Lre4yQJ9ssRnkK9LL { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+@media (max-width: 600px) { .FxesF5DiwLpWw69_utw5 { grid-template-columns: minmax(0,1fr); } .ukcwciyVp1TlW8ddmfEm { flex-direction: row; overflow-x: auto; border-left: 0; border-bottom: 1px solid var(--uc-border); } .CWhnBvraxYIslBF4TTi0 { width: auto; white-space: nowrap; } .kf9Rl9dHvU9QOi0XR8mi, .GpHZQnt1T1jaSAHMiOMg { padding: var(--uc-space-16); } }
+
+/* Tabs, Radix behavior, uc- token look. Two variants: pill and underline.
+   The active marker is a single sliding indicator that animates between tabs. */
+.yUbZ9JN8Q6q_cxttzVQf { display: flex; flex-direction: column; gap: var(--uc-space-16); min-width: 0; max-width: 100%; } /* can shrink so its list scrolls */
+
+/* ---- pill (segmented) ----------------------------------------------------- */
+.c5fOPZJlD5q2gHovvEQh {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: var(--uc-tab-track-pad, 3px);
+  background: var(--uc-tab-track-bg, var(--uc-surface-sunken));
+  border-radius: var(--uc-tab-track-radius, var(--uc-radius-md));
+  box-shadow: var(--uc-tab-track-stroke, inset 0 0 0 1px var(--uc-border-subtle));
+  width: -moz-max-content;
+  width: max-content;
+}
+
+/* ---- sideways overflow (both variants) -------------------------------------
+   Too many / too wide tabs for the space: the list scrolls sideways (wheel,
+   trackpad, or the picked tab scrolling itself into view — Tabs.tsx) with NO
+   visible scrollbar, and labels are never squashed or clipped. The edge fade
+   widths are set from script only while there is more to scroll that way. */
+.c5fOPZJlD5q2gHovvEQh,
+.yhi1vngR1p2YuJVNnaDE {
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+  -webkit-mask-image: linear-gradient(to right, transparent 0, #000 var(--uc-tabs-fade-l, 0px), #000 calc(100% - var(--uc-tabs-fade-r, 0px)), transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0, #000 var(--uc-tabs-fade-l, 0px), #000 calc(100% - var(--uc-tabs-fade-r, 0px)), transparent 100%);
+}
+.c5fOPZJlD5q2gHovvEQh::-webkit-scrollbar,
+.yhi1vngR1p2YuJVNnaDE::-webkit-scrollbar { display: none; }
+/* A tab never shrinks below its own label (callers that stretch tabs with
+   flex:1 / min-width:0 still share the width when it fits). */
+.c5fOPZJlD5q2gHovvEQh > [role="tab"],
+.yhi1vngR1p2YuJVNnaDE > [role="tab"] { min-width: -moz-max-content !important; min-width: max-content !important; }
+.IiPxNJwR_you4cvPsbWF {
+  position: absolute;
+  top: var(--uc-tab-track-pad, 3px);
+  bottom: var(--uc-tab-track-pad, 3px);
+  right: 0;
+  width: 0;
+  opacity: 0;
+  border-radius: var(--uc-tab-radius, var(--uc-radius-sm));
+  background: var(--uc-surface-raised);
+  background-image: var(--uc-sheen);
+  box-shadow: var(--uc-shadow-control);
+  transition: transform var(--uc-dur-base) var(--uc-ease-emphasized),
+    width var(--uc-dur-base) var(--uc-ease-emphasized);
+  z-index: 0;
+  pointer-events: none;
+}
+.NcCLOdesrW3h0feW8Cqd {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  z-index: 1;
+  height: var(--uc-tab-h, 26px);
+  padding: 0 var(--uc-tab-px, var(--uc-space-12));
+  display: inline-flex;
+  align-items: center;
+  /* Centred, so a trigger stretched to share a full-width bar (flex: 1) keeps
+     its label in the middle instead of against its left edge. No effect on a
+     trigger sized to its content. */
+  justify-content: center;
+  gap: var(--uc-space-8);
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-medium);
+  /* One line always: a two-word label in a shared-width bar ("WP Connectors")
+     wrapped and spilled out of the fixed-height trigger. */
+  white-space: nowrap;
+  color: var(--uc-text-muted);
+  border-radius: var(--uc-tab-radius, var(--uc-radius-sm));
+  cursor: pointer;
+  transition: color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.NcCLOdesrW3h0feW8Cqd:hover { color: var(--uc-text-strong); }
+.NcCLOdesrW3h0feW8Cqd[data-state="active"] { color: var(--uc-text-strong); }
+.NcCLOdesrW3h0feW8Cqd:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.NcCLOdesrW3h0feW8Cqd:disabled { opacity: 0.5; cursor: not-allowed; }
+.sa8wAhUubaDeDz9m2lSy { height: 22px; padding: 0 var(--uc-space-8); font-size: var(--uc-text-sm); }
+.AXCzoGHV2zjSW04iuiPm { height: 32px; padding: 0 var(--uc-space-16); font-size: var(--uc-text-md); }
+/* icon-only pill trigger, square (width tracks the size's height via
+   aspect-ratio), no side padding, glyph centered. Pairs with `iconOnly` on
+   TabsTrigger for segmented icon toggles (e.g. a light/dark switch). */
+.e3ubPG9y4BJzwsrdHlEA { padding: 0; gap: 0; aspect-ratio: 1; justify-content: center; }
+
+/* ---- underline ------------------------------------------------------------ */
+.yhi1vngR1p2YuJVNnaDE {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-20);
+  /* drawn inside the box (was border-bottom) so the scrolling list doesn't clip
+     the active underline sitting on it */
+  box-shadow: inset 0 -1px 0 var(--uc-border);
+}
+.nAh0Gfr2zYUey0XGqts9 {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 2px;
+  opacity: 0;
+  border-radius: 2px;
+  background: var(--uc-text-strong); /* neutral underline, tab indicators aren't CTAs */
+  transition: transform var(--uc-dur-base) var(--uc-ease-emphasized),
+    width var(--uc-dur-base) var(--uc-ease-emphasized);
+  pointer-events: none;
+}
+.cC9aL4ulO5rxAtpAr4A0 {
+  all: unset;
+  box-sizing: border-box;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  /* Centred, so a trigger stretched to share a full-width bar (flex: 1) keeps
+     its label in the middle instead of against its left edge. No effect on a
+     trigger sized to its content. */
+  justify-content: center;
+  gap: var(--uc-space-8);
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-medium);
+  color: var(--uc-text-muted);
+  cursor: pointer;
+  transition: color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.cC9aL4ulO5rxAtpAr4A0:hover { color: var(--uc-text-strong); }
+.cC9aL4ulO5rxAtpAr4A0[data-state="active"] { color: var(--uc-brand-fg); }
+.cC9aL4ulO5rxAtpAr4A0:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.cC9aL4ulO5rxAtpAr4A0:disabled { opacity: 0.5; cursor: not-allowed; }
+.rkiDdr7DnTZzxeE4XWn2 { height: 30px; font-size: var(--uc-text-sm); }
+.PlObOj8t3yHaJNy9nwoe { height: 40px; font-size: var(--uc-text-md); }
+
+.DR_2eHes4dZNHfA9fRnL:focus-visible { outline: none; }
+
+/* ── Preflight-proofing: PADDING ONLY ────────────────────────────────────────
+   Tailwind's stock preflight ships inside the app's Tailwind root:
+
+     .uich-tw button, .uich-tw input, ... { ... margin: 0; padding: 0; }
+
+   That is (0,1,1); a CSS-module class is (0,1,0), so preflight strips the side
+   padding off every trigger. The control keeps its height (preflight does not
+   set height) and the labels end up touching — a half-styled strip.
+
+   Re-stating ONLY padding at (0,2,0) is enough to beat it.
+
+   Deliberately NOT doubling the whole rule: the base rules start with
+   `all: unset`, and callers style these triggers with utility classes of their
+   own (the Code tab's scopes use `flex-1 min-w-0 justify-center text-xs
+   font-semibold`, all (0,1,0)). Lifting `all: unset` above those made it reset
+   their `flex`, so four equal columns collapsed to content width and ran
+   together. Specificity here has to be raised one property at a time, never
+   across a rule that resets everything.
+   ------------------------------------------------------------------------- */
+.NcCLOdesrW3h0feW8Cqd.NcCLOdesrW3h0feW8Cqd { padding: 0 var(--uc-tab-px, var(--uc-space-12)); }
+.sa8wAhUubaDeDz9m2lSy.sa8wAhUubaDeDz9m2lSy { padding: 0 var(--uc-space-8); }
+.AXCzoGHV2zjSW04iuiPm.AXCzoGHV2zjSW04iuiPm { padding: 0 var(--uc-space-16); }
+.e3ubPG9y4BJzwsrdHlEA.e3ubPG9y4BJzwsrdHlEA { padding: 0; }
+
+/* Input, recessed field on uc- tokens.
+
+   wp-admin hardening: WordPress's forms.css styles `input[type="text"]` (and
+   every other type) at specificity (0,1,1) — border, 2px radius, 40px
+   min-height, 0 8px padding and a blue :focus box-shadow — which beats a lone
+   `.input` (0,1,0) whenever the field has a type attribute (the Combobox search,
+   number/date fields…). Every field rule below therefore carries `[class]`
+   (always true on these elements): +(0,1,0) on each one, so their order among
+   themselves is unchanged but they now outrank wp-admin. margin, min-height and
+   line-height are reset because wp-admin sets them and the DS did not. */
+.gf6IRPe9LovRo8vS3IAl {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 100%;
+}
+.jvLYLaG45SNM0t7oug2a[class] {
+  width: 100%;
+  height: var(--uc-input-h, var(--uc-control-h-md));
+  padding: 0 var(--uc-input-px, var(--uc-space-12));
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-regular);
+  color: var(--uc-text-strong);
+  background: var(--uc-surface-overlay);
+  background-image: linear-gradient(to bottom, oklch(0% 0 0 / 0.02), transparent);
+  margin: 0;
+  min-height: 0;
+  line-height: normal;
+  border: none;
+  border-radius: var(--uc-input-radius, var(--uc-radius-md));
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+  outline: none;
+}
+.jvLYLaG45SNM0t7oug2a[class]::-moz-placeholder { color: var(--uc-text-subtle); }
+.jvLYLaG45SNM0t7oug2a[class]::placeholder { color: var(--uc-text-subtle); }
+.jvLYLaG45SNM0t7oug2a[class]:hover:not(:disabled):not(:focus) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+/* Focus = OFFSET brand ring: the field keeps its subtle inset border, then a
+   1px transparent gap (outline-offset shows the surface behind), then a thin 1px
+   brand outline sits OUTSIDE the field. Uses :focus so it shows on click +
+   keyboard. Kept thin (1px + 1px) so it reads as a single hairline ring, not a
+   thick double band. */
+.jvLYLaG45SNM0t7oug2a[class]:focus {
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  outline: 1px solid var(--uc-brand);
+  outline-offset: 1px;
+}
+.jvLYLaG45SNM0t7oug2a[class]:disabled {
+  color: var(--uc-text-subtle);
+  background: var(--uc-surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--uc-border);
+  cursor: not-allowed;
+}
+
+.haw52Sf_U1aNw5UG26i6[class] { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
+.l_6Te8jk6g9i2OYGVJQK[class] { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+
+.ssewu8L6FxnF8mjD_c_D[class] {
+  box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
+}
+.ssewu8L6FxnF8mjD_c_D[class]:focus {
+  box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
+  outline: 1px solid var(--uc-danger);
+  outline-offset: 1px;
+}
+
+/* icon adornments */
+.fGN3tsXkL0HfDxLoHJ3b[class] { padding-right: var(--uc-space-32); }
+.F7_NHLpEO7zGCxeHmEbl[class] { padding-left: var(--uc-space-32); }
+.NPtEFuYEvwKDd0CQ2ZL4 {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  color: var(--uc-text-subtle);
+  pointer-events: none;
+}
+.Bcg2bwvX_INxmvsS4KTp { right: var(--uc-space-12); }
+.oFadrtuqYdL1WAYq7mGM { left: var(--uc-space-12); }
+
+/* ── Addons (BoardUI Input adornments) ────────────────────────────────────
+   The shell is the field: same fill, inset ring, radius and heights as .input,
+   with the focus ring on :focus-within. The inner input (.bare) is transparent.
+   [class] keeps these above wp-admin's input[type=…] rules, as above. */
+.D0Xdmp8POlPPHSzhzm9g[class] {
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-8);
+  width: 100%;
+  height: var(--uc-input-h, var(--uc-control-h-md));
+  padding: 0 var(--uc-input-px, var(--uc-space-12));
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text-strong);
+  background: var(--uc-surface-overlay);
+  background-image: linear-gradient(to bottom, oklch(0% 0 0 / 0.02), transparent);
+  border-radius: var(--uc-input-radius, var(--uc-radius-md));
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+  cursor: text;
+}
+.D0Xdmp8POlPPHSzhzm9g[class]:hover:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+.D0Xdmp8POlPPHSzhzm9g[class]:focus-within { outline: 1px solid var(--uc-brand); outline-offset: 1px; }
+.Xg64tHf4Kp4Noa25JH0b[class] { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); gap: var(--uc-space-6); }
+.M5O1Ldpq66ff3nhO1rMQ[class] { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+.ekm8tp1ZbcU5q1z1wOWS[class] { box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input); }
+.ekm8tp1ZbcU5q1z1wOWS[class]:focus-within { outline-color: var(--uc-danger); }
+.sXdm39Z0ZiRwORSaPpZv[class] { color: var(--uc-text-subtle); background: var(--uc-surface-sunken); box-shadow: inset 0 0 0 1px var(--uc-border); cursor: not-allowed; }
+
+.rqDSPev3xkBlb20ToTZX[class] {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  font: inherit;
+  font-weight: var(--uc-weight-regular);
+  line-height: normal;
+  color: inherit;
+}
+.rqDSPev3xkBlb20ToTZX[class]:focus { box-shadow: none; outline: none; }
+.rqDSPev3xkBlb20ToTZX[class]::-moz-placeholder { color: var(--uc-text-subtle); }
+.rqDSPev3xkBlb20ToTZX[class]::placeholder { color: var(--uc-text-subtle); }
+.rqDSPev3xkBlb20ToTZX[class]:disabled { cursor: not-allowed; background: transparent; }
+
+.Y3HnmS9EPQ7CMwpRJcPQ { flex: none; display: inline-flex; align-items: center; min-width: 0; }
+.JY5ljlGXeMh2RPyRM1X1 { color: var(--uc-text-muted); white-space: nowrap; -webkit-user-select: none; -moz-user-select: none; user-select: none; }
+.Q7QN4UqutcmDnCCw7QMY { flex: none; display: grid; place-items: center; color: var(--uc-text-subtle); }
+
+/* field wrapper (label + hint) */
+.XrLNCTYM8KNOcisy0k1u { display: flex; flex-direction: column; gap: var(--uc-space-8); width: 100%; }
+._nx7MrQDNMenHelkZy99 { font-size: var(--uc-text-sm); font-weight: var(--uc-weight-medium); color: var(--uc-text-strong); }
+.tmMcxsM0Zke7mcbuxgiI { font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
+.C1A65qwuRNgkck1QS09Q { color: var(--uc-danger-fg); }
+
+/* Combobox, a searchable DS Select.
+   Row metrics, colours and the tick mirror Select.module.css (.item / .indicator)
+   so a searchable list reads exactly like a <Select> menu. Everything is token-
+   driven, so inside <ComboboxContent> (the `uc-pop-dark` scope) it renders on the
+   same dark surface as SelectContent. */
+
+/* ── Trigger (layered on Select's .trigger) ── */
+.TMt7KQ8qabQdlCprI12S { width: 100%; min-width: 0; text-align: right; }
+.ZEtsbpSX6cU_Ed7QNcJN { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Menu surface (layered on Select's .content) ── */
+.vY68I_p_LHjMh_G555yq {
+  min-width: var(--radix-popover-trigger-width);
+  max-width: calc(100vw - var(--uc-space-32));
+  color: var(--uc-text);
+}
+.vY68I_p_LHjMh_G555yq:focus-visible { outline: none; }
+
+.EQh1Zsx8SYfcUIJngYxf {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uc-space-4, 4px);
+  min-height: 0;
+  max-height: min(360px, var(--radix-popover-content-available-height, 360px));
+}
+.tQgk3IM_QGgqoNAzLwr4 {
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--uc-border-strong) transparent;
+}
+.tQgk3IM_QGgqoNAzLwr4::-webkit-scrollbar { width: 3px; }
+.tQgk3IM_QGgqoNAzLwr4::-webkit-scrollbar-thumb { background: var(--uc-border-strong); border-radius: 2px; }
+.tQgk3IM_QGgqoNAzLwr4::-webkit-scrollbar-track { background: transparent; }
+
+/* Group heading: a quiet label, sticky over the list on the menu's own surface. */
+.FXycZdDhl9kJETbjUHFO {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  justify-content: space-between;
+  gap: var(--uc-space-8, 8px);
+  padding: var(--uc-space-8, 8px) var(--uc-space-12, 12px) var(--uc-space-4, 4px);
+  background: var(--uc-surface-overlay, var(--uc-surface-raised));
+  color: var(--uc-text-muted);
+  font-size: var(--uc-text-xs, 12px);
+  font-weight: var(--uc-weight-medium, 500);
+}
+.GgeQ5Hm142wabYznnqR_ { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.FGCG1SrRWYYTO8tUWYWH { flex: none; color: var(--uc-text-subtle); font-variant-numeric: tabular-nums; }
+
+/* Option = Select .item: md height, base text, 12px left / 32px right (tick slot). */
+.DbjLcjr6klrYFvEy6_vt {
+  all: unset;
+  box-sizing: border-box;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-8, 8px);
+  width: 100%;
+  min-height: var(--uc-control-h-md);
+  padding: var(--uc-space-4, 4px) var(--uc-space-12, 12px) var(--uc-space-4, 4px) var(--uc-space-32, 32px);
+  border-radius: var(--uc-radius-sm, 6px);
+  color: var(--uc-text);
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.DbjLcjr6klrYFvEy6_vt:hover, .DbjLcjr6klrYFvEy6_vt:focus-visible, .ccE6nEQL6RNfxBJgRm5Q {
+  background: var(--uc-surface-control);
+  color: var(--uc-text-strong);
+  outline: none;
+}
+.jjrrNWXXXL8tcadxilTQ { flex: none; display: grid; place-items: center; width: 14px; height: 14px; }
+.k8LjJ_XHmpaDx7Qh3G_7 { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Right-hand note ("Pro", "Soon"); sits in the same slot the tick uses. */
+.HKpAW1CbxoGEwI9fIDC8 {
+  flex: none;
+  color: var(--uc-text-subtle);
+  font-size: var(--uc-text-xs, 12px);
+}
+/* Shown but not pickable (e.g. a Pro option on Free): muted, no hover fill. */
+.DbjLcjr6klrYFvEy6_vt.GoruhHBwxRhs65oaecF5 { cursor: not-allowed; color: var(--uc-text-subtle); background: none; }
+/* Tick = Select .indicator: pinned 12px from the right edge. */
+.ikXlbGhcHwgPHhXRQEQ_ { position: absolute; left: var(--uc-space-12, 12px); color: var(--uc-text-strong); }
+.nfdpgypdXHcVtNywkl0I { padding: var(--uc-space-12, 12px); color: var(--uc-text-muted); font-size: var(--uc-text-sm, 13px); text-align: center; }
+/* Row sizes = Select .itemSm / .itemLg. */
+.fABAXkznu7kklkD7DYei { min-height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); }
+.fR_WUaRhPJ2S0YU10YX5 { min-height: var(--uc-control-h-lg); font-size: var(--uc-text-md); }
+/* Search field: it is auto-focused the moment the menu opens, so the Input's
+   brand focus ring would always be on, which no Select menu has. Inside the
+   list it keeps a quiet border instead; the open trigger already carries the
+   ring. Parent-scoped to out-rank Input's own .shell[class]:focus-within. */
+.EQh1Zsx8SYfcUIJngYxf .cd6b2KsxpSMWPJK50oS0[class]:focus-within,
+.EQh1Zsx8SYfcUIJngYxf .cd6b2KsxpSMWPJK50oS0[class]:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong);
+}
+
+/* Textarea, recessed multiline field on uc- tokens.
+   wp-admin hardening (same as Input.module.css): WordPress's forms.css gives every `textarea`
+   its own border, padding, radius, line-height and focus ring, which stacked on this field as a
+   second frame. Every field rule carries `[class]` so it outranks wp-admin; margin is reset too. */
+.Xqsy0_gRpA0dvKAZlYwM[class] {
+  width: 100%;
+  margin: 0;
+  min-height: 84px;
+  padding: var(--uc-space-8) var(--uc-space-12);
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  /* Explicit, like Input: Tailwind preflight sets `font-weight: inherit` on textarea, so without
+     this the value took the weight of whatever wrapped it and read heavier than the inputs. */
+  font-weight: var(--uc-weight-regular);
+  line-height: var(--uc-leading-normal);
+  color: var(--uc-text-strong);
+  background: var(--uc-surface-overlay);
+  background-image: linear-gradient(to bottom, oklch(0% 0 0 / 0.02), transparent);
+  border: none;
+  border-radius: var(--uc-radius-md);
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+  outline: none;
+  resize: vertical;
+}
+.A1clwk8PZzsmTt4nBCfy[class] { min-height: 64px; padding: var(--uc-space-6) var(--uc-space-8); font-size: var(--uc-text-sm); }
+.nVx7pbGGbpIdebBWF5zQ[class] { min-height: 104px; padding: var(--uc-space-10) var(--uc-space-16); font-size: var(--uc-text-md); }
+.Xqsy0_gRpA0dvKAZlYwM[class]::-moz-placeholder { color: var(--uc-text-subtle); }
+.Xqsy0_gRpA0dvKAZlYwM[class]::placeholder { color: var(--uc-text-subtle); }
+.Xqsy0_gRpA0dvKAZlYwM[class]:hover:not(:disabled):not(:focus) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+/* Focus = the same OFFSET brand ring as Input (Input.module.css): the field
+   keeps its subtle inset border, a 2px transparent gap, then the brand outline
+   OUTSIDE the field. It used to be an inset brand border plus a 3px
+   --uc-brand-soft halo, which on dark surfaces (where brand-soft is a white
+   wash) read as a grey frame round the field and did not match the inputs
+   next to it. :focus, like Input, so it shows on click and keyboard. */
+.Xqsy0_gRpA0dvKAZlYwM[class]:focus {
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  outline: 1px solid var(--uc-brand);
+  outline-offset: 1px;
+}
+.Xqsy0_gRpA0dvKAZlYwM[class]:disabled {
+  color: var(--uc-text-subtle);
+  background: var(--uc-surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--uc-border);
+  cursor: not-allowed;
+}
+.W9fQRV_wDrUOFRkjpGQu[class] { box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input); }
+.W9fQRV_wDrUOFRkjpGQu[class]:focus {
+  box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
+  outline: 1px solid var(--uc-danger);
+  outline-offset: 1px;
+}
+
+/* ── autoResize / showCount / resize (ported from BoardUI's Textarea) ──────── */
+/* autoResize: height is set inline by the component (rows → maxRows), so the
+   fixed min-height steps aside and the handle goes (it would fight the fit). */
+.bX2w9x35ygzUvJ1Dscl2[class] { min-height: 0; overflow-y: hidden; }
+.n00Ij5fjFCXcY_WwMjdU[class] { resize: none; }
+
+/* Counter on its own row, right-aligned under the field (hint stays in Field). */
+.JUQO0q7E0NLpfvNqJw7Z { display: flex; flex-direction: column; gap: var(--uc-space-4); width: 100%; }
+.EfB4hZBAgC6fRUUtokch {
+  align-self: flex-end;
+  font-size: var(--uc-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--uc-text-muted);
+}
+.HuvKETZwc0wgFBVafeEI { color: var(--uc-danger-fg); }
+
+/* Radio, Radix radio-group behavior, uc- token look. */
+.EHpEHlLUPuG0aN2_mP1X { display: flex; flex-direction: column; gap: var(--uc-space-12); }
+
+.jV015zG6LdAhWdyDqBpi {
+  all: unset;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--uc-surface-overlay);
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+  flex: none;
+}
+.jV015zG6LdAhWdyDqBpi:hover:not(:disabled) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+
+/* sizes (md is the base above) */
+.GAuTRizJXJviLrk00LIO { width: 16px; height: 16px; }
+.GAuTRizJXJviLrk00LIO .KR2ebzsC5rVGUpZM7hbP::after { width: 6px; height: 6px; }
+.LHEgjFoN6AvdlDSIH6dp { width: 22px; height: 22px; }
+.LHEgjFoN6AvdlDSIH6dp .KR2ebzsC5rVGUpZM7hbP::after { width: 9px; height: 9px; }
+.jV015zG6LdAhWdyDqBpi[data-state="checked"] {
+  background: var(--uc-inverse-bg);
+  box-shadow: var(--uc-shadow-control);
+}
+.jV015zG6LdAhWdyDqBpi:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.jV015zG6LdAhWdyDqBpi:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.KR2ebzsC5rVGUpZM7hbP { display: grid; place-items: center; }
+.KR2ebzsC5rVGUpZM7hbP::after {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--uc-inverse-fg);
+}
+
+._eXXDl7uwGpETC1aX04q { display: flex; align-items: center; gap: var(--uc-space-12); }
+.oo9fBIVe3BjRsI6nKrkV { font-size: var(--uc-text-base); color: var(--uc-text); cursor: pointer; }
+
+/* Switch, monochrome. Track = inverse fill (light on dark / dark on light),
+   thumb = inverse foreground (dark on dark / light on light). OFF track is a
+   dimmer version of ON; on/off also reads from thumb position. Radix behavior. */
+.CQzrpEN2AiSHuCJwKJKR {
+  all: unset;
+  box-sizing: border-box;
+  width: 36px;
+  height: 20px;
+  border-radius: var(--uc-radius-pill);
+  background: color-mix(in oklab, var(--uc-inverse-bg) 30%, transparent);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+  position: relative;
+  cursor: pointer;
+  transition: background var(--uc-dur-base) var(--uc-ease-standard);
+  flex: none;
+}
+.CQzrpEN2AiSHuCJwKJKR[data-state="checked"] {
+  background: var(--uc-inverse-bg);
+}
+.CQzrpEN2AiSHuCJwKJKR:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.CQzrpEN2AiSHuCJwKJKR:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.liwycOoSbQrPNLMN1Xcr {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--uc-inverse-fg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(0, 0, 0, 0.06);
+  transform: translateX(-2px);
+  transition: transform var(--uc-dur-base) var(--uc-ease-emphasized);
+  will-change: transform;
+}
+.liwycOoSbQrPNLMN1Xcr[data-state="checked"] { transform: translateX(-18px); }
+
+/* sizes (md is the base above) */
+.ECEZNe88_62620l_tqt1 { width: 30px; height: 16px; }
+.ECEZNe88_62620l_tqt1 .liwycOoSbQrPNLMN1Xcr { width: 12px; height: 12px; }
+.ECEZNe88_62620l_tqt1 .liwycOoSbQrPNLMN1Xcr[data-state="checked"] { transform: translateX(-16px); }
+.mlp2kErQ5pEV8gYtRfEi { width: 44px; height: 24px; }
+.mlp2kErQ5pEV8gYtRfEi .liwycOoSbQrPNLMN1Xcr { width: 20px; height: 20px; }
+.mlp2kErQ5pEV8gYtRfEi .liwycOoSbQrPNLMN1Xcr[data-state="checked"] { transform: translateX(-22px); }
+
+/* SwitchCard, BoardUI's settings card on uc- tokens. card = bordered tile; row = list row. */
+.lQh5Vu8MYxL4Okl_6gUR { min-width: 0; }
+
+.jqBcqjCyY6vRjXVzGq4A {
+  border-radius: var(--uc-radius-12);
+  background: var(--uc-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--uc-border);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.jqBcqjCyY6vRjXVzGq4A:hover { box-shadow: inset 0 0 0 1px var(--uc-border-strong); }
+
+.XNxHsZLxPGAWaWzgzfDQ + .XNxHsZLxPGAWaWzgzfDQ { border-top: 1px solid var(--uc-border-subtle); }
+
+.jq6asj7a92OA3e3lNa6A {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  -moz-column-gap: var(--uc-space-24);
+       column-gap: var(--uc-space-24);
+  padding: var(--uc-space-12) var(--uc-space-16);
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.jq6asj7a92OA3e3lNa6A:has(> .EX8CZe31UJHbZuOuXxe0) { grid-template-columns: auto minmax(0, 1fr) auto; -moz-column-gap: var(--uc-space-12); column-gap: var(--uc-space-12); }
+.jqBcqjCyY6vRjXVzGq4A .jq6asj7a92OA3e3lNa6A { border-radius: var(--uc-radius-12); }
+/* Hover tint only while the switch is off; a switched-on row stays flat. */
+.jq6asj7a92OA3e3lNa6A:not(:has([data-state="checked"])):hover { background: var(--uc-surface-base); }
+.jqBcqjCyY6vRjXVzGq4A:has(> .SpDJhaEfEPq4SKohdtid) .jq6asj7a92OA3e3lNa6A { border-radius: var(--uc-radius-12) var(--uc-radius-12) 0 0; }
+
+.EX8CZe31UJHbZuOuXxe0 {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--uc-text-strong);
+}
+.EX8CZe31UJHbZuOuXxe0 :where(svg) { width: 16px; height: 16px; }
+
+.ZSpYbdn0bakgODAnWpty { display: flex; flex-direction: column; gap: var(--uc-space-2); min-width: 0; }
+.Zl7UEFyLJLXZGV3FOBwX { font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); line-height: 1.35; color: var(--uc-text-strong); }
+.xuu2HW7tYEqlBx6Z7Tgq { font-size: var(--uc-text-11); line-height: var(--uc-leading-snug); color: var(--uc-text-muted); }
+.yfZxwXDJGfY5YhX1SnxF { justify-self: end; }
+
+/* What the setting unlocks: recessed, so it reads as belonging to the row above. */
+.SpDJhaEfEPq4SKohdtid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uc-space-12);
+  min-width: 0;
+  margin: 0 var(--uc-space-16) var(--uc-space-12);
+  padding: var(--uc-space-12);
+  border-radius: var(--uc-radius-8);
+  background: var(--uc-surface-base);
+}
+/* Nested rows inside an extra panel: no own padding box, hairline from the panel tone. */
+.SpDJhaEfEPq4SKohdtid .XNxHsZLxPGAWaWzgzfDQ .jq6asj7a92OA3e3lNa6A { padding: var(--uc-space-10) 0; }
+.SpDJhaEfEPq4SKohdtid .XNxHsZLxPGAWaWzgzfDQ .jq6asj7a92OA3e3lNa6A:hover { background: none; }
+.SpDJhaEfEPq4SKohdtid .XNxHsZLxPGAWaWzgzfDQ .SpDJhaEfEPq4SKohdtid { margin: 0 0 var(--uc-space-10); background: var(--uc-surface-raised); }
+
+.LROtETnc0Lr3x_vhJ8aD .jq6asj7a92OA3e3lNa6A { cursor: not-allowed; }
+.LROtETnc0Lr3x_vhJ8aD .jq6asj7a92OA3e3lNa6A:hover { background: none; }
+.LROtETnc0Lr3x_vhJ8aD .ZSpYbdn0bakgODAnWpty { opacity: 0.6; }
+
+@media (max-width: 600px) {
+  .jq6asj7a92OA3e3lNa6A { -moz-column-gap: var(--uc-space-12); column-gap: var(--uc-space-12); }
+}
+
+/* CheckboxCard, BoardUI's selectable card on uc- tokens. */
+.mSV4Ocw1nx8WQCVf30Y5 {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--uc-space-10);
+  min-width: 0;
+  height: 100%;
+  padding: var(--uc-space-10) var(--uc-space-12);
+  border-radius: var(--uc-radius-12);
+  background: var(--uc-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--uc-border);
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.mSV4Ocw1nx8WQCVf30Y5:hover { background: var(--uc-surface-base); }
+.mSV4Ocw1nx8WQCVf30Y5:has(.OhkcyXyg3majenzeonx0[data-state="checked"]) { box-shadow: inset 0 0 0 1px var(--uc-border-strong); }
+.mSV4Ocw1nx8WQCVf30Y5:has(.OhkcyXyg3majenzeonx0:focus-visible) { box-shadow: inset 0 0 0 1px var(--uc-border-strong), 0 0 0 2px var(--uc-ring); }
+
+.OhkcyXyg3majenzeonx0 { flex: none; margin-top: 1px; }
+.YLmt16KVnfhvADb8q3zk { display: flex; flex-direction: column; gap: var(--uc-space-2); min-width: 0; }
+.qPgxqVTsiAPIUPXFdVnh { font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); line-height: 1.35; color: var(--uc-text-strong); }
+.qHxjQm0nCbZroGa8tyjQ { font-size: var(--uc-text-11); line-height: var(--uc-leading-snug); color: var(--uc-text-muted); }
+
+.VHcB_4JeIrq5e2fFzbEy { cursor: not-allowed; }
+.VHcB_4JeIrq5e2fFzbEy:hover { background: var(--uc-surface-raised); }
+.VHcB_4JeIrq5e2fFzbEy .YLmt16KVnfhvADb8q3zk { opacity: 0.6; }
+
+/* Card, raised surface container on uc- tokens. */
+.gT8W3wT5_Ba5VSUAbiaN {
+  background: var(--uc-surface-raised);
+  border-radius: var(--uc-card-radius, var(--uc-radius-lg));
+  box-shadow: var(--uc-shadow-2);
+  overflow: hidden;
+}
+.Oel1VBmZW4zbRXFpwMnS { background: var(--uc-surface-base); box-shadow: none; }
+.PmYbFXpbOLRpe8xVBly7 { box-shadow: inset 0 0 0 1px var(--uc-border); }
+.ajLMSKKPg9Hd3PPP8Dqu { --uc-card-pad: var(--uc-space-12); }
+.vQwV7NnqcyxK5yGD3Kxk {
+  cursor: pointer;
+  transition: box-shadow var(--uc-dur-base) var(--uc-ease-standard),
+    transform var(--uc-dur-base) var(--uc-ease-standard);
+}
+.vQwV7NnqcyxK5yGD3Kxk:hover { box-shadow: var(--uc-shadow-4); transform: translateY(-2px); }
+
+.Ozaw2N7sweiJhCzrVH9V {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uc-space-4);
+  padding: var(--uc-card-pad, var(--uc-space-20)) var(--uc-card-pad, var(--uc-space-20)) 0;
+}
+.e_JQ1Na16LbBnSYsOa8j { font-size: var(--uc-text-lg); font-weight: var(--uc-weight-semibold); color: var(--uc-text-strong); }
+.C0gK2PdnQkSK0JKYxUkQ { font-size: var(--uc-text-base); color: var(--uc-text-muted); }
+.WBt7GN5IgsrSw13Tt8PW { padding: var(--uc-card-pad, var(--uc-space-20)); display: flex; flex-direction: column; gap: var(--uc-space-12); }
+.L7zeltlUg8v8lxbSyP31 {
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-12);
+  padding: var(--uc-space-16) var(--uc-space-20);
+  border-top: 1px solid var(--uc-border-subtle);
+  background: var(--uc-surface-base);
+}
+.thxpXRf3z2mbzRJMt6lb { display: block; width: 100%; aspect-ratio: 16 / 9; -o-object-fit: cover; object-fit: cover; background: var(--uc-surface-sunken); }
+
+/* Shared inline notice: neutral surface with the status color on its icon. */
+.IILYhd8ntsVVzoTtoCzS {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--uc-space-12);
+  padding: var(--uc-space-16);
+  border-radius: var(--uc-radius-xl);
+  background: var(--uc-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--uc-border);
+}
+.iJqVR9yC7bJdPcF1H148 {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--uc-space-32);
+  height: var(--uc-space-32);
+  border-radius: var(--uc-radius-md);
+  background: var(--_soft, var(--uc-accent-soft));
+  color: var(--_fg, var(--uc-accent-fg));
+}
+.iJqVR9yC7bJdPcF1H148 svg { display: block; }
+.fsL4LE6BWTWYXZx1XnR7 {
+  display: flex;
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-self: center;
+  gap: var(--uc-space-4);
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.zdyHEULlvuONmATbuv0B { font-size: var(--uc-text-base); font-weight: var(--uc-weight-semibold); line-height: var(--uc-leading-normal); color: var(--uc-text-strong); }
+.Dv0zeaJPLiT4cu2pTtos { font-size: var(--uc-text-sm); line-height: var(--uc-leading-normal); color: var(--uc-text-muted); }
+
+.LFWCFHm_dE4h4xOD3l5b  { --_soft: var(--uc-accent-soft);  --_fg: var(--uc-accent-fg); }
+.m17aruYIjxeq7f0zlcDu { --_soft: var(--uc-success-soft); --_fg: var(--uc-success-fg); }
+.oP8lfcSNoJtz2jZNaCOS { --_soft: var(--uc-warning-soft); --_fg: var(--uc-warning-fg); }
+.XJncEdRViBU7GBdse6PM  { --_soft: var(--uc-danger-soft);  --_fg: var(--uc-danger-fg); }
+
+/* Tooltip, Radix behavior, uc- token look. */
+.zL8PtLvN_qxmBr9JJpNb {
+  background: var(--uc-text-strong);
+  color: var(--uc-text-inverse);
+  padding: var(--uc-space-5) var(--uc-space-12);
+  border-radius: var(--uc-radius-sm);
+  font-size: var(--uc-text-xs);
+  font-weight: var(--uc-weight-medium);
+  line-height: var(--uc-leading-tight);
+  max-width: 240px;
+  box-shadow: var(--uc-shadow-4);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  z-index: var(--uc-z-tooltip);
+  animation: WoWiPylS53SgKPqicqzK var(--uc-dur-enter) var(--uc-ease-emphasized);
+}
+.z1QfDdwojgYdst1stf84 { fill: var(--uc-text-strong); }
+
+@keyframes WoWiPylS53SgKPqicqzK {
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* Dialog, Radix behavior, uc- token look. */
+.tLHpNm_FOBexXs6CBi96 {
+  position: fixed;
+  inset: 0;
+  background: oklch(20% 0.01 285 / 0.44);
+  backdrop-filter: blur(2px);
+  z-index: var(--uc-z-overlay);
+  animation: rg8F2pLnEEvaQ9SFhUDe var(--uc-dur-enter) var(--uc-ease-standard);
+}
+/* centers the dialog + hosts the outside close button */
+.WPC3ZWEoy8l8FDXn6KM6 {
+  position: fixed;
+  top: 50%;
+  right: 50%;
+  transform: translate(50%, -50%);
+  width: min(calc(100vw - var(--uc-space-32)), 480px);
+  z-index: var(--uc-z-dialog);
+}
+.j_Fq8xzwnV0fZ3X6whIJ {
+  position: relative;
+  width: 100%;
+  max-height: calc(100vh - var(--uc-space-48));
+  overflow: auto;
+  background: var(--uc-surface-base);      /* grey tray */
+  border-radius: var(--uc-radius-xl);
+  box-shadow: var(--uc-shadow-5);
+  padding: var(--uc-space-4);
+  animation: q2klsmdheEHvyti7wZU2 var(--uc-dur-enter) var(--uc-ease-emphasized);
+}
+/* white content card inside the tray, same radius as the dialog + full border */
+.RV4l4TibrDbhnzu86BM5 {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uc-space-16);
+  padding: var(--uc-space-20);           /* 20px equal on all 4 sides */
+  background: var(--uc-surface-raised);
+  border-radius: var(--uc-radius-xl);
+  border: 1px solid var(--uc-border);
+  overflow: hidden;
+}
+/* close button sits just outside the dialog's top-right corner.
+   Radix disables pointer-events on the body while the modal is open and only
+   re-enables them on its own Content, this button lives outside that Content,
+   so it must opt back in explicitly or hover/click fall through to the overlay. */
+.e784dW4AlZcPspGNMNkW {
+  /* The dialog portals outside the dashboard root, so wp-admin's own button rules
+     can reach it: reset what they would add to the glyph (padding, margin, line
+     height, tap highlight) and show a focus ring for keyboard focus only. */
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Fade in with the dialog. The dialog animates in (fade + settle) but its close
+     button used to appear at once, so for a moment it floated by itself beside a
+     half-faded dialog. Same keyframes and timing keep the two in step. */
+  animation: q2klsmdheEHvyti7wZU2 var(--uc-dur-enter) var(--uc-ease-emphasized) backwards;
+  pointer-events: auto;
+  position: absolute;
+  top: 0;
+  right: calc(100% + var(--uc-space-8));
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: none;
+  background: var(--uc-surface-raised);
+  color: var(--uc-text-strong);
+  border-radius: var(--uc-radius-md);
+  box-shadow: var(--uc-shadow-control);
+  cursor: pointer;
+  transition:
+    background var(--uc-dur-fast) var(--uc-ease-standard),
+    box-shadow var(--uc-dur-fast) var(--uc-ease-standard),
+    transform var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.e784dW4AlZcPspGNMNkW:hover {
+  background: var(--uc-surface-sunken);
+  color: var(--uc-text-strong);
+  box-shadow: var(--uc-shadow-raised);
+}
+.e784dW4AlZcPspGNMNkW:active {
+  transform: translateY(1px);
+  box-shadow: var(--uc-shadow-1);
+}
+.e784dW4AlZcPspGNMNkW:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 2px;
+}
+.q_8ukzAV3OUe2odpsEY5 { display: flex; flex-direction: column; gap: var(--uc-space-4); }
+/* margin: 0 is load-bearing, the dialog portals to .uc-portal, OUTSIDE the
+   #uich-new-dash scope that resets heading/paragraph margins, so without this
+   the <h2> title / <p> description inherit the browser's default ~0.83em margin
+   and the header reads loose and uneven. Spacing is owned by .header's gap. */
+.UfyHB6eiwtZLSk7PepRg { font-size: var(--uc-text-xl); font-weight: var(--uc-weight-semibold); color: var(--uc-text-strong); margin: 0; }
+.t_H6WjDbU6wwanCeDD5R { font-size: var(--uc-text-base); color: var(--uc-text-muted); margin: 0; }
+.FyNDuWfZcvfpCUzp2FdK { min-width: 0; }
+/* footer sits below the card on the grey tray */
+.wCgH8U_27aKkRVUNBkwH {
+  display: flex;
+  justify-content: space-between;        /* secondary left, primary right */
+  align-items: center;
+  gap: var(--uc-space-16);
+  padding: var(--uc-space-20);           /* 20px below/around the white card */
+}
+
+@keyframes rg8F2pLnEEvaQ9SFhUDe { from { opacity: 0; } to { opacity: 1; } }
+@keyframes q2klsmdheEHvyti7wZU2 {
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Narrow screens: the positioner leaves only a 16px margin, so "just outside the corner" is off
+   screen. Tuck the close button into the card's top-right corner instead, and keep the header
+   text clear of it. */
+@media (max-width: 600px) {
+  .e784dW4AlZcPspGNMNkW {
+    right: auto;
+    left: var(--uc-space-12);
+    top: var(--uc-space-12);
+    z-index: 1;
+  }
+  .q_8ukzAV3OUe2odpsEY5 { padding-left: var(--uc-space-36); }
+}
+
+/* Toast, rebuilt on uc- tokens. ONE card — border, shadow and rounded corners
+   live on the outer `.tray` only, `overflow: hidden` so the footer's own
+   background is clipped to the same radius — with an internal divider line
+   separating the icon/title/description row from the optional live
+   "closes in N sec" countdown footer. Built on Sonner (see Toast.tsx). */
+
+.uEgf7jDuE3sb8XIhVHwa {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden; /* clips .footer's background to the shared radius */
+  border-radius: var(--uc-radius-xl);
+  border: 1px solid var(--uc-border-subtle);
+  background: var(--uc-surface-raised);
+  box-shadow: var(--uc-shadow-4);
+}
+
+.HuoQe6UnXU7LEdxGlIFq {
+  display: flex;
+  width: 100%;
+  align-items: flex-start;
+  gap: var(--uc-space-12);
+  padding: var(--uc-space-16);
+}
+.QztwV7_WaaVeiJozwfKA {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  align-items: flex-start;
+  gap: var(--uc-space-12);
+}
+
+.K52K3qbtIuEYY1Lp9HIS {
+  flex-shrink: 0;
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  /* The icon (24px) is taller than the title's line box (20px); top-aligning
+     both leaves the icon sitting ~2px low against the title's optical
+     center. Nudge up to match. */
+  margin-top: -2px;
+}
+.K52K3qbtIuEYY1Lp9HIS svg { width: 24px; height: 24px; display: block; }
+.KvDwwOF2QnEwXk3hh_7d { color: var(--uc-success); }
+.eNw277BwbrUF3EAS8Hur { color: var(--uc-danger); }
+.G_2Rr5fjKHGVLFqj6kVU,
+.tkQqWV5W8gma_t54UXuK { color: var(--uc-text-strong); }
+.xRajrFEIype8bQVnjHT3 { animation: zZ9uDvoK_jCS7GqG3lZA 0.6s linear infinite; }
+
+.SBsc_b8Mbv6JaJMxtcnU {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--uc-space-4);
+}
+.djBPnRO7iwu0STGhCPFR {
+  margin: 0; /* <p> — kill the default block margin, or it stacks on .text's gap */
+  font-size: var(--uc-text-base);
+  line-height: 20px;
+  font-weight: var(--uc-weight-medium);
+  color: var(--uc-text-strong);
+  word-break: break-word;
+}
+.eMFAMHuEEfPNU_chAKwC {
+  margin: 0; /* <p> — same */
+  font-size: var(--uc-text-base);
+  line-height: 20px;
+  color: var(--uc-text-muted);
+  word-break: break-word;
+}
+
+.u23WgsL_rBCGJLTinAxB {
+  flex-shrink: 0;
+  align-self: flex-start;
+  border-radius: var(--uc-radius-sm);
+  border: 1px solid var(--uc-border-subtle);
+  background: var(--uc-surface-raised);
+  padding: 3px var(--uc-space-8);
+  font-size: var(--uc-text-xs);
+  line-height: 16px;
+  color: var(--uc-text-strong);
+  cursor: pointer;
+  box-shadow: var(--uc-shadow-raised);
+  transition:
+    background var(--uc-dur-fast) var(--uc-ease-standard),
+    box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.u23WgsL_rBCGJLTinAxB:hover { background: var(--uc-surface-sunken); }
+.u23WgsL_rBCGJLTinAxB:active { box-shadow: var(--uc-shadow-1); }
+.u23WgsL_rBCGJLTinAxB:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+
+._FghQMfCd6oqErra0P5K {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: flex-start;
+  padding: var(--uc-space-8) var(--uc-space-16);
+  border-top: 1px solid var(--uc-border-subtle);
+  background: var(--uc-surface-sunken);
+}
+.miqo6EOGNRDI4TqUYdZr {
+  margin: 0; /* <p> — same default-margin fix as .title/.desc */
+  font-size: var(--uc-text-sm);
+  line-height: 16px;
+  color: var(--uc-text-muted);
+  text-align: right;
+}
+/* Emphasis, not alarm — danger-red on a routine countdown read as an error
+   on an otherwise-successful toast. */
+.bP11Yisq2h8m4KJ_hKBD { color: var(--uc-text-strong); font-weight: var(--uc-weight-medium); }
+
+/* Sonner container: our card owns the look, we only set its width. */
+.gIN5XjDE973nIqn0vJKg {
+  width: 426px;
+  max-width: calc(100vw - var(--uc-space-32));
+}
+
+@keyframes zZ9uDvoK_jCS7GqG3lZA { to { transform: rotate(-360deg); } }
+
+/* Accordion, token-driven, chevron rotates, height animates via Radix var. */
+.DFGr5k2eRrJnxwR8wIDu {
+  border-bottom: 1px solid var(--uc-border-subtle);
+}
+
+.GFKvYR3a72nGoScN0tFW {
+  margin: 0;
+  display: flex;
+}
+
+.tvcRj9RnfQDkmcI1jqe4 {
+  all: unset;
+  box-sizing: border-box;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uc-space-12);
+  padding: var(--uc-space-16) var(--uc-space-4);
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-semibold);
+  color: var(--uc-text-strong);
+  cursor: pointer;
+}
+
+.tvcRj9RnfQDkmcI1jqe4:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 2px;
+  border-radius: var(--uc-radius-sm);
+}
+
+.kEKgCi8RUSQAuVKmrOgo {
+  flex: none;
+  color: var(--uc-text-muted);
+  transition: transform var(--uc-dur-base) var(--uc-ease-standard);
+}
+
+.tvcRj9RnfQDkmcI1jqe4[data-state="open"] .kEKgCi8RUSQAuVKmrOgo {
+  transform: rotate(-180deg);
+}
+
+.Z8tltYrpVFnQ1kjmShck {
+  overflow: hidden;
+  font-size: var(--uc-text-base);
+  color: var(--uc-text-muted);
+}
+
+.Z8tltYrpVFnQ1kjmShck[data-state="open"] {
+  animation: C_plQPcmU7qNqKcQyRdB var(--uc-dur-base) var(--uc-ease-standard);
+}
+
+.Z8tltYrpVFnQ1kjmShck[data-state="closed"] {
+  animation: phgHywz15_vr7TB8HfOi var(--uc-dur-base) var(--uc-ease-standard);
+}
+
+.FeUPu6HLKbMSpMC925mj {
+  padding: 0 var(--uc-space-4) var(--uc-space-16);
+  line-height: var(--uc-leading-normal);
+}
+
+@keyframes C_plQPcmU7qNqKcQyRdB {
+  from {
+    height: 0;
+  }
+
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes phgHywz15_vr7TB8HfOi {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+
+  to {
+    height: 0;
+  }
+}
+/* Slider, monochrome: track = sunken, range = inverse fill, white thumb. */
+.H5aErHl8N79x4jLsGaKH {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 20px;
+  touch-action: none;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.mW86s6FpDTNgFoTOQlhK {
+  position: relative;
+  flex-grow: 1;
+  height: 4px;
+  border-radius: var(--uc-radius-pill);
+  background: var(--uc-surface-sunken);
+  box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.06);
+}
+.XNUcunXw1kFSNjBNSUYp { position: absolute; height: 100%; border-radius: var(--uc-radius-pill); background: var(--uc-inverse-bg); }
+.kx5WKhAYaB6fdNKGgc2p {
+  display: block;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--uc-surface-raised);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--uc-border-strong);
+  cursor: grab;
+}
+.kx5WKhAYaB6fdNKGgc2p:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.kx5WKhAYaB6fdNKGgc2p:active { cursor: grabbing; }
+.H5aErHl8N79x4jLsGaKH[data-disabled] { opacity: 0.5; }
+
+/* Popover, light raised surface, soft elevation. */
+.IgtxSpnrWCwpAiEUyVSV {
+  min-width: 200px;
+  background: var(--uc-surface-raised);
+  color: var(--uc-text);
+  border: 1px solid var(--uc-border-subtle);
+  border-radius: var(--uc-radius-md);
+  box-shadow: var(--uc-shadow-4);
+  padding: var(--uc-space-16);
+  font-size: var(--uc-text-base);
+  z-index: var(--uc-z-dropdown);
+  animation: IrisfxJ9u8Ano9jbOQyR var(--uc-dur-enter) var(--uc-ease-emphasized);
+}
+.IgtxSpnrWCwpAiEUyVSV:focus-visible { outline: none; }
+
+@keyframes IrisfxJ9u8Ano9jbOQyR { from { opacity: 0; transform: translateY(-4px) scale(0.98); } to { opacity: 1; transform: none; } }
+
+/* Separator, subtle hairline in either orientation. */
+.R8avrtTyuO0UDSY9TLVT { background: var(--uc-border-subtle); flex: none; }
+.R8avrtTyuO0UDSY9TLVT[data-orientation="horizontal"] { height: 1px; width: 100%; }
+.R8avrtTyuO0UDSY9TLVT[data-orientation="vertical"] { width: 1px; height: 100%; align-self: stretch; }
+
+/* Toggle, ghost by default, inverse fill when on. */
+.sU0JLjylwFNHfT1l3y0v {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--uc-space-6);
+  height: var(--uc-control-h-md);
+  min-width: var(--uc-control-h-md);
+  padding: 0 var(--uc-space-10);
+  border-radius: var(--uc-radius-sm);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text-muted);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.sU0JLjylwFNHfT1l3y0v:hover { background: var(--uc-surface-sunken); color: var(--uc-text-strong); }
+.sU0JLjylwFNHfT1l3y0v:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.sU0JLjylwFNHfT1l3y0v[data-state="on"] { background: var(--uc-inverse-bg); color: var(--uc-inverse-fg); }
+.sU0JLjylwFNHfT1l3y0v[data-disabled] { opacity: 0.5; cursor: not-allowed; }
+
+.iXArTg5PgOy_bFknlxwp { height: var(--uc-control-h-sm); min-width: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
+.ymjpn0oXx850od60T2Xh { height: var(--uc-control-h-lg); min-width: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-12); }
+
+/* ToggleGroup, sunken tray; selected item lifts to a raised white pill. */
+.RiaHcNaRvgF5_WF4Twlu {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--uc-radius-md);
+  background: var(--uc-surface-sunken);
+  box-shadow: inset 0 0 0 1px var(--uc-border-subtle);
+}
+.cJtc7DytBy6twvBNrgYW {
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--uc-space-6);
+  height: calc(var(--uc-control-h-md) - 4px);
+  min-width: calc(var(--uc-control-h-md) - 4px);
+  padding: 0 var(--uc-space-12);
+  border-radius: var(--uc-radius-sm);
+  font-size: var(--uc-text-base);
+  font-weight: var(--uc-weight-medium);
+  color: var(--uc-text-muted);
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard),
+    box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.cJtc7DytBy6twvBNrgYW:hover { color: var(--uc-text-strong); }
+.cJtc7DytBy6twvBNrgYW:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: -2px; }
+.cJtc7DytBy6twvBNrgYW[data-state="on"] { background: var(--uc-surface-raised); color: var(--uc-text-strong); box-shadow: var(--uc-shadow-1); }
+.cJtc7DytBy6twvBNrgYW[data-disabled] { opacity: 0.5; cursor: not-allowed; }
+
+.DbZTGhST2zu9kqObbddw { height: calc(var(--uc-control-h-sm) - 4px); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
+.zcrHMHPyeAgqN6i_TtjU { height: calc(var(--uc-control-h-lg) - 4px); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+
+/* ContextMenu, dark popover, item highlight follows the pointer/keys. */
+.ObF2WajmmJIdcSbDcPA6 {
+  min-width: 180px;
+  background: var(--uc-surface-overlay);
+  border-radius: var(--uc-radius-md);
+  box-shadow: var(--uc-shadow-4);
+  padding: var(--uc-space-4);
+  z-index: var(--uc-z-dropdown);
+  animation: KtINbZCxWPggCCFOcqVH var(--uc-dur-enter) var(--uc-ease-emphasized);
+}
+.joVkdb04kUqg2MfkTxh4 {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-8);
+  height: var(--uc-control-h-md);
+  padding: 0 var(--uc-space-12);
+  border-radius: var(--uc-radius-sm);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text);
+  cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.joVkdb04kUqg2MfkTxh4[data-highlighted] { background: var(--uc-surface-hover, var(--uc-surface-control)); color: var(--uc-text-strong); }
+.joVkdb04kUqg2MfkTxh4[data-disabled] { color: var(--uc-text-subtle); pointer-events: none; }
+.Uu01aIUKmmYABm_IsZN7 { color: var(--uc-danger-fg); }
+.hAgu97V1LKZK2OyKpDG7 {
+  padding: var(--uc-space-8) var(--uc-space-12) var(--uc-space-4);
+  font-size: var(--uc-text-xs);
+  font-weight: var(--uc-weight-medium);
+  letter-spacing: var(--uc-tracking-wide);
+  text-transform: uppercase;
+  color: var(--uc-text-subtle);
+}
+.A_nxlFZ5ayD0PHwN8RmO { height: 1px; background: var(--uc-border-subtle); margin: var(--uc-space-4) 0; }
+
+@keyframes KtINbZCxWPggCCFOcqVH { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
+
+/* Label, form label typography. */
+.vuPUoTZPfAR5m6X8v_zh {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-6);
+  font-size: var(--uc-text-sm);
+  font-weight: var(--uc-weight-medium);
+  color: var(--uc-text-strong);
+  line-height: var(--uc-leading-snug);
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+}
+.vuPUoTZPfAR5m6X8v_zh[data-disabled] { color: var(--uc-text-subtle); cursor: not-allowed; }
+
+/* ScrollArea, thin token-styled scrollbars that fade in on hover. */
+.S6t0k8vIF2BgEmWoruVS { overflow: hidden; }
+.Ymb1tUEYhyCulKD4M2Kd { width: 100%; height: 100%; border-radius: inherit; }
+.gub_S62WoZUYFrtXAsps {
+  display: flex;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
+  touch-action: none;
+  padding: 2px;
+  background: transparent;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.gub_S62WoZUYFrtXAsps:hover { background: var(--uc-surface-sunken); }
+.gub_S62WoZUYFrtXAsps[data-orientation="vertical"] { width: 10px; }
+.gub_S62WoZUYFrtXAsps[data-orientation="horizontal"] { flex-direction: column; height: 10px; }
+.LRlTFNaG2bPn3AnQjljF {
+  flex: 1;
+  background: var(--uc-border-strong);
+  border-radius: var(--uc-radius-pill);
+  position: relative;
+}
+/* enlarge the invisible hit target so the thin thumb is easy to grab */
+.LRlTFNaG2bPn3AnQjljF::before {
+  content: "";
+  position: absolute;
+  inset: -4px;
+}
+
+/* TagInput, a token field on uc- tokens. The box copies Input's .shell (fill,
+   inset ring, hover, offset brand focus ring, radius) but grows in height so
+   the chips can wrap. [class] keeps the inner input above wp-admin's
+   input[type] rules, as in Input.module.css. */
+.PNrZsWQDPgfpDFIQDdLH { display: flex; flex-direction: column; gap: var(--uc-space-8); width: 100%; min-width: 0; }
+
+.sG8i2AKt656r9kdIRhPR {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uc-space-4);
+  width: 100%;
+  min-height: var(--uc-input-h, var(--uc-control-h-md));
+  padding: var(--uc-space-4) var(--uc-space-8);
+  box-sizing: border-box;
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text-strong);
+  background: var(--uc-surface-overlay);
+  background-image: linear-gradient(to bottom, oklch(0% 0 0 / 0.02), transparent);
+  border-radius: var(--uc-input-radius, var(--uc-radius-md));
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+  cursor: text;
+}
+.sG8i2AKt656r9kdIRhPR:hover:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--uc-text-subtle), var(--uc-shadow-input); }
+.sG8i2AKt656r9kdIRhPR:focus-within { outline: 1px solid var(--uc-brand); outline-offset: 1px; }
+.kyzpjDxK04uEFH0OXFan { min-height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: var(--uc-space-3) var(--uc-space-6); }
+.DgKAk2c65Ltr3nMvn9_b { color: var(--uc-text-subtle); background: var(--uc-surface-sunken); box-shadow: inset 0 0 0 1px var(--uc-border); cursor: not-allowed; }
+
+.Vpha_gjWolO_6QIAxpA1 { flex: none; display: grid; place-items: center; margin-left: var(--uc-space-2); color: var(--uc-text-subtle); }
+
+.jPpldC2W869OWB3Qi7iE[class] {
+  flex: 1 1 64px;
+  min-width: 64px;
+  height: 22px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 var(--uc-space-2);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  font: inherit;
+  font-weight: var(--uc-weight-regular);
+  line-height: normal;
+  color: inherit;
+}
+.jPpldC2W869OWB3Qi7iE[class]:focus { box-shadow: none; outline: none; }
+.jPpldC2W869OWB3Qi7iE[class]::-moz-placeholder { color: var(--uc-text-subtle); }
+.jPpldC2W869OWB3Qi7iE[class]::placeholder { color: var(--uc-text-subtle); }
+.jPpldC2W869OWB3Qi7iE[class]:disabled { cursor: not-allowed; background: transparent; }
+
+/* Added tags: the DS Chip on a grey fill. Chip's default fill is the white
+   control surface, the same as this field, so it would read as bare text. */
+.sG8i2AKt656r9kdIRhPR .hRxupUJSBLxIlTY07TF9 { --_bg: var(--uc-surface-sunken); --_fg: var(--uc-text-strong); --_bg-hover: var(--uc-surface-sunken); }
+
+/* Suggestions: existing tags as one-click chips under the field. Outlined with
+   a "+", so they read as "add this" rather than as tags already added. */
+.DLdW_O2d4P1EMBWNaceT .LhXrdwMqopE6LpuwQyAh {
+  --_bg: transparent;
+  --_fg: var(--uc-text);
+  --_bg-hover: var(--uc-surface-sunken);
+  --_fg-hover: var(--uc-text-strong);
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong);
+}
+.DLdW_O2d4P1EMBWNaceT .LhXrdwMqopE6LpuwQyAh:hover { box-shadow: inset 0 0 0 1px var(--uc-text-subtle); }
+.DLdW_O2d4P1EMBWNaceT { display: flex; flex-wrap: wrap; align-items: center; gap: var(--uc-space-4); }
+.zaPIIqmmCwSjCoj9QksH { margin-left: var(--uc-space-2); font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
+
+/* LinkButton, a text-only action on uc- tokens (BoardUI Link Button look).
+   primary: ink · secondary: muted → ink on hover · disabled: subtle. */
+
+.F3TffuAmG5ropBRI_sPr {
+  --_fg: var(--uc-text-strong);
+  --_fg-hover: var(--uc-text-strong);
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-4);
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--_fg);
+  font-family: var(--uc-font-sans);
+  font-weight: var(--uc-weight-medium);
+  text-decoration: none;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.B4VIceu3ndNJ1GNJupPV {
+  --_fg: var(--uc-text-muted);
+  --_fg-hover: var(--uc-text-strong);
+}
+
+/* Sizes: Button's scale, line-height = the control's text box. */
+.A4FxIVSomlGsL6P9FA56 { font-size: var(--uc-text-base); line-height: 20px; }
+.CVrVPq4uhKdWJoANTfEP { font-size: var(--uc-text-sm);   line-height: 18px; }
+.tu6uv4wksqk8_MdC2aEy { font-size: var(--uc-text-xs);   line-height: 16px; }
+
+/* Underline sits on the label only, so an icon never gets a stray line. */
+.AkUbZD5s9sdu22gDIZcQ { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.F3TffuAmG5ropBRI_sPr:hover:not(.ZPFdB1iXYP_FE2dRauOJ) { color: var(--_fg-hover); }
+.F3TffuAmG5ropBRI_sPr:hover:not(.ZPFdB1iXYP_FE2dRauOJ) .AkUbZD5s9sdu22gDIZcQ { text-decoration: underline; text-decoration-thickness: 1px; }
+
+.F3TffuAmG5ropBRI_sPr:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 2px;
+  border-radius: var(--uc-radius-xs);
+}
+
+.ZPFdB1iXYP_FE2dRauOJ { --_fg: var(--uc-text-subtle); cursor: not-allowed; }
+
+/* Icons follow the size: 16 / 14 / 12px, currentColor. */
+.whjbd7LK38RZFapIzSAp { flex: none; display: inline-flex; }
+.whjbd7LK38RZFapIzSAp > svg { display: block; }
+.A4FxIVSomlGsL6P9FA56 .whjbd7LK38RZFapIzSAp > svg { width: 16px; height: 16px; }
+.CVrVPq4uhKdWJoANTfEP .whjbd7LK38RZFapIzSAp > svg { width: 14px; height: 14px; }
+.tu6uv4wksqk8_MdC2aEy .whjbd7LK38RZFapIzSAp > svg { width: 12px; height: 12px; }
+
+/* CloseButton, a circular ✕ on uc- tokens (BoardUI Close Button look).
+   rest: sunken fill + muted glyph · hover: ink glyph on a deeper fill. */
+
+.QOTbMy4b_y0ucC5M9MA5 {
+  all: unset;
+  box-sizing: border-box;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--uc-radius-pill);
+  background: var(--uc-surface-sunken);
+  color: var(--uc-text-muted);
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.QOTbMy4b_y0ucC5M9MA5:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--uc-surface-sunken), var(--uc-text-strong) 8%);
+  color: var(--uc-text-strong);
+}
+.QOTbMy4b_y0ucC5M9MA5:active:not(:disabled) {
+  background: color-mix(in srgb, var(--uc-surface-sunken), var(--uc-text-strong) 14%);
+}
+.QOTbMy4b_y0ucC5M9MA5:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.QOTbMy4b_y0ucC5M9MA5:disabled { opacity: 0.5; cursor: not-allowed; }
+.QOTbMy4b_y0ucC5M9MA5 > svg { display: block; }
+
+/* Size classes can't start with a digit, hence the `size` prefix. */
+.WHBVgcb71sx41ukmtx_L { width: 16px; height: 16px; }
+.UEcQwCSg3YWnDDfAKPzE  { width: 20px; height: 20px; }
+.BDOXAhByJuaA7L8n8wpi  { width: 24px; height: 24px; }
+.JhTFTE5OcPS5hafm71v9  { width: 32px; height: 32px; }
+

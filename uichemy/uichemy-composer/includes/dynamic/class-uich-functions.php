@@ -94,11 +94,37 @@ if ( ! class_exists( 'Uich_Functions' ) ) {
 			// class-uich-functions-pro.php instead of here.
 			$fns['get_post']  = function ( $a ) {
 				$id = isset( $a[0] ) ? (int) $a[0] : 0;
-				return $id ? Uich_Dynamic::post_provider( get_post( $id ) ) : null;
+				// An ID typed into a template names one copy of the post. On a translated
+				// request the visitor should get their own language's copy; the original
+				// comes back when there is no translation (UiChemy_I18n never returns 0).
+				if ( $id && class_exists( 'UiChemy_I18n' ) ) {
+					$id = UiChemy_I18n::current_post_id( $id );
+				}
+				$post = $id ? get_post( $id ) : null;
+				if ( ! $post || ! self::post_visible( $post ) ) {
+					return null;
+				}
+				return Uich_Dynamic::post_provider( $post );
 			};
 			$fns['get_image'] = function ( $a ) {
 				$id = isset( $a[0] ) ? (int) $a[0] : 0;
 				return $id ? new Uich_Image_Provider( $id ) : null;
+			};
+
+			/*
+			---- language switcher (WPML / Polylang) ------------------------
+			 *
+			 * {% for l in languages() %}<a href="{{ l.url }}"{% if l.current %} aria-current="true"{% endif %}>{{ l.name }}</a>{% endfor %}
+			 *
+			 * Each item: code, name, url (this page in that language), current, flag.
+			 * Empty on a single-language site, so a switcher built from it simply
+			 * disappears there. Not a Pro source: multilingual support is not a paid feature.
+			 */
+			$fns['languages']        = function () {
+				return class_exists( 'UiChemy_I18n' ) ? UiChemy_I18n::switcher_items() : array();
+			};
+			$fns['current_language'] = function () {
+				return class_exists( 'UiChemy_I18n' ) ? UiChemy_I18n::current_language() : '';
 			};
 
 			/*
@@ -204,6 +230,17 @@ if ( ! class_exists( 'Uich_Functions' ) ) {
 				$args['post_type'] = $force_type;
 			} elseif ( empty( $args['post_type'] ) ) {
 				$args['post_type'] = 'post';
+			}
+			if ( Uich_Dynamic::is_untrusted() ) {
+				// An untrusted template lists published content of public types only: no
+				// status override (drafts, private, trash), no password probing, no perm tricks.
+				$args['post_status'] = 'publish';
+				unset( $args['post_password'], $args['perm'], $args['suppress_filters'] );
+				foreach ( (array) $args['post_type'] as $t ) {
+					if ( 'any' === $t || ! is_post_type_viewable( $t ) ) {
+						return array();
+					}
+				}
 			}
 			// Pagination needs the total-pages count, so disable the no_found_rows shortcut.
 			$paged = isset( $args['paged'] ) ? max( 1, (int) $args['paged'] ) : 0;
@@ -392,6 +429,21 @@ if ( ! class_exists( 'Uich_Functions' ) ) {
 			return array_values( array_unique( array_merge( array_map( 'intval', $existing ), $ids ) ) );
 		}
 
+
+		/**
+		 * May a single post be handed to this template? Always for a trusted template (an
+		 * admin may build what they like). For an untrusted one only a published post of a
+		 * public type: the author could not read anything else themselves.
+		 *
+		 * @param WP_Post $post Post.
+		 * @return bool
+		 */
+		public static function post_visible( $post ) {
+			if ( ! Uich_Dynamic::is_untrusted() ) {
+				return true;
+			}
+			return $post instanceof WP_Post && 'publish' === $post->post_status && is_post_type_viewable( $post->post_type );
+		}
 
 		/** Current loop page from the ?loop_page= param (falls back to the main paged var). */
 		public static function current_page() {

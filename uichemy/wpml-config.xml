@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+	Multilingual configuration for UiChemy. Read by WPML, and by Polylang (it imports the
+	custom-types / custom-fields / admin-texts sections of this same file).
+
+	Policy, in one place:
+
+	  * UiChemy's own storage post types are LANGUAGE-NEUTRAL. A Theme Builder header or
+	    footer is one template shared by every language; which pages it shows on is decided
+	    by display conditions, which UiChemy compares by language-neutral ID
+	    (UiChemy_I18n::original_post_id). Making templates translatable would mean building
+	    one header per language and silently losing the header in any language that has none.
+
+	  * Pages, posts and CPT entries are ordinary content: translate them like any other
+	    page. Composer / Elementor / Gutenberg / Bricks content travels with the post.
+
+	  * Per-post UiChemy data that the author edits in each language's own editor (SEO title
+	    and description, form messages) is "copy-once": a new translation starts from the
+	    original's values and is independent afterwards. Plain "copy" would overwrite the
+	    French meta title every time the English one is saved.
+-->
+<wpml-config>
+
+	<custom-types>
+		<!-- Theme Builder templates (header / footer / single / archive / 404 ...). -->
+		<custom-type translate="0">uichemy_template</custom-type>
+		<!-- Private store for JSON-LD schema templates. -->
+		<custom-type translate="0">uichemy_seo_schema</custom-type>
+		<!-- Content Types / Custom Fields definitions. -->
+		<custom-type translate="0">uich_content_types</custom-type>
+	</custom-types>
+
+	<custom-fields>
+		<!-- SEO: titles, descriptions, social image, robots, canonical. Edited per language. -->
+		<custom-field action="copy-once">_uichemy_seo</custom-field>
+		<custom-field action="copy-once">_uichemy_seo_md</custom-field>
+
+		<!-- JSON-LD schema attached to a post. -->
+		<custom-field action="copy-once">_uich_schema_type</custom-field>
+		<custom-field action="copy-once">_uich_schema_conditions</custom-field>
+
+		<!-- Composer forms: recipients, subject, success / redirect message. -->
+		<custom-field action="copy-once">_uich_atom_forms</custom-field>
+
+		<!-- Custom Fields (Content Types): the values authors type into a post. -->
+		<custom-field action="copy-once">_uichemy_gf_*</custom-field>
+
+		<!-- Editor bookkeeping: never meaningful on another language's copy. -->
+		<custom-field action="ignore">_uichemy_history</custom-field>
+		<custom-field action="ignore">_uichemy_stashed_conditions</custom-field>
+		<custom-field action="ignore">_uich_webpage_source</custom-field>
+		<custom-field action="ignore">_uich_webpage_temp_page</custom-field>
+		<custom-field action="ignore">_uichemy_original_url</custom-field>
+		<custom-field action="ignore">_uich_mcp_source_image_url</custom-field>
+		<custom-field action="ignore">_uich_mcp_source_image_hash</custom-field>
+	</custom-fields>
+
+</wpml-config>

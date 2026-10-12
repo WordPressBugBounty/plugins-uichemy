@@ -172,6 +172,31 @@
 		delete UichSHE.floatingCodeEditors[editorId];
 	}
 
+	// Page code can replace WordPress's global underscore (a classic-loaded ES
+	// module build declares `function _`), and code-editor.js reads `_` when it
+	// lints. Lend it the methods it calls instead of taking the name back.
+	function ensureUichemyUnderscore() {
+		if (typeof window.uichemyRepairUnderscore === 'function') {
+			window.uichemyRepairUnderscore();
+			return;
+		}
+		const u = window.uichemyUnderscore;
+		const cur = window._;
+		if (!u || cur === u) {
+			return;
+		}
+		if (cur && (typeof cur === 'function' || typeof cur === 'object')) {
+			['isEqual', 'contains', 'delay', 'isObject', 'without', 'defer'].forEach(function (k) {
+				if (typeof cur[k] !== 'function') {
+					try { cur[k] = u[k]; } catch (e) { /* frozen: handled below */ }
+				}
+			});
+		}
+		if (!window._ || typeof window._.isEqual !== 'function') {
+			window._ = u;
+		}
+	}
+
 	function initializeUiChemyComposerCodeEditor(textarea, languageKey) {
 		if (!textarea || !textarea.id || !languageKey) {
 			return null;
@@ -186,6 +211,7 @@
 		const allSettings = window.uichComposerEditorCfg || {};
 		const editorSettings = allSettings[languageKey] || getFallbackUiChemyComposerEditorSettings(languageKey);
 
+		ensureUichemyUnderscore();
 		const editor = wp.codeEditor.initialize(textarea, editorSettings);
 		if (editor && editor.codemirror) {
 			editor.codemirror.setOption('lineNumbers', true);

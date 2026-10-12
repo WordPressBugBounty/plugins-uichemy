@@ -1065,7 +1065,7 @@ if ( ! class_exists( 'Uich_Composer_Migration' ) ) {
 			);
 
 			echo '<div class="notice notice-info"><p><strong>';
-			echo esc_html__( 'UiChemy is updating content from your previous plugin.', 'uichemy' );
+			echo esc_html__( 'Updating content from your previous plugin.', 'uichemy' );
 			echo '</strong> ';
 			printf(
 				/* translators: %d: number of Elementor rows left to rewrite. */

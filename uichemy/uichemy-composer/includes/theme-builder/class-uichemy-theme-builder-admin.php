@@ -85,7 +85,7 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 			}
 
 			if ( ! class_exists( 'UiChemy_Template_Store' ) || ! class_exists( 'UiChemy_Template_CPT' ) ) {
-				wp_send_json_error( array( 'message' => 'Theme Builder is disabled.' ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Theme Builder is disabled.', 'uichemy' ) ), 400 );
 			}
 
 			$type = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : '';
@@ -302,7 +302,7 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 		private static function handle_create() {
 			$tpl_type = isset( $_POST['tpl_type'] ) ? sanitize_key( wp_unslash( $_POST['tpl_type'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce (check_ajax_referer) and capability verified at handler entry.
 			if ( ! UiChemy_Template_CPT::is_valid_type( $tpl_type ) ) {
-				wp_send_json_error( array( 'message' => 'Invalid template type.' ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Invalid template type.', 'uichemy' ) ), 400 );
 			}
 
 			$title = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce (check_ajax_referer) and capability verified at handler entry.
@@ -353,13 +353,13 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 			$id = isset( $_POST['id'] ) ? absint( $_POST['id'] ) : 0;  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce (check_ajax_referer) and capability verified at handler entry.
 
 			if ( ! UiChemy_Template_Store::is_template( $id ) ) {
-				wp_send_json_error( array( 'message' => 'Template not found.' ), 404 );
+				wp_send_json_error( array( 'message' => __( 'Template not found.', 'uichemy' ) ), 404 );
 			}
 
 			$type = (string) get_post_meta( $id, UiChemy_Template_CPT::META_TYPE, true );
 			if ( ! UiChemy_Template_CPT::is_valid_type( $type ) ) {
 				wp_send_json_error(
-					array( 'message' => 'This template type is not available on your plan.' ),
+					array( 'message' => __( 'This template type is not available on your plan.', 'uichemy' ) ),
 					403
 				);
 			}

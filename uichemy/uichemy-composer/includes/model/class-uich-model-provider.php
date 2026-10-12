@@ -224,7 +224,7 @@ if ( ! class_exists( 'Uich_Model_Provider' ) ) {
 			if ( ! $objects ) {
 				return new WP_Error(
 					'uich_model_taxonomy_no_objects',
-					'"object_types" is required: the post type slugs this taxonomy attaches to. A taxonomy attached to nothing is registered, invisible in the admin, and unqueryable.'
+					__( '"object_types" is required: the post type slugs this taxonomy attaches to. A taxonomy attached to nothing is registered, invisible in the admin, and unqueryable.', 'uichemy' )
 				);
 			}
 
@@ -290,7 +290,7 @@ if ( ! class_exists( 'Uich_Model_Provider' ) ) {
 				}
 
 				if ( 'key' === $key ) {
-					return new WP_Error( 'uich_model_rekey_refused', 'A field\'s key is its identity in the owning plugin\'s own storage and is never changed.' );
+					return new WP_Error( 'uich_model_rekey_refused', __( 'A field\'s key is its identity in the owning plugin\'s own storage and is never changed.', 'uichemy' ) );
 				}
 
 				if ( ! in_array( $key, $allowed, true ) ) {

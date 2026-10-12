@@ -95,6 +95,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			wp_enqueue_style( 'wp-codemirror' );
 			wp_enqueue_style( 'code-editor' );
 			wp_enqueue_script( 'code-editor' );
+			self::keep_underscore_reference();
 			wp_enqueue_script( 'wp-theme-plugin-editor' );
 
 			$panel_css = UICHEMY_PATH . 'assets/css/uichemy-composer-editor-panel.css';
@@ -124,6 +125,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 				}
 			}
 			$panel_html = self::brand_panel_html( $panel_html );
+			$panel_html = self::translate_panel_html( $panel_html );
 
 			// Was three byte-identical copies of the same array. One builder now,
 			// and it is empty unless a build supplies chat (see get_wp_agent_config).
@@ -169,24 +171,27 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			wp_enqueue_script(
 				'uichemy-composer-editor-helpers',
 				UICHEMY_URL . 'assets/js/uichemy-composer-editor-helpers.js',
-				array( 'uichemy-composer-editor-registry', 'code-editor', 'wp-theme-plugin-editor' ),
+				array( 'uichemy-composer-editor-registry', 'code-editor', 'wp-theme-plugin-editor', 'wp-i18n' ),
 				filemtime( $js_base . 'uichemy-composer-editor-helpers.js' ),
 				true
 			);
+			wp_set_script_translations( 'uichemy-composer-editor-helpers', 'uichemy' );
 			wp_enqueue_script(
 				'uichemy-composer-editor-panel',
 				UICHEMY_URL . 'assets/js/uichemy-composer-editor-panel.js',
-				array( 'uichemy-composer-editor-helpers' ),
+				array( 'uichemy-composer-editor-helpers', 'wp-i18n' ),
 				filemtime( $js_base . 'uichemy-composer-editor-panel.js' ),
 				true
 			);
+			wp_set_script_translations( 'uichemy-composer-editor-panel', 'uichemy' );
 			wp_enqueue_script(
 				'uichemy-composer-editor',
 				UICHEMY_URL . 'assets/js/uichemy-composer-editor.js',
-				array( 'jquery', 'uichemy-composer-editor-panel' ),
+				array( 'jquery', 'uichemy-composer-editor-panel', 'wp-i18n' ),
 				filemtime( $js_base . 'uichemy-composer-editor.js' ),
 				true
 			);
+			wp_set_script_translations( 'uichemy-composer-editor', 'uichemy' );
 			/**
 			 * Let this build add its own editor scripts after the shared panel ones.
 			 *
@@ -331,6 +336,164 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 		}
 
 		/**
+		 * Translate the static panel template.
+		 *
+		 * The template is a plain HTML file, so its strings never reach the POT on their
+		 * own. Every user-facing label is listed here as a literal __() call (which is what
+		 * makes it extractable); the template's text nodes and title / placeholder /
+		 * aria-label / alt attributes are then swapped for the translation. CSS keyword
+		 * options (absolute, flex, ...) and example values are deliberately not listed.
+		 *
+		 * @param string $html Template markup.
+		 * @return string
+		 */
+		private static function translate_panel_html( $html ) {
+			if ( '' === $html ) {
+				return $html;
+			}
+
+			$strings = array(
+				'AI Data Sending' => __( 'AI Data Sending', 'uichemy' ),
+				'Add class, then press Enter' => __( 'Add class, then press Enter', 'uichemy' ),
+				'Align Items' => __( 'Align Items', 'uichemy' ),
+				'Applied Classes' => __( 'Applied Classes', 'uichemy' ),
+				'Attach image' => __( 'Attach image', 'uichemy' ),
+				'Background' => __( 'Background', 'uichemy' ),
+				'Background Color' => __( 'Background Color', 'uichemy' ),
+				'Before </body> on the entire site' => __( 'Before </body> on the entire site', 'uichemy' ),
+				'Before </body> on this page only' => __( 'Before </body> on this page only', 'uichemy' ),
+				'Before </head> on the entire site' => __( 'Before </head> on the entire site', 'uichemy' ),
+				'Before </head> on this page only' => __( 'Before </head> on this page only', 'uichemy' ),
+				'Border' => __( 'Border', 'uichemy' ),
+				'Border Color' => __( 'Border Color', 'uichemy' ),
+				'Border Radius' => __( 'Border Radius', 'uichemy' ),
+				'Border Type' => __( 'Border Type', 'uichemy' ),
+				'Border Width' => __( 'Border Width', 'uichemy' ),
+				'Bottom' => __( 'Bottom', 'uichemy' ),
+				'Box Sizing' => __( 'Box Sizing', 'uichemy' ),
+				'Change Image' => __( 'Change Image', 'uichemy' ),
+				'Chat' => __( 'Chat', 'uichemy' ),
+				'Choose global background color' => __( 'Choose global background color', 'uichemy' ),
+				'Choose global color' => __( 'Choose global color', 'uichemy' ),
+				'Choose global text color' => __( 'Choose global text color', 'uichemy' ),
+				'Classes on this element' => __( 'Classes on this element', 'uichemy' ),
+				'Clear element selection' => __( 'Clear element selection', 'uichemy' ),
+				'Code' => __( 'Code', 'uichemy' ),
+				'Code groups' => __( 'Code groups', 'uichemy' ),
+				'Column Gap' => __( 'Column Gap', 'uichemy' ),
+				'Copy' => __( 'Copy', 'uichemy' ),
+				'Custom Attributes' => __( 'Custom Attributes', 'uichemy' ),
+				'Dashed' => __( 'Dashed', 'uichemy' ),
+				'Direct Editor' => __( 'Direct Editor', 'uichemy' ),
+				'Display' => __( 'Display', 'uichemy' ),
+				'Dotted' => __( 'Dotted', 'uichemy' ),
+				'Double' => __( 'Double', 'uichemy' ),
+				'Elementor Globals Editor' => __( 'Elementor Globals Editor', 'uichemy' ),
+				'Elementor globals snapshot' => __( 'Elementor globals snapshot', 'uichemy' ),
+				'Entire Site' => __( 'Entire Site', 'uichemy' ),
+				'Flex Direction' => __( 'Flex Direction', 'uichemy' ),
+				'Flex Wrap' => __( 'Flex Wrap', 'uichemy' ),
+				'Font Family' => __( 'Font Family', 'uichemy' ),
+				'Font Size' => __( 'Font Size', 'uichemy' ),
+				'Font Style' => __( 'Font Style', 'uichemy' ),
+				'Font Weight' => __( 'Font Weight', 'uichemy' ),
+				'Format' => __( 'Format', 'uichemy' ),
+				'Gap' => __( 'Gap', 'uichemy' ),
+				'Globals' => __( 'Globals', 'uichemy' ),
+				'Grid Column' => __( 'Grid Column', 'uichemy' ),
+				'Grid Row' => __( 'Grid Row', 'uichemy' ),
+				'Grid Template Columns' => __( 'Grid Template Columns', 'uichemy' ),
+				'Grid Template Rows' => __( 'Grid Template Rows', 'uichemy' ),
+				'Groove' => __( 'Groove', 'uichemy' ),
+				'Height' => __( 'Height', 'uichemy' ),
+				'Hover Off' => __( 'Hover Off', 'uichemy' ),
+				'Image' => __( 'Image', 'uichemy' ),
+				'Image URL' => __( 'Image URL', 'uichemy' ),
+				'Inspect Element' => __( 'Inspect Element', 'uichemy' ),
+				'Justify Content' => __( 'Justify Content', 'uichemy' ),
+				'Layers' => __( 'Layers', 'uichemy' ),
+				'Layout' => __( 'Layout', 'uichemy' ),
+				'Left' => __( 'Left', 'uichemy' ),
+				'Letter Spacing' => __( 'Letter Spacing', 'uichemy' ),
+				'Line Height' => __( 'Line Height', 'uichemy' ),
+				'Link URL' => __( 'Link URL', 'uichemy' ),
+				'Link values together' => __( 'Link values together', 'uichemy' ),
+				'Margin' => __( 'Margin', 'uichemy' ),
+				'Max Height' => __( 'Max Height', 'uichemy' ),
+				'Max Width' => __( 'Max Width', 'uichemy' ),
+				'Min Height' => __( 'Min Height', 'uichemy' ),
+				'Min Width' => __( 'Min Width', 'uichemy' ),
+				'No image selected' => __( 'No image selected', 'uichemy' ),
+				'Opacity' => __( 'Opacity', 'uichemy' ),
+				'Open in new tab' => __( 'Open in new tab', 'uichemy' ),
+				'Overflow' => __( 'Overflow', 'uichemy' ),
+				'Padding' => __( 'Padding', 'uichemy' ),
+				'Page' => __( 'Page', 'uichemy' ),
+				'Pick an element from the left list to edit its text and link settings.' => __( 'Pick an element from the left list to edit its text and link settings.', 'uichemy' ),
+				'Pick element' => __( 'Pick element', 'uichemy' ),
+				'Pick element for AI targeting' => __( 'Pick element for AI targeting', 'uichemy' ),
+				'Position' => __( 'Position', 'uichemy' ),
+				'Read-only · synced with Elementor Site Settings' => __( 'Read-only · synced with Elementor Site Settings', 'uichemy' ),
+				'Remove global background color' => __( 'Remove global background color', 'uichemy' ),
+				'Remove global text color' => __( 'Remove global text color', 'uichemy' ),
+				'Remove inline background color' => __( 'Remove inline background color', 'uichemy' ),
+				'Remove inline color' => __( 'Remove inline color', 'uichemy' ),
+				'Remove inline text color' => __( 'Remove inline text color', 'uichemy' ),
+				'Reset Style' => __( 'Reset Style', 'uichemy' ),
+				'Right' => __( 'Right', 'uichemy' ),
+				'Row Gap' => __( 'Row Gap', 'uichemy' ),
+				'SVG Code' => __( 'SVG Code', 'uichemy' ),
+				'SVG URL' => __( 'SVG URL', 'uichemy' ),
+				'SVG mode' => __( 'SVG mode', 'uichemy' ),
+				'Select an element first' => __( 'Select an element first', 'uichemy' ),
+				'Selected image preview' => __( 'Selected image preview', 'uichemy' ),
+				'Send' => __( 'Send', 'uichemy' ),
+				'Solid' => __( 'Solid', 'uichemy' ),
+				'Spacing' => __( 'Spacing', 'uichemy' ),
+				'Target' => __( 'Target', 'uichemy' ),
+				'Text' => __( 'Text', 'uichemy' ),
+				'Text Align' => __( 'Text Align', 'uichemy' ),
+				'Text Color' => __( 'Text Color', 'uichemy' ),
+				'Text Decoration' => __( 'Text Decoration', 'uichemy' ),
+				'Text Transform' => __( 'Text Transform', 'uichemy' ),
+				'Top' => __( 'Top', 'uichemy' ),
+				'Type a prompt...' => __( 'Type a prompt...', 'uichemy' ),
+				'Typography' => __( 'Typography', 'uichemy' ),
+				'UiChemy Composer tabs' => __( 'Composer tabs', 'uichemy' ),
+				'Unselect class' => __( 'Unselect class', 'uichemy' ),
+				'Width' => __( 'Width', 'uichemy' ),
+				'Z-Index' => __( 'Z-Index', 'uichemy' ),
+			);
+
+			$lookup = static function ( $raw ) use ( $strings ) {
+				$key = trim( preg_replace( '/\s+/', ' ', html_entity_decode( $raw, ENT_QUOTES, 'UTF-8' ) ) );
+				return isset( $strings[ $key ] ) ? $strings[ $key ] : null;
+			};
+
+			// Text nodes: >  Some   label  <
+			$html = preg_replace_callback(
+				'/>(\s*)([^<>]*[A-Za-z][^<>]*?)(\s*)</',
+				static function ( $m ) use ( $lookup ) {
+					$translated = $lookup( $m[2] );
+					return null === $translated ? $m[0] : '>' . $m[1] . esc_html( $translated ) . $m[3] . '<';
+				},
+				$html
+			);
+
+			// Attributes.
+			$html = preg_replace_callback(
+				'/\b(title|placeholder|aria-label|alt|data-tooltip)="([^"]*)"/',
+				static function ( $m ) use ( $lookup ) {
+					$translated = $lookup( $m[2] );
+					return null === $translated ? $m[0] : $m[1] . '="' . esc_attr( $translated ) . '"';
+				},
+				$html
+			);
+
+			return $html;
+		}
+
+		/**
 		 * White Label branding for the composer panel.
 		 *
 		 * Routed through the free plugin's helper so the panel, the dashboard shell
@@ -420,6 +583,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			wp_enqueue_style( 'wp-codemirror' );
 			wp_enqueue_style( 'code-editor' );
 			wp_enqueue_script( 'code-editor' );
+			self::keep_underscore_reference();
 			wp_enqueue_script( 'wp-theme-plugin-editor' );
 
 			// Dashicons font in the Bricks builder — the Bricks element's icon is
@@ -469,6 +633,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 				}
 			}
 			$panel_html = self::brand_panel_html( $panel_html );
+			$panel_html = self::translate_panel_html( $panel_html );
 
 			// Was three byte-identical copies of the same array. One builder now,
 			// and it is empty unless a build supplies chat (see get_wp_agent_config).
@@ -512,24 +677,27 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			wp_enqueue_script(
 				'uichemy-composer-editor-helpers',
 				UICHEMY_URL . 'assets/js/uichemy-composer-editor-helpers.js',
-				array( 'uichemy-composer-editor-registry', 'code-editor', 'wp-theme-plugin-editor' ),
+				array( 'uichemy-composer-editor-registry', 'code-editor', 'wp-theme-plugin-editor', 'wp-i18n' ),
 				filemtime( $js_base . 'uichemy-composer-editor-helpers.js' ),
 				true
 			);
+			wp_set_script_translations( 'uichemy-composer-editor-helpers', 'uichemy' );
 			wp_enqueue_script(
 				'uichemy-composer-editor-panel',
 				UICHEMY_URL . 'assets/js/uichemy-composer-editor-panel.js',
-				array( 'uichemy-composer-editor-helpers' ),
+				array( 'uichemy-composer-editor-helpers', 'wp-i18n' ),
 				filemtime( $js_base . 'uichemy-composer-editor-panel.js' ),
 				true
 			);
+			wp_set_script_translations( 'uichemy-composer-editor-panel', 'uichemy' );
 			wp_enqueue_script(
 				'uichemy-composer-editor',
 				UICHEMY_URL . 'assets/js/uichemy-composer-editor.js',
-				array( 'jquery', 'uichemy-composer-editor-panel' ),
+				array( 'jquery', 'uichemy-composer-editor-panel', 'wp-i18n' ),
 				filemtime( $js_base . 'uichemy-composer-editor.js' ),
 				true
 			);
+			wp_set_script_translations( 'uichemy-composer-editor', 'uichemy' );
 			/**
 			 * Let this build add its own editor scripts after the shared panel ones.
 			 *
@@ -571,10 +739,11 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			wp_enqueue_script(
 				'uichemy-composer-bricks-adapter',
 				UICHEMY_URL . 'assets/js/uichemy-composer-bricks-adapter.js',
-				array( 'uichemy-composer-editor', 'uichemy-composer-composer', 'uich-dd-picker', 'uichemy-composer-slots' ),
+				array( 'uichemy-composer-editor', 'uichemy-composer-composer', 'uich-dd-picker', 'uichemy-composer-slots', 'wp-i18n' ),
 				file_exists( $bricks_adapter_js ) ? filemtime( $bricks_adapter_js ) : UICHEMY_VERSION,
 				true
 			);
+			wp_set_script_translations( 'uichemy-composer-bricks-adapter', 'uichemy' );
 		}
 
 		/**
@@ -585,6 +754,35 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 		 *
 		 * @return bool
 		 */
+		/**
+		 * Save WordPress's underscore before page code can replace it.
+		 *
+		 * code-editor.js reads the global `_` when it lints (`_.isEqual`). On the live
+		 * page the editor shares the window with section scripts, and a library built
+		 * as ES module code but loaded as a classic script (a minified Lenis, for one)
+		 * declares `function _` at the top level, which replaces underscore and crashes
+		 * the Code tab and the media library. The reference lets `_` be repaired.
+		 *
+		 * @return void
+		 */
+		public static function keep_underscore_reference() {
+			static $done = false;
+			if ( $done ) {
+				return;
+			}
+			$done = true;
+			wp_add_inline_script( 'underscore', 'window.uichemyUnderscore = window._;', 'after' );
+			// Repair on DOMContentLoaded, registered before jQuery so it runs ahead of
+			// every ready handler (wp.media builds its views there and calls `_.isArray`).
+			// Underscore's methods are copied onto the page's `_` instead of taking the
+			// name back, so the page code that declared it keeps working.
+			wp_add_inline_script(
+				'jquery-core',
+				'window.uichemyRepairUnderscore=function(){var u=window.uichemyUnderscore,c=window._,k;if(!u||c===u){return;}if(c&&("function"===typeof c||"object"===typeof c)){for(k in u){if("function"===typeof u[k]&&"function"!==typeof c[k]){try{c[k]=u[k];}catch(e){}}}}if(!window._||"function"!==typeof window._.isArray){window._=u;}};document.addEventListener("DOMContentLoaded",function(){window.uichemyRepairUnderscore();});',
+				'before'
+			);
+		}
+
 		public function frontend_editor_allowed() {
 			if ( is_admin() || wp_doing_ajax() ) {
 				return false;
@@ -859,6 +1057,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			wp_enqueue_style( 'wp-codemirror' );
 			wp_enqueue_style( 'code-editor' );
 			wp_enqueue_script( 'code-editor' );
+			self::keep_underscore_reference();
 			wp_enqueue_script( 'wp-theme-plugin-editor' );
 
 			// The panel uses position:absolute (correct inside Elementor's preview
@@ -1131,6 +1330,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			wp_enqueue_style( 'wp-codemirror' );
 			wp_enqueue_style( 'code-editor' );
 			wp_enqueue_script( 'code-editor' );
+			self::keep_underscore_reference();
 			wp_enqueue_script( 'wp-theme-plugin-editor' );
 
 			$panel_css = UICHEMY_PATH . 'assets/css/uichemy-composer-editor-panel.css';
@@ -1160,6 +1360,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 				}
 			}
 			$panel_html = self::brand_panel_html( $panel_html );
+			$panel_html = self::translate_panel_html( $panel_html );
 
 			$wp_agent_config = $this->get_wp_agent_config();
 
@@ -1201,24 +1402,28 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'uichemy-composer-editor-registry',
 					'code-editor',
 					'wp-theme-plugin-editor',
+					'wp-i18n',
 				),
 				filemtime( $js_base . 'uichemy-composer-editor-helpers.js' ),
 				true
 			);
+			wp_set_script_translations( 'uichemy-composer-editor-helpers', 'uichemy' );
 			wp_enqueue_script(
 				'uichemy-composer-editor-panel',
 				UICHEMY_URL . 'assets/js/uichemy-composer-editor-panel.js',
-				array( 'uichemy-composer-editor-helpers' ),
+				array( 'uichemy-composer-editor-helpers', 'wp-i18n' ),
 				filemtime( $js_base . 'uichemy-composer-editor-panel.js' ),
 				true
 			);
+			wp_set_script_translations( 'uichemy-composer-editor-panel', 'uichemy' );
 			wp_enqueue_script(
 				'uichemy-composer-editor',
 				UICHEMY_URL . 'assets/js/uichemy-composer-editor.js',
-				array( 'jquery', 'uichemy-composer-editor-panel' ),
+				array( 'jquery', 'uichemy-composer-editor-panel', 'wp-i18n' ),
 				filemtime( $js_base . 'uichemy-composer-editor.js' ),
 				true
 			);
+			wp_set_script_translations( 'uichemy-composer-editor', 'uichemy' );
 
 			/**
 			 * Let this build add its own editor scripts after the shared panel ones.

@@ -684,7 +684,7 @@
 			ref: ref,
 			srcDoc: srcDoc,
 			sandbox: 'allow-scripts allow-same-origin',
-			title: 'Composer preview',
+			title: __( 'Composer preview', 'uichemy' ),
 			style: { width: '100%', height: height + 'px', border: '0', display: 'block', background: '#fff' }
 		} );
 	}

@@ -125,7 +125,7 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 					return get_post_type( self::object_id() ) === (string) $rule['value'];
 
 				case 'singular':
-					return self::object_id() === (int) $rule['value'];
+					return self::norm_post( self::object_id() ) === self::norm_post( (int) $rule['value'] );
 
 				case 'author':
 					$author = (int) $rule['value'];
@@ -273,6 +273,18 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 
 			if ( is_singular() ) {
 				if ( $term > 0 ) {
+					if ( self::i18n_on() ) {
+						// A French post carries the French term, the rule stores the
+						// default-language one: compare their language-neutral IDs.
+						$want  = self::norm_term( $term, $taxonomy );
+						$terms = wp_get_object_terms( self::object_id(), $taxonomy, array( 'fields' => 'ids' ) );
+						foreach ( is_array( $terms ) ? $terms : array() as $have ) {
+							if ( self::norm_term( (int) $have, $taxonomy ) === $want ) {
+								return true;
+							}
+						}
+						return false;
+					}
 					return has_term( $term, $taxonomy, self::object_id() );
 				}
 				$terms = get_the_terms( self::object_id(), $taxonomy );
@@ -283,7 +295,7 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 				if ( 0 === $term ) {
 					return true;
 				}
-				return (int) get_queried_object_id() === $term;
+				return self::norm_term( (int) get_queried_object_id(), $taxonomy ) === self::norm_term( $term, $taxonomy );
 			}
 
 			return false;
@@ -342,7 +354,9 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 		 * @return array{match:bool,specificity:int}
 		 */
 		private static function evaluate_legacy( array $c ) {
-			$object_id = self::object_id();
+			$object_id = self::norm_post( self::object_id() );
+			$c['exclude'] = array_map( array( __CLASS__, 'norm_post' ), (array) $c['exclude'] );
+			$c['include'] = array_map( array( __CLASS__, 'norm_post' ), (array) $c['include'] );
 
 			if ( $object_id && in_array( $object_id, $c['exclude'], true ) ) {
 				return array(
@@ -380,6 +394,43 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 		private static function object_id() {
 			$id = (int) get_queried_object_id();
 			return $id > 0 ? $id : 0;
+		}
+
+		/**
+		 * Is a multilingual plugin driving this site (and is the helper loaded)?
+		 *
+		 * @return bool
+		 */
+		private static function i18n_on() {
+			return class_exists( 'UiChemy_I18n' ) && UiChemy_I18n::is_active();
+		}
+
+		/**
+		 * A post ID as its language-neutral identity (the default-language copy).
+		 *
+		 * Rules are stored against whichever copy the author picked, while the
+		 * request may be on any translation. Both sides go through here so a rule
+		 * written on the English page still matches the French and Arabic copies.
+		 * Identity function when no multilingual plugin is active.
+		 *
+		 * @param int $id Post ID.
+		 * @return int
+		 */
+		private static function norm_post( $id ) {
+			$id = (int) $id;
+			return ( $id > 0 && self::i18n_on() ) ? UiChemy_I18n::original_post_id( $id ) : $id;
+		}
+
+		/**
+		 * A term ID as its language-neutral identity (see norm_post()).
+		 *
+		 * @param int    $id       Term ID.
+		 * @param string $taxonomy Taxonomy slug.
+		 * @return int
+		 */
+		private static function norm_term( $id, $taxonomy ) {
+			$id = (int) $id;
+			return ( $id > 0 && self::i18n_on() ) ? UiChemy_I18n::original_term_id( $id, $taxonomy ) : $id;
 		}
 
 		/**

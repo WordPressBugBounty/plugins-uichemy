@@ -125,6 +125,13 @@ class UiChemy {
 		// Free/Pro gating helpers (uichemy_upgrade_url(), the Pro feature map).
 		// Loaded first so every gate below can rely on them.
 		require_once UICHEMY_PATH . 'includes/uichemy-pro-gate.php';
+		// Language helper (WPML / Polylang). Loaded early: theme builder, dynamic loops and SEO all call it.
+		require_once UICHEMY_PATH . 'includes/i18n/class-uichemy-i18n.php';
+		require_once UICHEMY_PATH . 'includes/i18n/class-uichemy-i18n-compat.php';
+		require_once UICHEMY_PATH . 'includes/i18n/class-uichemy-i18n-composer-text.php';
+		require_once UICHEMY_PATH . 'includes/i18n/class-uichemy-i18n-strings.php';
+		UiChemy_I18n_Compat::init();
+		UiChemy_I18n_Strings::init();
 		// The license manager (EDD) is Pro-only and no longer exists in this plugin —
 		// Pro loads it from its own includes/plugin-modules.php. It grants update and
 		// support entitlement and never unlocks a feature, so Free needs nothing here.
@@ -182,6 +189,10 @@ class UiChemy {
 		// `uichemy/theme_builder/create_template` creation hook.
 		require_once UICHEMY_PATH . 'includes/theme-builder/class-uichemy-theme-builder.php';
 		UiChemy_Theme_Builder::init();
+
+		// UiChemy SEO — its own module; reads Composer, never edits it.
+		require_once UICHEMY_PATH . 'includes/seo/class-uich-seo.php';
+		Uich_SEO::init();
 
 		// Shared HTML renderer + the Gutenberg Composer block (uichemy/composer).
 		// The block class self-instantiates on include and registers on `init`.

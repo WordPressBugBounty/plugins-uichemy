@@ -8,16 +8,17 @@
  * posts. So every model write DELEGATES to whichever plugin the site already
  * uses, and this class is the delegation decision:
  *
+ *   UiChemy Custom Fields => its own REST routes (uichemy-fields/v1), in-process
  *   ACF active         => acf_update_internal_post_type() / acf_update_field_group()
  *   JetEngine active   => jet_engine()->cpt->data / taxonomies->data / meta_boxes->data
- *   Both active        => ASK the user which; never pick
- *   Neither active     => REFUSE with a specific instruction
+ *   Two or more active => ASK the user which; never pick
+ *   None active        => REFUSE with a specific instruction
  *
  * The neither-active branch is the one that matters most. With no PHP runner on
  * the other end, an empty field map reads as "this site has no data" and the
  * agent hardcodes the page. It has to read as "this site has no field-modelling
- * plugin; install ACF or JetEngine, or I can build this with plain posts and
- * categories instead".
+ * layer; switch UiChemy Custom Fields on, install ACF or JetEngine, or I can
+ * build this with plain posts and categories instead".
  *
  * @link       https://posimyth.com/
  * @since      5.1.0
@@ -91,7 +92,7 @@ if ( ! class_exists( 'Uich_Model' ) ) {
 
 			$providers = array();
 
-			foreach ( array( 'Uich_Model_ACF', 'Uich_Model_Jet' ) as $class ) {
+			foreach ( array( 'Uich_Model_Uichemy', 'Uich_Model_ACF', 'Uich_Model_Jet' ) as $class ) {
 				if ( class_exists( $class ) ) {
 					$provider                       = new $class();
 					$providers[ $provider->slug() ] = $provider;
@@ -158,14 +159,14 @@ if ( ! class_exists( 'Uich_Model' ) ) {
 
 				return new WP_Error(
 					'uich_model_unknown_provider',
-					sprintf( 'Unknown provider "%s". UiChemy delegates content modelling to ACF or JetEngine: pass provider="acf" or provider="jetengine".', $prefer )
+					sprintf( 'Unknown provider "%s". Pass one of: %s.', $prefer, implode( ', ', array_keys( $known ) ) )
 				);
 			}
 
 			if ( ! $active ) {
 				return new WP_Error(
 					'uich_model_no_provider',
-					'This site has no field-modelling plugin, so UiChemy cannot create a post type, taxonomy or custom field here. UiChemy deliberately does not register content types under its own storage - that would make uninstalling it orphan the user\'s content. Tell the user: install Advanced Custom Fields or JetEngine and call this again, OR model the content with what WordPress already has (posts plus categories and tags), which UiChemy can bind and lay out today.'
+					'This site has no content-modelling layer active, so UiChemy cannot create a post type, taxonomy or custom field here. UiChemy\'s own Custom Fields is switched off (Settings > Features) and neither ACF nor JetEngine is installed. Tell the user they can switch UiChemy Custom Fields back on, or install Advanced Custom Fields or JetEngine, and call this again - OR model the content with what WordPress already has (posts plus categories and tags), which UiChemy can bind and lay out today. Do not switch the feature on yourself: the user turned it off, usually because another plugin owns their content model.'
 				);
 			}
 
@@ -178,8 +179,8 @@ if ( ! class_exists( 'Uich_Model' ) ) {
 				return new WP_Error(
 					'uich_model_ambiguous_provider',
 					sprintf(
-						'Both %s are active, so UiChemy will not choose which one owns this. ASK THE USER which plugin they want their content model in, then pass "provider". Do not pick for them: a model split across two plugins ends up half in each plugin\'s admin screens, and moving it later means rewriting every template that binds it.',
-						implode( ' and ', $names )
+						'%s are all active, so UiChemy will not choose which one owns this. ASK THE USER which one they want their content model in, then pass "provider". Do not pick for them: a model split across two plugins ends up half in each one\'s admin screens, and moving it later means rewriting every template that binds it. If the site\'s existing model already lives in one of them ("owner" in action="describe"), say so when you ask.',
+						implode( ', ', $names )
 					)
 				);
 			}
@@ -289,9 +290,13 @@ if ( ! class_exists( 'Uich_Model' ) ) {
 			$active = self::active();
 
 			if ( ! $active ) {
-				$out['message'] = 'No field-modelling plugin is active. Post types and taxonomies can be read here but not created. Install ACF or JetEngine, or model the content with plain posts, categories and tags - do not report this as "the site has no content model".';
+				$out['message'] = 'No content-modelling layer is active: UiChemy Custom Fields is switched off (Settings > Features) and neither ACF nor JetEngine is installed. Post types and taxonomies can be read here but not created. Tell the user the options, or model the content with plain posts, categories and tags - do not report this as "the site has no content model".';
 			} elseif ( count( $active ) > 1 ) {
-				$out['message'] = 'ACF and JetEngine are both active. Every register-* / add-fields call needs "provider" - UiChemy will not choose which plugin owns the model. Ask the user.';
+				$labels = array();
+				foreach ( $active as $slug => $provider ) {
+					$labels[] = $provider->label() . ' (provider="' . $slug . '")';
+				}
+				$out['message'] = sprintf( '%s are all active. Every register-* / add-fields / update-field call needs "provider" - UiChemy will not choose which one owns the model. Ask the user, mentioning where the existing model lives ("owner" on each type, "provider" on each field group).', implode( ', ', $labels ) );
 			} else {
 				$provider       = reset( $active );
 				$out['message'] = sprintf( 'Model writes go through %s. "provider" is optional while it is the only one active.', $provider->label() );
@@ -323,7 +328,7 @@ if ( ! class_exists( 'Uich_Model' ) ) {
 				return true;
 			}
 
-			foreach ( array( 'acf-', 'acf_', 'elementor_', 'e_', 'e-', 'jet-engine', 'jet_engine', 'uichemy_', 'nxt_', 'wp_' ) as $prefix ) {
+			foreach ( array( 'acf-', 'acf_', 'elementor_', 'e_', 'e-', 'jet-engine', 'jet_engine', 'uichemy_', 'uich_', 'nxt_', 'wp_' ) as $prefix ) {
 				if ( 0 === strpos( $name, $prefix ) ) {
 					return true;
 				}
@@ -587,7 +592,7 @@ if ( ! class_exists( 'Uich_Model' ) ) {
 				if ( ! in_array( $type, $types, true ) ) {
 					return new WP_Error(
 						'uich_model_bad_field_type',
-						sprintf( 'fields[%d] ("%s") has type "%s", which UiChemy does not know. Valid: %s. These are UiChemy\'s provider-neutral names - they are mapped to the right ACF or JetEngine type for you.', $i, $name, $type, implode( ', ', $types ) )
+						sprintf( 'fields[%d] ("%s") has type "%s", which UiChemy does not know. Valid: %s. These are UiChemy\'s provider-neutral names - they are mapped to the right UiChemy Custom Fields, ACF or JetEngine type for you.', $i, $name, $type, implode( ', ', $types ) )
 					);
 				}
 

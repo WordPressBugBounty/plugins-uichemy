@@ -5,8 +5,8 @@
  * UiChemy preserves all user data by default. Only when the site has enabled
  * "Delete all data on uninstall" (Settings screen → stored in
  * `uichemy_settings['delete_on_uninstall']`) does this file remove the data
- * UiChemy owns: its custom tables, options, transients, and chat upload
- * directory. On multisite the check + cleanup run per-site, so each site keeps
+ * UiChemy owns: its custom tables, options, transients, SEO data and chat
+ * upload directory. On multisite the check + cleanup run per-site, so each site keeps
  * or removes its own data according to its own setting.
  *
  * Intentionally NOT removed: page content and theme-builder templates the user
@@ -83,7 +83,19 @@ if ( ! function_exists( 'uichemy_uninstall_cleanup_site' ) ) {
 			 OR option_name LIKE '\_transient\_timeout\_uichemy\_selected\_el\_%'"
 		);
 
-		// 4. Chat upload directory (uploads/uichemy/chat), then the parent if empty.
+		// 4. SEO module: its tables, per-page SEO data, schema templates and queued
+		// rebuilds. Its `uichemy_seo_*` options already went with step 2.
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}uichemy_redirects`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name built from trusted $wpdb->prefix.
+		$wpdb->query( "DROP TABLE IF EXISTS `{$wpdb->prefix}uichemy_404s`" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- Table name built from trusted $wpdb->prefix.
+		$wpdb->query( "DELETE FROM {$wpdb->postmeta} WHERE meta_key IN ('_uichemy_seo','_uichemy_seo_md','_uichemy_seo_head','_uich_schema_type','_uich_schema_conditions')" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( "DELETE FROM {$wpdb->posts} WHERE post_type = 'uichemy_seo_schema'" ); // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
+			"DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_uich\_seo\_%'
+			 OR option_name LIKE '\_transient\_timeout\_uich\_seo\_%'"
+		);
+		wp_unschedule_hook( 'uich_seo_rebuild' );
+
+		// 5. Chat upload directory (uploads/uichemy/chat), then the parent if empty.
 		$uploads = wp_upload_dir();
 		if ( empty( $uploads['error'] ) && ! empty( $uploads['basedir'] ) ) {
 			require_once ABSPATH . 'wp-admin/includes/file.php';

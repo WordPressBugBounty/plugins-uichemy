@@ -193,13 +193,15 @@ class Uich_Webpage_Nexter_Settings {
 	}
 
 	/**
-	 * Theme Customizer / dashboard toggles, stored in `nexter_settings_opts`.
+	 * Theme Customizer / dashboard toggles, stored in `nexter_settings_opts` —
+	 * the "Nexter Theme Optimization Controls" panel.
 	 *
-	 * Disable Theme Woo CSS is conditional: only enabled when the imported kit does
-	 * NOT require WooCommerce (flagged at fetch time in Uich_Webpage_Import::run_fetch_only(),
-	 * since the raw globals.json this is derived from is deleted by finalize's cleanup
-	 * before this runs) — otherwise it would strip shop/cart/checkout styling out from
-	 * under a site that needs it.
+	 * Every control is turned ON. An imported kit brings its own header, footer,
+	 * container and type styles, so each of the theme's own stylesheets is dead
+	 * weight the visitor still downloads, and some of it (reset, container) also
+	 * fights the imported design. These are the same seven keys the theme's own
+	 * dashboard writes, with 1 meaning "optimisation applied / stylesheet not
+	 * enqueued" (see nexter_settings_page_get() in the theme's helper functions).
 	 */
 	protected function apply_theme_customizer_settings() {
 		$settings = get_option( 'nexter_settings_opts', array() );
@@ -210,14 +212,42 @@ class Uich_Webpage_Nexter_Settings {
 			$settings['values'] = array();
 		}
 
-		$settings['values']['sidebar_css'] = 1;
+		/*
+		 * The master switch has to be on or every individual control is ignored:
+		 * nexter_settings_page_get() short-circuits to "load everything" as soon
+		 * as switch is present and falsy, so a site that had the panel turned off
+		 * would take these writes and still enqueue all seven stylesheets.
+		 */
+		$settings['switch'] = true;
 
-		$import_meta          = get_option( Uich_Webpage_Import::OPTION_IMPORT_META, array() );
-		$requires_woocommerce = is_array( $import_meta ) && ! empty( $import_meta['requiresWooCommerce'] );
-		if ( ! $requires_woocommerce ) {
-			$settings['values']['woocommerce_min_css'] = 1;
+		$controls = array(
+			'container_css',       // Disable Theme Container
+			'header_footer_css',   // Disable Theme Header Footer
+			'reset_min_css',       // Disable Reset CSS
+			'sidebar_css',         // Disable Theme Sidebar
+			'theme_min_css',       // Disable Theme CSS
+			'woocommerce_min_css', // Disable Theme Woo CSS
+			'skip_link',           // Disable Skip Link
+		);
+		foreach ( $controls as $control ) {
+			$settings['values'][ $control ] = 1;
 		}
 
 		update_option( 'nexter_settings_opts', $settings );
+
+		/*
+		 * Mirror the side-effect the theme's own save performs for
+		 * header_footer_css: it writes the matching header/footer disable flags to
+		 * nxt-theme-options. Skipping it leaves the two options disagreeing, and
+		 * the theme's header/footer markup keeps rendering underneath the imported
+		 * one even though its stylesheet is gone.
+		 */
+		$theme_options = get_option( 'nxt-theme-options', array() );
+		if ( ! is_array( $theme_options ) ) {
+			$theme_options = array();
+		}
+		$theme_options['nxt-header-disable-opt'] = 'on';
+		$theme_options['nxt-footer-disable-opt'] = 'on';
+		update_option( 'nxt-theme-options', $theme_options );
 	}
 }

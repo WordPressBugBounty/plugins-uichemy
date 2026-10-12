@@ -32,7 +32,7 @@ if ( ! class_exists( 'Uich_Rest_Permissions' ) ) {
 			}
 			return new WP_Error(
 				'rest_forbidden',
-				__( 'Sorry, only administrators can use UiChemy endpoints.', 'uichemy' ),
+				__( 'Sorry, only administrators can use these endpoints.', 'uichemy' ),
 				array( 'status' => 403 )
 			);
 		}

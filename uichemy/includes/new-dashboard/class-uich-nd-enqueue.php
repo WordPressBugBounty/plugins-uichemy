@@ -257,7 +257,7 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 		public static function missing_build_notice() {
 			?>
 			<div class="notice notice-warning">
-				<p><strong>UiChemy (New):</strong> the React build is missing.
+				<p><strong>New dashboard:</strong> the React build is missing.
 				Run <code>cd new-dashboard &amp;&amp; npm install &amp;&amp; npm run build</code> from the plugin root.</p>
 			</div>
 			<?php

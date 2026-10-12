@@ -49,7 +49,7 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 		 */
 		public static function create( $args ) {
 			if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
-				return new WP_Error( 'uichemy_tb_missing', 'Theme Builder is not initialised.' );
+				return new WP_Error( 'uichemy_tb_missing', __( 'Theme Builder is not initialised.', 'uichemy' ) );
 			}
 
 			$args = is_array( $args ) ? $args : array();
@@ -101,7 +101,7 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			if ( is_wp_error( $post_id ) || ! $post_id ) {
 				return is_wp_error( $post_id )
 					? $post_id
-					: new WP_Error( 'uichemy_tb_insert_failed', 'Failed to create the template post.' );
+					: new WP_Error( 'uichemy_tb_insert_failed', __( 'Failed to create the template post.', 'uichemy' ) );
 			}
 
 			// If this template is created active, make sure it is the only active
@@ -682,25 +682,25 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 		private static function default_title( $type ) {
 			switch ( $type ) {
 				case 'header':
-					return __( 'Header (UiChemy)', 'uichemy' );
+					return __( 'Header', 'uichemy' );
 				case 'footer':
-					return __( 'Footer (UiChemy)', 'uichemy' );
+					return __( 'Footer', 'uichemy' );
 				case 'single':
-					return __( 'Single Post or Page (UiChemy)', 'uichemy' );
+					return __( 'Single Post or Page', 'uichemy' );
 				case 'archive':
-					return __( 'Archive (UiChemy)', 'uichemy' );
+					return __( 'Archive', 'uichemy' );
 				case 'single_product':
-					return __( 'Single Product (UiChemy)', 'uichemy' );
+					return __( 'Single Product', 'uichemy' );
 				case 'product_archive':
-					return __( 'Products Archive (UiChemy)', 'uichemy' );
+					return __( 'Products Archive', 'uichemy' );
 				case 'order_received':
-					return __( 'Order Received / Thank You (UiChemy)', 'uichemy' );
+					return __( 'Order Received / Thank You', 'uichemy' );
 				case 'search':
-					return __( 'Search Results (UiChemy)', 'uichemy' );
+					return __( 'Search Results', 'uichemy' );
 				case 'error_404':
-					return __( '404 Page (UiChemy)', 'uichemy' );
+					return __( '404 Page', 'uichemy' );
 				default:
-					return __( 'Template (UiChemy)', 'uichemy' );
+					return __( 'Template', 'uichemy' );
 			}
 		}
 

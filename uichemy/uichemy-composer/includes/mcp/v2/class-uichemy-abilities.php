@@ -323,6 +323,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 								array(
 									'title'  => array( 'type' => 'string', 'description' => ucfirst( $noun ) . ' title. Defaults to "UiChemy AI Landing Page".' ),
 									'status' => array( 'type' => 'string', 'enum' => array( 'draft', 'publish', 'private' ), 'description' => 'Post status. Defaults to draft.' ),
+									'parent' => array( 'type' => 'integer', 'description' => 'Optional. ID of the parent page, to nest this one under it (e.g. /services/kitchen-design/). Hierarchical types only, same type as the parent. Use it to keep the site in topic groups (silos).' ),
 								),
 								$is_post
 									? array( 'post_type' => array( 'type' => 'string', 'description' => 'Which post type to create (default "post"). Any public type works - "product", "portfolio", a custom one.' ) )
@@ -404,6 +405,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 								array(
 									'title'  => array( 'type' => 'string', 'description' => ucfirst( $noun ) . ' title.' ),
 									'status' => array( 'type' => 'string', 'enum' => array( 'draft', 'publish', 'private' ), 'description' => 'Post status. Defaults to draft.' ),
+									'parent' => array( 'type' => 'integer', 'description' => 'Optional. ID of the parent page, to nest this one under it (e.g. /services/kitchen-design/). Hierarchical types only, same type as the parent. Use it to keep the site in topic groups (silos).' ),
 								),
 								$is_post
 									? array( 'post_type' => array( 'type' => 'string', 'description' => 'Which post type to create (default "post"). Any public type works.' ) )
@@ -666,7 +668,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 			return array(
 				array(
 					'name'                     => 'schema',
-					'description'              => 'The whole site in one payload: build readiness (which page builder is resolved and whether it is usable, active header and footer, branding) plus the content model - public post types, taxonomies, the ACF and registered-meta field map with each field\'s metaKey, nav menus with their locations, and WooCommerce presence.',
+					'description'              => 'The whole site in one payload: build readiness (which page builder is resolved and whether it is usable, active header and footer, branding) plus the content model - public post types, taxonomies, the custom-field map (UiChemy Custom Fields, ACF, JetEngine and registered meta) with each field\'s metaKey, nav menus with their locations, and WooCommerce presence.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => new stdClass(),
@@ -1188,7 +1190,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				return array(
 					array(
 						'name'                     => 'list-fields',
-						'description'              => 'The dynamic tokens this site can actually resolve, per provider (post, product, user, term, image, site, request) plus the custom ACF / registered-meta fields. Call this BEFORE writing any binding: a token that does not exist renders EMPTY rather than failing, so a guessed field name produces a page that looks built and is silently blank.',
+						'description'              => 'The dynamic tokens this site can actually resolve, per provider (post, product, user, term, image, site, request) plus the custom fields (UiChemy Custom Fields, ACF, JetEngine, registered meta). Call this BEFORE writing any binding: a token that does not exist renders EMPTY rather than failing, so a guessed field name produces a page that looks built and is silently blank.',
 						'action_parameters_schema' => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -1365,7 +1367,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'slug'               => 'uichemy-composer/dynamic',
 					'label'              => 'UiChemy Builder: Dynamic',
 					'description'        => 'Bind LIVE WordPress content into a section instead of hardcoding it: list the tokens this site can resolve, build a data-bound listing, get the exact Twig token for one field, or emit a UiChemy placeholder tag.',
-					'schema_description' => $preamble . ' "list-fields" is the catalog of every token this build resolves - post, product (WooCommerce), user, term, image, site, request - plus the site\'s own ACF / JetEngine / registered-meta fields. Read it BEFORE writing a binding: an unknown token renders EMPTY rather than failing, so a guessed name yields a page that looks built and is blank. "create-loop" wraps your per-item markup in a validated {% for %} over posts, products, terms or users; its "query" object carries the full filter set (status, offset, include/exclude, author, date range, one meta clause) and "raw_query" is the unvalidated escape hatch for what that cannot express - several post types, OR between taxonomies, several meta clauses. "bind-field" returns the EXACT token for one field on one provider. "add-tag" emits a placeholder (post-content, nav-menu, site-logo, site-icon, toc) that resolves server-side at render time. Everything except list-fields returns MARKUP and writes nothing: pass the html to uichemy-composer/page, post or template. Call uichemy-composer/describe-site FIRST so every taxonomy and term you reference is real. This ability only PRINTS field data. To read or write the values themselves use uichemy-composer/custom-fields, and to create the post type, taxonomy or field in the first place use uichemy-composer/cpt.',
+					'schema_description' => $preamble . ' "list-fields" is the catalog of every token this build resolves - post, product (WooCommerce), user, term, image, site, request - plus the site\'s own custom fields - UiChemy Custom Fields, ACF, JetEngine and registered meta. Read it BEFORE writing a binding: an unknown token renders EMPTY rather than failing, so a guessed name yields a page that looks built and is blank. "create-loop" wraps your per-item markup in a validated {% for %} over posts, products, terms or users; its "query" object carries the full filter set (status, offset, include/exclude, author, date range, one meta clause) and "raw_query" is the unvalidated escape hatch for what that cannot express - several post types, OR between taxonomies, several meta clauses. "bind-field" returns the EXACT token for one field on one provider. "add-tag" emits a placeholder (post-content, nav-menu, site-logo, site-icon, toc) that resolves server-side at render time. Everything except list-fields returns MARKUP and writes nothing: pass the html to uichemy-composer/page, post or template. Call uichemy-composer/describe-site FIRST so every taxonomy and term you reference is real. This ability only PRINTS field data. To read or write the values themselves use uichemy-composer/custom-fields, and to create the post type, taxonomy or field in the first place use uichemy-composer/cpt.',
 					'handler'            => 'execute_dynamic',
 					'readonly'           => true,
 				),
@@ -1511,7 +1513,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'Call uichemy-composer/instructions first, then this on any build: what this site can do (which page builder, readiness, logo) and what content it has (post types, taxonomies, real field metaKeys, menus, Woo). Required before any data binding.',
 					array(
 						'type'        => 'object',
-						'description' => self::contract() . ' "schema" (the default) returns the whole site: "platform" is build readiness - "builder" is the page builder every write lands in (elementor | bricks | gutenberg), "builders" reports each one\'s availability and why, plus active_header / active_footer and branding; STOP the build if platform.ready is false and say what platform.builders gives as the reason. The Elementor-specific keys (checks.elementor_active, header_footer_system, atomic_enabled, active kit) describe ELEMENTOR only and are meaningless on another builder - never gate a build on them. The rest is the content model: public post types, taxonomies, the ACF / registered-meta FIELD MAP (name, type and metaKey, grouped by post/product/user/term), registered meta keys, nav menus + locations, and WooCommerce presence + product count. Bind fields by the metaKey it returns, never by a guessed name. "entities" resolves concrete records to real IDs. Read-only either way.',
+						'description' => self::contract() . ' "schema" (the default) returns the whole site: "platform" is build readiness - "builder" is the page builder every write lands in (elementor | bricks | gutenberg), "builders" reports each one\'s availability and why, plus active_header / active_footer and branding; STOP the build if platform.ready is false and say what platform.builders gives as the reason. The Elementor-specific keys (checks.elementor_active, header_footer_system, atomic_enabled, active kit) describe ELEMENTOR only and are meaningless on another builder - never gate a build on them. The rest is the content model: public post types, taxonomies, the custom FIELD MAP (UiChemy Custom Fields, ACF, JetEngine, registered meta) (name, type and metaKey, grouped by post/product/user/term), registered meta keys, nav menus + locations, and WooCommerce presence + product count. Bind fields by the metaKey it returns, never by a guessed name. "entities" resolves concrete records to real IDs. Read-only either way.',
 						'properties'  => array(
 							'action'            => array(
 								'type'        => 'string',
@@ -1717,6 +1719,13 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 			// dynamic / forms / seo / audit — the four small action-routed abilities.
 			foreach ( self::small_domains() as $group => $spec ) {
 				if ( ! method_exists( 'UiChemy_MCP_V2_Router', $spec['handler'] ) ) {
+					continue;
+				}
+				// The SEO module normally replaces this basic `seo` ability with its
+				// own. With Settings > Features > SEO off, neither is offered: this one
+				// writes SEO tags into page head code, which is stripped while SEO is
+				// off, so every "set" would report success and print nothing.
+				if ( 'seo' === $group && function_exists( 'uich_feature_enabled' ) && ! uich_feature_enabled( 'seo' ) ) {
 					continue;
 				}
 				self::register_standalone_ability(

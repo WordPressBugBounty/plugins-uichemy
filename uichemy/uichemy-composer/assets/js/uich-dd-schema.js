@@ -11,33 +11,40 @@
 (function (root) {
 	'use strict';
 
+	// Labels are display text, so they go through wp.i18n in the browser. Under
+	// node (the catalog generator) wp is absent and this is the identity, which
+	// keeps the generated MCP catalog in English whatever the site language.
+	var __ = ( root.wp && root.wp.i18n && root.wp.i18n.__ ) || function ( text ) {
+		return text;
+	};
+
 	// Root providers available by page context. The picker also injects loop aliases.
 	var PROVIDERS = {
 		post: {
-			label: 'This Post',
+			label: __( 'This Post', 'uichemy' ),
 			fields: [
-				{ key: 'title', label: 'Title', type: 'text' },
-				{ key: 'content', label: 'Content', type: 'html' },
-				{ key: 'excerpt', label: 'Excerpt', type: 'text' },
-				{ key: 'link', label: 'Link', type: 'url' },
-				{ key: 'date', label: 'Date', type: 'date', args: [ { name: 'format', label: 'Format', default: 'F j, Y' } ] },
-				{ key: 'id', label: 'ID', type: 'number' },
-				{ key: 'slug', label: 'Slug', type: 'text' },
-				{ key: 'status', label: 'Status', type: 'text' },
-				{ key: 'comment_count', label: 'Comment count', type: 'number' },
-				{ key: 'author', label: 'Author', type: 'provider', provider: 'user' },
-				{ key: 'thumbnail', label: 'Featured image', type: 'provider', provider: 'image' },
-				{ key: 'categories', label: 'Categories', type: 'array', provider: 'term' },
-				{ key: 'tags', label: 'Tags', type: 'array', provider: 'term' },
+				{ key: 'title', label: __( 'Title', 'uichemy' ), type: 'text' },
+				{ key: 'content', label: __( 'Content', 'uichemy' ), type: 'html' },
+				{ key: 'excerpt', label: __( 'Excerpt', 'uichemy' ), type: 'text' },
+				{ key: 'link', label: __( 'Link', 'uichemy' ), type: 'url' },
+				{ key: 'date', label: __( 'Date', 'uichemy' ), type: 'date', args: [ { name: 'format', label: __( 'Format', 'uichemy' ), default: 'F j, Y' } ] },
+				{ key: 'id', label: __( 'ID', 'uichemy' ), type: 'number' },
+				{ key: 'slug', label: __( 'Slug', 'uichemy' ), type: 'text' },
+				{ key: 'status', label: __( 'Status', 'uichemy' ), type: 'text' },
+				{ key: 'comment_count', label: __( 'Comment count', 'uichemy' ), type: 'number' },
+				{ key: 'author', label: __( 'Author', 'uichemy' ), type: 'provider', provider: 'user' },
+				{ key: 'thumbnail', label: __( 'Featured image', 'uichemy' ), type: 'provider', provider: 'image' },
+				{ key: 'categories', label: __( 'Categories', 'uichemy' ), type: 'array', provider: 'term' },
+				{ key: 'tags', label: __( 'Tags', 'uichemy' ), type: 'array', provider: 'term' },
 				// Adjacent-post navigation. Chainable back into `post`, so the picker
 				// drills Previous post -> Title / Link / Featured image; resolves to
 				// nothing at the first / last post so the link can be hidden with
 				// {% if post.prev %}. Backed by Uich_Post_Provider_Pro::adjacent(), so
 				// fieldIsPro() marks both Pro without Pro installed — listed rather than
 				// hidden, which is how every other gated field here behaves.
-				{ key: 'prev', label: 'Previous post', type: 'provider', provider: 'post' },
-				{ key: 'next', label: 'Next post', type: 'provider', provider: 'post' },
-				{ key: 'meta', label: 'Custom field…', type: 'text', args: [ { name: 'key', label: 'Field key', default: '' } ] }
+				{ key: 'prev', label: __( 'Previous post', 'uichemy' ), type: 'provider', provider: 'post' },
+				{ key: 'next', label: __( 'Next post', 'uichemy' ), type: 'provider', provider: 'post' },
+				{ key: 'meta', label: __( 'Custom field…', 'uichemy' ), type: 'text', args: [ { name: 'key', label: __( 'Field key', 'uichemy' ), default: '' } ] }
 			]
 		},
 		// Mirrors Uich_Product_Provider (Pro). `extends: 'post'` inherits every post
@@ -45,169 +52,169 @@
 		// getFields), which is how `categories` reads product_cat here rather than
 		// the post `category` the inherited entry describes.
 		product: {
-			label: 'This Product',
+			label: __( 'This Product', 'uichemy' ),
 			extends: 'post',
 			fields: [
 				/* pricing */
-				{ key: 'price', label: 'Price (raw number)', type: 'number' },
-				{ key: 'price_html', label: 'Price (formatted)', type: 'html' },
-				{ key: 'regular_price', label: 'Regular price', type: 'number' },
-				{ key: 'sale_price', label: 'Sale price', type: 'number' },
-				{ key: 'sale_percentage', label: 'Discount %', type: 'number' },
-				{ key: 'is_on_sale', label: 'Is on sale?', type: 'bool' },
-				{ key: 'sale_from', label: 'Sale starts', type: 'date', args: [ { name: 'format', label: 'Format', default: 'F j, Y' } ] },
-				{ key: 'sale_to', label: 'Sale ends', type: 'date', args: [ { name: 'format', label: 'Format', default: 'F j, Y' } ] },
-				{ key: 'currency', label: 'Currency code', type: 'text' },
-				{ key: 'currency_symbol', label: 'Currency symbol', type: 'text' },
+				{ key: 'price', label: __( 'Price (raw number)', 'uichemy' ), type: 'number' },
+				{ key: 'price_html', label: __( 'Price (formatted)', 'uichemy' ), type: 'html' },
+				{ key: 'regular_price', label: __( 'Regular price', 'uichemy' ), type: 'number' },
+				{ key: 'sale_price', label: __( 'Sale price', 'uichemy' ), type: 'number' },
+				{ key: 'sale_percentage', label: __( 'Discount %', 'uichemy' ), type: 'number' },
+				{ key: 'is_on_sale', label: __( 'Is on sale?', 'uichemy' ), type: 'bool' },
+				{ key: 'sale_from', label: __( 'Sale starts', 'uichemy' ), type: 'date', args: [ { name: 'format', label: __( 'Format', 'uichemy' ), default: 'F j, Y' } ] },
+				{ key: 'sale_to', label: __( 'Sale ends', 'uichemy' ), type: 'date', args: [ { name: 'format', label: __( 'Format', 'uichemy' ), default: 'F j, Y' } ] },
+				{ key: 'currency', label: __( 'Currency code', 'uichemy' ), type: 'text' },
+				{ key: 'currency_symbol', label: __( 'Currency symbol', 'uichemy' ), type: 'text' },
 				/* identity */
-				{ key: 'sku', label: 'SKU', type: 'text' },
-				{ key: 'type', label: 'Product type (simple / variable…)', type: 'text' },
-				{ key: 'is_featured', label: 'Featured?', type: 'bool' },
-				{ key: 'is_downloadable', label: 'Downloadable?', type: 'bool' },
-				{ key: 'is_virtual', label: 'Virtual?', type: 'bool' },
+				{ key: 'sku', label: __( 'SKU', 'uichemy' ), type: 'text' },
+				{ key: 'type', label: __( 'Product type (simple / variable…)', 'uichemy' ), type: 'text' },
+				{ key: 'is_featured', label: __( 'Featured?', 'uichemy' ), type: 'bool' },
+				{ key: 'is_downloadable', label: __( 'Downloadable?', 'uichemy' ), type: 'bool' },
+				{ key: 'is_virtual', label: __( 'Virtual?', 'uichemy' ), type: 'bool' },
 				/* stock */
-				{ key: 'stock_status', label: 'Stock status', type: 'text' },
-				{ key: 'stock_quantity', label: 'Stock quantity', type: 'number' },
-				{ key: 'is_in_stock', label: 'In stock?', type: 'bool' },
-				{ key: 'is_on_backorder', label: 'On backorder?', type: 'bool' },
-				{ key: 'availability', label: 'Availability text', type: 'text' },
+				{ key: 'stock_status', label: __( 'Stock status', 'uichemy' ), type: 'text' },
+				{ key: 'stock_quantity', label: __( 'Stock quantity', 'uichemy' ), type: 'number' },
+				{ key: 'is_in_stock', label: __( 'In stock?', 'uichemy' ), type: 'bool' },
+				{ key: 'is_on_backorder', label: __( 'On backorder?', 'uichemy' ), type: 'bool' },
+				{ key: 'availability', label: __( 'Availability text', 'uichemy' ), type: 'text' },
 				/* content */
-				{ key: 'short_description', label: 'Short description', type: 'html' },
-				{ key: 'description', label: 'Description', type: 'html' },
-				{ key: 'purchase_note', label: 'Purchase note', type: 'html' },
+				{ key: 'short_description', label: __( 'Short description', 'uichemy' ), type: 'html' },
+				{ key: 'description', label: __( 'Description', 'uichemy' ), type: 'html' },
+				{ key: 'purchase_note', label: __( 'Purchase note', 'uichemy' ), type: 'html' },
 				/* taxonomies */
-				{ key: 'categories', label: 'Product categories', type: 'array', provider: 'term' },
-				{ key: 'tags', label: 'Product tags', type: 'array', provider: 'term' },
-				{ key: 'brand', label: 'Brands', type: 'array', provider: 'term' },
-				{ key: 'category_list', label: 'Categories (linked list)', type: 'html' },
-				{ key: 'tag_list', label: 'Tags (linked list)', type: 'html' },
-				{ key: 'attribute', label: 'Attribute…', type: 'text', args: [ { name: 'name', label: 'Attribute name', default: 'color' } ] },
-				{ key: 'attributes', label: 'All attributes (label → value)', type: 'array' },
+				{ key: 'categories', label: __( 'Product categories', 'uichemy' ), type: 'array', provider: 'term' },
+				{ key: 'tags', label: __( 'Product tags', 'uichemy' ), type: 'array', provider: 'term' },
+				{ key: 'brand', label: __( 'Brands', 'uichemy' ), type: 'array', provider: 'term' },
+				{ key: 'category_list', label: __( 'Categories (linked list)', 'uichemy' ), type: 'html' },
+				{ key: 'tag_list', label: __( 'Tags (linked list)', 'uichemy' ), type: 'html' },
+				{ key: 'attribute', label: __( 'Attribute…', 'uichemy' ), type: 'text', args: [ { name: 'name', label: __( 'Attribute name', 'uichemy' ), default: 'color' } ] },
+				{ key: 'attributes', label: __( 'All attributes (label → value)', 'uichemy' ), type: 'array' },
 				/* commerce actions */
-				{ key: 'add_to_cart_url', label: 'Add-to-cart URL', type: 'url' },
-				{ key: 'add_to_cart_text', label: 'Add-to-cart label', type: 'text' },
-				{ key: 'is_purchasable', label: 'Purchasable?', type: 'bool' },
-				{ key: 'cart_url', label: 'Cart URL', type: 'url' },
-				{ key: 'checkout_url', label: 'Checkout URL', type: 'url' },
-				{ key: 'shop_url', label: 'Shop URL', type: 'url' },
+				{ key: 'add_to_cart_url', label: __( 'Add-to-cart URL', 'uichemy' ), type: 'url' },
+				{ key: 'add_to_cart_text', label: __( 'Add-to-cart label', 'uichemy' ), type: 'text' },
+				{ key: 'is_purchasable', label: __( 'Purchasable?', 'uichemy' ), type: 'bool' },
+				{ key: 'cart_url', label: __( 'Cart URL', 'uichemy' ), type: 'url' },
+				{ key: 'checkout_url', label: __( 'Checkout URL', 'uichemy' ), type: 'url' },
+				{ key: 'shop_url', label: __( 'Shop URL', 'uichemy' ), type: 'url' },
 				/* reviews */
-				{ key: 'average_rating', label: 'Average rating', type: 'number' },
-				{ key: 'review_count', label: 'Review count', type: 'number' },
-				{ key: 'rating_html', label: 'Star rating (markup)', type: 'html' },
-				{ key: 'reviews_allowed', label: 'Reviews allowed?', type: 'bool' },
-				{ key: 'total_sales', label: 'Total sales', type: 'number' },
+				{ key: 'average_rating', label: __( 'Average rating', 'uichemy' ), type: 'number' },
+				{ key: 'review_count', label: __( 'Review count', 'uichemy' ), type: 'number' },
+				{ key: 'rating_html', label: __( 'Star rating (markup)', 'uichemy' ), type: 'html' },
+				{ key: 'reviews_allowed', label: __( 'Reviews allowed?', 'uichemy' ), type: 'bool' },
+				{ key: 'total_sales', label: __( 'Total sales', 'uichemy' ), type: 'number' },
 				/* shipping */
-				{ key: 'weight', label: 'Weight', type: 'text' },
-				{ key: 'length', label: 'Length', type: 'text' },
-				{ key: 'width', label: 'Width', type: 'text' },
-				{ key: 'height', label: 'Height', type: 'text' },
-				{ key: 'dimensions', label: 'Dimensions (formatted)', type: 'text' },
+				{ key: 'weight', label: __( 'Weight', 'uichemy' ), type: 'text' },
+				{ key: 'length', label: __( 'Length', 'uichemy' ), type: 'text' },
+				{ key: 'width', label: __( 'Width', 'uichemy' ), type: 'text' },
+				{ key: 'height', label: __( 'Height', 'uichemy' ), type: 'text' },
+				{ key: 'dimensions', label: __( 'Dimensions (formatted)', 'uichemy' ), type: 'text' },
 				/* related products — chainable back into `product` */
-				{ key: 'related', label: 'Related products', type: 'array', provider: 'product', args: [ { name: 'limit', label: 'How many', default: '4' } ] },
-				{ key: 'upsells', label: 'Upsells', type: 'array', provider: 'product' },
-				{ key: 'cross_sells', label: 'Cross-sells', type: 'array', provider: 'product' },
-				{ key: 'variations', label: 'Variations', type: 'array', provider: 'product' },
+				{ key: 'related', label: __( 'Related products', 'uichemy' ), type: 'array', provider: 'product', args: [ { name: 'limit', label: __( 'How many', 'uichemy' ), default: '4' } ] },
+				{ key: 'upsells', label: __( 'Upsells', 'uichemy' ), type: 'array', provider: 'product' },
+				{ key: 'cross_sells', label: __( 'Cross-sells', 'uichemy' ), type: 'array', provider: 'product' },
+				{ key: 'variations', label: __( 'Variations', 'uichemy' ), type: 'array', provider: 'product' },
 				/* media */
-				{ key: 'gallery', label: 'Gallery', type: 'array', provider: 'image' }
+				{ key: 'gallery', label: __( 'Gallery', 'uichemy' ), type: 'array', provider: 'image' }
 			]
 		},
 		user: {
-			label: 'Current User',
+			label: __( 'Current User', 'uichemy' ),
 			fields: [
-				{ key: 'name', label: 'Display name', type: 'text' },
-				{ key: 'id', label: 'ID', type: 'number' },
-				{ key: 'url', label: 'Website', type: 'url' },
-				{ key: 'bio', label: 'Bio', type: 'text' },
-				{ key: 'link', label: 'Posts URL', type: 'url' },
-				{ key: 'avatar', label: 'Avatar URL', type: 'url', args: [ { name: 'size', label: 'Size', default: '96' } ] },
-				{ key: 'email', label: 'Email (admins)', type: 'text' },
-				{ key: 'meta', label: 'Custom field…', type: 'text', args: [ { name: 'key', label: 'Field key', default: '' } ] }
+				{ key: 'name', label: __( 'Display name', 'uichemy' ), type: 'text' },
+				{ key: 'id', label: __( 'ID', 'uichemy' ), type: 'number' },
+				{ key: 'url', label: __( 'Website', 'uichemy' ), type: 'url' },
+				{ key: 'bio', label: __( 'Bio', 'uichemy' ), type: 'text' },
+				{ key: 'link', label: __( 'Posts URL', 'uichemy' ), type: 'url' },
+				{ key: 'avatar', label: __( 'Avatar URL', 'uichemy' ), type: 'url', args: [ { name: 'size', label: __( 'Size', 'uichemy' ), default: '96' } ] },
+				{ key: 'email', label: __( 'Email (admins)', 'uichemy' ), type: 'text' },
+				{ key: 'meta', label: __( 'Custom field…', 'uichemy' ), type: 'text', args: [ { name: 'key', label: __( 'Field key', 'uichemy' ), default: '' } ] }
 			]
 		},
 		term: {
-			label: 'This Term',
+			label: __( 'This Term', 'uichemy' ),
 			fields: [
-				{ key: 'name', label: 'Name', type: 'text' },
-				{ key: 'id', label: 'ID', type: 'number' },
-				{ key: 'slug', label: 'Slug', type: 'text' },
-				{ key: 'description', label: 'Description', type: 'text' },
-				{ key: 'count', label: 'Post count', type: 'number' },
-				{ key: 'link', label: 'Link', type: 'url' }
+				{ key: 'name', label: __( 'Name', 'uichemy' ), type: 'text' },
+				{ key: 'id', label: __( 'ID', 'uichemy' ), type: 'number' },
+				{ key: 'slug', label: __( 'Slug', 'uichemy' ), type: 'text' },
+				{ key: 'description', label: __( 'Description', 'uichemy' ), type: 'text' },
+				{ key: 'count', label: __( 'Post count', 'uichemy' ), type: 'number' },
+				{ key: 'link', label: __( 'Link', 'uichemy' ), type: 'url' }
 			]
 		},
 		image: {
-			label: 'Image',
+			label: __( 'Image', 'uichemy' ),
 			fields: [
-				{ key: 'src', label: 'URL', type: 'url', args: [ { name: 'size', label: 'Size', default: 'full' } ] },
-				{ key: 'alt', label: 'Alt text', type: 'text' },
-				{ key: 'width', label: 'Width', type: 'number' },
-				{ key: 'height', label: 'Height', type: 'number' },
-				{ key: 'caption', label: 'Caption', type: 'text' }
+				{ key: 'src', label: __( 'URL', 'uichemy' ), type: 'url', args: [ { name: 'size', label: __( 'Size', 'uichemy' ), default: 'full' } ] },
+				{ key: 'alt', label: __( 'Alt text', 'uichemy' ), type: 'text' },
+				{ key: 'width', label: __( 'Width', 'uichemy' ), type: 'number' },
+				{ key: 'height', label: __( 'Height', 'uichemy' ), type: 'number' },
+				{ key: 'caption', label: __( 'Caption', 'uichemy' ), type: 'text' }
 			]
 		},
 		site: {
-			label: 'Site',
+			label: __( 'Site', 'uichemy' ),
 			fields: [
-				{ key: 'name', label: 'Name', type: 'text' },
-				{ key: 'description', label: 'Tagline', type: 'text' },
-				{ key: 'url', label: 'Home URL', type: 'url' },
-				{ key: 'language', label: 'Language', type: 'text' },
-				{ key: 'icon', label: 'Site icon', type: 'provider', provider: 'image' },
-				{ key: 'logo', label: 'Logo', type: 'provider', provider: 'image' },
-				{ key: 'option', label: 'Option…', type: 'text', args: [ { name: 'key', label: 'Option name', default: '' } ] }
+				{ key: 'name', label: __( 'Name', 'uichemy' ), type: 'text' },
+				{ key: 'description', label: __( 'Tagline', 'uichemy' ), type: 'text' },
+				{ key: 'url', label: __( 'Home URL', 'uichemy' ), type: 'url' },
+				{ key: 'language', label: __( 'Language', 'uichemy' ), type: 'text' },
+				{ key: 'icon', label: __( 'Site icon', 'uichemy' ), type: 'provider', provider: 'image' },
+				{ key: 'logo', label: __( 'Logo', 'uichemy' ), type: 'provider', provider: 'image' },
+				{ key: 'option', label: __( 'Option…', 'uichemy' ), type: 'text', args: [ { name: 'key', label: __( 'Option name', 'uichemy' ), default: '' } ] }
 			]
 		},
 		request: {
-			label: 'URL / Request',
+			label: __( 'URL / Request', 'uichemy' ),
 			fields: [
-				{ key: 'get', label: 'Query parameter…', type: 'text', args: [ { name: 'key', label: 'Param name', default: '' } ] },
-				{ key: 'url', label: 'Current URL', type: 'url' },
-				{ key: 'referrer', label: 'Referrer', type: 'url' }
+				{ key: 'get', label: __( 'Query parameter…', 'uichemy' ), type: 'text', args: [ { name: 'key', label: __( 'Param name', 'uichemy' ), default: '' } ] },
+				{ key: 'url', label: __( 'Current URL', 'uichemy' ), type: 'url' },
+				{ key: 'referrer', label: __( 'Referrer', 'uichemy' ), type: 'url' }
 			]
 		}
 	};
 
 	// Filters grouped by the value types they apply to. `any` always shows.
 	var FILTERS = [
-		{ name: 'upper', label: 'UPPERCASE', types: [ 'text' ] },
-		{ name: 'lower', label: 'lowercase', types: [ 'text' ] },
-		{ name: 'capitalize', label: 'Capitalize', types: [ 'text' ] },
-		{ name: 'title', label: 'Title Case', types: [ 'text' ] },
-		{ name: 'trim', label: 'Trim spaces', types: [ 'text' ] },
-		{ name: 'truncate', label: 'Truncate…', types: [ 'text' ], args: [ { name: 'length', label: 'Length', default: '100' } ] },
-		{ name: 'excerpt', label: 'Excerpt (words)…', types: [ 'text', 'html' ], args: [ { name: 'words', label: 'Words', default: '25' } ] },
-		{ name: 'striptags', label: 'Strip HTML', types: [ 'html', 'text' ] },
-		{ name: 'date', label: 'Format date…', types: [ 'date' ], args: [ { name: 'format', label: 'Format', default: 'F j, Y' } ] },
-		{ name: 'time_ago', label: 'Time ago', types: [ 'date' ] },
-		{ name: 'number_format', label: 'Number format…', types: [ 'number' ], args: [ { name: 'decimals', label: 'Decimals', default: '0' } ] },
-		{ name: 'round', label: 'Round…', types: [ 'number' ], args: [ { name: 'precision', label: 'Decimals', default: '0' } ] },
-		{ name: 'currency', label: 'As currency', types: [ 'number' ] },
-		{ name: 'join', label: 'Join with…', types: [ 'array' ], args: [ { name: 'glue', label: 'Separator', default: ', ' } ] },
-		{ name: 'length', label: 'Count', types: [ 'array' ] },
-		{ name: 'first', label: 'First item', types: [ 'array' ] },
-		{ name: 'last', label: 'Last item', types: [ 'array' ] },
-		{ name: 'reverse', label: 'Reverse', types: [ 'array' ] },
-		{ name: 'slug', label: 'Slugify', types: [ 'text' ] },
-		{ name: 'wpautop', label: 'Auto paragraphs', types: [ 'html' ] },
-		{ name: 'raw', label: 'Raw (allow HTML)', types: [ 'html', 'text' ] }
+		{ name: 'upper', label: __( 'UPPERCASE', 'uichemy' ), types: [ 'text' ] },
+		{ name: 'lower', label: __( 'lowercase', 'uichemy' ), types: [ 'text' ] },
+		{ name: 'capitalize', label: __( 'Capitalize', 'uichemy' ), types: [ 'text' ] },
+		{ name: 'title', label: __( 'Title Case', 'uichemy' ), types: [ 'text' ] },
+		{ name: 'trim', label: __( 'Trim spaces', 'uichemy' ), types: [ 'text' ] },
+		{ name: 'truncate', label: __( 'Truncate…', 'uichemy' ), types: [ 'text' ], args: [ { name: 'length', label: __( 'Length', 'uichemy' ), default: '100' } ] },
+		{ name: 'excerpt', label: __( 'Excerpt (words)…', 'uichemy' ), types: [ 'text', 'html' ], args: [ { name: 'words', label: __( 'Words', 'uichemy' ), default: '25' } ] },
+		{ name: 'striptags', label: __( 'Strip HTML', 'uichemy' ), types: [ 'html', 'text' ] },
+		{ name: 'date', label: __( 'Format date…', 'uichemy' ), types: [ 'date' ], args: [ { name: 'format', label: __( 'Format', 'uichemy' ), default: 'F j, Y' } ] },
+		{ name: 'time_ago', label: __( 'Time ago', 'uichemy' ), types: [ 'date' ] },
+		{ name: 'number_format', label: __( 'Number format…', 'uichemy' ), types: [ 'number' ], args: [ { name: 'decimals', label: __( 'Decimals', 'uichemy' ), default: '0' } ] },
+		{ name: 'round', label: __( 'Round…', 'uichemy' ), types: [ 'number' ], args: [ { name: 'precision', label: __( 'Decimals', 'uichemy' ), default: '0' } ] },
+		{ name: 'currency', label: __( 'As currency', 'uichemy' ), types: [ 'number' ] },
+		{ name: 'join', label: __( 'Join with…', 'uichemy' ), types: [ 'array' ], args: [ { name: 'glue', label: __( 'Separator', 'uichemy' ), default: ', ' } ] },
+		{ name: 'length', label: __( 'Count', 'uichemy' ), types: [ 'array' ] },
+		{ name: 'first', label: __( 'First item', 'uichemy' ), types: [ 'array' ] },
+		{ name: 'last', label: __( 'Last item', 'uichemy' ), types: [ 'array' ] },
+		{ name: 'reverse', label: __( 'Reverse', 'uichemy' ), types: [ 'array' ] },
+		{ name: 'slug', label: __( 'Slugify', 'uichemy' ), types: [ 'text' ] },
+		{ name: 'wpautop', label: __( 'Auto paragraphs', 'uichemy' ), types: [ 'html' ] },
+		{ name: 'raw', label: __( 'Raw (allow HTML)', 'uichemy' ), types: [ 'html', 'text' ] }
 	];
 
 	// Loop sources for the loop builder.
 	var LOOP_SOURCES = [
-		{ key: 'get_posts', label: 'Posts', alias: 'post', postType: true },
-		{ key: 'get_products', label: 'Products (WooCommerce)', alias: 'product', postType: false, taxonomy: 'product_cat' },
-		{ key: 'get_terms', label: 'Terms / Categories', alias: 'term' },
-		{ key: 'get_users', label: 'Users', alias: 'user' }
+		{ key: 'get_posts', label: __( 'Posts', 'uichemy' ), alias: 'post', postType: true },
+		{ key: 'get_products', label: __( 'Products (WooCommerce)', 'uichemy' ), alias: 'product', postType: false, taxonomy: 'product_cat' },
+		{ key: 'get_terms', label: __( 'Terms / Categories', 'uichemy' ), alias: 'term' },
+		{ key: 'get_users', label: __( 'Users', 'uichemy' ), alias: 'user' }
 	];
 
 	var ORDERBY = [ 'date', 'title', 'menu_order', 'rand', 'ID', 'name', 'count' ];
 	var CONDITION_OPS = [
-		{ key: '==', label: 'is' },
-		{ key: '!=', label: 'is not' },
-		{ key: '>', label: 'greater than' },
-		{ key: '<', label: 'less than' },
-		{ key: 'is_set', label: 'is set' },
-		{ key: 'is_empty', label: 'is empty' }
+		{ key: '==', label: __( 'is', 'uichemy' ) },
+		{ key: '!=', label: __( 'is not', 'uichemy' ) },
+		{ key: '>', label: __( 'greater than', 'uichemy' ) },
+		{ key: '<', label: __( 'less than', 'uichemy' ) },
+		{ key: 'is_set', label: __( 'is set', 'uichemy' ) },
+		{ key: 'is_empty', label: __( 'is empty', 'uichemy' ) }
 	];
 
 	function getFields(providerKey) {

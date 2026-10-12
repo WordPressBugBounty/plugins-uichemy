@@ -10,9 +10,28 @@ Two abilities, and the split is the first thing to get right:
 | **`uichemy-composer/cpt`** | the SHAPE - post types, taxonomies, field groups, field definitions |
 | **`uichemy-composer/custom-fields`** | the VALUES in those fields, on one object or many |
 
+Both work across three **providers** - whoever owns the model:
+
+| provider | what it is |
+|---|---|
+| `uichemy` | **UiChemy Custom Fields**, built into UiChemy (dashboard > Custom Fields). Present unless the user switched it off under Settings > Features. |
+| `acf` | Advanced Custom Fields, free or Pro |
+| `jetengine` | JetEngine |
+
+Plain registered meta also shows up as provider `meta` for values, never for
+modelling.
+
 Everything about how any of it *looks* is elsewhere: `uichemy-composer/dynamic`
 for the tokens, `uichemy-composer/page` and `uichemy-composer/theme-builder`
 for the layout.
+
+**Free or Pro - check before you promise anything.** On a site without UiChemy
+Pro, reading is free (`cpt describe`, `custom-fields list` / `get`), but every
+model write (`register-*`, `add-fields`, `update-field`) and every value write
+is refused with a message naming the upgrade. Printing is gated too:
+`{{ post.meta('...') }}` renders **empty** on Free and `dynamic` `list-fields`
+lists no custom fields, so a binding built on Free looks finished and shows
+nothing. Tell the user before you design around custom fields.
 
 ---
 
@@ -86,27 +105,76 @@ whole set. Sending one row deletes the others, silently.
 
 ---
 
-## Who owns what - the delegation rule
+## Who owns what - choosing the provider
 
-UiChemy never registers a post type under its own storage. That would make a
-design tool the owner of the user's content model, and uninstalling UiChemy
-would orphan their posts. Every model write delegates:
+Every model write goes through exactly one provider, and what it creates is
+edited in that provider's own screens afterwards. Read `cpt` action="describe"
+first: `providers` says what is active, `owner` on each post type and taxonomy
+says who made it, and `provider` on each field group says where the fields live.
 
 ```
-ACF active        => ACF's internal-post-type API
-JetEngine active  => jet_engine()->cpt / taxonomies / meta_boxes
-Both active       => REFUSED until you pass "provider". ASK THE USER.
-Neither active    => REFUSED, naming the two ways forward
+one provider active    => "provider" optional, writes go there
+two or more active     => every register-* / add-fields / update-field REFUSES
+                          until you pass "provider". ASK THE USER.
+none active            => REFUSED, naming the ways forward
 ```
 
-**When both are active, ask.** Do not pick. A model split across two plugins
-ends up half in each plugin's admin screens, and moving it later means
-rewriting every template that binds it.
+**When more than one is active, ask - and inform the question.** Do not pick. A
+model split across plugins ends up half in each one's admin screens, and moving
+it later means rewriting every template that binds it. Tell the user where the
+existing model already lives: *"Your Case Studies are in JetEngine and your
+Movies are in ACF. Should the new Books type go in UiChemy Custom Fields, ACF or
+JetEngine?"* Extending an existing type or group belongs with its owner -
+`add-fields` to an ACF group is `provider="acf"`.
 
-**When neither is active, say so plainly** - *"this site has no field-modelling
-plugin; install ACF or JetEngine, or I can model this with plain posts,
-categories and tags, which I can bind and lay out today."* Never report an
-empty field list as though the site had no data.
+**Starting fresh with nothing else installed**, UiChemy Custom Fields is the only
+provider and is used automatically. It needs no extra plugin, and its fields are
+edited in the same dashboard as the rest of UiChemy.
+
+**When none is active, say so plainly** - *"UiChemy Custom Fields is switched off
+on this site and there is no ACF or JetEngine. You can switch it back on under
+UiChemy > Settings > Features, install ACF or JetEngine, or I can model this
+with plain posts, categories and tags, which I can bind and lay out today."*
+Never switch the feature on yourself: a user who turned it off usually did so
+because another plugin owns their content model. Never report an empty field
+list as though the site had no data.
+
+**A field name in two providers is a write you have to pin.** `list` flags it as
+`also_claimed_by`, and `update` / `delete` on that name refuse until you pass
+`provider`. The two are different storage rows; the one you did not write keeps
+rendering wherever it is bound.
+
+---
+
+## UiChemy Custom Fields - what differs
+
+Same calls and the same five rules. These are the differences that bite:
+
+- **Values live under internal keys**, not the field name. `update_post_meta( $id,
+  'subtitle', ... )` writes a row nothing reads. Only `custom-fields` `update`
+  writes these fields; `{{ post.meta('subtitle') }}` reads them like any other.
+- **Conditional logic hides values.** A field whose condition is not met renders
+  EMPTY and reads back with `formatted: null` while `value` is still stored. Set
+  the field it depends on first; the definition says `"conditional": true`.
+- **Dates are stored in the field's return format** (`d/m/Y` by default for a
+  group built in the dashboard; ISO for one built through `cpt`). Send ISO on a
+  write. Echoing `value` back is also safe - it is parsed in the field's own
+  format, not guessed.
+- **No options pages and no gallery type.** Put site-wide values on a dedicated
+  page or a single "settings" post. Model a gallery as a `repeater` with one
+  `image` sub-field.
+- **One name, one field.** If two native groups both reach an object with the
+  same field name, the first group wins on every read and write - `describe`
+  shows the groups; pick names that do not collide.
+- **Registration is on the next request**, like JetEngine. Create the post type,
+  then make the field group in a separate call.
+- **Free vs Pro.** Writing through these abilities needs UiChemy Pro (see the
+  note at the top). In the dashboard every field type is free except `repeater`
+  and `relationship`; on an unlicensed site those two read back empty and refuse
+  writes, and the stored value survives until Pro is active.
+- **Changing identity** - renaming or retyping a field, deleting a group, trashing
+  a post type - is done by the user in UiChemy > Custom Fields, which shows what
+  will break and keeps a Trash to restore from.
 
 ---
 
@@ -125,21 +193,29 @@ UiChemy refuses those types on a free install rather than creating the trap.
 promising a repeater. On ACF free, model repeating data as a separate post type
 with a relation.
 
+The refusal comes **after** `register-field-group` has created the group: the
+error says the group "WAS created" and no fields were added. Do not create a
+second group - fill that one with `add-fields` using supported types.
+
 ---
 
-## Storage differs between the two plugins
+## Storage differs between the providers
 
 Same concept, different bytes. This is why a field must be written through its
-own owner, and why UiChemy's two adapters share no code.
+own owner, and why UiChemy's adapters share no code.
 
-| | ACF | JetEngine |
-|---|---|---|
-| boolean | `"1"` / `"0"` | `'true'` / `''` |
-| repeater | flat `name_0_sub` rows + a count | one serialised array |
-| checkbox | a list of values | a `{ value: true }` map |
-| media | attachment ID | ID **or** URL, per field |
-| date | `Ymd` string | Unix timestamp |
-| relations | plain meta | **its own database tables** |
+| | UiChemy Custom Fields | ACF | JetEngine |
+|---|---|---|---|
+| where | internal key per group + field | the field name + a `_name` key row | the field name |
+| boolean | `"1"` / `""` | `"1"` / `"0"` | `'true'` / `''` |
+| repeater | one array of rows | flat `name_0_sub` rows + a count | one serialised array |
+| checkbox | a list of values | a list of values | a `{ value: true }` map |
+| media | attachment ID | attachment ID | ID **or** URL, per field |
+| date | the field's return format | `Ymd` string | Unix timestamp |
+| relations | post / term / user IDs | plain meta | **its own database tables** |
+
+You never write these by hand: send the neutral value (`true`, `"2026-09-07"`,
+an attachment id, an array of rows) and the owning provider stores its own form.
 
 **ACF has a second row per value.** `price` holds the value and `_price` holds
 the field key. `update_post_meta()` writes the first and not the second, so the
@@ -183,9 +259,55 @@ Four silent traps in that sequence:
   be filled in. `register-field-group` requires `object_subtype` for exactly
   this reason.
 
-**JetEngine registers a post type or taxonomy on the *next* request.** Anything
-that has to *see* it - a field group, a loop, a template condition - belongs in
-a separate call. ACF registers immediately.
+**UiChemy Custom Fields and JetEngine register a post type or taxonomy on the
+*next* request.** Anything that has to *see* it - a loop, a template condition -
+belongs in a separate call. ACF registers immediately. (A field group for a
+UiChemy Custom Fields type it has just defined is accepted straight away.)
+
+---
+
+## Call shapes
+
+Every call is `{ action, action_parameters }`. Use these names exactly. On
+`cpt`, a parameter the action does not define is refused with the list of valid
+ones and nothing is changed; on `custom-fields`, a missing required name is
+refused and named. `get-ability-info` has the full schema, with types and enums.
+
+```
+cpt  register-post-type    { slug, label (plural), singular_label, supports, has_archive,
+                             hierarchical, public, rewrite_slug, menu_icon, taxonomies, provider }
+cpt  register-taxonomy     { slug, label, singular_label, object_types: ["book"],
+                             hierarchical, rewrite_slug, provider }
+cpt  ensure-term           { taxonomy, terms: ["Residential", "Commercial"] }
+cpt  set-terms             { post_id, taxonomy, terms: ["residential"], append }
+cpt  register-field-group  { title, object_type: "post", object_subtype: "book", fields: [...], provider }
+cpt  add-fields            { group_key, fields: [...], provider }
+cpt  update-field          { name, group_key, label, instructions, placeholder, required, default, choices }
+
+one field   { name: "price", label, type, choices (select/radio/checkbox),
+              sub_fields: [ { name, type } ] (repeater) }
+field types text textarea wysiwyg number email url boolean select radio checkbox
+            image file gallery date datetime time color link post_relation
+            taxonomy repeater
+
+custom-fields list    { object_type: "post", object_subtype: "book" }
+custom-fields get     { object_id, names }
+custom-fields update  { object_id | object_ids: [...], fields: { price: 49 }, dry_run }
+custom-fields delete  { object_id, names }
+custom-fields revert  { revert_token }
+```
+
+Names that are easy to get wrong:
+
+- the plural label is `label`, not `plural` or `name`;
+- values go in `fields`, not `values`;
+- the object is `object_id`, not `post_id` (only `set-terms` takes `post_id`);
+- a select value is the choice **value** (`online`), not its label (`Online`).
+
+**A post type is never reconfigured here.** Registering an existing slug
+again is refused, so labels, supports and archive settings are fixed at
+creation. Get them right in the first call; afterwards the user changes them in
+the provider's own screen.
 
 ---
 
@@ -209,7 +331,8 @@ Refused, and each refusal names what to do instead:
 - **change or delete a post type** - breaks permalinks and every stored
   reference, or orphans all its content.
 
-Identity-changing work goes through the owning plugin's own admin screen, where
+Identity-changing work goes through the owning provider's own screen (UiChemy >
+Custom Fields, ACF's or JetEngine's), where
 the user is shown what they are about to break. Every refusal here names what to
 do instead - pass that on rather than working around it.
 
@@ -242,9 +365,9 @@ twenty. A per-object failure does not abort the rest.
 **Keep the revert token.** Every `update` and `delete` that changed something
 returns one. `action="revert"` restores exactly those fields for 24 hours.
 
-**Pass `provider` when a name collides.** With ACF and JetEngine both defining
-a name, the response flags `also_claimed_by`. Whichever plugin the template
-reads through decides the value - pin it rather than letting the order decide.
+**Pass `provider` when a name collides.** When two providers define a name,
+`list` flags `also_claimed_by` and a write refuses until you pin one. Pin the one
+the template actually reads through.
 
 **Choices are not optional on a select.** A select without them accepts anything
 and renders an empty label, and a caller writing a value has no way to know what
@@ -256,7 +379,9 @@ is resolved for you.
 
 **Dates go in as ISO.** `"2026-09-07"`, or `"2026-09-07 14:30:00"`. Ambiguous
 forms like `07/09/2026` are refused rather than guessed, because a guess
-produces a plausible wrong date that passes every check afterwards.
+produces a plausible wrong date that passes every check afterwards. (The one
+exception is a UiChemy Custom Fields date already in its field's own return
+format - the `value` a read handed you - which is parsed in that format.)
 
 **Print HTML fields through `|kses_post`, never `|raw`.** `raw` marks output
 unescaped, so a `<script>` in user-supplied meta executes. Use `raw` only for
@@ -305,7 +430,7 @@ silent empty string is not.
 | Not supported | Why |
 |---|---|
 | **ACF Flexible Content writes** | Polymorphic - each row's shape depends on its layout name, so it needs per-layout partials the render engine does not have. Readable, not writable. |
-| **Creating an options page** | It needs a menu slug and a capability: site structure, not content model. Make one in ACF's or JetEngine's screens, then its fields are readable and writable with `object_type="options"`. |
+| **Creating an options page** | It needs a menu slug and a capability: site structure, not content model. Make one in ACF's or JetEngine's screens, then its fields are readable and writable with `object_type="options"`. UiChemy Custom Fields has no options pages at all. |
 | **Creating a relation** | A relation defines the content model and its two sides have to be chosen deliberately. Create it in JetEngine > Relations; UiChemy changes *membership* only. |
 | **JetEngine CCT** | Items live in `wp_jet_cct_*`, not posts. Every provider is post/term/user-shaped and `WP_Query` cannot see them. |
 | **Nested repeaters** | Buildable in the plugin's own screen if genuinely needed. |

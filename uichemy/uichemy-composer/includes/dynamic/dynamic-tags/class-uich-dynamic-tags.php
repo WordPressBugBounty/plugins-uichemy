@@ -43,6 +43,7 @@ if ( ! class_exists( 'Uich_Dynamic_Tags' ) ) {
 		const GROUP_USER    = 'composer-user';
 		const GROUP_TERM    = 'composer-term';
 		const GROUP_WOO     = 'composer-woo';
+		const GROUP_FIELDS  = 'composer-fields';
 		const GROUP_ACF     = 'composer-acf';
 		const GROUP_JET     = 'composer-jet';
 		const GROUP_TWIG    = 'composer-twig';
@@ -76,7 +77,7 @@ if ( ! class_exists( 'Uich_Dynamic_Tags' ) ) {
 			// keeping Pro data. See docs/free-pro-split-plan.md.
 			$tags->register_group(
 				self::GROUP_POST,
-				array( 'title' => esc_html__( 'UiChemy Â· Post', 'uichemy' ) )
+				array( 'title' => esc_html__( 'Composer · Post', 'uichemy' ) )
 			);
 
 			self::register_classes( $tags, self::free_tag_classes() );

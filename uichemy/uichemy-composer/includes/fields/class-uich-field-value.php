@@ -69,6 +69,7 @@ if ( ! class_exists( 'Uich_Field_Value' ) ) {
 				'time'             => 'time',
 				'colour_picker'    => 'string',
 				'color_picker'     => 'string',
+				'color'            => 'string',
 				'link'             => 'object',
 				'google_map'       => 'object',
 				'post_object'      => 'relation',
@@ -136,19 +137,24 @@ if ( ! class_exists( 'Uich_Field_Value' ) ) {
 				return (string) $def['reason'];
 			}
 
-			$route = 'acf' === $provider
-				? 'Written through ACF update_field() by NAME, which stores both the value row and the reference row ACF needs.'
-				: ( 'jetengine' === $provider
-					? 'Written with update_post_meta(): raw meta IS JetEngine\'s storage.'
-					: 'Written with update_post_meta().' );
+			$routes = array(
+				'acf'       => 'Written through ACF update_field() by NAME, which stores both the value row and the reference row ACF needs.',
+				'jetengine' => 'Written with update_post_meta(): raw meta IS JetEngine\'s storage.',
+				'uichemy'   => 'Written through UiChemy Custom Fields\' own save (uich_save_field_value), which runs the field\'s sanitiser and stores it under the module\'s internal key - never update_post_meta() by the field name.',
+			);
+			$route  = isset( $routes[ $provider ] ) ? $routes[ $provider ] : 'Written with update_post_meta().';
 
 			switch ( $shape ) {
 				case 'bool':
-					return ( 'jetengine' === $provider
-						? 'Pass true or false. Stored as JetEngine\'s \'true\' / \'\' pair, not 1/0. '
-						: 'Pass true or false. Stored as ACF\'s "1" / "0". ' ) . $route;
+					if ( 'jetengine' === $provider ) {
+						return 'Pass true or false. Stored as JetEngine\'s \'true\' / \'\' pair, not 1/0. ' . $route;
+					}
+					return ( 'uichemy' === $provider ? 'Pass true or false. ' : 'Pass true or false. Stored as ACF\'s "1" / "0". ' ) . $route;
 
 				case 'date':
+					if ( 'uichemy' === $provider ) {
+						return 'Pass an ISO date ("2026-09-07"). The field stores dates in its own return format (see "return_format"), and the module converts ISO into it. Send ISO; sending back the "value" a read returned is also safe - it is parsed in the field\'s own format. Ambiguous forms like "07/09/2026" are otherwise refused. ' . $route;
+					}
 					return 'Pass an ISO date ("2026-09-07"). UiChemy converts it to the storage format ' . ( 'acf' === $provider ? '(Ymd)' : '(timestamp)' ) . ' - ACF does no conversion of its own, so an unconverted string stores as-is and the admin shows an empty date. ' . $route;
 
 				case 'datetime':
@@ -475,18 +481,61 @@ if ( ! class_exists( 'Uich_Field_Value' ) ) {
 				);
 			}
 
-			// A bare integer is already a timestamp, which is what JetEngine
-			// stores for its date fields.
-			if ( is_numeric( $value ) && (int) $value > 100000 ) {
-				$ts = (int) $value;
-			} else {
-				$ts = strtotime( (string) $value );
+			$ts = null;
+
+			// A UiChemy Custom Fields date is STORED in the field's return format
+			// (d/m/Y by default), so the "value" a read hands back is in it. Parse
+			// that format strictly first: strtotime() reads 07/09/2026 as 9 July.
+			if ( 'uichemy' === $provider && is_string( $value ) && ! empty( $def['return_format'] ) ) {
+				$parsed = DateTime::createFromFormat( '!' . $def['return_format'], $value, new DateTimeZone( 'UTC' ) );
+				$errors = DateTime::getLastErrors();
+				if ( $parsed && ( ! $errors || ( 0 === $errors['warning_count'] && 0 === $errors['error_count'] ) ) ) {
+					$ts = $parsed->getTimestamp();
+				}
+			}
+
+			// Day/month order is a guess in any form that leads with two short
+			// numbers - 07/09/2026, 7.9.26, 07-09-2026 - and strtotime() guesses
+			// month-first for slashes and day-first for dashes, so the same date
+			// lands in July or September depending on the separator. Refused, as
+			// the message below promises; the field's own format was tried above.
+			if ( null === $ts && is_string( $value ) && preg_match( '#^\s*\d{1,2}[/.\-]\d{1,2}[/.\-]\d{2,4}\b#', $value ) ) {
+				$ts = false;
+			}
+
+			// Eight digits is ACF's stored date (Ymd) - the "value" a read hands
+			// back. Read as a Unix timestamp it would land in 1970.
+			if ( null === $ts && preg_match( '/^\d{8}$/', trim( (string) $value ) ) ) {
+				$parsed = DateTime::createFromFormat( '!Ymd', trim( (string) $value ), new DateTimeZone( 'UTC' ) );
+				if ( $parsed && $parsed->format( 'Ymd' ) === trim( (string) $value ) ) {
+					$ts = $parsed->getTimestamp();
+				}
+			}
+
+			if ( null === $ts ) {
+				// A bare integer is already a timestamp, which is what JetEngine
+				// stores for its date fields.
+				$ts = ( is_numeric( $value ) && (int) $value > 100000 ) ? (int) $value : strtotime( (string) $value );
 			}
 
 			if ( false === $ts || null === $ts ) {
 				return new WP_Error(
 					'uich_field_bad_date',
 					sprintf( '"%s" is not a date UiChemy can parse for field "%s". Pass ISO 8601 - "2026-09-07" or "2026-09-07 14:30:00". Ambiguous forms like "07/09/2026" are refused rather than guessed, because guessing produces a plausible wrong date that passes every read-back.', self::describe( $value ), $name )
+				);
+			}
+
+			if ( 'uichemy' === $provider ) {
+				// UiChemy Custom Fields stores a date in the field's own return format
+				// and its sanitiser parses ISO into that, so ISO is the one form that
+				// is unambiguous whatever the field's display or return format is.
+				$fmt = 'time' === $shape ? 'H:i:s' : ( 'datetime' === $shape ? 'Y-m-d H:i:s' : 'Y-m-d' );
+
+				return array(
+					'value' => gmdate( $fmt, $ts ),
+					'notes' => array(
+						sprintf( 'Sent as "%s"; the field converts it to its return format ("%s") for storage.', gmdate( $fmt, $ts ), isset( $def['return_format'] ) && '' !== (string) $def['return_format'] ? $def['return_format'] : 'its default' ),
+					),
 				);
 			}
 

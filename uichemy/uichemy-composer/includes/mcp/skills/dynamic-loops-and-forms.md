@@ -14,7 +14,7 @@ Never confuse them: **Twig is output, forms are input.** Don't wrap form fields 
 ## Before anything — know the site
 
 1. Call `uichemy-composer/describe-site` **first**. Every post type, taxonomy, and term you reference must be one this site actually has — a guessed name renders **empty**, not an error, so the page looks built and is blank.
-2. Before writing ANY token binding, call `uichemy-composer/dynamic (action="list-fields")` — the catalog of every token this build resolves (`post`, `product` [WooCommerce], `user`, `term`, `image`, `site`, `request`) **plus the site's own ACF / meta fields**. Bind only tokens that appear there.
+2. Before writing ANY token binding, call `uichemy-composer/dynamic (action="list-fields")` — the catalog of every token this build resolves (`post`, `product` [WooCommerce], `user`, `term`, `image`, `site`, `request`) **plus the site's own custom fields** - from UiChemy Custom Fields (built in), ACF, JetEngine and registered meta, each tagged with its `provider`. Bind only tokens that appear there.
 
 The `dynamic` ability returns **markup and writes nothing** (except `list-fields`, which just reads). You take the returned HTML and pass it to `uichemy-composer/page`, `uichemy-composer/post`, or `uichemy-composer/template` to actually build.
 
@@ -29,7 +29,9 @@ Print a token as-is with `{{ … }}`:
 - `{{ post.title }}`, `{{ post.permalink }}`
 - `{{ post.excerpt }}` reads the **`post_excerpt` column**, not the visible text. On any post built with a Composer widget that column is **empty**, so the token renders blank while the page plainly shows text — it looks like a broken binding and is not one. Either set a real excerpt (`uichemy-composer/post` action="update", `excerpt`), or print `{{ post.content }}`, or write the summary as a custom field.
 - **Chaining** — a token that returns another provider: `{{ post.author.name }}`, `{{ post.thumbnail.src('large') }}`
-- **Custom / ACF fields are meta** — reach them with `meta()`, not a bare accessor: `{{ post.meta('price') }}`, or `{{ post.meta('hero').src('large') }}` for an image. Take the `metaKey` verbatim from `uichemy-composer/dynamic (action="list-fields")` — never guess it.
+- **Custom fields are meta, whoever owns them** — UiChemy Custom Fields, ACF or JetEngine. Reach them with `meta()` and the field NAME, not a bare accessor and not dot syntax: `{{ post.meta('price') }}`, or `{{ post.meta('hero').src('large') }}` for an image (`post.meta.price` renders EMPTY). The same goes for `term.meta('…')` and `user.meta('…')`. Take the `metaKey` verbatim from `uichemy-composer/dynamic (action="list-fields")` — never guess it.
+  - **UiChemy Custom Fields keep their values under internal keys** (`_uichemy_gf_…`). Bind the field name and `meta()` resolves it; never bind the internal key or read it with raw post meta.
+  - A UiChemy Custom Fields **rich-text** field prints formatted HTML: use `|kses_post`. A field with **conditional logic** prints nothing while its condition is unmet, even though a value is stored - wrap it in `{% if %}` rather than reading the blank as a broken binding.
 - `product.*` (price, sale_percentage, …) resolves **only when WooCommerce is active**.
 
 When you need the exact token for one field on one provider, call `uichemy-composer/dynamic (action="bind-field")`.
@@ -150,6 +152,6 @@ Submissions are saved to the database and are viewable in the UiChemy Forms dash
 
 ## Where this skill ends
 
-- **Custom fields and post types** — creating them, and writing their VALUES — are `custom-fields-and-cpt`. Come back here to print what you wrote.
+- **Custom fields and post types** — creating them (in UiChemy Custom Fields, ACF or JetEngine), and writing their VALUES — are `custom-fields-and-cpt`. Come back here to print what you wrote. If a listing needs a content type the site does not have ("team members", "case studies"), that skill comes first: UiChemy Custom Fields can create it with no extra plugin.
 - **Terms** are created and assigned with `uichemy-composer/cpt` (`ensure-term`, `set-terms`). A taxonomy with no terms makes every loop filtered by it render its `{% else %}` branch forever, which looks like a broken query.
 - **Publishing** is `uichemy-composer/post` / `page` action="update". A loop over drafts returns nothing: `get_posts()` defaults to `post_status: publish`, so an unpublished post is invisible to every listing you build here.

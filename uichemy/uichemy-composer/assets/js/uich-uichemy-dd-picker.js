@@ -22,6 +22,15 @@
 		return;
 	}
 
+	// Display text goes through wp.i18n (uich-dd-schema.js depends on wp-i18n, so it is
+	// there by now). Anything that becomes Twig - args, defaults, keys - is NOT wrapped.
+	var i18n = (window.wp && window.wp.i18n) || {};
+	var __ = i18n.__ || function (text) { return text; };
+	var sprintf = i18n.sprintf || function (fmt) {
+		var a = Array.prototype.slice.call(arguments, 1);
+		return fmt.replace(/%s/g, function () { return a.shift(); });
+	};
+
 	/* --------------------------- tiny DOM helper --------------------------- */
 	function el(tag, attrs, kids) {
 		var n = document.createElement(tag);
@@ -108,9 +117,9 @@
 			close();
 		}
 
-		var insertBtn = el("button", { class: "uich-dd-insert", text: "Insert", onclick: commit });
+		var insertBtn = el("button", { class: "uich-dd-insert", text: __( "Insert", "uichemy" ), onclick: commit });
 		var foot = el("div", { class: "uich-dd-foot" }, [
-			el("div", { class: "uich-dd-preview-wrap" }, [el("span", { text: "Output:" }), preview]),
+			el("div", { class: "uich-dd-preview-wrap" }, [el("span", { text: __( "Output:", "uichemy" ) }), preview]),
 			insertBtn,
 		]);
 
@@ -270,7 +279,7 @@
 		}
 
 		modal(
-			"Insert dynamic value",
+			__( "Insert dynamic value", "uichemy" ),
 			function (body, refresh, commit, setFootVisible, setInsertVisible) {
 				var search = "";
 
@@ -331,7 +340,7 @@
 						{
 							class: "uich-dd-row" + (f.provider ? " is-chain" : "") + (active ? " is-active" : "") + (pro ? " is-pro" : ""),
 							type: "button",
-							title: pro ? f.label + " — UiChemy Pro" : "",
+							title: pro ? sprintf( __( "%s — UiChemy Pro", "uichemy" ), f.label ) : "",
 							onclick: pro
 								? function () {
 										window.open(S.proUrl(), "_blank", "noopener");
@@ -341,7 +350,7 @@
 						[
 							el("span", { class: "uich-dd-row-label", text: f.label }),
 							pro
-								? el("span", { class: "uich-dd-pro", text: "PRO" })
+								? el("span", { class: "uich-dd-pro", text: __( "PRO", "uichemy" ) })
 								: el("span", { class: "uich-dd-row-meta", text: f.provider ? "›" : f.type || "" }),
 						],
 					);
@@ -396,7 +405,7 @@
 						el("input", {
 							class: "uich-dd-search",
 							type: "search",
-							placeholder: "Search fields…",
+							placeholder: __( "Search fields…", "uichemy" ),
 							value: search,
 							oninput: function (e) {
 								search = e.target.value;
@@ -486,17 +495,17 @@
 							// groups above. Surface it here as a "Navigation" entry that opens
 							// its own options builder and inserts {{ breadcrumbs_html() }}
 							// through this picker's same insert target.
-							if (matches({ label: "Breadcrumbs", key: "breadcrumbs" })) {
+							if (matches({ label: __( "Breadcrumbs", "uichemy" ), key: "breadcrumbs" })) {
 								// Pro, like its Elementor tag (Uich_DT_Breadcrumbs, unregistered
 								// in Free) and like breadcrumbs_html() in the engine.
 								var bcPro = !S.isPro();
-								list.appendChild(el("div", { class: "uich-dd-group", text: "Navigation" }));
+								list.appendChild(el("div", { class: "uich-dd-group", text: __( "Navigation", "uichemy" ) }));
 								list.appendChild(
 									el(
 										"button",
 										{
 											class: "uich-dd-row is-chain" + (bcPro ? " is-pro" : ""),
-											title: bcPro ? "Breadcrumbs — UiChemy Pro" : "",
+											title: bcPro ? sprintf( __( "%s — UiChemy Pro", "uichemy" ), __( "Breadcrumbs", "uichemy" ) ) : "",
 											type: "button",
 											onclick: function () {
 												if (bcPro) {
@@ -511,8 +520,8 @@
 											},
 										},
 										[
-											el("span", { class: "uich-dd-row-label", text: "Breadcrumbs" }),
-											bcPro ? el("span", { class: "uich-dd-pro", text: "PRO" }) : el("span", { class: "uich-dd-row-meta", text: "›" }),
+											el("span", { class: "uich-dd-row-label", text: __( "Breadcrumbs", "uichemy" ) }),
+											bcPro ? el("span", { class: "uich-dd-pro", text: __( "PRO", "uichemy" ) }) : el("span", { class: "uich-dd-row-meta", text: "›" }),
 										],
 									),
 								);
@@ -602,7 +611,7 @@
 						});
 						filterRow.appendChild(
 							select(
-								[{ value: "", label: "+ add filter" }].concat(
+								[{ value: "", label: __( "+ add filter", "uichemy" ) }].concat(
 									avail.map(function (f) {
 										return { value: f.name, label: f.label };
 									}),
@@ -627,7 +636,7 @@
 								},
 							),
 						);
-						opts2.appendChild(field("Filters", filterRow));
+						opts2.appendChild(field(__( "Filters", "uichemy" ), filterRow));
 
 						// Fallback.
 						opts2.appendChild(
@@ -636,7 +645,7 @@
 								el("input", {
 									class: "uich-dd-input",
 									value: state.fallback,
-									placeholder: "(optional)",
+									placeholder: __( "(optional)", "uichemy" ),
 									oninput: function (e) {
 										state.fallback = e.target.value;
 										refresh();
@@ -672,19 +681,19 @@
 		}
 
 		modal(
-			part === "open" ? "Insert loop start" : "Insert loop",
+			part === "open" ? __( "Insert loop start", "uichemy" ) : __( "Insert loop", "uichemy" ),
 			function (body, refresh) {
 				function render() {
 					body.innerHTML = "";
 					body.appendChild(
 						field(
-							"Show",
+							__( "Show", "uichemy" ),
 							select(
 								// Free loops over Posts only. Pro sources stay listed (marked
 								// "· Pro") but picking one bounces to pricing and keeps the
 								// current source — the server would return no items anyway.
 								S.LOOP_SOURCES.map(function (s) {
-									return { value: s.key, label: s.label + (S.loopSourceIsPro(s.key) ? " · Pro" : "") };
+									return { value: s.key, label: S.loopSourceIsPro(s.key) ? sprintf( __( "%s · Pro", "uichemy" ), s.label ) : s.label };
 								}),
 								state.sourceKey,
 								function (v) {
@@ -707,7 +716,7 @@
 					);
 					body.appendChild(
 						field(
-							"Variable name",
+							__( "Variable name", "uichemy" ),
 							el("input", {
 								class: "uich-dd-input",
 								value: state.alias,
@@ -720,7 +729,7 @@
 					);
 					body.appendChild(
 						field(
-							"How many",
+							__( "How many", "uichemy" ),
 							el("input", {
 								class: "uich-dd-input",
 								type: "number",
@@ -735,7 +744,7 @@
 					if (state.sourceKey === "get_posts") {
 						body.appendChild(
 							field(
-								"Post type",
+								__( "Post type", "uichemy" ),
 								el("input", {
 									class: "uich-dd-input",
 									value: state.postType,
@@ -750,11 +759,11 @@
 					if (state.sourceKey === "get_posts" || state.sourceKey === "get_products" || state.sourceKey === "get_terms") {
 						body.appendChild(
 							field(
-								"Category slug",
+								__( "Category slug", "uichemy" ),
 								el("input", {
 									class: "uich-dd-input",
 									value: state.term,
-									placeholder: "(optional)",
+									placeholder: __( "(optional)", "uichemy" ),
 									oninput: function (e) {
 										state.term = e.target.value;
 										refresh();
@@ -765,7 +774,7 @@
 					}
 					body.appendChild(
 						field(
-							"Order by",
+							__( "Order by", "uichemy" ),
 							select(
 								S.ORDERBY.map(function (o) {
 									return { value: o, label: o };
@@ -780,11 +789,11 @@
 					);
 					body.appendChild(
 						field(
-							"Order",
+							__( "Order", "uichemy" ),
 							select(
 								[
-									{ value: "DESC", label: "Newest / Z-A" },
-									{ value: "ASC", label: "Oldest / A-Z" },
+									{ value: "DESC", label: __( "Newest / Z-A", "uichemy" ) },
+									{ value: "ASC", label: __( "Oldest / A-Z", "uichemy" ) },
 								],
 								state.order,
 								function (v) {
@@ -821,13 +830,13 @@
 		}
 
 		modal(
-			part === "open" ? "Insert condition start" : "Insert condition",
+			part === "open" ? __( "Insert condition start", "uichemy" ) : __( "Insert condition", "uichemy" ),
 			function (body, refresh) {
 				function render() {
 					body.innerHTML = "";
 					body.appendChild(
 						field(
-							"Source",
+							__( "Source", "uichemy" ),
 							select(
 								// A <select> has no room for a PRO pill, and a condition on a
 								// Pro field would silently read null in Free — so here the
@@ -849,9 +858,9 @@
 					);
 					body.appendChild(
 						field(
-							"Field",
+							__( "Field", "uichemy" ),
 							select(
-								[{ value: "", label: "— choose —" }].concat(
+								[{ value: "", label: __( "— choose —", "uichemy" ) }].concat(
 									S.getFields(state.source).filter(function (f) {
 											return !S.fieldIsPro(state.source, f.key);
 										}).map(function (f) {
@@ -868,7 +877,7 @@
 					);
 					body.appendChild(
 						field(
-							"Condition",
+							__( "Condition", "uichemy" ),
 							select(
 								S.CONDITION_OPS.map(function (o) {
 									return { value: o.key, label: o.label };
@@ -885,7 +894,7 @@
 					if (state.op !== "is_set" && state.op !== "is_empty") {
 						body.appendChild(
 							field(
-								"Value",
+								__( "Value", "uichemy" ),
 								el("input", {
 									class: "uich-dd-input",
 									value: state.value,
@@ -915,11 +924,11 @@
 			return '<form data-atom-form="' + (state.name || "form").replace(/[^a-z0-9_-]/gi, "") + '">';
 		}
 		modal(
-			"Insert form start",
+			__( "Insert form start", "uichemy" ),
 			function (body, refresh) {
 				body.appendChild(
 					field(
-						"Form name",
+						__( "Form name", "uichemy" ),
 						el("input", {
 							class: "uich-dd-input",
 							value: state.name,
@@ -930,7 +939,7 @@
 						}),
 					),
 				);
-				body.appendChild(el("div", { class: "uich-dd-field" }, [el("span", { text: "Next" }), el("div", { class: "uich-dd-hint", text: "Add your <input>/<textarea> fields, then insert “Form end”. Submissions appear in wp-admin → Form Submissions." })]));
+				body.appendChild(el("div", { class: "uich-dd-field" }, [el("span", { text: __( "Next", "uichemy" ) }), el("div", { class: "uich-dd-hint", text: __( "Add your <input>/<textarea> fields, then insert “Form end”. Submissions appear in wp-admin → Form Submissions.", "uichemy" ) })]));
 			},
 			getTwig,
 			opts.onInsert || noop,
@@ -971,7 +980,7 @@
 			return "{{ breadcrumbs_html(" + args + ")|raw }}";
 		}
 		modal(
-			"Breadcrumbs",
+			__( "Breadcrumbs", "uichemy" ),
 			function (body, refresh) {
 				function textIn(key, ph) {
 					return el("input", {
@@ -988,25 +997,25 @@
 					c.addEventListener("change", function () { state[key] = c.checked; refresh(); });
 					return c;
 				}
-				body.appendChild(field("Home label", textIn("home_label", "Home")));
+				body.appendChild(field(__( "Home label", "uichemy" ), textIn("home_label", "Home")));
 				body.appendChild(
 					field(
-						"Separator",
+						__( "Separator", "uichemy" ),
 						select(
 							[
-								{ value: "/", label: "/  (slash)" },
-								{ value: "›", label: "›  (chevron)" },
-								{ value: "»", label: "»  (angle)" },
-								{ value: "•", label: "•  (dot)" },
-								{ value: "-", label: "-  (dash)" },
+								{ value: "/", label: __( "/  (slash)", "uichemy" ) },
+								{ value: "›", label: __( "›  (chevron)", "uichemy" ) },
+								{ value: "»", label: __( "»  (angle)", "uichemy" ) },
+								{ value: "•", label: __( "•  (dot)", "uichemy" ) },
+								{ value: "-", label: __( "-  (dash)", "uichemy" ) },
 							],
 							state.sep,
 							function (v) { state.sep = v; refresh(); },
 						),
 					),
 				);
-				body.appendChild(field("Post taxonomy", textIn("taxonomy", "category")));
-				body.appendChild(field("Prefix (optional)", textIn("prefix", "You are here:")));
+				body.appendChild(field(__( "Post taxonomy", "uichemy" ), textIn("taxonomy", "category")));
+				body.appendChild(field(__( "Prefix (optional)", "uichemy" ), textIn("prefix", "You are here:")));
 				body.appendChild(
 					field(
 						"Truncate labels (chars, 0 = off)",
@@ -1019,7 +1028,7 @@
 						}),
 					),
 				);
-				body.appendChild(field("Show current page", checkIn("show_current")));
+				body.appendChild(field(__( "Show current page", "uichemy" ), checkIn("show_current")));
 				body.appendChild(field("SEO schema (JSON-LD)", checkIn("schema")));
 			},
 			getTwig,
@@ -1098,7 +1107,7 @@
 			document.dispatchEvent(new CustomEvent("uich:dd:insert", { detail: { text: text } }));
 			if (navigator.clipboard && navigator.clipboard.writeText) {
 				navigator.clipboard.writeText(text);
-				window.alert("Click into the Code editor first, then paste. Snippet copied:\n\n" + text);
+				window.alert(__( "Click into the Code editor first, then paste. Snippet copied:", "uichemy" ) + "\n\n" + text);
 			}
 		},
 	};
@@ -1109,14 +1118,14 @@
 
 	// The single "+ Dynamic" menu's items → what each inserts.
 	window.UichDD.MENU = [
-		{ mode: "value", label: "Dynamic value", icon: "ti-database" },
-		{ mode: "loop-start", label: "Loop start", icon: "ti-repeat" },
-		{ mode: "loop-end", label: "Loop end", icon: "ti-repeat-off" },
-		{ mode: "condition-start", label: "Condition start", icon: "ti-git-branch" },
-		{ mode: "condition-end", label: "Condition end", icon: "ti-git-branch" },
-		{ mode: "form-start", label: "Form start", icon: "ti-forms" },
-		{ mode: "form-end", label: "Form end", icon: "ti-x" },
-		{ mode: "breadcrumbs", label: "Breadcrumbs", icon: "ti-directions" },
+		{ mode: "value", label: __( "Dynamic value", "uichemy" ), icon: "ti-database" },
+		{ mode: "loop-start", label: __( "Loop start", "uichemy" ), icon: "ti-repeat" },
+		{ mode: "loop-end", label: __( "Loop end", "uichemy" ), icon: "ti-repeat-off" },
+		{ mode: "condition-start", label: __( "Condition start", "uichemy" ), icon: "ti-git-branch" },
+		{ mode: "condition-end", label: __( "Condition end", "uichemy" ), icon: "ti-git-branch" },
+		{ mode: "form-start", label: __( "Form start", "uichemy" ), icon: "ti-forms" },
+		{ mode: "form-end", label: __( "Form end", "uichemy" ), icon: "ti-x" },
+		{ mode: "breadcrumbs", label: __( "Breadcrumbs", "uichemy" ), icon: "ti-directions" },
 	];
 
 	// Convenience: open the right builder (or insert a closing token) and route through the bridge.

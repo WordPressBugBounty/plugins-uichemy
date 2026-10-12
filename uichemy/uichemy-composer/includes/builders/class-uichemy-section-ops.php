@@ -791,9 +791,11 @@ if ( ! class_exists( 'UiChemy_Section_Ops' ) ) {
 				$scope    = '.uichemy-composer-' . sanitize_html_class( $uid );
 
 				if ( ! empty( $settings['raw_html'] ) && class_exists( 'Uich_Dynamic' ) ) {
-					$settings['raw_html'] = Uich_Dynamic::render_html(
+					// Judged by the author of the post these sections belong to.
+					$settings['raw_html'] = Uich_Dynamic::render_authored(
 						(string) $settings['raw_html'],
-						array( 'widget_id' => $uid )
+						array( 'widget_id' => $uid ),
+						(int) $post_id
 					);
 				}
 

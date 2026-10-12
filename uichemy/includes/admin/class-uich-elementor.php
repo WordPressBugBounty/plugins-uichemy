@@ -103,7 +103,7 @@ if ( ! class_exists( 'Uich_Elementor' ) ) {
 			$element->start_controls_section(
 				'custom_css_section',
 				array(
-					'label' => esc_html__( 'UiChemy : Custom CSS', 'uichemy' ),
+					'label' => esc_html__( 'Additional CSS', 'uichemy' ),
 					'tab'   => Controls_Manager::TAB_ADVANCED,
 				)
 			);

@@ -149,7 +149,7 @@ if ( ! class_exists( 'Uich_Composer_Loader' ) ) {
 			}
 
 			echo '<div class="notice notice-warning"><p>';
-			echo esc_html__( 'UiChemy now includes Composer, so the standalone Protuno (or Protuno Pro) plugin is being retired automatically. If this message keeps appearing, deactivate that plugin manually. Until then Composer stays disabled to avoid a conflict.', 'uichemy' );
+			echo esc_html__( 'This plugin now includes Composer, so the standalone Protuno (or Protuno Pro) plugin is being retired automatically. If this message keeps appearing, deactivate that plugin manually. Until then Composer stays disabled to avoid a conflict.', 'uichemy' );
 			echo '</p></div>';
 		}
 

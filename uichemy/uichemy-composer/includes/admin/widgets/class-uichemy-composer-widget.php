@@ -302,6 +302,16 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 				)
 			);
 
+			// Translations of this widget's visible text, written onto a TRANSLATED copy of the
+			// page by WPML's translation editor (see UiChemy_WPML_Composer_Strings). Registered
+			// so Elementor round-trips it through the editor and hands it to render().
+			$this->add_control(
+				'uich_i18n',
+				array(
+					'type' => \Elementor\Controls_Manager::HIDDEN,
+				)
+			);
+
 			// Where this widget's CSS / JS is printed: '' = Normal (the long-standing
 			// output), 'head' = Before Head, 'body' = Before Body (end of the body).
 			$this->add_control(
@@ -3024,6 +3034,20 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
       }catch(e){}
     });
   }
+  // Tweens whose targets ALL left the document (the thrown-away DOM) keep running
+  // otherwise, a repeat:-1 marquee or a pointer quickTo for ever, one more set per
+  // edit. A tween with any target still on the page, or a non-DOM target, stays.
+  // Same rule as killDetachedTweens() in composer-elementor.jsx.
+  try{
+    if(window.gsap&&window.gsap.globalTimeline&&window.gsap.globalTimeline.getChildren){
+      window.gsap.globalTimeline.getChildren(true,true,false).forEach(function(tw){
+        try{
+          var tg=tw.targets?tw.targets():[];
+          if(tg.length&&tg.every(function(el){ return el&&el.nodeType===1&&!document.contains(el); })){ tw.kill(); }
+        }catch(e){}
+      });
+    }
+  }catch(e){}
   // When the shell confirms a reload is coming, this section's script is NOT run
   // here: the reload runs it again over fresh nodes, and a first run that loads a
   // module would finish against the nodes the reload has since replaced — failing
@@ -3353,7 +3377,10 @@ JS;
 			if ( ! defined( 'UICHEMY_URL' ) ) {
 				return;
 			}
-			$ver = defined( 'UICHEMY_VERSION' ) ? UICHEMY_VERSION : false;
+			// Versioned by the bundled GSAP release, not the plugin version: a GSAP
+			// update ships inside a plugin update that may keep the same number, and
+			// a browser or CDN still serving the old file mixes core and plugins.
+			$ver = '3.15.0';
 			wp_enqueue_script( 'uichemy-gsap-core', UICHEMY_URL . 'assets/js/vendor/gsap/gsap.min.js', array(), $ver, true );
 			wp_enqueue_script( 'uichemy-gsap-scrolltrigger', UICHEMY_URL . 'assets/js/vendor/gsap/ScrollTrigger.min.js', array( 'uichemy-gsap-core' ), $ver, true );
 			wp_enqueue_script( 'uichemy-gsap-motionpath', UICHEMY_URL . 'assets/js/vendor/gsap/MotionPathPlugin.min.js', array( 'uichemy-gsap-core' ), $ver, true );
@@ -3400,7 +3427,10 @@ JS;
 			// pipeline (slots, CSS scoping, dynamic tags) runs on the result.
 			$had_dynamic = class_exists( 'Uich_Dynamic' ) && Uich_Dynamic::has_dynamic( $raw_html );
 			if ( $had_dynamic ) {
-				$raw_html = Uich_Dynamic::render_html( $raw_html, array( 'widget_id' => $this->get_id() ) );
+				// Trust follows the author of the document this widget belongs to: an author
+				// without unfiltered_html gets an untrusted render (published content only,
+				// output filtered like their own HTML). See Uich_Dynamic::render_authored().
+				$raw_html = Uich_Dynamic::render_authored( $raw_html, array( 'widget_id' => $this->get_id() ) );
 			}
 
 			// Extract <uichemy:*> dynamic tags before DOMDocument sees them so
@@ -3434,6 +3464,13 @@ JS;
 				}
 			}
 
+			// Translations: this widget's `uich_i18n` map (a translated copy of a page) and,
+			// inside a Theme Builder template, string translation. After the slots, so an
+			// author's override is what gets translated.
+			if ( class_exists( 'UiChemy_I18n_Strings' ) ) {
+				UiChemy_I18n_Strings::apply_translations( $dom, $settings );
+			}
+
 			$widget_scope_selector = '.elementor-element-' . $this->get_id();
 			$style_nodes           = $dom->getElementsByTagName( 'style' );
 			if ( $style_nodes && $style_nodes->length > 0 ) {
@@ -3463,6 +3500,10 @@ JS;
 			// tree; the link is materialised on the real front-end render.
 			if ( ! $is_editor ) {
 				$this->wrap_element_links( $dom );
+				// Same reason: removing <title> / <meta> would shift the editor's paths.
+				if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
+					UiChemy_Composer_Renderer::strip_document_tags( $dom );
+				}
 			}
 
 			$output = '';
@@ -3574,6 +3615,18 @@ JS;
 
 			if ( ! $is_editor && class_exists( 'UiChemy_Fast_Load' ) ) {
 				$output = UiChemy_Fast_Load::optimize_images( $output, $this->get_id() );
+			}
+
+			// Section JSON-LD after Twig: values arrive HTML-escaped (&#8220;, &amp;) and
+			// may break the JSON; rebuild it as real JSON, and drop it when invalid.
+			if ( class_exists( 'UiChemy_Composer_Renderer' ) && false !== stripos( $output, 'ld+json' ) ) {
+				$output = (string) preg_replace_callback(
+					'#(<script\b[^>]*application/ld\+json[^>]*>)(.*?)(</script>)#is',
+					function ( $m ) {
+						return \UiChemy_Composer_Renderer::safe_script_block( $m[1], $m[2], $m[3] );
+					},
+					$output
+				);
 			}
 
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- raw_html markup is kses-filtered on save for users without unfiltered_html (Elementor pipeline); admins author it raw, mirroring core's Custom HTML block.

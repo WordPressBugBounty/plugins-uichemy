@@ -57,6 +57,7 @@ require_once $uichemy_field_layer . 'class-uich-field-provider.php';
 require_once $uichemy_field_layer . 'class-uich-field-provider-meta.php';
 require_once $uichemy_field_layer . 'class-uich-field-provider-acf.php';
 require_once $uichemy_field_layer . 'class-uich-field-provider-jet.php';
+require_once $uichemy_field_layer . 'class-uich-field-provider-uichemy.php';
 require_once $uichemy_field_layer . 'class-uich-field-registry.php';
 require_once $uichemy_field_layer . 'class-uich-field-relations.php';
 require_once $uichemy_field_layer . 'class-uich-field-service.php';
@@ -65,6 +66,7 @@ $uichemy_model_layer = plugin_dir_path( dirname( __FILE__ ) ) . 'model/';
 require_once $uichemy_model_layer . 'class-uich-model-provider.php';
 require_once $uichemy_model_layer . 'class-uich-model-acf.php';
 require_once $uichemy_model_layer . 'class-uich-model-jet.php';
+require_once $uichemy_model_layer . 'class-uich-model-uichemy.php';
 require_once $uichemy_model_layer . 'class-uich-model.php';
 require_once $uichemy_model_layer . 'class-uich-model-terms.php';
 

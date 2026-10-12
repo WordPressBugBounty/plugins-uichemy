@@ -108,13 +108,13 @@ if ( ! class_exists( 'Uich_Enqueue' ) ) {
 					);
 
 					wp_enqueue_script(
-						'uich-nxt-js',
+						'uich-admin-js',
 						UICH_URL . 'assets/js/index.js',
 						array_merge( $scripts_dep, array( 'lodash', 'code-editor', 'csslint', 'wp-i18n' ) ),
 						UICH_VERSION,
 						true
 					);
-					wp_set_script_translations( 'uich-nxt-js', 'uichemy' );
+					wp_set_script_translations( 'uich-admin-js', 'uichemy' );
 				}
 			}
 		}

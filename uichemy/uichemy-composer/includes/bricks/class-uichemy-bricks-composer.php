@@ -224,7 +224,7 @@ class UiChemy_Bricks_Composer extends \Bricks\Element {
 			// adapter.js bridges the two via `window.UiChemyBricksCanvasOpen`,
 			// called on `window.top` from decorateCanvasButtons() (iframe side).
 			$cta = '<div class="uichemy-bricks-canvas-cta">'
-				. '<p style="margin:0 0 12px;">' . esc_html__( 'Add HTML/CSS/JS via the UiChemy panel to render this element.', 'uichemy' ) . '</p>'
+				. '<p style="margin:0 0 12px;">' . esc_html__( 'Add HTML/CSS/JS via the Composer panel to render this element.', 'uichemy' ) . '</p>'
 				. '<button type="button" class="uichemy-bricks-canvas-edit-btn" data-uichemy-element-id="' . esc_attr( $this->id ) . '" '
 				. 'style="padding:8px 22px;border:1px solid currentColor;border-radius:6px;background:transparent;color:inherit;font:inherit;font-weight:600;cursor:pointer;">'
 				. esc_html__( 'Open Composer', 'uichemy' )
@@ -301,7 +301,8 @@ class UiChemy_Bricks_Composer extends \Bricks\Element {
 		$raw_html    = (string) $render_settings['raw_html'];
 		$had_dynamic = class_exists( 'Uich_Dynamic' ) && Uich_Dynamic::has_dynamic( $raw_html );
 		if ( $had_dynamic ) {
-			$render_settings['raw_html'] = Uich_Dynamic::render_html( $raw_html, array( 'widget_id' => $uid ) );
+			// Same trust rule as the Elementor widget (Uich_Dynamic::render_authored()).
+			$render_settings['raw_html'] = Uich_Dynamic::render_authored( $raw_html, array( 'widget_id' => $uid ) );
 			foreach ( array_keys( $render_settings ) as $k ) {
 				if ( 0 === strpos( $k, 'slot_' ) ) {
 					unset( $render_settings[ $k ] );

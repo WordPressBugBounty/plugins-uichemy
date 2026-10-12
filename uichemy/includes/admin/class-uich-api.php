@@ -227,7 +227,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			apply_filters( 'uich_manage_usermanager', 'set_user', $newuser );
 
 			$response = array(
-				'message'  => 'Set Successful',
+				'message'  => esc_html__( 'Set Successful', 'uichemy' ),
 				'new_user' => apply_filters( 'uich_manage_usermanager', 'get_user' ),
 			);
 
@@ -322,7 +322,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			if ( ! class_exists( '\Elementor\Plugin' ) ) {
 				return array(
 					'success' => false,
-					'message' => 'Elementor is not active.',
+					'message' => esc_html__( 'Elementor is not active.', 'uichemy' ),
 				);
 			}
 
@@ -807,14 +807,14 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 */
 		public function uich_handle_nexter_theme_update( WP_REST_Request $request ) {
 			if ( ! current_user_can( 'update_themes' ) ) {
-				return new WP_Error( 'forbidden', 'You do not have permission to update themes.', array( 'status' => 403 ) );
+				return new WP_Error( 'forbidden', __( 'You do not have permission to update themes.', 'uichemy' ), array( 'status' => 403 ) );
 			}
 
 			if ( ! wp_get_theme( 'nexter' )->exists() ) {
 				return array(
 					'success' => false,
 					'reason'  => 'not_installed',
-					'message' => 'Nexter Theme is not installed.',
+					'message' => esc_html__( 'Nexter Theme is not installed.', 'uichemy' ),
 				);
 			}
 
@@ -844,7 +844,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				return array(
 					'success' => false,
 					'reason'  => 'update_failed',
-					'message' => 'Update could not be completed.',
+					'message' => esc_html__( 'Update could not be completed.', 'uichemy' ),
 				);
 			}
 
@@ -873,7 +873,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			// (`menu_items['plugins']`, wp-includes/capabilities.php:654-665), so a
 			// site admin must not be able to activate through here either.
 			if ( ! current_user_can( 'activate_plugins' ) ) {
-				return new WP_Error( 'forbidden', 'You do not have permission to activate plugins.', array( 'status' => 403 ) );
+				return new WP_Error( 'forbidden', __( 'You do not have permission to activate plugins.', 'uichemy' ), array( 'status' => 403 ) );
 			}
 
 			$slug              = sanitize_key( (string) $request->get_param( 'slug' ) );
@@ -881,7 +881,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$with_nexter_theme = $request->get_param( 'with_nexter_theme' ) !== false;
 
 			if ( ! $resolved ) {
-				return new WP_Error( 'invalid_slug', 'Unknown plugin slug.', array( 'status' => 400 ) );
+				return new WP_Error( 'invalid_slug', __( 'Unknown plugin slug.', 'uichemy' ), array( 'status' => 400 ) );
 			}
 
 			if ( ! function_exists( 'is_plugin_active' ) || ! function_exists( 'activate_plugin' ) ) {
@@ -894,7 +894,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				return array(
 					'success' => false,
 					'reason'  => 'not_installed',
-					'message' => 'Plugin is not installed.',
+					'message' => esc_html__( 'Plugin is not installed.', 'uichemy' ),
 				);
 			}
 
@@ -955,11 +955,11 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$with_nexter_theme = $request->get_param( 'with_nexter_theme' ) !== false;
 
 			if ( ! $resolved ) {
-				return new WP_Error( 'invalid_slug', 'Unknown plugin slug.', array( 'status' => 400 ) );
+				return new WP_Error( 'invalid_slug', __( 'Unknown plugin slug.', 'uichemy' ), array( 'status' => 400 ) );
 			}
 
 			if ( ! current_user_can( 'install_plugins' ) || ! current_user_can( 'activate_plugins' ) ) {
-				return new WP_Error( 'forbidden', 'You do not have permission to install plugins.', array( 'status' => 403 ) );
+				return new WP_Error( 'forbidden', __( 'You do not have permission to install plugins.', 'uichemy' ), array( 'status' => 403 ) );
 			}
 
 			$file = $resolved['file'];
@@ -980,7 +980,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				return array(
 					'success' => false,
 					'reason'  => 'wporg_lookup_failed',
-					'message' => 'Could not look up plugin on wordpress.org.',
+					'message' => esc_html__( 'Could not look up plugin on wordpress.org.', 'uichemy' ),
 				);
 			}
 
@@ -1115,11 +1115,11 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$resolved = $this->uich_resolve_plugin_slug( $slug );
 
 			if ( ! $resolved ) {
-				return new WP_Error( 'invalid_slug', 'Unknown plugin slug.', array( 'status' => 400 ) );
+				return new WP_Error( 'invalid_slug', __( 'Unknown plugin slug.', 'uichemy' ), array( 'status' => 400 ) );
 			}
 
 			if ( ! current_user_can( 'update_plugins' ) ) {
-				return new WP_Error( 'forbidden', 'You do not have permission to update plugins.', array( 'status' => 403 ) );
+				return new WP_Error( 'forbidden', __( 'You do not have permission to update plugins.', 'uichemy' ), array( 'status' => 403 ) );
 			}
 
 			$file = $resolved['file'];
@@ -1133,7 +1133,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				return array(
 					'success' => false,
 					'reason'  => 'not_installed',
-					'message' => 'Plugin is not installed.',
+					'message' => esc_html__( 'Plugin is not installed.', 'uichemy' ),
 				);
 			}
 
@@ -1163,7 +1163,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				return array(
 					'success' => false,
 					'reason'  => 'update_failed',
-					'message' => 'Update could not be completed.',
+					'message' => esc_html__( 'Update could not be completed.', 'uichemy' ),
 				);
 			}
 
@@ -1657,7 +1657,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$new_import           = ( isset( $_GET['newImport'] ) && ! empty( $_GET['newImport'] ) ) ? sanitize_text_field( wp_unslash( $_GET['newImport'] ) ) : 'true';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 			$post_type            = ( isset( $_GET['postType'] ) && ! empty( $_GET['postType'] ) ) ? sanitize_text_field( wp_unslash( $_GET['postType'] ) ) : 'page';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 			$nexter_post_sub_type = ( isset( $_GET['nexterPostSubType'] ) && ! empty( $_GET['nexterPostSubType'] ) ) ? sanitize_text_field( wp_unslash( $_GET['nexterPostSubType'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
-			$post_title           = ( isset( $_GET['postTitle'] ) && ! empty( $_GET['postTitle'] ) ) ? sanitize_text_field( wp_unslash( $_GET['postTitle'] ) ) : 'New Post - UiChemy';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+			$post_title           = ( isset( $_GET['postTitle'] ) && ! empty( $_GET['postTitle'] ) ) ? sanitize_text_field( wp_unslash( $_GET['postTitle'] ) ) : 'New Post';  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 
 			// postType: 'page' | 'nexter' | 'gutenberg_pattern'
 			$post_type_map = array(
@@ -1849,7 +1849,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			if ( ! class_exists( '\Bricks\Theme' ) || ! class_exists( ( '\Bricks\Templates' ) ) || ! class_exists( 'Bricks\Frontend' ) ) {
 				return array(
 					'success' => false,
-					'message' => 'Please Install & Activate Bricks First.',
+					'message' => __( 'Please Install & Activate Bricks First.', 'uichemy' ),
 				);
 			}
 
@@ -2128,14 +2128,14 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			if ( ! class_exists( '\Bricks\Theme' ) || ! class_exists( ( '\Bricks\Templates' ) ) ) {
 				return array(
 					'success' => false,
-					'message' => 'Please Install & Activate Bricks First.',
+					'message' => __( 'Please Install & Activate Bricks First.', 'uichemy' ),
 				);
 			}
 
 			if ( empty( $_FILES ) || empty( $_FILES['files'] ) ) {  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
 				return array(
 					'success' => false,
-					'message' => 'No file provided',
+					'message' => esc_html__( 'No file provided', 'uichemy' ),
 				);
 			}
 

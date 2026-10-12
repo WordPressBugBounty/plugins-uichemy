@@ -3,12 +3,13 @@
  * Plugin Name:       UiChemy - Convert Figma, Prompts and AI Builds to Elementor, Gutenberg and Bricks
  * Plugin URI:        https://uichemy.com
  * Description:       Convert Figma Design to 100% Editable WordPress websites in Elementor Website Builder and Gutenberg aka WordPress Block Editor.
- * Version:           5.2.5
+ * Version:           5.3.0
  * Author:            POSIMYTH
  * Author URI:        https://posimyth.com
  * License:           GPLv3
  * License URI:       https://www.gnu.org/licenses/gpl-3.0.html
  * Text Domain:       uichemy
+ * Domain Path:       /languages
  * Requires at least: 6.9
  * Tested up to:      7.1
  * Requires PHP:      7.4
@@ -22,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'UICH_VERSION', '5.2.5' );
+define( 'UICH_VERSION', '5.3.0' );
 define( 'UICH_FILE', __FILE__ );
 define( 'UICH_PATH', plugin_dir_path( __FILE__ ) );
 define( 'UICH_URL', plugins_url( '/', __FILE__ ) );
@@ -42,6 +43,12 @@ require UICH_PATH . 'includes/class-uich-brand.php';
 require UICH_PATH . 'includes/class-uich-uichemy.php';
 
 /**
+ * Per-feature on/off switches (Settings > Features). Ahead of every module
+ * loader below, because each one asks uich_feature_enabled() before booting.
+ */
+require UICH_PATH . 'includes/class-uich-features.php';
+
+/**
  * The merged UiChemy builder runtime (uichemy-composer/).
  *
  * Required here, at plugin-file load time, rather than from
@@ -50,3 +57,12 @@ require UICH_PATH . 'includes/class-uich-uichemy.php';
  * which is unreliable to add while that same hook is mid-flight.
  */
 require UICH_PATH . 'includes/composer/class-uich-composer-loader.php';
+
+/**
+ * The merged UiChemy Custom Fields runtime (includes/fields/).
+ *
+ * Required here for the same reason the composer loader is: the module registers
+ * its own `plugins_loaded` callbacks, and adding those while that hook is already
+ * mid-flight is unreliable.
+ */
+require UICH_PATH . 'includes/fields/class-uich-fields-loader.php';

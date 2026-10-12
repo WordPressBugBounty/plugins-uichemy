@@ -21,6 +21,140 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 
 		private static $loaded = false;
 
+		/**
+		 * Depth of untrusted renders in progress (see untrusted()).
+		 *
+		 * @var int
+		 */
+		private static $untrusted = 0;
+
+		/**
+		 * Documents whose templates are being rendered, innermost last (see push_document()).
+		 *
+		 * @var int[]
+		 */
+		private static $documents = array();
+
+		/**
+		 * Is the template being rendered from an UNTRUSTED author?
+		 *
+		 * WordPress lets only users with `unfiltered_html` publish code; everyone else's
+		 * content is filtered and may only show what they themselves may read. Template text
+		 * is code, so a template from an author without `unfiltered_html` runs in this mode:
+		 * functions see published, public content only, viewer-gated fields stay closed
+		 * whoever is viewing, and the output is filtered like the author's own HTML.
+		 *
+		 * @return bool
+		 */
+		public static function is_untrusted() {
+			return self::$untrusted > 0;
+		}
+
+		/**
+		 * Run a callback as an untrusted render.
+		 *
+		 * @param callable $fn Callback.
+		 * @return mixed
+		 */
+		public static function untrusted( callable $fn ) {
+			++self::$untrusted;
+			try {
+				return $fn();
+			} finally {
+				--self::$untrusted;
+			}
+		}
+
+		/**
+		 * Declare the document (template or post) whose content is about to render, so trust
+		 * is judged by ITS author (a Theme Builder header renders on every page, but belongs
+		 * to the template, not to the page it appears on). Pair with pop_document().
+		 *
+		 * @param int $id Post id.
+		 * @return void
+		 */
+		public static function push_document( $id ) {
+			self::$documents[] = (int) $id;
+		}
+
+		/** Undo push_document(). */
+		public static function pop_document() {
+			array_pop( self::$documents );
+		}
+
+		/**
+		 * The post whose content is rendering: a pushed document, else Elementor's current
+		 * document, else the current post.
+		 *
+		 * @return int
+		 */
+		public static function current_document_id() {
+			if ( self::$documents ) {
+				return (int) end( self::$documents );
+			}
+			if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->documents ) ) {
+				$doc = \Elementor\Plugin::$instance->documents->get_current();
+				if ( $doc && method_exists( $doc, 'get_main_id' ) ) {
+					$id = (int) $doc->get_main_id();
+					if ( $id ) {
+						return $id;
+					}
+				}
+			}
+			return (int) get_the_ID();
+		}
+
+		/**
+		 * May this document's templates use the full engine? Same rule as raw section JS
+		 * (UiChemy_Composer_Widget::content_allows_raw_code()): its author holds
+		 * `unfiltered_html`. With no document at all, the current user decides.
+		 *
+		 * @param int $post_id Post id (0 = current document).
+		 * @return bool
+		 */
+		public static function author_trusted( $post_id = 0 ) {
+			$post_id = $post_id ? (int) $post_id : self::current_document_id();
+			if ( ! $post_id ) {
+				$trusted = current_user_can( 'unfiltered_html' );
+			} else {
+				$author  = (int) get_post_field( 'post_author', $post_id );
+				$trusted = $author > 0 && user_can( $author, 'unfiltered_html' );
+			}
+			/**
+			 * Filter whether a document's templates run with the full engine.
+			 *
+			 * @param bool $trusted Author holds unfiltered_html.
+			 * @param int  $post_id Document id (0 when there is none).
+			 */
+			return (bool) apply_filters( 'uich_dynamic_author_trusted', $trusted, $post_id );
+		}
+
+		/**
+		 * Render author-written HTML with the trust its author has earned: the full engine
+		 * for a trusted author, otherwise an untrusted render (published content only,
+		 * viewer-gated fields closed, raw output filtered with wp_kses_post() - so Twig can
+		 * never print markup the author could not have saved). The template's own static
+		 * markup is not re-filtered: it went through kses when it was saved.
+		 *
+		 * @param string $html      Template.
+		 * @param array  $overrides Extra context.
+		 * @param int    $post_id   Document id (0 = current document).
+		 * @return string
+		 */
+		public static function render_authored( $html, array $overrides = array(), $post_id = 0 ) {
+			if ( ! self::has_dynamic( $html ) ) {
+				return $html;
+			}
+			if ( self::author_trusted( $post_id ) ) {
+				return self::render_html( $html, $overrides );
+			}
+			return (string) self::untrusted(
+				function () use ( $html, $overrides ) {
+					return self::render_html( $html, $overrides );
+				}
+			);
+		}
+
 		/** Register the editor-preview + field-introspection REST routes. */
 		public static function init() {
 			add_action( 'rest_api_init', array( __CLASS__, 'register_preview_route' ) );
@@ -206,7 +340,7 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		}
 
 		/**
-		 * Introspect the site's real custom fields (ACF / JetEngine / registered meta)
+		 * Introspect the site's real custom fields (UiChemy Custom Fields / ACF / JetEngine / registered meta)
 		 * per provider, plus the list of public post types - so the visual picker can
 		 * list actual field names instead of making the user type meta('key'). Each
 		 * field carries a `metaKey` the picker compiles to post.meta('key').
@@ -251,7 +385,7 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 				);
 			}
 
-			// Custom fields (ACF / JetEngine / registered meta) are a Pro tag: Free
+			// Custom fields (UiChemy Custom Fields / ACF / JetEngine / registered meta) are a Pro tag: Free
 			// resolves nothing but the five free fields, so listing them in the picker
 			// would only offer bindings that render empty. Post types stay — the Loop
 			// tab's "Post type" select is a Free feature and holds no field data.
@@ -305,10 +439,27 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 					// reported rather than hidden - with ACF and JetEngine both
 					// defining a name, whichever the template reads through decides
 					// the value, and that is worth knowing before binding it.
-					foreach ( $out[ $in ] as $existing ) {
-						if ( $existing['key'] === $entry['key'] ) {
-							continue 2;
+					//
+					// The same NAME on two different post types is not a collision:
+					// the token is identical and each type resolves its own field.
+					// Dropping the second entry hid it from every template of that
+					// type, so widen the first entry's postTypes instead.
+					foreach ( $out[ $in ] as $i => $existing ) {
+						if ( $existing['key'] !== $entry['key'] ) {
+							continue;
 						}
+
+						$had = isset( $existing['postTypes'] ) ? (array) $existing['postTypes'] : array();
+						$new = isset( $entry['postTypes'] ) ? (array) $entry['postTypes'] : array();
+
+						// Either one unscoped means it already reaches every type.
+						if ( $had && $new ) {
+							$out[ $in ][ $i ]['postTypes'] = array_values( array_unique( array_merge( $had, $new ) ) );
+						} elseif ( ! $new ) {
+							unset( $out[ $in ][ $i ]['postTypes'] );
+						}
+
+						continue 2;
 					}
 
 					$out[ $in ][] = $entry;
@@ -528,7 +679,7 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		 *
 		 * action="schema" (default) returns the whole model in one payload: build readiness
 		 * (`platform` — what check-config used to answer on its own), public post types,
-		 * taxonomies, the ACF / registered-meta field map, nav menus + locations, and WooCommerce.
+		 * taxonomies, the custom-field map (every field provider), nav menus + locations, and WooCommerce.
 		 * action="entities" resolves concrete records (kind=posts|terms|users) to real ids.
 		 *
 		 * Read-only, no side effects.
@@ -557,7 +708,7 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		 * Every dynamic token this build can resolve, for an agent that would
 		 * otherwise guess field names.
 		 *
-		 * describe_site() reports CUSTOM fields (ACF / registered meta) — the ones
+		 * describe_site() reports CUSTOM fields (every field provider) — the ones
 		 * that differ per site. This reports the BUILT-IN ones, which don't: the
 		 * accessors on each provider. Both matter, and a binding written from a
 		 * guessed accessor renders empty rather than erroring, so there is nothing
@@ -651,7 +802,7 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 					'tokens'   => 'For the BUILT-IN accessors (post.title, product.price, product.sale_percentage, …) call uichemy-composer/dynamic (action="list-fields"). This payload only carries the custom fields.',
 					'image'    => "{{ post.meta('metaKey').src('large') }} for an image field - but ONLY when the field stores an attachment ID or array. Check the entry's returnFormat: on an ACF image field set to \"Image URL\" this token renders EMPTY, because there is no id to derive a size from.",
 					'repeater' => 'A repeater entry carries subFields and a ready loopExample. Its body binds row.<subFieldName>, not post.meta().',
-					'options'  => 'fields.options are site-wide values on an ACF or JetEngine options page. They belong to no post, so a post.meta() token can never reach them.',
+					'options'  => 'fields.options are site-wide values on an ACF or JetEngine options page (UiChemy Custom Fields has none). They belong to no post, so a post.meta() token can never reach them.',
 					'loop'     => 'Build listings with uichemy-composer/dynamic (action="create-loop") using a post type from post_types[].name.',
 					'taxonomy' => 'Filter by taxonomies[].name and a real term resolve terms with action="entities", kind="terms".',
 					'model'    => 'To CREATE a post type, taxonomy or field, call uichemy-composer/cpt. To read or write field VALUES, call uichemy-composer/custom-fields.',
@@ -868,7 +1019,20 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 				$overrides['post'] = self::post_provider( $preview_post );
 			}
 
-			return new WP_REST_Response( array( 'html' => self::render_html( $html, $overrides ) ), 200 );
+			// The template comes from the request (the document open in the editor). It gets the
+			// full engine only when the requester may publish code AND the edited document's
+			// author may: an admin previewing a Contributor's section must not run it trusted.
+			$trusted = current_user_can( 'unfiltered_html' ) && ( ! $post_id || self::author_trusted( $post_id ) );
+			if ( $trusted ) {
+				$out = self::render_html( $html, $overrides );
+			} else {
+				$out = (string) self::untrusted(
+					function () use ( $html, $overrides ) {
+						return self::render_html( $html, $overrides );
+					}
+				);
+			}
+			return new WP_REST_Response( array( 'html' => $out ), 200 );
 		}
 
 		/** Require engine files once. */

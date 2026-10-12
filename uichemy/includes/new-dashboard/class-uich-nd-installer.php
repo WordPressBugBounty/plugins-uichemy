@@ -260,13 +260,13 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 			if ( ! $file ) {
 				return new WP_Error(
 					'uichemy_missing',
-					__( 'UiChemy could not be located. Activate it from the Plugins screen.', 'uichemy' ),
+					__( 'The plugin could not be located. Activate it from the Plugins screen.', 'uichemy' ),
 					array( 'status' => 500 )
 				);
 			}
 
 			if ( is_plugin_active( $file ) ) {
-				return self::uichemy_payload( 'already_active', __( 'UiChemy is already active.', 'uichemy' ) );
+				return self::uichemy_payload( 'already_active', __( 'The plugin is already active.', 'uichemy' ) );
 			}
 			return self::activate_uichemy_file( $file );
 		}
@@ -282,7 +282,7 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		 */
 		private static function activate_uichemy_file( $file, $success_action = 'activated', $success_message = null ) {
 			if ( null === $success_message ) {
-				$success_message = __( 'UiChemy installed and activated.', 'uichemy' );
+				$success_message = __( 'Plugin installed and activated.', 'uichemy' );
 			}
 			$threw = null;
 			try {
@@ -304,8 +304,8 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 				'action'       => 'activate_url',
 				'plugin'       => 'uichemy',
 				'message'      => $threw
-					? __( 'UiChemy installed. Finish activation in WP-Admin.', 'uichemy' )
-					: __( 'UiChemy installed. Click to activate in WP-Admin.', 'uichemy' ),
+					? __( 'Plugin installed. Finish activation in WP-Admin.', 'uichemy' )
+					: __( 'Plugin installed. Click to activate in WP-Admin.', 'uichemy' ),
 				'activate_url' => self::activation_url( $file ),
 				'uichemy'      => Uich_ND_Settings::detect_uichemy(),
 			);
@@ -596,7 +596,7 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 				$detail   = is_array( $messages ) ? trim( implode( ' ', $messages ) ) : '';
 				return new WP_Error(
 					'uichemy_install_failed',
-					trim( __( 'UiChemy installation failed.', 'uichemy' ) . ' ' . $detail ),
+					trim( __( 'Plugin installation failed.', 'uichemy' ) . ' ' . $detail ),
 					array( 'status' => 500 )
 				);
 			}
@@ -656,7 +656,7 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		 */
 		private static function download_package_to_temp( $url ) {
 			if ( '' === trim( (string) $url ) ) {
-				return new WP_Error( 'uichemy_no_zip', __( 'UiChemy download URL is not configured.', 'uichemy' ), array( 'status' => 500 ) );
+				return new WP_Error( 'uichemy_no_zip', __( 'Plugin download URL is not configured.', 'uichemy' ), array( 'status' => 500 ) );
 			}
 
 			// Fetch into memory (not stream-to-file): the package is small and this
@@ -684,14 +684,14 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 				return new WP_Error(
 					'uichemy_download_failed',
 					/* translators: %d is the HTTP status code returned by the download request. */
-					sprintf( __( 'UiChemy download failed (HTTP %d).', 'uichemy' ), $code ),
+					sprintf( __( 'Plugin download failed (HTTP %d).', 'uichemy' ), $code ),
 					array( 'status' => 500 )
 				);
 			}
 
 			$body = wp_remote_retrieve_body( $response );
 			if ( '' === $body ) {
-				return new WP_Error( 'uichemy_download_empty', __( 'UiChemy download returned an empty package.', 'uichemy' ), array( 'status' => 500 ) );
+				return new WP_Error( 'uichemy_download_empty', __( 'Plugin download returned an empty package.', 'uichemy' ), array( 'status' => 500 ) );
 			}
 
 			$tmp = wp_tempnam( 'uichemy-' );

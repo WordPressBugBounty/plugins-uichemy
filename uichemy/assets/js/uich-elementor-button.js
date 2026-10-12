@@ -299,7 +299,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const div = document.createElement("div");
         div.className = 'preview-dimension';
         div.style.cssText = "align-self: center";
-        div.setAttribute('data-balloon', 'Upload Media & Paste Using ' + brandName());
+        div.setAttribute('data-balloon', ( window.wp && window.wp.i18n && window.wp.i18n.sprintf ? window.wp.i18n.sprintf : function ( f, v ) { return f.replace( '%s', v ); } )( /* translators: %s: product name */ __( 'Upload Media & Paste Using %s', 'uichemy' ), brandName() ));
         div.setAttribute('data-balloon-pos','bottom');
         div.appendChild(openModalBtn);
         toolbar.appendChild(div);

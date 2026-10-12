@@ -20,7 +20,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 <head>
 	<meta charset="<?php bloginfo( 'charset' ); ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<title><?php esc_html_e( 'Template Preview UiChemy', 'uichemy' ); ?></title>
+	<title><?php esc_html_e( 'Template Preview', 'uichemy' ); ?></title>
 	<?php wp_head(); ?>
 	<style>
 		html, body.uichemy-tb-preview { margin: 0; padding: 0; background: #fff; }

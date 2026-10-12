@@ -166,6 +166,11 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 						),
 					),
 				),
+				'builder-to-composer'     => array(
+					'description' => 'Move anything built with any other page builder (or theme, or custom code) into UiChemy Composer, same to same: on the same site, or from a source site A to a target site B. You act as the middleman AI between the two sites through whatever connectors you have: read the source (read-only), write the target. Covers pages, builder templates, dynamic loops and field bindings, custom post types, taxonomies, custom fields, media, menus and site settings, with an inventory checklist so nothing is missed. The source builder is never installed on the target. Read this when the user asks to convert, migrate, move or rebuild pages or a site in Composer, whatever builder they came from.',
+					'keywords'    => array( 'migrate', 'migration', 'move site', 'site to site', 'convert page', 'convert to composer', 'rebuild in composer', 'page builder', 'builder to composer', 'divi', 'elementor', 'bricks', 'oxygen', 'beaver builder', 'brizy', 'wpbakery', 'acf', 'custom fields', 'dynamic' ),
+					'files'       => array( 'skills/builder-to-composer.md' ),
+				),
 				'brief-to-wordpress'      => array(
 					'description' => 'Invent and build a complete site or landing page from a one-line brief, with no design and no code supplied. Read this when the user asks for a website, homepage, landing page or section and gives nothing but a description.',
 					'keywords'    => array( 'brief', 'landing page', 'website', 'homepage', 'build me', 'design a', 'from scratch' ),
@@ -223,6 +228,20 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 						),
 					),
 				),
+				'improve-seo'             => array(
+					// Hidden while Settings > Features > SEO is off: the ability it
+					// teaches is not registered then.
+					'feature'     => 'seo',
+					'description' => 'Improve how the site does in search and AI answers: how UiChemy SEO works (SEO values are tags in page/site head code, and their precedence), finalising site settings (title template, social fallbacks, identity, permalinks), auditing and fixing every page (one H1, text in the HTML), silo site structure and orphan pages, schema (templates vs page vs section JSON-LD), redirects for missing pages, trust signals (author bios, generic AI copy), AEO, and what to hand over to the user (Search Console, backlinks). Read this when the user asks about SEO, rankings, Google not showing the site, meta titles or descriptions, Open Graph / share images, schema or structured data, sitemaps, redirects, 404s or permalinks.',
+					'keywords'    => array( 'seo', 'search', 'google', 'ranking', 'meta title', 'meta description', 'open graph', 'og image', 'share image', 'schema', 'structured data', 'json-ld', 'faq schema', 'sitemap', 'robots', 'redirect', '404', 'permalink', 'canonical', 'noindex', 'silo', 'aeo', 'llms.txt', 'h1', 'orphan pages', 'internal links', 'breadcrumbs', 'alt text', 'author bio', 'e-e-a-t', 'search console', 'backlinks', 'indexing', 'not indexed' ),
+					'files'       => array( 'skills/improve-seo.md' ),
+					'additional_parts' => array(
+						'scope-decision' => array(
+							'description' => 'Decide whether a tag belongs at site level or page level.',
+							'files'       => array( 'skills/shared/scope-decision.md' ),
+						),
+					),
+				),
 				'custom-fields-and-cpt'   => array(
 					// Deliberately its own skill as well as a part of the dynamic
 					// one. The two jobs arrive from opposite directions - "build a
@@ -230,8 +249,8 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 					// field to products" starts at the model - and a model that
 					// enters at the second should not have to read about forms to
 					// find the delegation rule.
-					'description' => 'Create and configure a WordPress content model - custom post types, taxonomies, field groups and fields - through ACF or JetEngine, and read and write the field values on posts, terms, users and options pages. Read this when the user asks for a custom post type, a custom field, ACF, JetEngine, or wants field values filled in or read back.',
-					'keywords'    => array( 'cpt', 'custom post type', 'custom field', 'custom fields', 'acf', 'advanced custom fields', 'jetengine', 'jet engine', 'taxonomy', 'field group', 'meta', 'meta box', 'repeater', 'relation', 'content model', 'schema' ),
+					'description' => 'Create and configure a WordPress content model - custom post types, taxonomies, field groups and fields - through UiChemy Custom Fields (built in), ACF or JetEngine, and read and write the field values on posts, terms, users and options pages. Read this when the user asks for a custom post type, a custom field, UiChemy Custom Fields, ACF, JetEngine, or wants field values filled in or read back.',
+					'keywords'    => array( 'cpt', 'custom post type', 'custom field', 'custom fields', 'uichemy custom fields', 'uichemy fields', 'post type', 'acf', 'advanced custom fields', 'jetengine', 'jet engine', 'taxonomy', 'field group', 'meta', 'meta box', 'repeater', 'relation', 'content model', 'schema' ),
 					'files'       => array( 'skills/custom-fields-and-cpt.md' ),
 					'additional_parts' => array(),
 				),
@@ -274,6 +293,15 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 			 * @param array<string,array> $skills Skill definitions.
 			 */
 			$skills = apply_filters( 'uichemy_skills', self::definitions() );
+
+			// A skill for a switched-off feature teaches abilities that are not loaded.
+			if ( is_array( $skills ) && function_exists( 'uich_feature_enabled' ) ) {
+				foreach ( $skills as $slug => $skill ) {
+					if ( ! empty( $skill['feature'] ) && ! uich_feature_enabled( $skill['feature'] ) ) {
+						unset( $skills[ $slug ] );
+					}
+				}
+			}
 
 			self::$cache = is_array( $skills ) ? $skills : array();
 

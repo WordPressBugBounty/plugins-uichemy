@@ -41,7 +41,7 @@ if ( ! class_exists( 'Uich_Forms_Dashboard' ) ) {
 				wp_send_json_error( array( 'message' => 'forbidden' ), 403 );
 			}
 			if ( ! class_exists( 'Uich_Forms_DB' ) ) {
-				wp_send_json_error( array( 'message' => 'Forms are disabled.' ), 400 );
+				wp_send_json_error( array( 'message' => __( 'Forms are disabled.', 'uichemy' ) ), 400 );
 			}
 
 			$type = isset( $_POST['type'] ) ? sanitize_key( wp_unslash( $_POST['type'] ) ) : '';
@@ -213,7 +213,7 @@ if ( ! class_exists( 'Uich_Forms_Dashboard' ) ) {
 			$id   = isset( $_POST['id'] ) ? (int) $_POST['id'] : 0;  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce (check_ajax_referer) and capability verified at handler entry.
 			$item = $id ? Uich_Forms_DB::get_submission( $id ) : null;
 			if ( ! $item ) {
-				wp_send_json_error( array( 'message' => 'Submission not found.' ), 404 );
+				wp_send_json_error( array( 'message' => __( 'Submission not found.', 'uichemy' ) ), 404 );
 			}
 
 			// Mark as read on open (matches the classic view behaviour).
@@ -296,6 +296,14 @@ if ( ! class_exists( 'Uich_Forms_Dashboard' ) ) {
 		public static function export_csv() {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				wp_die( esc_html__( 'Permission denied.', 'uichemy' ), 403 );
+			}
+
+			// Exporting submissions is a Pro feature. Enforced HERE, not only by
+			// hiding the dashboard button: this is a plain admin-post URL, so a
+			// UI-only gate would leave every submission one hand-typed link away
+			// from any administrator on a Free site.
+			if ( ! function_exists( 'uichemy_is_pro' ) || ! uichemy_is_pro() ) {
+				wp_die( esc_html__( 'Exporting form submissions requires UiChemy Pro.', 'uichemy' ), 403 );
 			}
 
 			$nonce = isset( $_GET['nonce'] ) ? sanitize_text_field( wp_unslash( $_GET['nonce'] ) ) : '';

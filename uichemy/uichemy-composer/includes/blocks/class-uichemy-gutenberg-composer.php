@@ -176,7 +176,8 @@ if ( ! class_exists( 'UiChemy_Gutenberg_Composer' ) ) {
 			$raw_html    = (string) $render_settings['raw_html'];
 			$had_dynamic = class_exists( 'Uich_Dynamic' ) && Uich_Dynamic::has_dynamic( $raw_html );
 			if ( $had_dynamic ) {
-				$raw_html                    = Uich_Dynamic::render_html( $raw_html, array( 'widget_id' => $uid ) );
+				// Same trust rule as the Elementor widget (Uich_Dynamic::render_authored()).
+				$raw_html                    = Uich_Dynamic::render_authored( $raw_html, array( 'widget_id' => $uid ) );
 				$render_settings['raw_html'] = $raw_html;
 
 				// Position-indexed slots (slot_0…slot_19) only line up with static
@@ -203,7 +204,10 @@ if ( ! class_exists( 'UiChemy_Gutenberg_Composer' ) ) {
 
 			$html = UiChemy_Composer_Renderer::render_html( $render_settings, $scope, $uid, false, $scope_css );
 
-			if ( '' !== trim( $raw_js ) ) {
+			// Section JS prints as a <script>, so only for an author who may publish code - the
+			// gate the Elementor widget applies (content_allows_raw_code()). Block attributes
+			// only lose their TAGS to kses, so plain JS from anyone else would otherwise run.
+			if ( '' !== trim( $raw_js ) && class_exists( 'Uich_Dynamic' ) && Uich_Dynamic::author_trusted() ) {
 				self::queue_footer_js( $uid, $raw_js );
 			}
 

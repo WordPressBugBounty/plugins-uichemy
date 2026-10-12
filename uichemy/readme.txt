@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.2.5
+Stable tag: 5.3.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -116,7 +116,7 @@ UiChemy runs a **Model Context Protocol (MCP) server**, so your AI tool writes i
 
 - **No Context Switching** : Build and revise pages from the editor you already have open, so the browser is where you check the result, not where you do the work
 - **Editable Output** : Sections arrive as real code in your builder, so the next person to touch the page does not need your AI tool
-- **Custom Post Types And Fields** : Set up post types and fields through ACF or JetEngine, which covers the scaffolding most client builds start with
+- **Custom Post Types And Fields** : Set up post types and fields through UiChemy Custom Fields, ACF or JetEngine, which covers the scaffolding most client builds start with
 - **Agency Repeatability** : One prompt pattern produces the same section across five client sites
 
 == 4. UiChemy Composer ==
@@ -142,7 +142,7 @@ Every other builder hands you a widget for each idea, and the one you need alway
 
 - **A Real Class System** : Style by class as you would in any front-end project, with global colours and variables you define once
 - **Import A Brand, Export It Again** : Move a design system between projects instead of rebuilding it per client
-- **Dynamic Data** : Every WordPress field plus ACF, JetEngine and Metabox, with a visual query builder, loop builder, theme builder and full WooCommerce
+- **Dynamic Data** : Every WordPress field plus UiChemy Custom Fields, ACF, JetEngine and Metabox, with a visual query builder, loop builder, theme builder and full WooCommerce
 - **Forms** : Describe the form and it gets built, any element can become a field, submissions collected and spam proof by default
 - **Agency Handover** : Role Manager, front end only handover, White Label, and one dashboard for every site
 - **Code Split Three Ways** : Site, page and section styles load separately, so only the code a page uses is served. POSIMYTH measures 90+ on Google PageSpeed in its own testing
@@ -271,6 +271,13 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.3.0 = 12 October 2026
+- Added: Built-in SEO: meta titles, social previews, schema, sitemaps, redirects, llms.txt and a site audit.
+- Added: Custom Fields (Beta) for custom post types, taxonomies and field groups.
+- Added: Move your site from any page builder to UiChemy, in the builder of your choice, with your AI assistant.
+- Fixed: String translation issues.
+- Fixed: Various minor bugs and design improvements.
 
 = 5.2.5 = 7 October 2026
 - Added: Disable Emojis Script option in Performance settings.

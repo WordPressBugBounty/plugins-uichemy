@@ -2248,6 +2248,9 @@ body[data-theme="light"],
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
+.uich-tw .duration-150 {
+  transition-duration: 150ms;
+}
 .uich-tw .duration-200 {
   transition-duration: 200ms;
 }
@@ -2304,6 +2307,9 @@ body[data-theme="light"],
 }
 .uich-tw .slide-in-from-top-1 {
   --tw-enter-translate-y: -0.25rem;
+}
+.uich-tw .duration-150 {
+  animation-duration: 150ms;
 }
 .uich-tw .duration-200 {
   animation-duration: 200ms;
@@ -3163,6 +3169,8 @@ body[data-theme="light"],
   --uc-font-sans: "Zalando Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --uc-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
   --uc-text-3xs: 0.5rem;    --uc-text-2xs: 0.625rem;  --uc-text-xs: 0.75rem;
+  /* 11px: compact meta / dense-panel text (list meta, inspector hints, code gutter). */
+  --uc-text-11: 0.6875rem;
   --uc-text-sm: 0.8125rem;  --uc-text-base: 0.875rem; --uc-text-md: 1rem;
   --uc-text-lg: 1.125rem;   --uc-text-xl: 1.25rem;    --uc-text-2xl: 1.5rem;
   --uc-text-3xl: 1.875rem;
@@ -3626,6 +3634,24 @@ body[data-theme="light"],
   --_glow: rgba(128, 128, 128, 0.12);
 }
 
+/* ---- As a link (asChild <a>) --------------------------------------------- *
+   wp-admin styles `a:hover, a:active` (blue text) and `a:focus` (blue text + a
+   2px blue box-shadow) at 0,1,1, which out-ranks the variant colours and
+   shadows above (0,1,0). Re-assert them for anchors so a link button looks
+   exactly like the button it is in every state. */
+a.nx448XS4JGEoBYKJ_Xeh:is(:hover, :focus, :active, :visited) { color: var(--uc-brand-on); }
+a.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :active, :visited) { color: var(--uc-inverse-fg); }
+a.lSxxR32yQ7uBGKoReA0d:is(:hover, :focus, :active, :visited),
+a.uEkFBKngy5ABC8BavrlF:is(:hover, :focus, :active, :visited) { color: var(--_fg, var(--uc-brand-fg)); }
+a.uEkFBKngy5ABC8BavrlF.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :active, :visited) { color: var(--uc-text-strong); }
+a.ZShdqkg6btw_9kcxTgYx:is(:focus, :active, :visited) { color: var(--_fg, var(--uc-brand-fg)); }
+a.ZShdqkg6btw_9kcxTgYx.P6iUGKQ9CuUmhTY4IDx4:is(:focus, :active, :visited) { color: var(--uc-text); }
+a.nx448XS4JGEoBYKJ_Xeh:focus { box-shadow: var(--_shadow, var(--uc-shadow-control-brand)); }
+a.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:focus { box-shadow: var(--uc-shadow-control); }
+a.lSxxR32yQ7uBGKoReA0d:focus { box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)), var(--uc-shadow-1); }
+a.uEkFBKngy5ABC8BavrlF:focus { box-shadow: inset 0 0 0 1px var(--_border, var(--uc-border-subtle)), var(--uc-shadow-raised); }
+a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
+
 /* ---- Loading -------------------------------------------------------------- */
 .pc70O1Y6HdzT607YK_OL { color: transparent !important; pointer-events: none; }
 .rtWcge6eoBiDmFoHo4gD {
@@ -3857,14 +3883,23 @@ body[data-theme="light"],
 .AXCzoGHV2zjSW04iuiPm.AXCzoGHV2zjSW04iuiPm { padding: 0 var(--uc-space-16); }
 .e3ubPG9y4BJzwsrdHlEA.e3ubPG9y4BJzwsrdHlEA { padding: 0; }
 
-/* Input, recessed field on uc- tokens. */
+/* Input, recessed field on uc- tokens.
+
+   wp-admin hardening: WordPress's forms.css styles `input[type="text"]` (and
+   every other type) at specificity (0,1,1) — border, 2px radius, 40px
+   min-height, 0 8px padding and a blue :focus box-shadow — which beats a lone
+   `.input` (0,1,0) whenever the field has a type attribute (the Combobox search,
+   number/date fields…). Every field rule below therefore carries `[class]`
+   (always true on these elements): +(0,1,0) on each one, so their order among
+   themselves is unchanged but they now outrank wp-admin. margin, min-height and
+   line-height are reset because wp-admin sets them and the DS did not. */
 .gf6IRPe9LovRo8vS3IAl {
   position: relative;
   display: inline-flex;
   align-items: center;
   width: 100%;
 }
-.jvLYLaG45SNM0t7oug2a {
+.jvLYLaG45SNM0t7oug2a[class] {
   width: 100%;
   height: var(--uc-input-h, var(--uc-control-h-md));
   padding: 0 var(--uc-input-px, var(--uc-space-12));
@@ -3874,47 +3909,50 @@ body[data-theme="light"],
   color: var(--uc-text-strong);
   background: var(--uc-surface-overlay);
   background-image: linear-gradient(to bottom, oklch(0% 0 0 / 0.02), transparent);
+  margin: 0;
+  min-height: 0;
+  line-height: normal;
   border: none;
   border-radius: var(--uc-input-radius, var(--uc-radius-md));
   box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
   transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
   outline: none;
 }
-.jvLYLaG45SNM0t7oug2a::-moz-placeholder { color: var(--uc-text-subtle); }
-.jvLYLaG45SNM0t7oug2a::placeholder { color: var(--uc-text-subtle); }
-.jvLYLaG45SNM0t7oug2a:hover:not(:disabled):not(:focus) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+.jvLYLaG45SNM0t7oug2a[class]::-moz-placeholder { color: var(--uc-text-subtle); }
+.jvLYLaG45SNM0t7oug2a[class]::placeholder { color: var(--uc-text-subtle); }
+.jvLYLaG45SNM0t7oug2a[class]:hover:not(:disabled):not(:focus) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
 /* Focus = OFFSET brand ring: the field keeps its subtle inset border, then a
    1px transparent gap (outline-offset shows the surface behind), then a thin 1px
    brand outline sits OUTSIDE the field. Uses :focus so it shows on click +
    keyboard. Kept thin (1px + 1px) so it reads as a single hairline ring, not a
    thick double band. */
-.jvLYLaG45SNM0t7oug2a:focus {
+.jvLYLaG45SNM0t7oug2a[class]:focus {
   box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
   outline: 1px solid var(--uc-brand);
   outline-offset: 1px;
 }
-.jvLYLaG45SNM0t7oug2a:disabled {
+.jvLYLaG45SNM0t7oug2a[class]:disabled {
   color: var(--uc-text-subtle);
   background: var(--uc-surface-sunken);
   box-shadow: inset 0 0 0 1px var(--uc-border);
   cursor: not-allowed;
 }
 
-.haw52Sf_U1aNw5UG26i6 { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
-.l_6Te8jk6g9i2OYGVJQK { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+.haw52Sf_U1aNw5UG26i6[class] { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
+.l_6Te8jk6g9i2OYGVJQK[class] { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
 
-.ssewu8L6FxnF8mjD_c_D {
+.ssewu8L6FxnF8mjD_c_D[class] {
   box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
 }
-.ssewu8L6FxnF8mjD_c_D:focus {
+.ssewu8L6FxnF8mjD_c_D[class]:focus {
   box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
   outline: 1px solid var(--uc-danger);
   outline-offset: 1px;
 }
 
 /* icon adornments */
-.fGN3tsXkL0HfDxLoHJ3b { padding-right: var(--uc-space-32); }
-.F7_NHLpEO7zGCxeHmEbl { padding-left: var(--uc-space-32); }
+.fGN3tsXkL0HfDxLoHJ3b[class] { padding-right: var(--uc-space-32); }
+.F7_NHLpEO7zGCxeHmEbl[class] { padding-left: var(--uc-space-32); }
 .NPtEFuYEvwKDd0CQ2ZL4 {
   position: absolute;
   display: grid;
@@ -3924,6 +3962,61 @@ body[data-theme="light"],
 }
 .Bcg2bwvX_INxmvsS4KTp { right: var(--uc-space-12); }
 .oFadrtuqYdL1WAYq7mGM { left: var(--uc-space-12); }
+
+/* ── Addons (BoardUI Input adornments) ────────────────────────────────────
+   The shell is the field: same fill, inset ring, radius and heights as .input,
+   with the focus ring on :focus-within. The inner input (.bare) is transparent.
+   [class] keeps these above wp-admin's input[type=…] rules, as above. */
+.D0Xdmp8POlPPHSzhzm9g[class] {
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-8);
+  width: 100%;
+  height: var(--uc-input-h, var(--uc-control-h-md));
+  padding: 0 var(--uc-input-px, var(--uc-space-12));
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text-strong);
+  background: var(--uc-surface-overlay);
+  background-image: linear-gradient(to bottom, oklch(0% 0 0 / 0.02), transparent);
+  border-radius: var(--uc-input-radius, var(--uc-radius-md));
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+  cursor: text;
+}
+.D0Xdmp8POlPPHSzhzm9g[class]:hover:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+.D0Xdmp8POlPPHSzhzm9g[class]:focus-within { outline: 1px solid var(--uc-brand); outline-offset: 1px; }
+.Xg64tHf4Kp4Noa25JH0b[class] { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); gap: var(--uc-space-6); }
+.M5O1Ldpq66ff3nhO1rMQ[class] { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+.ekm8tp1ZbcU5q1z1wOWS[class] { box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input); }
+.ekm8tp1ZbcU5q1z1wOWS[class]:focus-within { outline-color: var(--uc-danger); }
+.sXdm39Z0ZiRwORSaPpZv[class] { color: var(--uc-text-subtle); background: var(--uc-surface-sunken); box-shadow: inset 0 0 0 1px var(--uc-border); cursor: not-allowed; }
+
+.rqDSPev3xkBlb20ToTZX[class] {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  font: inherit;
+  font-weight: var(--uc-weight-regular);
+  line-height: normal;
+  color: inherit;
+}
+.rqDSPev3xkBlb20ToTZX[class]:focus { box-shadow: none; outline: none; }
+.rqDSPev3xkBlb20ToTZX[class]::-moz-placeholder { color: var(--uc-text-subtle); }
+.rqDSPev3xkBlb20ToTZX[class]::placeholder { color: var(--uc-text-subtle); }
+.rqDSPev3xkBlb20ToTZX[class]:disabled { cursor: not-allowed; background: transparent; }
+
+.Y3HnmS9EPQ7CMwpRJcPQ { flex: none; display: inline-flex; align-items: center; min-width: 0; }
+.JY5ljlGXeMh2RPyRM1X1 { color: var(--uc-text-muted); white-space: nowrap; -webkit-user-select: none; -moz-user-select: none; user-select: none; }
+.Q7QN4UqutcmDnCCw7QMY { flex: none; display: grid; place-items: center; color: var(--uc-text-subtle); }
 
 /* field wrapper (label + hint) */
 .XrLNCTYM8KNOcisy0k1u { display: flex; flex-direction: column; gap: var(--uc-space-8); width: 100%; }
@@ -4024,7 +4117,12 @@ body[data-theme="light"],
 }
 .e7F3s8Cpe8pIMhvl2kjH[data-placeholder] { color: var(--uc-text-subtle); }
 .e7F3s8Cpe8pIMhvl2kjH:disabled { opacity: 0.5; cursor: not-allowed; }
+/* The chevron is the one DS icon that sits inside a WRAPPER (Radix renders
+   SelectPrimitive.Icon as a <span>), so the svg inside it is inline and sits on
+   that span's text baseline, which leaves descender space below it and pushes
+   the glyph above the trigger's centre. `display: block` collapses that line box. */
 .RXwx8sg3STq8XWcaRIiM { color: var(--uc-text-muted); flex: none; }
+.RXwx8sg3STq8XWcaRIiM svg { display: block; }
 
 /* trigger sizes (md is the base above) */
 .A7XnIZMI5obBSBNATLZT { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }

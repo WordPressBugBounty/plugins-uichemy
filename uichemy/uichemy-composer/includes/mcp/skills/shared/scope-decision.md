@@ -22,6 +22,16 @@ For each asset you'd otherwise drop into a `<link>`/`<style>`/`<script>` tag, as
 4. **Is it specific to one page only?** (campaign pixel, chart library only used by a report page, page-only hero font, page-only animation lib) → **page_before_head** / **page_before_body**.
 5. **Tiebreaker for fonts:** when you genuinely can't tell, prefer **site_before_head**. Font files are cache-friendly across pages and the cost of double-importing on the one page that uses them is much smaller than the cost of a missing font on a page you forgot.
 
+## SEO tags
+
+`<title>`, `<meta name="description">`, `<meta name="robots">`, `<link rel="canonical">`, `og:*` / `twitter:*` meta and `<script type="application/ld+json">` are SEO tags. UiChemy prints each of them **once**, so writing one never duplicates the theme's title or another plugin's tag:
+
+- **page_before_head** — the page's own title, description, canonical, robots, share image and page-level JSON-LD. These win for that page.
+- **site_before_head** — fallbacks for every page: the title template (`<title>{{ title }} | Brand</title>`), the default `og:image`, `og:site_name`, `twitter:site`, verification codes, and the site's Organization JSON-LD. Prefer `uichemy-composer/seo update-site-settings` for these.
+- JSON-LD that describes one section (an FAQ, a set of steps) goes in **that section's HTML**, not in head code.
+
+Read the `improve-seo` skill before writing SEO tags.
+
 ## Second decision — inline, or a real file?
 
 Scope is *where the tag goes*. This is a separate question: should these bytes be a file at all?

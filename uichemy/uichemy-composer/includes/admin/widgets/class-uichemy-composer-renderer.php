@@ -212,16 +212,85 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 		 */
 		public static function decode_inline_code_blocks( $html ) {
 			$html = (string) $html;
-			if ( false === strpos( $html, '&' ) ) {
+			if ( false === strpos( $html, '&' ) && false === stripos( $html, 'ld+json' ) ) {
 				return $html;
 			}
 			return (string) preg_replace_callback(
 				'#(<(script|style)\b[^>]*>)(.*?)(</\2>)#is',
 				function ( $m ) {
+					if ( 'script' === strtolower( $m[2] ) ) {
+						return self::safe_script_block( $m[1], $m[3], $m[4] );
+					}
 					return $m[1] . self::decode_code_entities( $m[3] ) . $m[4];
 				},
 				$html
 			);
+		}
+
+		/**
+		 * One inline <script> with its body entity-decoded, made safe to print.
+		 *
+		 * Twig escapes dynamic values as HTML (`</script>` → `&lt;/script&gt;`), and
+		 * decoding the body for the browser undid that: a post title or field holding
+		 * `</script><script>…` closed the tag and ran as code. So after decoding no
+		 * body may contain `</script`; JSON-LD is rebuilt as real JSON.
+		 *
+		 * @param string $open  Opening tag.
+		 * @param string $body  Body as stored / rendered (entities not decoded).
+		 * @param string $close Closing tag.
+		 * @return string Block to print ('' or a comment when JSON-LD is invalid).
+		 */
+		public static function safe_script_block( $open, $body, $close ) {
+			if ( preg_match( '#\btype\s*=\s*["\']?application/ld\+json#i', (string) $open ) ) {
+				$json = self::ld_json_body( (string) $body );
+				// Invalid JSON-LD is worse than none (the SEO head code drops it too).
+				return null === $json ? '<!-- UiChemy: invalid JSON-LD removed -->' : $open . $json . $close;
+			}
+			$code = self::decode_code_entities( $body );
+			$code = (string) preg_replace( '#</(script)#i', '<\/$1', $code );
+			return $open . $code . $close;
+		}
+
+		/**
+		 * A JSON-LD body after Twig: each string literal is decoded (entities from the
+		 * HTML escaper, raw line breaks from a multi-line value) and re-encoded as JSON
+		 * with `<` and `&` hex-escaped, so values read as text and cannot close the tag.
+		 *
+		 * @param string $body Rendered body.
+		 * @return string|null JSON, or null when it is not valid JSON.
+		 */
+		public static function ld_json_body( $body ) {
+			$out = preg_replace_callback(
+				'/"(?:[^"\\\\]|\\\\.)*"/s',
+				function ( $m ) {
+					$inner = substr( $m[0], 1, -1 );
+					$inner = (string) preg_replace( '/\\\\(?![\"\\\\\/bfnrtu])/', '\\\\\\\\', $inner );
+					$inner = strtr( $inner, array( "\r\n" => '\\n', "\r" => '\\n', "\n" => '\\n', "\t" => '\\t' ) );
+					$inner = (string) preg_replace_callback(
+						'/[\x00-\x1F]/',
+						function ( $c ) {
+							return sprintf( '\\u%04x', ord( $c[0] ) );
+						},
+						$inner
+					);
+					$str = json_decode( '"' . $inner . '"' );
+					if ( ! is_string( $str ) ) {
+						return $m[0];
+					}
+					$str = html_entity_decode( $str, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+					return wp_json_encode( $str, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_HEX_TAG | JSON_HEX_AMP );
+				},
+				trim( (string) $body )
+			);
+			if ( null === $out ) {
+				return null;
+			}
+			$data = json_decode( $out, true );
+			if ( ! is_array( $data ) ) {
+				return null;
+			}
+			// Anything left outside the strings that could still end the tag.
+			return str_replace( array( '<', '>' ), array( '<', '>' ), $out );
 		}
 
 		/**
@@ -261,7 +330,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 						$block = preg_replace_callback(
 							'#(<script\b[^>]*>)(.*?)(</script>)#is',
 							function ( $s ) {
-								return $s[1] . UiChemy_Composer_Renderer::decode_code_entities( $s[2] ) . $s[3];
+								return UiChemy_Composer_Renderer::safe_script_block( $s[1], $s[2], $s[3] );
 							},
 							$block
 						);
@@ -321,6 +390,13 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 				$this->apply_slot_settings_to_node( $node, $settings, $i );
 			}
 
+			// Translations: the widget's own `uich_i18n` map (a translated copy of a page) and,
+			// inside a Theme Builder template, string translation. No-op on single-language
+			// sites and for widgets that carry neither.
+			if ( class_exists( 'UiChemy_I18n_Strings' ) ) {
+				UiChemy_I18n_Strings::apply_translations( $dom, $settings );
+			}
+
 			$widget_scope_selector = $scope_selector;
 			$style_nodes           = $dom->getElementsByTagName( 'style' );
 			if ( $style_nodes && $style_nodes->length > 0 ) {
@@ -335,6 +411,14 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 					}
 					$style_node->nodeValue = $scope_css ? $this->scope_css_to_widget( $raw_style_css, $widget_scope_selector ) : $raw_style_css;
 				}
+			}
+
+			// A pasted full page brings <title> / <meta charset> / <meta viewport> and
+			// <html>/<head>/<body> wrappers that do not belong inside <body>. Front end
+			// only: not in the Bricks builder ($obfuscate_scripts) nor the block
+			// editor's server-side preview (a REST block-renderer request).
+			if ( ! $is_editor && ! $obfuscate_scripts && ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) ) {
+				self::strip_document_tags( $dom );
 			}
 
 			$output = '';
@@ -438,6 +522,40 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			}
 
 			return $out;
+		}
+
+		/**
+		 * Drop document-level tags a pasted full HTML page brings along — <title>,
+		 * <meta charset>, <meta name="viewport">, the doctype and the <html> /
+		 * <head> / <body> wrappers (their children are kept). Printed inside the
+		 * page's <body> they give the page a second <title> and stray head tags.
+		 * Only the output changes; the stored raw_html is untouched. Front end only
+		 * (shared by the Elementor widget and render()): in an editor, removing
+		 * nodes would shift the element paths the canvas picker relies on. Tags inside
+		 * <svg>, <math> or <template> are content, not document tags, and stay;
+		 * <script> bodies are text to the parser, so nothing in them is touched.
+		 *
+		 * @param \DOMDocument $dom Parsed document.
+		 * @return void
+		 */
+		public static function strip_document_tags( $dom ) {
+			if ( $dom->doctype ) {
+				$dom->removeChild( $dom->doctype );
+			}
+			$xpath   = new \DOMXPath( $dom );
+			$outside = 'not(ancestor::svg) and not(ancestor::math) and not(ancestor::template)';
+			$nodes   = $xpath->query( "//title[$outside] | //meta[$outside][@charset or translate(@name, 'VIEWPORT', 'viewport') = 'viewport']" );
+			foreach ( $nodes ? iterator_to_array( $nodes ) : array() as $node ) {
+				$node->parentNode->removeChild( $node );
+			}
+			// Innermost first, so <head> / <body> are unwrapped before <html>.
+			$wrappers = $xpath->query( "//body[$outside] | //head[$outside] | //html[$outside]" );
+			foreach ( $wrappers ? array_reverse( iterator_to_array( $wrappers ) ) : array() as $node ) {
+				while ( $node->firstChild ) {
+					$node->parentNode->insertBefore( $node->firstChild, $node );
+				}
+				$node->parentNode->removeChild( $node );
+			}
 		}
 
 		/**

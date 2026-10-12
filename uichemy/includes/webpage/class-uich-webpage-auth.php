@@ -467,7 +467,7 @@ class Uich_Webpage_Auth {
 		}
 
 		if ( ! current_user_can( 'manage_options' ) ) {
-			wp_die( esc_html__( 'You do not have permission to connect a UiChemy account.', 'uichemy' ) );
+			wp_die( esc_html__( 'You do not have permission to connect an account.', 'uichemy' ) );
 		}
 
 		// Bind the callback to the admin who STARTED the flow. get_authorization_url()
@@ -505,7 +505,7 @@ class Uich_Webpage_Auth {
 		delete_transient( self::TRANSIENT_OAUTH_PENDING );
 		if ( empty( $code_verifier ) ) {
 			wp_die(
-				esc_html__( 'Your connection session expired. Please open UiChemy › Import and start the connection again.', 'uichemy' )
+				esc_html__( 'Your connection session expired. Please open the Import screen and start the connection again.', 'uichemy' )
 			);
 		}
 
@@ -526,7 +526,7 @@ class Uich_Webpage_Auth {
 
 		if ( is_wp_error( $response ) ) {
 			wp_die(
-				esc_html__( 'Failed to connect to the UiChemy app. Please try again.', 'uichemy' ) .
+				esc_html__( 'Failed to connect to the app. Please try again.', 'uichemy' ) .
 				'<br><br>' .
 				esc_html( $response->get_error_message() )
 			);
@@ -555,7 +555,7 @@ class Uich_Webpage_Auth {
 			if ( isset( $body['id_token'] ) && $this->is_storable_id_token( $body['id_token'] ) ) {
 				$user_info = $this->decode_jwt_payload( $body['id_token'] );
 				if ( ! $user_info || ! $this->validate_id_token_payload( $user_info ) ) {
-					wp_die( esc_html__( 'Invalid or expired identity token from the UiChemy app. Please try signing in again.', 'uichemy' ) );
+					wp_die( esc_html__( 'Invalid or expired identity token from the app. Please try signing in again.', 'uichemy' ) );
 				}
 				update_option( self::OPTION_ID_TOKEN, $this->encrypt_token( $body['id_token'] ), false );
 				update_option( self::OPTION_USER_INFO, $user_info, false );
@@ -586,7 +586,7 @@ class Uich_Webpage_Auth {
 			exit;
 		} else {
 			wp_die(
-				esc_html__( 'Failed to authenticate with the UiChemy app. Please try again.', 'uichemy' ) .
+				esc_html__( 'Failed to authenticate with the app. Please try again.', 'uichemy' ) .
 				'<br><br>' .
 				esc_html( isset( $body['error_description'] ) ? $body['error_description'] : '' )
 			);
@@ -1193,7 +1193,7 @@ class Uich_Webpage_Auth {
 		$auth_url = $this->get_authorization_url( $route );
 		if ( ! $auth_url ) {
 			return new WP_REST_Response(
-				array( 'error' => __( 'Failed to connect to the UiChemy app. Please try again.', 'uichemy' ) ),
+				array( 'error' => __( 'Failed to connect to the app. Please try again.', 'uichemy' ) ),
 				502
 			);
 		}

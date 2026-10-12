@@ -57,7 +57,11 @@ if ( ! class_exists( 'Uich_Field_Registry' ) ) {
 
 			$providers = array();
 
-			foreach ( array( 'Uich_Field_Provider_ACF', 'Uich_Field_Provider_Jet', 'Uich_Field_Provider_Meta' ) as $class ) {
+			// UiChemy's own fields resolve first: their values live under internal keys
+			// nothing else reads, so on an unpinned READ of a shared name they are the
+			// only answer that is certainly this site's. Writes to a shared name refuse
+			// until "provider" is pinned (see resolve()).
+			foreach ( array( 'Uich_Field_Provider_Uichemy', 'Uich_Field_Provider_ACF', 'Uich_Field_Provider_Jet', 'Uich_Field_Provider_Meta' ) as $class ) {
 				if ( class_exists( $class ) ) {
 					$provider = new $class();
 					$providers[ $provider->slug() ] = $provider;
@@ -142,12 +146,19 @@ if ( ! class_exists( 'Uich_Field_Registry' ) ) {
 				}
 			}
 
-			$modelling = array_values( array_intersect( $out['active'], array( 'acf', 'jetengine' ) ) );
+			$modelling = array_values( array_intersect( $out['active'], array( 'uichemy', 'acf', 'jetengine' ) ) );
 
 			if ( ! $modelling ) {
-				$out['notes'][] = 'No field-modelling plugin is active on this site. Custom fields cannot be created here. Tell the user to install ACF or JetEngine, or offer to model the content with plain posts, categories and tags instead - do not report an empty field list as though the site had no data.';
+				$out['notes'][] = 'No field-modelling layer is active on this site. Custom fields cannot be created here. UiChemy\'s own Custom Fields is switched off (Settings > Features) and neither ACF nor JetEngine is installed. Tell the user they can switch UiChemy Custom Fields on, or install ACF or JetEngine, or offer to model the content with plain posts, categories and tags instead - do not report an empty field list as though the site had no data.';
 			} elseif ( count( $modelling ) > 1 ) {
-				$out['notes'][] = 'ACF and JetEngine are BOTH active. They store the same concepts differently (booleans, repeaters, checkboxes, media), so a field must be written through its own owner. Where a name is claimed by both, pass "provider" explicitly rather than letting UiChemy pick.';
+				$labels = array();
+				foreach ( $modelling as $slug ) {
+					$labels[] = self::providers()[ $slug ]->label() . ' ("' . $slug . '")';
+				}
+				$out['notes'][] = sprintf(
+					'%s are all active. They store the same concepts differently (booleans, dates, repeaters, media), so a field must be written through its own owner. A field name claimed by more than one of them is refused on a write until "provider" is passed - check "also_claimed_by" on action="list".',
+					implode( ', ', $labels )
+				);
 			}
 
 			/*
@@ -168,7 +179,7 @@ if ( ! class_exists( 'Uich_Field_Registry' ) ) {
 			 * is the failure this whole layer exists to prevent.
 			 */
 			if ( $modelling && ! $out['writes_enabled'] ) {
-				$out['notes'][] = 'The fields listed here are REAL, but this build can neither read nor write their values, nor create post types, taxonomies or fields - that needs UiChemy Pro (' . uichemy_upgrade_url( 'custom-fields' ) . '). This is a licence boundary, not an empty site, so do not report the site as having no data. Nor can a custom-field value be RENDERED on this build: only post title, content, link, id and the featured-image chain resolve, so do not bind one and do not invent placeholder content in its place. Say plainly that the value layer needs Pro, and build what is asked from the free post fields or from content the user supplies. ACF and JetEngine can still edit these values in their own admin screens.';
+				$out['notes'][] = 'The fields listed here are REAL, but this build can neither read nor write their values, nor create post types, taxonomies or fields - that needs UiChemy Pro (' . uichemy_upgrade_url( 'custom-fields' ) . '). This is a licence boundary, not an empty site, so do not report the site as having no data. Nor can a custom-field value be RENDERED on this build: only post title, content, link, id and the featured-image chain resolve, so do not bind one and do not invent placeholder content in its place. Say plainly that the value layer needs Pro, and build what is asked from the free post fields or from content the user supplies. The plugin that owns each field can still edit its values in its own admin screens.';
 			}
 
 			return $out;
@@ -259,10 +270,11 @@ if ( ! class_exists( 'Uich_Field_Registry' ) ) {
 		 *
 		 * @param string $name   Field name.
 		 * @param array  $target Resolved target.
-		 * @param string $prefer Optional provider slug to pin.
+		 * @param string $prefer    Optional provider slug to pin.
+		 * @param bool   $for_write Refuse a name more than one provider claims, unless pinned.
 		 * @return array{def:array,provider:Uich_Field_Provider}|WP_Error
 		 */
-		public static function resolve( $name, $target, $prefer = '' ) {
+		public static function resolve( $name, $target, $prefer = '', $for_write = false ) {
 			$name        = (string) $name;
 			$by_provider = self::definitions( $target );
 
@@ -288,13 +300,34 @@ if ( ! class_exists( 'Uich_Field_Registry' ) ) {
 				);
 			}
 
+			$claimed = array();
 			foreach ( $by_provider as $slug => $defs ) {
 				if ( isset( $defs[ $name ] ) ) {
-					return array(
-						'def'      => $defs[ $name ],
-						'provider' => self::providers()[ $slug ],
-					);
+					$claimed[] = $slug;
 				}
+			}
+
+			// A write never picks between two owners. The same name in two plugins
+			// is two different storage rows, and the one not written keeps rendering
+			// wherever it is bound - the page looks unchanged and the write "worked".
+			if ( $for_write && count( $claimed ) > 1 ) {
+				return new WP_Error(
+					'uich_field_ambiguous_provider',
+					sprintf(
+						'"%s" is defined by %s on %s, so UiChemy will not choose which one to write. Pass "provider" (one of: %s) - ask the user which plugin owns this field if it is not clear from where it is bound.',
+						$name,
+						implode( ' and ', $claimed ),
+						isset( $target['label'] ) ? $target['label'] : 'that object',
+						implode( ', ', $claimed )
+					)
+				);
+			}
+
+			if ( $claimed ) {
+				return array(
+					'def'      => $by_provider[ $claimed[0] ][ $name ],
+					'provider' => self::providers()[ $claimed[0] ],
+				);
 			}
 
 			return new WP_Error(

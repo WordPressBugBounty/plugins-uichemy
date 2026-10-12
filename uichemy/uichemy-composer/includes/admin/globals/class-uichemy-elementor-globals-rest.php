@@ -116,10 +116,10 @@ if ( ! class_exists( 'UiChemy_Elementor_Globals_Rest' ) ) {
 			// Elementor global-sync is a Pro-only feature — blocked server-side so a
 			// crafted request can't bypass the locked UI in the Free build.
 			if ( ! uichemy_is_pro() ) {
-				return new WP_Error( 'uichemy_pro_only', 'Elementor Sync is a UiChemy Pro feature.', array( 'status' => 403 ) );
+				return new WP_Error( 'uichemy_pro_only', __( 'Elementor Sync is a UiChemy Pro feature.', 'uichemy' ), array( 'status' => 403 ) );
 			}
 			if ( ! UiChemy_Elementor_Globals::is_available() ) {
-				return new WP_Error( 'uichemy_no_elementor', 'Elementor is not active.', array( 'status' => 400 ) );
+				return new WP_Error( 'uichemy_no_elementor', __( 'Elementor is not active.', 'uichemy' ), array( 'status' => 400 ) );
 			}
 
 			$body       = $request->get_json_params();

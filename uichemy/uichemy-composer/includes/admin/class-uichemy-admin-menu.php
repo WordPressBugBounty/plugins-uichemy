@@ -39,6 +39,11 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 			add_action( 'admin_init', array( __CLASS__, 'register_settings' ) );
 			add_action( 'admin_enqueue_scripts', array( __CLASS__, 'enqueue' ) );
 
+			// A white-label logo is any uploaded image, but WordPress prints a menu
+			// icon URL as a bare <img> sized only for a 20px icon, so a photo spread
+			// across the whole admin menu. Fit it to the icon box on every screen.
+			add_action( 'admin_head', array( __CLASS__, 'print_menu_logo_css' ) );
+
 			// React dashboard save endpoint (settings + white label).
 			add_action( 'wp_ajax_uichemy_dashboard', array( __CLASS__, 'ajax' ) );
 
@@ -450,6 +455,8 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 			if ( class_exists( 'UiChemy_Fast_Load' ) ) {
 				$opts = UiChemy_Fast_Load::with_synced( $opts );
 			}
+			// Feature switches likewise show wherever each feature keeps its own.
+			$opts = array_merge( $opts, self::feature_settings() );
 
 			return array(
 				'version'     => UICHEMY_VERSION,
@@ -499,6 +506,9 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 					'force_disable' => (int) $wl['force_disable'],
 				),
 				'settings'    => $opts,
+				// slug => bool, Settings > Features. The dashboard hides a switched-off
+				// feature's tab from this, so it never offers a screen whose module is unloaded.
+				'features'    => function_exists( 'uich_feature_states' ) ? uich_feature_states() : array(),
 				'fonts'       => class_exists( 'UiChemy_Fonts' ) ? UiChemy_Fonts::dashboard_payload() : null,
 				'imageOpt'    => class_exists( 'UiChemy_Image_Optimizer_Boot' ) ? UiChemy_Image_Optimizer_Boot::dashboard_payload() : null,
 				// The performance switches the Performance screen lists, so the screen has
@@ -538,13 +548,14 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				$raw   = isset( $_POST['settings'] ) ? json_decode( wp_unslash( $_POST['settings'] ), true ) : array(); // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
 				$raw   = is_array( $raw ) ? $raw : array();
 				$clean = self::sanitize_settings( $raw );
+				$clean = self::save_feature_switches( $clean );
 				update_option( 'uichemy_settings', $clean );
 				if ( class_exists( 'UiChemy_Fast_Load' ) ) {
 					// Settings that are Elementor's own go to Elementor's options too.
 					UiChemy_Fast_Load::save_synced( $raw );
 					$clean = UiChemy_Fast_Load::with_synced( $clean );
 				}
-				wp_send_json_success( array( 'settings' => $clean ) );
+				wp_send_json_success( array( 'settings' => array_merge( $clean, self::feature_settings() ) ) );
 			}
 
 			/**
@@ -563,14 +574,14 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 			// Free has no License screen and no license class, so any license_* type
 			// that reaches here was not handled by a Pro module.
 			if ( 0 === strpos( $type, 'license_' ) ) {
-				wp_send_json_error( array( 'message' => 'This is a UiChemy Pro feature.' ), 403 );
+				wp_send_json_error( array( 'message' => __( 'This is a UiChemy Pro feature.', 'uichemy' ) ), 403 );
 			}
 
 			// Both writers below are Pro-only. The React screens are already locked,
 			// but the ajax route has to refuse too — otherwise a crafted POST could
 			// still persist settings the Free UI can't display or undo.
 			if ( in_array( $type, array( 'save_role_manager', 'save_white_label' ), true ) && ! uichemy_is_pro() ) {
-				wp_send_json_error( 'This is a UiChemy Pro feature.', 403 );
+				wp_send_json_error( __( 'This is a UiChemy Pro feature.', 'uichemy' ), 403 );
 			}
 
 			if ( 'save_role_manager' === $type && class_exists( 'UiChemy_Roles' ) ) {
@@ -593,6 +604,20 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 			}
 
 			wp_send_json_error( array( 'message' => 'unknown type' ), 400 );
+		}
+
+		/**
+		 * Fit a white-label logo into the 20px admin menu icon slot.
+		 */
+		public static function print_menu_logo_css() {
+			$wl = (array) uichemy_white_label_settings();
+			if ( empty( $wl['enabled'] ) || empty( $wl['logo_url'] ) ) {
+				return;
+			}
+			echo '<style id="uichemy-menu-logo">'
+				. '#adminmenu #toplevel_page_' . esc_attr( self::SLUG ) . ' .wp-menu-image img{'
+				. 'width:20px;height:20px;padding:7px 0 0;object-fit:contain;box-sizing:content-box;border-radius:3px;}'
+				. '</style>';
 		}
 
 		/* ── Branding marks ───────────────────────────────────────────────── */
@@ -715,7 +740,58 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				}
 			}
 
+			// Settings > Features: one `feature_{slug}` switch per feature in uich_features(), all on.
+			if ( function_exists( 'uich_feature_setting_defaults' ) ) {
+				$defaults = array_merge( $defaults, uich_feature_setting_defaults() );
+			}
+
 			return $defaults;
+		}
+
+		/**
+		 * Write each feature switch to wherever that feature keeps it.
+		 *
+		 * A feature with a switch of its own (SEO's module_enabled) is written
+		 * there and NOT kept in uichemy_settings, so there is one stored value and
+		 * the two screens that show it cannot drift. The returned array still
+		 * carries every switch, for the response.
+		 *
+		 * @param array $clean Sanitized settings.
+		 * @return array Settings to store in uichemy_settings.
+		 */
+		private static function save_feature_switches( $clean ) {
+			if ( ! function_exists( 'uich_features' ) ) {
+				return $clean;
+			}
+
+			foreach ( array_keys( uich_features() ) as $slug ) {
+				$key = uich_feature_setting_key( $slug );
+				if ( ! array_key_exists( $key, $clean ) || ! uich_feature_store( $slug ) ) {
+					continue;
+				}
+				if ( (bool) $clean[ $key ] !== uich_feature_stored( $slug ) ) {
+					uich_feature_set( $slug, (bool) $clean[ $key ] );
+				}
+				unset( $clean[ $key ] );
+			}
+
+			return $clean;
+		}
+
+		/**
+		 * Settings as the dashboard shows them: stored values over defaults, with
+		 * each feature switch read from wherever that feature keeps it.
+		 *
+		 * @return array
+		 */
+		private static function feature_settings() {
+			$out = array();
+			if ( function_exists( 'uich_features' ) ) {
+				foreach ( array_keys( uich_features() ) as $slug ) {
+					$out[ uich_feature_setting_key( $slug ) ] = uich_feature_stored( $slug ) ? 1 : 0;
+				}
+			}
+			return $out;
 		}
 
 		/**
@@ -744,6 +820,13 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				// stored instead of switching it off. Absent in storage too means on.
 				if ( ( 'enable_fast_load' === $key || 0 === strpos( $key, 'perf_' ) ) && ! array_key_exists( $key, (array) $input ) ) {
 					$out[ $key ] = UiChemy_Fast_Load::opt( $key ) ? 1 : 0;
+					continue;
+				}
+				// Feature switches follow the same rule: a save that does not mention one keeps what
+				// is stored, because switching a feature off unloads a whole module and must only
+				// ever happen from its own control. Absent in storage too means on.
+				if ( 0 === strpos( $key, 'feature_' ) && ! array_key_exists( $key, (array) $input ) ) {
+					$out[ $key ] = function_exists( 'uich_feature_stored' ) && ! uich_feature_stored( substr( $key, 8 ) ) ? 0 : 1;
 					continue;
 				}
 				$out[ $key ] = empty( $input[ $key ] ) ? 0 : 1;

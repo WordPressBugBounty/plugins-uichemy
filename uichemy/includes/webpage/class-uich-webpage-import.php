@@ -23,6 +23,14 @@ defined( 'ABSPATH' ) || exit;
 class Uich_Webpage_Import {
 
 	/**
+	 * Why the last ensure_plugin_active_generic() call failed, so the REST layer
+	 * can tell the user instead of the bare "Plugin installation failed."
+	 *
+	 * @var WP_Error|null
+	 */
+	protected $last_plugin_install_error = null;
+
+	/**
 	 * Option key for stored globals (used in page content).
 	 */
 	const OPTION_GLOBALS = 'uich_webpage_replacement_globals';
@@ -817,16 +825,50 @@ class Uich_Webpage_Import {
 		$is_active   = is_plugin_active( $check_slug );
 		$status      = $is_active ? 'active' : ( $success ? 'active' : 'failed' );
 
+		$reason      = $this->get_last_plugin_install_error();
+		$reason_text = is_wp_error( $reason ) ? trim( $reason->get_error_message() ) : '';
+		$reason_code = is_wp_error( $reason ) ? $reason->get_error_code() : '';
+
 		if ( ! $is_active && ! $success ) {
 			$api = new Uich_Webpage_Api();
-			$api->report_error( 'INSTALL_PLUGIN_FAILED', array( 'message' => 'Plugin installation failed: ' . $plugin_slug, 'source' => 'uichemy-webpage', 'level' => 'error', 'context' => array( 'plugin_slug' => $plugin_slug ) ) );
+			$api->report_error(
+				'INSTALL_PLUGIN_FAILED',
+				array(
+					'message' => 'Plugin installation failed: ' . $plugin_slug . ( '' !== $reason_text ? ' — ' . $reason_text : '' ),
+					'source'  => 'uichemy-webpage',
+					'level'   => 'error',
+					'context' => array(
+						'plugin_slug' => $plugin_slug,
+						'reason_code' => $reason_code,
+						'reason'      => $reason_text,
+					),
+				)
+			);
+		}
+
+		/*
+		 * A version gate ("Requires at least: 7.0") is permanent, not transient:
+		 * retrying it can only ever fail the same way. Flag it so the dashboard can
+		 * show what to do instead of a Retry button that cannot help.
+		 */
+		$retryable = ! in_array(
+			$reason_code,
+			array( 'incompatible_wp_required_version', 'incompatible_php_required_version', 'incompatible_wp_php_required_version', 'uichemy_plugin_install_forbidden' ),
+			true
+		);
+
+		$message = __( 'Plugin installation failed.', 'uichemy' );
+		if ( '' !== $reason_text ) {
+			$message = $reason_text;
 		}
 
 		return new WP_REST_Response(
 			array(
-				'success' => $is_active || $success,
-				'status'  => $status,
-				'message' => $is_active ? __( 'Plugin is active.', 'uichemy' ) : __( 'Plugin installation failed.', 'uichemy' ),
+				'success'     => $is_active || $success,
+				'status'      => $status,
+				'message'     => $is_active ? __( 'Plugin is active.', 'uichemy' ) : $message,
+				'reason_code' => $is_active ? '' : $reason_code,
+				'retryable'   => $is_active ? true : $retryable,
 			)
 		);
 	}
@@ -2217,7 +2259,7 @@ class Uich_Webpage_Import {
 				'IMPORT_FETCH_DISALLOWED_HOST',
 				sprintf(
 					/* translators: %s: the rejected URL */
-					__( 'Refusing to fetch from a non-UiChemy host: %s', 'uichemy' ),
+					__( 'Refusing to fetch from a host that is not on the allowed list: %s', 'uichemy' ),
 					$url
 				),
 				array( 'status' => 403 )
@@ -6164,7 +6206,7 @@ class Uich_Webpage_Import {
 			'IMPORT_UICHEMY_TMPL_BAD_TYPE',
 			sprintf(
 				/* translators: 1: section type, 2: elementor-style type */
-				__( 'Could not map this template to a UiChemy type (section "%1$s", type "%2$s").', 'uichemy' ),
+				__( 'Could not map this template to a Theme Builder type (section "%1$s", type "%2$s").', 'uichemy' ),
 				$section_type,
 				$el_type
 			)
@@ -6175,7 +6217,7 @@ class Uich_Webpage_Import {
 		if ( ! $this->is_uichemy_theme_builder_available() ) {
 			return new WP_Error(
 				'IMPORT_UICHEMY_TB_NOT_ACTIVE',
-				__( 'UiChemy Theme Builder is not active. Install and activate the UiChemy plugin.', 'uichemy' )
+				__( 'The Theme Builder is not active. Make sure this plugin is installed and active.', 'uichemy' )
 			);
 		}
 
@@ -6266,7 +6308,7 @@ class Uich_Webpage_Import {
 			if ( null === $result ) {
 				return new WP_Error(
 					'IMPORT_UICHEMY_TB_NOT_ACTIVE',
-					__( 'UiChemy Theme Builder did not handle the template creation request.', 'uichemy' )
+					__( 'The Theme Builder did not handle the template creation request.', 'uichemy' )
 				);
 			}
 			$block_post_id = 0;
@@ -6278,7 +6320,7 @@ class Uich_Webpage_Import {
 			if ( ! $block_post_id ) {
 				return new WP_Error(
 					'IMPORT_UICHEMY_TMPL_FAILED',
-					__( 'UiChemy Theme Builder returned no template id.', 'uichemy' )
+					__( 'The Theme Builder returned no template id.', 'uichemy' )
 				);
 			}
 
@@ -6405,7 +6447,7 @@ class Uich_Webpage_Import {
 		if ( null === $result ) {
 			return new WP_Error(
 				'IMPORT_UICHEMY_TB_NOT_ACTIVE',
-				__( 'UiChemy Theme Builder did not handle the template creation request.', 'uichemy' )
+				__( 'The Theme Builder did not handle the template creation request.', 'uichemy' )
 			);
 		}
 
@@ -6419,7 +6461,7 @@ class Uich_Webpage_Import {
 		if ( $post_id <= 0 ) {
 			return new WP_Error(
 				'IMPORT_UICHEMY_TMPL_CREATE_FAILED',
-				__( 'UiChemy Theme Builder returned no template ID.', 'uichemy' )
+				__( 'The Theme Builder returned no template ID.', 'uichemy' )
 			);
 		}
 
@@ -7047,16 +7089,25 @@ class Uich_Webpage_Import {
 		$ok = $this->ensure_plugin_active_generic( 'woocommerce/woocommerce.php', 'woocommerce' );
 
 		if ( ! $ok ) {
+			$reason      = $this->get_last_plugin_install_error();
+			$reason_text = is_wp_error( $reason ) ? trim( $reason->get_error_message() ) : '';
+			$reason_code = is_wp_error( $reason ) ? $reason->get_error_code() : '';
+
 			$api = new Uich_Webpage_Api();
 			$api->report_error(
 				'IMPORT_WOOCOMMERCE_INSTALL_FAILED',
 				array(
-					'message' => 'This project needs WooCommerce and it could not be installed or activated; product templates will be skipped.',
+					'message' => 'This project needs WooCommerce and it could not be installed or activated; product templates will be skipped.'
+						. ( '' !== $reason_text ? ' Reason: ' . $reason_text : '' ),
 					'source'  => 'uichemy-webpage',
 					'level'   => 'warning',
+					'context' => array(
+						'reason_code' => $reason_code,
+						'reason'      => $reason_text,
+					),
 				)
 			);
-			return array( 'needed' => true, 'status' => 'failed' );
+			return array( 'needed' => true, 'status' => 'failed', 'reason' => $reason_text, 'reason_code' => $reason_code );
 		}
 
 		$this->disable_woocommerce_coming_soon();
@@ -7089,6 +7140,8 @@ class Uich_Webpage_Import {
 	protected function ensure_plugin_active_generic( $plugin_slug, $original_slug ) {
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
 
+		$this->last_plugin_install_error = null;
+
 		$all_plugins = get_plugins();
 		$resolved    = $this->resolve_plugin_file_from_slug( $plugin_slug, $all_plugins );
 		if ( $resolved ) {
@@ -7107,10 +7160,25 @@ class Uich_Webpage_Import {
 
 		if ( $installed ) {
 			$activate_status = $this->uich_webpage_activate_plugin( $plugin_slug );
-			return ( $activate_status && ! is_wp_error( $activate_status ) );
+			if ( is_wp_error( $activate_status ) ) {
+				$this->last_plugin_install_error = $activate_status;
+				return false;
+			}
+			if ( ! $activate_status ) {
+				$this->last_plugin_install_error = new WP_Error(
+					'uichemy_plugin_activate_failed',
+					/* translators: %s: plugin file, e.g. woocommerce/woocommerce.php. */
+					sprintf( __( '%s is installed but could not be activated.', 'uichemy' ), $plugin_slug )
+				);
+			}
+			return (bool) $activate_status;
 		}
 
 		if ( ! current_user_can( 'install_plugins' ) ) {
+			$this->last_plugin_install_error = new WP_Error(
+				'uichemy_plugin_install_forbidden',
+				__( 'Your user account is not allowed to install plugins on this site.', 'uichemy' )
+			);
 			return false;
 		}
 
@@ -7123,11 +7191,17 @@ class Uich_Webpage_Import {
 		);
 
 		if ( is_wp_error( $plugin_api ) ) {
+			$this->last_plugin_install_error = $plugin_api;
 			return false;
 		}
 
 		$download_url = isset( $plugin_api->download_link ) ? $plugin_api->download_link : null;
 		if ( empty( $download_url ) ) {
+			$this->last_plugin_install_error = new WP_Error(
+				'uichemy_plugin_no_download_link',
+				/* translators: %s: plugin slug on wordpress.org. */
+				sprintf( __( 'wordpress.org returned no download link for "%s".', 'uichemy' ), $original_slug )
+			);
 			return false;
 		}
 
@@ -7135,16 +7209,33 @@ class Uich_Webpage_Import {
 		$upgrader = new Plugin_Upgrader( $skin );
 		$result   = $upgrader->install( $download_url );
 
+		/*
+		 * Every branch below used to return a bare false, so an install that
+		 * WordPress refused for a precise, stated reason reached the dashboard as
+		 * "Plugin installation failed." next to a Retry button that could never
+		 * succeed. The commonest case is a plain version gate — WooCommerce
+		 * declares "Requires at least: 7.0" while Elementor declares 6.8, so on a
+		 * 6.8/6.9 site core installs Elementor and refuses WooCommerce — and core
+		 * puts the actionable sentence ("Your WordPress version is X, however the
+		 * uploaded plugin requires Y") in the error DATA, not the message, which
+		 * is why it never surfaced even where the error object was kept.
+		 */
+		$failure = null;
 		if ( is_wp_error( $result ) ) {
-			return false;
+			$failure = $result;
+		} elseif ( is_wp_error( $skin->result ) ) {
+			$failure = $skin->result;
+		} elseif ( $skin->get_errors()->has_errors() ) {
+			$failure = $skin->get_errors();
+		} elseif ( is_null( $result ) ) {
+			$failure = new WP_Error(
+				'uichemy_plugin_install_no_result',
+				__( 'The plugin installer finished without installing anything. This is usually a PHP memory limit or a hard timeout on your host.', 'uichemy' )
+			);
 		}
-		if ( is_wp_error( $skin->result ) ) {
-			return false;
-		}
-		if ( $skin->get_errors()->has_errors() ) {
-			return false;
-		}
-		if ( is_null( $result ) ) {
+
+		if ( $failure ) {
+			$this->last_plugin_install_error = $this->clarify_plugin_install_error( $failure );
 			return false;
 		}
 
@@ -7152,7 +7243,60 @@ class Uich_Webpage_Import {
 		$file_to_use     = ( ! empty( $install_status['file'] ) ) ? $install_status['file'] : $plugin_slug;
 		$activate_status = $this->uich_webpage_activate_plugin( $file_to_use );
 
-		return ( $activate_status && ! is_wp_error( $activate_status ) );
+		if ( is_wp_error( $activate_status ) ) {
+			$this->last_plugin_install_error = $activate_status;
+			return false;
+		}
+		if ( ! $activate_status ) {
+			$this->last_plugin_install_error = new WP_Error(
+				'uichemy_plugin_activate_failed',
+				/* translators: %s: plugin file, e.g. woocommerce/woocommerce.php. */
+				sprintf( __( '%s installed but could not be activated.', 'uichemy' ), $file_to_use )
+			);
+		}
+
+		return (bool) $activate_status;
+	}
+
+	/**
+	 * Promote WordPress's own explanation into the error message.
+	 *
+	 * On a version mismatch core returns the generic "The package could not be
+	 * installed." and stashes the sentence that actually tells the user what to do
+	 * in the error data. Mirrors Uich_ND_Installer::clarify_install_error(), which
+	 * does the same for the dashboard's plugin manager.
+	 *
+	 * @param WP_Error $error Error from Plugin_Upgrader or its skin.
+	 * @return WP_Error
+	 */
+	protected function clarify_plugin_install_error( $error ) {
+		if ( ! is_wp_error( $error ) ) {
+			return $error;
+		}
+
+		$compat_codes = array(
+			'incompatible_wp_required_version',
+			'incompatible_php_required_version',
+			'incompatible_wp_php_required_version',
+		);
+
+		$code   = $error->get_error_code();
+		$detail = $error->get_error_data();
+
+		if ( in_array( $code, $compat_codes, true ) && is_string( $detail ) && '' !== trim( $detail ) ) {
+			return new WP_Error( $code, trim( $detail ) );
+		}
+
+		return $error;
+	}
+
+	/**
+	 * Reason the last ensure_plugin_active_generic() call failed, if it did.
+	 *
+	 * @return WP_Error|null
+	 */
+	public function get_last_plugin_install_error() {
+		return $this->last_plugin_install_error;
 	}
 
 	/**
@@ -7990,7 +8134,7 @@ class Uich_Webpage_Import {
 			$base,
 			array(
 				'key'  => $preset_key,
-				'name' => __( 'UiChemy Import', 'uichemy' ),
+				'name' => __( 'Imported Styles', 'uichemy' ),
 			)
 		);
 		if ( ! empty( $colors_out ) ) {
@@ -8141,7 +8285,7 @@ class Uich_Webpage_Import {
 	protected function create_temp_gutenberg_page_and_delete() {
 		$post_id = wp_insert_post(
 			array(
-				'post_title'   => 'UiChemy Import Temp',
+				'post_title'   => 'Import Temp',
 				'post_status'  => 'publish',
 				'post_type'    => 'post',
 				'post_name'    => 'uich-webpage-import-temp-' . time(),

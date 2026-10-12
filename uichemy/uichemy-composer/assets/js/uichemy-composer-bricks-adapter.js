@@ -59,6 +59,9 @@
  */
 ( function () {
 	'use strict';
+	/* i18n helpers (wp-i18n is a declared script dependency). */
+	var __ = ( window.wp && window.wp.i18n && window.wp.i18n.__ ) || function ( text ) { return text; };
+
 
 	var PANEL_ID = 'uichemy-composer-floating-panel';
 	var POLL_MS = 400;
@@ -520,7 +523,7 @@
 
 		var btn = document.createElement( 'button' );
 		btn.type = 'button';
-		btn.textContent = 'Edit';
+		btn.textContent = __( 'Edit', 'uichemy' );
 		btn.className = 'uichemy-bricks-launcher-btn';
 		btn.style.cssText = 'flex:1 1 auto;padding:6px 10px;border:1px solid #dcdcde;'
 			+ 'border-radius:6px;background:#fff;color:#1e1e1e;font-size:12px;cursor:pointer;';

@@ -254,6 +254,37 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				return '';
 			}
 
+			// A template is language-neutral, so its text is translated while it renders
+			// (UiChemy_I18n_Strings). The scope is what keeps ordinary pages out of that path.
+			$scoped = class_exists( 'UiChemy_I18n_Strings' );
+			if ( $scoped ) {
+				UiChemy_I18n_Strings::enter();
+			}
+			// Dynamic data in the template is judged by the TEMPLATE's author, not by the
+			// author of the page it is shown on (Uich_Dynamic::author_trusted()).
+			$doc = class_exists( 'Uich_Dynamic' ) && method_exists( 'Uich_Dynamic', 'push_document' );
+			if ( $doc ) {
+				Uich_Dynamic::push_document( $id );
+			}
+			try {
+				return self::render_template_html( $id );
+			} finally {
+				if ( $doc ) {
+					Uich_Dynamic::pop_document();
+				}
+				if ( $scoped ) {
+					UiChemy_I18n_Strings::leave();
+				}
+			}
+		}
+
+		/**
+		 * Render a template's markup with the editor that authored it.
+		 *
+		 * @param int $id Template post ID.
+		 * @return string
+		 */
+		private static function render_template_html( $id ) {
 			$editor = class_exists( 'UiChemy_Template_CPT' ) ? UiChemy_Template_CPT::editor_for( $id ) : 'elementor';
 
 			if ( 'gutenberg' === $editor ) {

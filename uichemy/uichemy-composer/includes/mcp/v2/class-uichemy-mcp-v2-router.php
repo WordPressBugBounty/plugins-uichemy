@@ -435,6 +435,67 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 		}
 
 		/**
+		 * Refuse an unusable `parent` BEFORE anything is created, so a bad id never
+		 * leaves an orphan page behind.
+		 *
+		 * @param array $params Create params.
+		 * @return WP_Error|null
+		 */
+		private static function check_parent( array $params ) {
+			if ( empty( $params['parent'] ) ) {
+				return null;
+			}
+			$parent = get_post( (int) $params['parent'] );
+			if ( ! $parent ) {
+				return new WP_Error( 'uich_mcp_error', sprintf( 'No post with ID %d to be the parent.', (int) $params['parent'] ) );
+			}
+			$type = ! empty( $params['post_type'] ) ? sanitize_key( (string) $params['post_type'] ) : $parent->post_type;
+			if ( ! is_post_type_hierarchical( $type ) ) {
+				return new WP_Error( 'uich_mcp_error', sprintf( '"%s" is not hierarchical, so it cannot have a parent. Pages can; use categories to group posts.', $type ) );
+			}
+			if ( $parent->post_type !== $type ) {
+				return new WP_Error( 'uich_mcp_error', sprintf( 'The parent (ID %1$d) is a %2$s; a %3$s needs a parent of the same type.', $parent->ID, $parent->post_type, $type ) );
+			}
+			return null;
+		}
+
+		/**
+		 * After a create: set the new post's parent when one was asked for.
+		 *
+		 * @param mixed $result Create result.
+		 * @param array $params Create params.
+		 * @return mixed
+		 */
+		private static function with_parent( $result, array $params ) {
+			if ( empty( $params['parent'] ) || is_wp_error( $result ) || ! is_array( $result ) ) {
+				return $result;
+			}
+			$id = 0;
+			foreach ( array( 'post_id', 'page_id', 'id' ) as $k ) {
+				if ( ! empty( $result[ $k ] ) ) {
+					$id = (int) $result[ $k ];
+					break;
+				}
+			}
+			if ( ! $id ) {
+				return $result;
+			}
+			$set = UiChemy_Composer_Manager::mcp_update_post_attributes(
+				array(
+					'post_id' => $id,
+					'parent'  => (int) $params['parent'],
+				)
+			);
+			$result['parent'] = is_wp_error( $set ) ? 0 : (int) $params['parent'];
+			if ( is_wp_error( $set ) ) {
+				$result['parent_error'] = $set->get_error_message();
+			} else {
+				$result['url'] = get_permalink( $id );
+			}
+			return $result;
+		}
+
+		/**
 		 * uichemy-composer/seo — per-post SEO metadata, through whichever SEO plugin owns output.
 		 *
 		 * BASIC for now: UiChemy has no head emitter of its own in this build, so this
@@ -714,7 +775,11 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 					if ( 'template' === $domain ) {
 						return self::execute_create_template( $params );
 					}
-					return UiChemy_Composer_MCP_Server::execute_create_uichemy_composer_page( $params );
+					$bad_parent = self::check_parent( $params );
+					if ( $bad_parent ) {
+						return $bad_parent;
+					}
+					return self::with_parent( UiChemy_Composer_MCP_Server::execute_create_uichemy_composer_page( $params ), $params );
 
 				// --- Theme builder (template domain only) ------------------------
 				case 'set_conditions':
@@ -745,8 +810,15 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 					// head/body key translation the single-section creator does for
 					// itself. Without it the four code parameters this action
 					// advertises are accepted and silently dropped.
-					return UiChemy_Composer_Manager::mcp_create_page_with_sections(
-						array_merge( $params, self::map_page_code_params( $params ) )
+					$bad_parent = self::check_parent( $params );
+					if ( $bad_parent ) {
+						return $bad_parent;
+					}
+					return self::with_parent(
+						UiChemy_Composer_Manager::mcp_create_page_with_sections(
+							array_merge( $params, self::map_page_code_params( $params ) )
+						),
+						$params
 					);
 
 				// --- The post's own attributes -----------------------------------

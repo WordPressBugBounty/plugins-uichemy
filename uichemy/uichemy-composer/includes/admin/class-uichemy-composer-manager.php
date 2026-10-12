@@ -241,9 +241,10 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return "<style>\n" . self::neutralize_style_close( $css ) . "\n</style>";
 			}
 
-			// Head code can be markup, such as Google Fonts <link> tags. Preserve it
-			// instead of placing markup inside <style>, which browsers ignore.
-			if ( preg_match( '/<(style|link|meta)\b/i', $css ) ) {
+			// Head code can be markup, such as Google Fonts <link> tags, an SEO
+			// <title> or a JSON-LD <script>. Preserve it instead of placing markup
+			// inside <style>, which browsers ignore. Raw CSS never begins with a tag.
+			if ( preg_match( '/^<[a-z]/i', $css ) || preg_match( '/<(style|link|meta|title|script|noscript|base)\b/i', $css ) ) {
 				return $css;
 			}
 
@@ -6957,6 +6958,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'page_before_head' => (string) $section['page_custom_code_head'],
 				'page_before_body' => (string) $section['page_custom_code_footer'],
 				'site_code_note'   => 'Site-wide head/body code lives in uichemy-composer/platform (get-site-code / set-site-code / update-site-code).',
+				'seo_note'         => 'page_before_head is also where this page\'s SEO lives: <title>, <meta name="description">, <link rel="canonical">, <meta name="robots">, og:* / twitter:* tags and <script type="application/ld+json">. Each is printed once, ahead of the site head code\'s fallback tag; remove one to let that value follow the page content. uichemy-composer/seo audit-page-seo shows what they produce and what is missing.',
 			);
 		}
 
@@ -7317,6 +7319,49 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		}
 
 		/**
+		 * Three-way merge of an editor's site-head save.
+		 *
+		 * The editor edits a copy of the site head (each Composer widget carries
+		 * one), which can be older than the stored value: the SEO screen, the
+		 * design system or an MCP call may have changed it since. A part the
+		 * editor did not change keeps the stored value; a part it changed takes
+		 * the editor's. Parts merged this way: the #uichemy-globals block here, and
+		 * (through `uichemy_site_head_merge`) every SEO tag. Free-form code takes
+		 * the editor's version.
+		 *
+		 * @param string $head   Head the editor sent.
+		 * @param string $base   Head the editor's edit started from.
+		 * @param string $stored Head stored now.
+		 * @return string
+		 */
+		public static function merge_site_head( $head, $base, $stored ) {
+			if ( class_exists( 'UiChemy_Globals_CSS' ) ) {
+				$g_base   = UiChemy_Globals_CSS::locate_block( $base );
+				$g_mine   = UiChemy_Globals_CSS::locate_block( $head );
+				$g_stored = UiChemy_Globals_CSS::locate_block( $stored );
+				$inner    = function ( $loc ) {
+					return null === $loc ? null : trim( $loc['inner'] );
+				};
+				// Untouched by this edit: take the stored block (add, update or remove it).
+				if ( $inner( $g_base ) === $inner( $g_mine ) && $inner( $g_mine ) !== $inner( $g_stored ) ) {
+					if ( null === $g_stored ) {
+						$head = trim( substr( $head, 0, $g_mine['start'] ) . substr( $head, $g_mine['end'] ) );
+					} else {
+						$head = UiChemy_Globals_CSS::upsert_block( $head, $inner( $g_stored ) );
+					}
+				}
+			}
+			/**
+			 * Merge the parts of an editor's site-head save that a module owns.
+			 *
+			 * @param string $head   Head after the globals merge.
+			 * @param string $base   Head the editor's edit started from.
+			 * @param string $stored Head stored now.
+			 */
+			return (string) apply_filters( 'uichemy_site_head_merge', $head, $base, $stored );
+		}
+
+		/**
 		 * AJAX: save shared site-level custom code.
 		 *
 		 * @return void
@@ -7337,7 +7382,16 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized immediately below via self::update_site_custom_code_option() → self::sanitize_custom_code(), which is capability-scoped: only unfiltered_html users store raw markup, everyone else is passed through wp_kses_post().
 			$head   = isset( $_POST['head'] ) ? wp_unslash( $_POST['head'] ) : '';
 			$footer = isset( $_POST['footer'] ) ? wp_unslash( $_POST['footer'] ) : '';
+			// The head the editor last knew the server had. When the stored head has
+			// changed since (the SEO screen wrote a tag, an MCP call added a font),
+			// the editor's copy is stale and must not silently undo that change.
+			$base = isset( $_POST['base_head'] ) ? (string) wp_unslash( $_POST['base_head'] ) : null;
 			// phpcs:enable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized
+
+			if ( null !== $base ) {
+				$stored = self::get_site_custom_code_option();
+				$head   = self::merge_site_head( (string) $head, $base, $stored['head'] );
+			}
 
 			wp_send_json_success( self::update_site_custom_code_option( $head, $footer ) );
 		}
@@ -7480,6 +7534,19 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// The location label interpolated into the comment is a fixed internal
 			// string ('head' / 'body_end'), never user input.
 			foreach ( $site_codes as $site_code ) {
+				/**
+				 * Filter site/page custom code just before it is printed. The SEO module
+				 * removes the SEO tags it owns here (title, meta description, og:*,
+				 * canonical, JSON-LD…) and prints each of them exactly once itself.
+				 *
+				 * @param string $code     Code about to print.
+				 * @param string $scope    'site' | 'page'.
+				 * @param string $location 'head' | 'body_end'.
+				 */
+				$site_code = (string) apply_filters( 'uichemy_custom_code_output', $site_code, 'site', $location );
+				if ( '' === trim( $site_code ) ) {
+					continue;
+				}
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Sanitized on save per capability (see note above).
 				echo "\n<!-- Composer: Site Custom Code (" . esc_html( $location ) . ") -->\n" . $site_code . "\n";
 			}
@@ -7492,6 +7559,11 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$page_author_trusted = self::page_author_allows_raw_code();
 
 			foreach ( $page_codes as $page_code ) {
+				/** This filter is documented above. */
+				$page_code = (string) apply_filters( 'uichemy_custom_code_output', $page_code, 'page', $location );
+				if ( '' === trim( $page_code ) ) {
+					continue;
+				}
 				if ( ! $page_author_trusted ) {
 					$page_code = wp_kses_post( $page_code );
 				}

@@ -75,6 +75,10 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 			// to the onboarding wizard.
 			set_transient( 'uich_do_activation_redirect', true, MINUTE_IN_SECONDS * 5 );
 
+			// Deactivation removed the Custom Fields rewrite rules; ask for a flush on the next init
+			// (after the types register again) so their URLs come back.
+			update_option( 'uich_ct_flush_rewrite', 1, true );
+
 			// The merged builder runtime owns tables of its own (form submissions,
 			// and AI chat in Pro). Standalone UiChemy installed them from its own
 			// activation hook; that plugin file is not the one WordPress activates
@@ -110,6 +114,12 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 		 */
 		public static function uich_deactivation() {
 			apply_filters( 'uich_manage_usermanager', 'delete_user' );
+
+			// Custom Fields post types/taxonomies stop existing with the plugin, so drop them and
+			// their rewrite rules now; otherwise their URLs fall through to the home page with a 200.
+			if ( class_exists( '\Uich_Fields_Register', false ) ) {
+				\Uich_Fields_Register::get_instance()->unregister_all();
+			}
 		}
 
 		/**

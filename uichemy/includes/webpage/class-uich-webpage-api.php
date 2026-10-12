@@ -131,7 +131,7 @@ class Uich_Webpage_Api {
 		if ( 401 === $response_code ) {
 			return new WP_Error(
 				'not_authenticated',
-				__( 'Your UiChemy session has expired. Please reconnect.', 'uichemy' ),
+				__( 'Your session has expired. Please reconnect.', 'uichemy' ),
 				array( 'status' => 401 )
 			);
 		}
@@ -141,7 +141,7 @@ class Uich_Webpage_Api {
 				'api_error',
 				sprintf(
 					/* translators: %d: HTTP response code */
-					__( 'UiChemy API error: %d', 'uichemy' ),
+					__( 'API error: %d', 'uichemy' ),
 					$response_code
 				),
 				array( 'response' => $response_body )

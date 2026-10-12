@@ -97,6 +97,8 @@
   --uc-font-sans: "Zalando Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --uc-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
   --uc-text-3xs: 0.5rem;    --uc-text-2xs: 0.625rem;  --uc-text-xs: 0.75rem;
+  /* 11px: compact meta / dense-panel text (list meta, inspector hints, code gutter). */
+  --uc-text-11: 0.6875rem;
   --uc-text-sm: 0.8125rem;  --uc-text-base: 0.875rem; --uc-text-md: 1rem;
   --uc-text-lg: 1.125rem;   --uc-text-xl: 1.25rem;    --uc-text-2xl: 1.5rem;
   --uc-text-3xl: 1.875rem;
@@ -2826,6 +2828,9 @@ video {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
+.uich-tw .duration-150 {
+  transition-duration: 150ms;
+}
 .uich-tw .duration-200 {
   transition-duration: 200ms;
 }
@@ -2882,6 +2887,9 @@ video {
 }
 .uich-tw .slide-in-from-top-1 {
   --tw-enter-translate-y: -0.25rem;
+}
+.uich-tw .duration-150 {
+  animation-duration: 150ms;
 }
 .uich-tw .duration-200 {
   animation-duration: 200ms;
@@ -9629,6 +9637,21 @@ body[data-panel-only] .panel-resize {
 }
 
 /* --- Live code editor (wp.codeEditor / CodeMirror) integration --- */
+
+/* CodeMirror 5 hides the scroller's native scrollbars by sizing it 50px past
+   its box (padding + negative margin), which only works in content-box. The
+   global border-box resets (`*`, `.uich-tw *`, `.uc-content *`) tie on
+   specificity with codemirror.css and load after it, so they won: the native
+   bar came into view under CodeMirror's own one, two horizontal scrollbars at
+   the foot of every editor (QA). Restore CodeMirror's own sizing. */
+:is(.uich-tw, .uc-content, .uc-scope, body) .CodeMirror-scroll,
+:is(.uich-tw, .uc-content, .uc-scope, body) .CodeMirror-sizer,
+:is(.uich-tw, .uc-content, .uc-scope, body) .CodeMirror-gutter,
+:is(.uich-tw, .uc-content, .uc-scope, body) .CodeMirror-gutters,
+:is(.uich-tw, .uc-content, .uc-scope, body) .CodeMirror-linenumber {
+  box-sizing: content-box;
+}
+
 .ed-pane-live {
   display: flex;
   flex-direction: column;
@@ -18110,6 +18133,20 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
   --uc-z-tooltip: 100300;
 }
 
+/* The canvas portal root (the floating text toolbar's menus: Font, Weight,
+   colour and dynamic pickers) kept the DS default 1250. The selection overlay
+   with its resize dots sits at 9998 on the front end and ~2147482100 inside
+   the Elementor preview, so the dots drew across an open Font list (QA). Lift
+   that root's pop-ups above the overlay, the box handles and the toolbar host
+   (2147482500), and below nothing but the toolbar tooltips. */
+.uich-portal-root-canvas,
+.uich-portal-root-canvas :is(.uc-portal, .uc-pop-dark, [data-radix-popper-content-wrapper]) {
+  --uc-z-overlay: 2147482800;
+  --uc-z-dialog: 2147482900;
+  --uc-z-dropdown: 2147482950;
+  --uc-z-tooltip: 2147483000;
+}
+
 /* ---- Dialogs are LIGHT (Jay, 2026-09-29: "I don't want dark popups") -----
    Dialogs only: menus, popovers, tooltips and pickers stay dark. The DS
    Dialog's positioner carries `uc-portal` (DS light tokens) + `uc-dialog-light`
@@ -19237,7 +19274,9 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
    One flat surface: no card, no lines between rows. The DS pill tabs pick the
    list, rows are 32px with the panel's hover wash, each row notes where the
    file loads, and one full-width Add button names the open kind. Text sits on
-   the section's own inset; a row's hover wash reaches 6px past it. */
+   the section's own inset; a row's hover wash reaches 8px past it, so the
+   switch and the last icon get the same 8px inside the wash (QA: 6px read as
+   the switch touching the wash's left edge). */
 .panel.dock-right.uc-chrome .deps-bar--tabs {
   display: flex;
   flex-direction: column;
@@ -19252,14 +19291,14 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  margin: 0 calc(-1 * var(--uc-space-6, 6px));
+  margin: 0 calc(-1 * var(--uc-space-8, 8px));
 }
 .panel.dock-right.uc-chrome .deps-bar--tabs .dep {
   display: flex;
   align-items: center;
   gap: var(--uc-space-8, 8px);
   height: 32px;
-  padding: 0 var(--uc-space-6, 6px);
+  padding: 0 var(--uc-space-8, 8px);
   border: 0;
   border-radius: var(--uc-radius-sm, 6px);
   font-size: var(--uc-text-xs, 12px);
@@ -19281,7 +19320,7 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
   color: var(--uc-text-muted);
 }
 .panel.dock-right.uc-chrome .deps-bar--tabs .deps-empty {
-  padding: var(--uc-space-8, 8px) var(--uc-space-6, 6px);
+  padding: var(--uc-space-8, 8px);
   font-size: var(--uc-text-xs, 12px);
   line-height: 1.5;
   color: var(--uc-text-muted);
@@ -20979,6 +21018,24 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
   --_glow: rgba(128, 128, 128, 0.12);
 }
 
+/* ---- As a link (asChild <a>) --------------------------------------------- *
+   wp-admin styles `a:hover, a:active` (blue text) and `a:focus` (blue text + a
+   2px blue box-shadow) at 0,1,1, which out-ranks the variant colours and
+   shadows above (0,1,0). Re-assert them for anchors so a link button looks
+   exactly like the button it is in every state. */
+a.nx448XS4JGEoBYKJ_Xeh:is(:hover, :focus, :active, :visited) { color: var(--uc-brand-on); }
+a.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :active, :visited) { color: var(--uc-inverse-fg); }
+a.lSxxR32yQ7uBGKoReA0d:is(:hover, :focus, :active, :visited),
+a.uEkFBKngy5ABC8BavrlF:is(:hover, :focus, :active, :visited) { color: var(--_fg, var(--uc-brand-fg)); }
+a.uEkFBKngy5ABC8BavrlF.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :active, :visited) { color: var(--uc-text-strong); }
+a.ZShdqkg6btw_9kcxTgYx:is(:focus, :active, :visited) { color: var(--_fg, var(--uc-brand-fg)); }
+a.ZShdqkg6btw_9kcxTgYx.P6iUGKQ9CuUmhTY4IDx4:is(:focus, :active, :visited) { color: var(--uc-text); }
+a.nx448XS4JGEoBYKJ_Xeh:focus { box-shadow: var(--_shadow, var(--uc-shadow-control-brand)); }
+a.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:focus { box-shadow: var(--uc-shadow-control); }
+a.lSxxR32yQ7uBGKoReA0d:focus { box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)), var(--uc-shadow-1); }
+a.uEkFBKngy5ABC8BavrlF:focus { box-shadow: inset 0 0 0 1px var(--_border, var(--uc-border-subtle)), var(--uc-shadow-raised); }
+a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
+
 /* ---- Loading -------------------------------------------------------------- */
 .pc70O1Y6HdzT607YK_OL { color: transparent !important; pointer-events: none; }
 .rtWcge6eoBiDmFoHo4gD {
@@ -21107,6 +21164,18 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
    re-enables them on its own Content, this button lives outside that Content,
    so it must opt back in explicitly or hover/click fall through to the overlay. */
 .e784dW4AlZcPspGNMNkW {
+  /* The dialog portals outside the dashboard root, so wp-admin's own button rules
+     can reach it: reset what they would add to the glyph (padding, margin, line
+     height, tap highlight) and show a focus ring for keyboard focus only. */
+  padding: 0;
+  margin: 0;
+  line-height: 1;
+  outline: none;
+  -webkit-tap-highlight-color: transparent;
+  /* Fade in with the dialog. The dialog animates in (fade + settle) but its close
+     button used to appear at once, so for a moment it floated by itself beside a
+     half-faded dialog. Same keyframes and timing keep the two in step. */
+  animation: q2klsmdheEHvyti7wZU2 var(--uc-dur-enter) var(--uc-ease-emphasized) backwards;
   pointer-events: auto;
   position: absolute;
   top: 0;
@@ -21163,6 +21232,19 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
   to { opacity: 1; transform: none; }
 }
 
+/* Narrow screens: the positioner leaves only a 16px margin, so "just outside the corner" is off
+   screen. Tuck the close button into the card's top-right corner instead, and keep the header
+   text clear of it. */
+@media (max-width: 600px) {
+  .e784dW4AlZcPspGNMNkW {
+    right: auto;
+    left: var(--uc-space-12);
+    top: var(--uc-space-12);
+    z-index: 1;
+  }
+  .q_8ukzAV3OUe2odpsEY5 { padding-left: var(--uc-space-36); }
+}
+
 /* The always-dark chip: the floating canvas toolbar's standalone button as a
    reusable control. Reads the SAME --uc-toolbar tokens (with the same literal
    fallbacks), so the two stay identical; the component adds `uc-pop-dark`
@@ -21183,14 +21265,23 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
   outline-offset: 2px;
 }
 
-/* Input, recessed field on uc- tokens. */
+/* Input, recessed field on uc- tokens.
+
+   wp-admin hardening: WordPress's forms.css styles `input[type="text"]` (and
+   every other type) at specificity (0,1,1) — border, 2px radius, 40px
+   min-height, 0 8px padding and a blue :focus box-shadow — which beats a lone
+   `.input` (0,1,0) whenever the field has a type attribute (the Combobox search,
+   number/date fields…). Every field rule below therefore carries `[class]`
+   (always true on these elements): +(0,1,0) on each one, so their order among
+   themselves is unchanged but they now outrank wp-admin. margin, min-height and
+   line-height are reset because wp-admin sets them and the DS did not. */
 .gf6IRPe9LovRo8vS3IAl {
   position: relative;
   display: inline-flex;
   align-items: center;
   width: 100%;
 }
-.jvLYLaG45SNM0t7oug2a {
+.jvLYLaG45SNM0t7oug2a[class] {
   width: 100%;
   height: var(--uc-input-h, var(--uc-control-h-md));
   padding: 0 var(--uc-input-px, var(--uc-space-12));
@@ -21200,47 +21291,50 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
   color: var(--uc-text-strong);
   background: var(--uc-surface-overlay);
   background-image: linear-gradient(to bottom, oklch(0% 0 0 / 0.02), transparent);
+  margin: 0;
+  min-height: 0;
+  line-height: normal;
   border: none;
   border-radius: var(--uc-input-radius, var(--uc-radius-md));
   box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
   transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
   outline: none;
 }
-.jvLYLaG45SNM0t7oug2a::-moz-placeholder { color: var(--uc-text-subtle); }
-.jvLYLaG45SNM0t7oug2a::placeholder { color: var(--uc-text-subtle); }
-.jvLYLaG45SNM0t7oug2a:hover:not(:disabled):not(:focus) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+.jvLYLaG45SNM0t7oug2a[class]::-moz-placeholder { color: var(--uc-text-subtle); }
+.jvLYLaG45SNM0t7oug2a[class]::placeholder { color: var(--uc-text-subtle); }
+.jvLYLaG45SNM0t7oug2a[class]:hover:not(:disabled):not(:focus) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
 /* Focus = OFFSET brand ring: the field keeps its subtle inset border, then a
    1px transparent gap (outline-offset shows the surface behind), then a thin 1px
    brand outline sits OUTSIDE the field. Uses :focus so it shows on click +
    keyboard. Kept thin (1px + 1px) so it reads as a single hairline ring, not a
    thick double band. */
-.jvLYLaG45SNM0t7oug2a:focus {
+.jvLYLaG45SNM0t7oug2a[class]:focus {
   box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
   outline: 1px solid var(--uc-brand);
   outline-offset: 1px;
 }
-.jvLYLaG45SNM0t7oug2a:disabled {
+.jvLYLaG45SNM0t7oug2a[class]:disabled {
   color: var(--uc-text-subtle);
   background: var(--uc-surface-sunken);
   box-shadow: inset 0 0 0 1px var(--uc-border);
   cursor: not-allowed;
 }
 
-.haw52Sf_U1aNw5UG26i6 { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
-.l_6Te8jk6g9i2OYGVJQK { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+.haw52Sf_U1aNw5UG26i6[class] { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
+.l_6Te8jk6g9i2OYGVJQK[class] { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
 
-.ssewu8L6FxnF8mjD_c_D {
+.ssewu8L6FxnF8mjD_c_D[class] {
   box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
 }
-.ssewu8L6FxnF8mjD_c_D:focus {
+.ssewu8L6FxnF8mjD_c_D[class]:focus {
   box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
   outline: 1px solid var(--uc-danger);
   outline-offset: 1px;
 }
 
 /* icon adornments */
-.fGN3tsXkL0HfDxLoHJ3b { padding-right: var(--uc-space-32); }
-.F7_NHLpEO7zGCxeHmEbl { padding-left: var(--uc-space-32); }
+.fGN3tsXkL0HfDxLoHJ3b[class] { padding-right: var(--uc-space-32); }
+.F7_NHLpEO7zGCxeHmEbl[class] { padding-left: var(--uc-space-32); }
 .NPtEFuYEvwKDd0CQ2ZL4 {
   position: absolute;
   display: grid;
@@ -21251,19 +21345,81 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
 .Bcg2bwvX_INxmvsS4KTp { right: var(--uc-space-12); }
 .oFadrtuqYdL1WAYq7mGM { left: var(--uc-space-12); }
 
+/* ── Addons (BoardUI Input adornments) ────────────────────────────────────
+   The shell is the field: same fill, inset ring, radius and heights as .input,
+   with the focus ring on :focus-within. The inner input (.bare) is transparent.
+   [class] keeps these above wp-admin's input[type=…] rules, as above. */
+.D0Xdmp8POlPPHSzhzm9g[class] {
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-8);
+  width: 100%;
+  height: var(--uc-input-h, var(--uc-control-h-md));
+  padding: 0 var(--uc-input-px, var(--uc-space-12));
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text-strong);
+  background: var(--uc-surface-overlay);
+  background-image: linear-gradient(to bottom, oklch(0% 0 0 / 0.02), transparent);
+  border-radius: var(--uc-input-radius, var(--uc-radius-md));
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+  cursor: text;
+}
+.D0Xdmp8POlPPHSzhzm9g[class]:hover:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+.D0Xdmp8POlPPHSzhzm9g[class]:focus-within { outline: 1px solid var(--uc-brand); outline-offset: 1px; }
+.Xg64tHf4Kp4Noa25JH0b[class] { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); gap: var(--uc-space-6); }
+.M5O1Ldpq66ff3nhO1rMQ[class] { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
+.ekm8tp1ZbcU5q1z1wOWS[class] { box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input); }
+.ekm8tp1ZbcU5q1z1wOWS[class]:focus-within { outline-color: var(--uc-danger); }
+.sXdm39Z0ZiRwORSaPpZv[class] { color: var(--uc-text-subtle); background: var(--uc-surface-sunken); box-shadow: inset 0 0 0 1px var(--uc-border); cursor: not-allowed; }
+
+.rqDSPev3xkBlb20ToTZX[class] {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 100%;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  font: inherit;
+  font-weight: var(--uc-weight-regular);
+  line-height: normal;
+  color: inherit;
+}
+.rqDSPev3xkBlb20ToTZX[class]:focus { box-shadow: none; outline: none; }
+.rqDSPev3xkBlb20ToTZX[class]::-moz-placeholder { color: var(--uc-text-subtle); }
+.rqDSPev3xkBlb20ToTZX[class]::placeholder { color: var(--uc-text-subtle); }
+.rqDSPev3xkBlb20ToTZX[class]:disabled { cursor: not-allowed; background: transparent; }
+
+.Y3HnmS9EPQ7CMwpRJcPQ { flex: none; display: inline-flex; align-items: center; min-width: 0; }
+.JY5ljlGXeMh2RPyRM1X1 { color: var(--uc-text-muted); white-space: nowrap; -webkit-user-select: none; -moz-user-select: none; user-select: none; }
+.Q7QN4UqutcmDnCCw7QMY { flex: none; display: grid; place-items: center; color: var(--uc-text-subtle); }
+
 /* field wrapper (label + hint) */
 .XrLNCTYM8KNOcisy0k1u { display: flex; flex-direction: column; gap: var(--uc-space-8); width: 100%; }
 ._nx7MrQDNMenHelkZy99 { font-size: var(--uc-text-sm); font-weight: var(--uc-weight-medium); color: var(--uc-text-strong); }
 .tmMcxsM0Zke7mcbuxgiI { font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
 .C1A65qwuRNgkck1QS09Q { color: var(--uc-danger-fg); }
 
-/* Textarea, recessed multiline field on uc- tokens. */
-.Xqsy0_gRpA0dvKAZlYwM {
+/* Textarea, recessed multiline field on uc- tokens.
+   wp-admin hardening (same as Input.module.css): WordPress's forms.css gives every `textarea`
+   its own border, padding, radius, line-height and focus ring, which stacked on this field as a
+   second frame. Every field rule carries `[class]` so it outranks wp-admin; margin is reset too. */
+.Xqsy0_gRpA0dvKAZlYwM[class] {
   width: 100%;
+  margin: 0;
   min-height: 84px;
   padding: var(--uc-space-8) var(--uc-space-12);
   font-family: var(--uc-font-sans);
   font-size: var(--uc-text-base);
+  /* Explicit, like Input: Tailwind preflight sets `font-weight: inherit` on textarea, so without
+     this the value took the weight of whatever wrapped it and read heavier than the inputs. */
+  font-weight: var(--uc-weight-regular);
   line-height: var(--uc-leading-normal);
   color: var(--uc-text-strong);
   background: var(--uc-surface-overlay);
@@ -21275,34 +21431,50 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
   outline: none;
   resize: vertical;
 }
-.A1clwk8PZzsmTt4nBCfy { min-height: 64px; padding: var(--uc-space-6) var(--uc-space-8); font-size: var(--uc-text-sm); }
-.nVx7pbGGbpIdebBWF5zQ { min-height: 104px; padding: var(--uc-space-10) var(--uc-space-16); font-size: var(--uc-text-md); }
-.Xqsy0_gRpA0dvKAZlYwM::-moz-placeholder { color: var(--uc-text-subtle); }
-.Xqsy0_gRpA0dvKAZlYwM::placeholder { color: var(--uc-text-subtle); }
-.Xqsy0_gRpA0dvKAZlYwM:hover:not(:disabled):not(:focus) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
+.A1clwk8PZzsmTt4nBCfy[class] { min-height: 64px; padding: var(--uc-space-6) var(--uc-space-8); font-size: var(--uc-text-sm); }
+.nVx7pbGGbpIdebBWF5zQ[class] { min-height: 104px; padding: var(--uc-space-10) var(--uc-space-16); font-size: var(--uc-text-md); }
+.Xqsy0_gRpA0dvKAZlYwM[class]::-moz-placeholder { color: var(--uc-text-subtle); }
+.Xqsy0_gRpA0dvKAZlYwM[class]::placeholder { color: var(--uc-text-subtle); }
+.Xqsy0_gRpA0dvKAZlYwM[class]:hover:not(:disabled):not(:focus) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
 /* Focus = the same OFFSET brand ring as Input (Input.module.css): the field
    keeps its subtle inset border, a 2px transparent gap, then the brand outline
    OUTSIDE the field. It used to be an inset brand border plus a 3px
    --uc-brand-soft halo, which on dark surfaces (where brand-soft is a white
    wash) read as a grey frame round the field and did not match the inputs
    next to it. :focus, like Input, so it shows on click and keyboard. */
-.Xqsy0_gRpA0dvKAZlYwM:focus {
+.Xqsy0_gRpA0dvKAZlYwM[class]:focus {
   box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
   outline: 1px solid var(--uc-brand);
   outline-offset: 1px;
 }
-.Xqsy0_gRpA0dvKAZlYwM:disabled {
+.Xqsy0_gRpA0dvKAZlYwM[class]:disabled {
   color: var(--uc-text-subtle);
   background: var(--uc-surface-sunken);
   box-shadow: inset 0 0 0 1px var(--uc-border);
   cursor: not-allowed;
 }
-.W9fQRV_wDrUOFRkjpGQu { box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input); }
-.W9fQRV_wDrUOFRkjpGQu:focus {
+.W9fQRV_wDrUOFRkjpGQu[class] { box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input); }
+.W9fQRV_wDrUOFRkjpGQu[class]:focus {
   box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
   outline: 1px solid var(--uc-danger);
   outline-offset: 1px;
 }
+
+/* ── autoResize / showCount / resize (ported from BoardUI's Textarea) ──────── */
+/* autoResize: height is set inline by the component (rows → maxRows), so the
+   fixed min-height steps aside and the handle goes (it would fight the fit). */
+.bX2w9x35ygzUvJ1Dscl2[class] { min-height: 0; overflow-y: hidden; }
+.n00Ij5fjFCXcY_WwMjdU[class] { resize: none; }
+
+/* Counter on its own row, right-aligned under the field (hint stays in Field). */
+.JUQO0q7E0NLpfvNqJw7Z { display: flex; flex-direction: column; gap: var(--uc-space-4); width: 100%; }
+.EfB4hZBAgC6fRUUtokch {
+  align-self: flex-end;
+  font-size: var(--uc-text-xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--uc-text-muted);
+}
+.HuvKETZwc0wgFBVafeEI { color: var(--uc-danger-fg); }
 
 /* Checkbox, Radix behavior, uc- token look. */
 .ZsR9sqwfzVcmwaXHIwSy {
@@ -21427,7 +21599,12 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
 }
 .e7F3s8Cpe8pIMhvl2kjH[data-placeholder] { color: var(--uc-text-subtle); }
 .e7F3s8Cpe8pIMhvl2kjH:disabled { opacity: 0.5; cursor: not-allowed; }
+/* The chevron is the one DS icon that sits inside a WRAPPER (Radix renders
+   SelectPrimitive.Icon as a <span>), so the svg inside it is inline and sits on
+   that span's text baseline, which leaves descender space below it and pushes
+   the glyph above the trigger's centre. `display: block` collapses that line box. */
 .RXwx8sg3STq8XWcaRIiM { color: var(--uc-text-muted); flex: none; }
+.RXwx8sg3STq8XWcaRIiM svg { display: block; }
 
 /* trigger sizes (md is the base above) */
 .A7XnIZMI5obBSBNATLZT { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); }
@@ -22145,20 +22322,28 @@ body.uich-gb-dock .uichemy-composer-floating-panel.uich-dock-right {
   background: var(--uc-tb-active-bg);
 }
 
+/* A disabled action says so under the pointer. `default` read as "this button
+   simply does nothing" — the arrow never changes, so a press that was ignored
+   looked like a press that was missed. */
 .Nt2ipeZvcBNJCdMb5cZ_:disabled,
 .Nt2ipeZvcBNJCdMb5cZ_:disabled:hover {
   opacity: 1;
   color: var(--uc-text-muted, #a3a3a3);
   background: transparent;
-  cursor: default;
+  cursor: not-allowed;
 }
 
+/* Active AND disabled is work in progress — Save during a flush is the case
+   this exists for. `progress` was the old choice and it is the wrong signal
+   here: it means "busy, but you may still interact", while the button is in
+   fact refusing the click. Saves are also short, so a cursor that only reads
+   as a brief flicker told the user nothing. */
 .Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:disabled,
 .Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:disabled:hover {
   background: var(--uc-tb-active-bg);
   box-shadow: var(--uc-tb-active-ring);
   color: var(--uc-text-strong, #fff);
-  cursor: progress;
+  cursor: not-allowed;
 }
 
 .Nt2ipeZvcBNJCdMb5cZ_ svg,
@@ -23634,12 +23819,30 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
 .vd4Lre4yQJ9ssRnkK9LL { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (max-width: 600px) { .FxesF5DiwLpWw69_utw5 { grid-template-columns: minmax(0,1fr); } .ukcwciyVp1TlW8ddmfEm { flex-direction: row; overflow-x: auto; border-left: 0; border-bottom: 1px solid var(--uc-border); } .CWhnBvraxYIslBF4TTi0 { width: auto; white-space: nowrap; } .kf9Rl9dHvU9QOi0XR8mi, .GpHZQnt1T1jaSAHMiOMg { padding: var(--uc-space-16); } }
 
+/* Combobox, a searchable DS Select.
+   Row metrics, colours and the tick mirror Select.module.css (.item / .indicator)
+   so a searchable list reads exactly like a <Select> menu. Everything is token-
+   driven, so inside <ComboboxContent> (the `uc-pop-dark` scope) it renders on the
+   same dark surface as SelectContent. */
+
+/* ── Trigger (layered on Select's .trigger) ── */
+.TMt7KQ8qabQdlCprI12S { width: 100%; min-width: 0; text-align: right; }
+.ZEtsbpSX6cU_Ed7QNcJN { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* ── Menu surface (layered on Select's .content) ── */
+.vY68I_p_LHjMh_G555yq {
+  min-width: var(--radix-popover-trigger-width);
+  max-width: calc(100vw - var(--uc-space-32));
+  color: var(--uc-text);
+}
+.vY68I_p_LHjMh_G555yq:focus-visible { outline: none; }
+
 .EQh1Zsx8SYfcUIJngYxf {
   display: flex;
   flex-direction: column;
   gap: var(--uc-space-4, 4px);
   min-height: 0;
-  max-height: min(328px, var(--radix-popover-content-available-height, 328px));
+  max-height: min(360px, var(--radix-popover-content-available-height, 360px));
 }
 .tQgk3IM_QGgqoNAzLwr4 {
   min-height: 0;
@@ -23651,54 +23854,169 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
 .tQgk3IM_QGgqoNAzLwr4::-webkit-scrollbar { width: 3px; }
 .tQgk3IM_QGgqoNAzLwr4::-webkit-scrollbar-thumb { background: var(--uc-border-strong); border-radius: 2px; }
 .tQgk3IM_QGgqoNAzLwr4::-webkit-scrollbar-track { background: transparent; }
+
+/* Group heading: a quiet label, sticky over the list on the menu's own surface. */
 .FXycZdDhl9kJETbjUHFO {
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: 2;
   display: flex;
   justify-content: space-between;
   gap: var(--uc-space-8, 8px);
-  padding: var(--uc-space-8, 8px) var(--uc-space-6, 6px) var(--uc-space-4, 4px);
-  background: var(--uc-surface-raised);
+  padding: var(--uc-space-8, 8px) var(--uc-space-12, 12px) var(--uc-space-4, 4px);
+  background: var(--uc-surface-overlay, var(--uc-surface-raised));
   color: var(--uc-text-muted);
   font-size: var(--uc-text-xs, 12px);
   font-weight: var(--uc-weight-medium, 500);
 }
 .GgeQ5Hm142wabYznnqR_ { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .FGCG1SrRWYYTO8tUWYWH { flex: none; color: var(--uc-text-subtle); font-variant-numeric: tabular-nums; }
+
+/* Option = Select .item: md height, base text, 12px left / 32px right (tick slot). */
 .DbjLcjr6klrYFvEy6_vt {
   all: unset;
   box-sizing: border-box;
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--uc-space-8, 8px);
   width: 100%;
-  height: 28px;
-  padding: 0 var(--uc-space-6, 6px);
+  min-height: var(--uc-control-h-md);
+  padding: var(--uc-space-4, 4px) var(--uc-space-12, 12px) var(--uc-space-4, 4px) var(--uc-space-32, 32px);
   border-radius: var(--uc-radius-sm, 6px);
   color: var(--uc-text);
-  font: var(--uc-text-xs, 12px) var(--uc-font-sans);
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
   cursor: pointer;
+  -webkit-user-select: none;
+     -moz-user-select: none;
+          user-select: none;
 }
 .DbjLcjr6klrYFvEy6_vt:hover, .DbjLcjr6klrYFvEy6_vt:focus-visible, .ccE6nEQL6RNfxBJgRm5Q {
-  background: var(--uc-brand-glow-hover, rgba(128, 128, 128, .10));
+  background: var(--uc-surface-control);
   color: var(--uc-text-strong);
   outline: none;
 }
 .jjrrNWXXXL8tcadxilTQ { flex: none; display: grid; place-items: center; width: 14px; height: 14px; }
 .k8LjJ_XHmpaDx7Qh3G_7 { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* Right-hand note ("Pro", "Soon"); sits in the same slot the tick uses. */
 .HKpAW1CbxoGEwI9fIDC8 {
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 42%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--uc-text-muted);
-  font: 11px var(--uc-font-mono);
+  flex: none;
+  color: var(--uc-text-subtle);
+  font-size: var(--uc-text-xs, 12px);
 }
-.ikXlbGhcHwgPHhXRQEQ_ { flex: none; color: var(--uc-text-strong); }
-.nfdpgypdXHcVtNywkl0I { padding: var(--uc-space-12, 12px) var(--uc-space-6, 6px); color: var(--uc-text-muted); font-size: var(--uc-text-xs, 12px); text-align: center; }
+/* Shown but not pickable (e.g. a Pro option on Free): muted, no hover fill. */
+.DbjLcjr6klrYFvEy6_vt.GoruhHBwxRhs65oaecF5 { cursor: not-allowed; color: var(--uc-text-subtle); background: none; }
+/* Tick = Select .indicator: pinned 12px from the right edge. */
+.ikXlbGhcHwgPHhXRQEQ_ { position: absolute; left: var(--uc-space-12, 12px); color: var(--uc-text-strong); }
+.nfdpgypdXHcVtNywkl0I { padding: var(--uc-space-12, 12px); color: var(--uc-text-muted); font-size: var(--uc-text-sm, 13px); text-align: center; }
+/* Row sizes = Select .itemSm / .itemLg. */
+.fABAXkznu7kklkD7DYei { min-height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); }
+.fR_WUaRhPJ2S0YU10YX5 { min-height: var(--uc-control-h-lg); font-size: var(--uc-text-md); }
+/* Search field: it is auto-focused the moment the menu opens, so the Input's
+   brand focus ring would always be on, which no Select menu has. Inside the
+   list it keeps a quiet border instead; the open trigger already carries the
+   ring. Parent-scoped to out-rank Input's own .shell[class]:focus-within. */
+.EQh1Zsx8SYfcUIJngYxf .cd6b2KsxpSMWPJK50oS0[class]:focus-within,
+.EQh1Zsx8SYfcUIJngYxf .cd6b2KsxpSMWPJK50oS0[class]:focus {
+  outline: none;
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong);
+}
+
+/* SwitchCard, BoardUI's settings card on uc- tokens. card = bordered tile; row = list row. */
+.lQh5Vu8MYxL4Okl_6gUR { min-width: 0; }
+
+.jqBcqjCyY6vRjXVzGq4A {
+  border-radius: var(--uc-radius-12);
+  background: var(--uc-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--uc-border);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.jqBcqjCyY6vRjXVzGq4A:hover { box-shadow: inset 0 0 0 1px var(--uc-border-strong); }
+
+.XNxHsZLxPGAWaWzgzfDQ + .XNxHsZLxPGAWaWzgzfDQ { border-top: 1px solid var(--uc-border-subtle); }
+
+.jq6asj7a92OA3e3lNa6A {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  -moz-column-gap: var(--uc-space-24);
+       column-gap: var(--uc-space-24);
+  padding: var(--uc-space-12) var(--uc-space-16);
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.jq6asj7a92OA3e3lNa6A:has(> .EX8CZe31UJHbZuOuXxe0) { grid-template-columns: auto minmax(0, 1fr) auto; -moz-column-gap: var(--uc-space-12); column-gap: var(--uc-space-12); }
+.jqBcqjCyY6vRjXVzGq4A .jq6asj7a92OA3e3lNa6A { border-radius: var(--uc-radius-12); }
+/* Hover tint only while the switch is off; a switched-on row stays flat. */
+.jq6asj7a92OA3e3lNa6A:not(:has([data-state="checked"])):hover { background: var(--uc-surface-base); }
+.jqBcqjCyY6vRjXVzGq4A:has(> .SpDJhaEfEPq4SKohdtid) .jq6asj7a92OA3e3lNa6A { border-radius: var(--uc-radius-12) var(--uc-radius-12) 0 0; }
+
+.EX8CZe31UJHbZuOuXxe0 {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  color: var(--uc-text-strong);
+}
+.EX8CZe31UJHbZuOuXxe0 :where(svg) { width: 16px; height: 16px; }
+
+.ZSpYbdn0bakgODAnWpty { display: flex; flex-direction: column; gap: var(--uc-space-2); min-width: 0; }
+.Zl7UEFyLJLXZGV3FOBwX { font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); line-height: 1.35; color: var(--uc-text-strong); }
+.xuu2HW7tYEqlBx6Z7Tgq { font-size: var(--uc-text-11); line-height: var(--uc-leading-snug); color: var(--uc-text-muted); }
+.yfZxwXDJGfY5YhX1SnxF { justify-self: end; }
+
+/* What the setting unlocks: recessed, so it reads as belonging to the row above. */
+.SpDJhaEfEPq4SKohdtid {
+  display: flex;
+  flex-direction: column;
+  gap: var(--uc-space-12);
+  min-width: 0;
+  margin: 0 var(--uc-space-16) var(--uc-space-12);
+  padding: var(--uc-space-12);
+  border-radius: var(--uc-radius-8);
+  background: var(--uc-surface-base);
+}
+/* Nested rows inside an extra panel: no own padding box, hairline from the panel tone. */
+.SpDJhaEfEPq4SKohdtid .XNxHsZLxPGAWaWzgzfDQ .jq6asj7a92OA3e3lNa6A { padding: var(--uc-space-10) 0; }
+.SpDJhaEfEPq4SKohdtid .XNxHsZLxPGAWaWzgzfDQ .jq6asj7a92OA3e3lNa6A:hover { background: none; }
+.SpDJhaEfEPq4SKohdtid .XNxHsZLxPGAWaWzgzfDQ .SpDJhaEfEPq4SKohdtid { margin: 0 0 var(--uc-space-10); background: var(--uc-surface-raised); }
+
+.LROtETnc0Lr3x_vhJ8aD .jq6asj7a92OA3e3lNa6A { cursor: not-allowed; }
+.LROtETnc0Lr3x_vhJ8aD .jq6asj7a92OA3e3lNa6A:hover { background: none; }
+.LROtETnc0Lr3x_vhJ8aD .ZSpYbdn0bakgODAnWpty { opacity: 0.6; }
+
+@media (max-width: 600px) {
+  .jq6asj7a92OA3e3lNa6A { -moz-column-gap: var(--uc-space-12); column-gap: var(--uc-space-12); }
+}
+
+/* CheckboxCard, BoardUI's selectable card on uc- tokens. */
+.mSV4Ocw1nx8WQCVf30Y5 {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--uc-space-10);
+  min-width: 0;
+  height: 100%;
+  padding: var(--uc-space-10) var(--uc-space-12);
+  border-radius: var(--uc-radius-12);
+  background: var(--uc-surface-raised);
+  box-shadow: inset 0 0 0 1px var(--uc-border);
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.mSV4Ocw1nx8WQCVf30Y5:hover { background: var(--uc-surface-base); }
+.mSV4Ocw1nx8WQCVf30Y5:has(.OhkcyXyg3majenzeonx0[data-state="checked"]) { box-shadow: inset 0 0 0 1px var(--uc-border-strong); }
+.mSV4Ocw1nx8WQCVf30Y5:has(.OhkcyXyg3majenzeonx0:focus-visible) { box-shadow: inset 0 0 0 1px var(--uc-border-strong), 0 0 0 2px var(--uc-ring); }
+
+.OhkcyXyg3majenzeonx0 { flex: none; margin-top: 1px; }
+.YLmt16KVnfhvADb8q3zk { display: flex; flex-direction: column; gap: var(--uc-space-2); min-width: 0; }
+.qPgxqVTsiAPIUPXFdVnh { font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); line-height: 1.35; color: var(--uc-text-strong); }
+.qHxjQm0nCbZroGa8tyjQ { font-size: var(--uc-text-11); line-height: var(--uc-leading-snug); color: var(--uc-text-muted); }
+
+.VHcB_4JeIrq5e2fFzbEy { cursor: not-allowed; }
+.VHcB_4JeIrq5e2fFzbEy:hover { background: var(--uc-surface-raised); }
+.VHcB_4JeIrq5e2fFzbEy .YLmt16KVnfhvADb8q3zk { opacity: 0.6; }
 
 /* Toast, rebuilt on uc- tokens. ONE card — border, shadow and rounded corners
    live on the outer `.tray` only, `overflow: hidden` so the footer's own
@@ -23897,6 +24215,166 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
 
 @keyframes KtINbZCxWPggCCFOcqVH { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
 
+/* TagInput, a token field on uc- tokens. The box copies Input's .shell (fill,
+   inset ring, hover, offset brand focus ring, radius) but grows in height so
+   the chips can wrap. [class] keeps the inner input above wp-admin's
+   input[type] rules, as in Input.module.css. */
+.PNrZsWQDPgfpDFIQDdLH { display: flex; flex-direction: column; gap: var(--uc-space-8); width: 100%; min-width: 0; }
+
+.sG8i2AKt656r9kdIRhPR {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--uc-space-4);
+  width: 100%;
+  min-height: var(--uc-input-h, var(--uc-control-h-md));
+  padding: var(--uc-space-4) var(--uc-space-8);
+  box-sizing: border-box;
+  font-family: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text-strong);
+  background: var(--uc-surface-overlay);
+  background-image: linear-gradient(to bottom, oklch(0% 0 0 / 0.02), transparent);
+  border-radius: var(--uc-input-radius, var(--uc-radius-md));
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
+  transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
+  cursor: text;
+}
+.sG8i2AKt656r9kdIRhPR:hover:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--uc-text-subtle), var(--uc-shadow-input); }
+.sG8i2AKt656r9kdIRhPR:focus-within { outline: 1px solid var(--uc-brand); outline-offset: 1px; }
+.kyzpjDxK04uEFH0OXFan { min-height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: var(--uc-space-3) var(--uc-space-6); }
+.DgKAk2c65Ltr3nMvn9_b { color: var(--uc-text-subtle); background: var(--uc-surface-sunken); box-shadow: inset 0 0 0 1px var(--uc-border); cursor: not-allowed; }
+
+.Vpha_gjWolO_6QIAxpA1 { flex: none; display: grid; place-items: center; margin-left: var(--uc-space-2); color: var(--uc-text-subtle); }
+
+.jPpldC2W869OWB3Qi7iE[class] {
+  flex: 1 1 64px;
+  min-width: 64px;
+  height: 22px;
+  min-height: 0;
+  margin: 0;
+  padding: 0 var(--uc-space-2);
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  outline: none;
+  font: inherit;
+  font-weight: var(--uc-weight-regular);
+  line-height: normal;
+  color: inherit;
+}
+.jPpldC2W869OWB3Qi7iE[class]:focus { box-shadow: none; outline: none; }
+.jPpldC2W869OWB3Qi7iE[class]::-moz-placeholder { color: var(--uc-text-subtle); }
+.jPpldC2W869OWB3Qi7iE[class]::placeholder { color: var(--uc-text-subtle); }
+.jPpldC2W869OWB3Qi7iE[class]:disabled { cursor: not-allowed; background: transparent; }
+
+/* Added tags: the DS Chip on a grey fill. Chip's default fill is the white
+   control surface, the same as this field, so it would read as bare text. */
+.sG8i2AKt656r9kdIRhPR .hRxupUJSBLxIlTY07TF9 { --_bg: var(--uc-surface-sunken); --_fg: var(--uc-text-strong); --_bg-hover: var(--uc-surface-sunken); }
+
+/* Suggestions: existing tags as one-click chips under the field. Outlined with
+   a "+", so they read as "add this" rather than as tags already added. */
+.DLdW_O2d4P1EMBWNaceT .LhXrdwMqopE6LpuwQyAh {
+  --_bg: transparent;
+  --_fg: var(--uc-text);
+  --_bg-hover: var(--uc-surface-sunken);
+  --_fg-hover: var(--uc-text-strong);
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong);
+}
+.DLdW_O2d4P1EMBWNaceT .LhXrdwMqopE6LpuwQyAh:hover { box-shadow: inset 0 0 0 1px var(--uc-text-subtle); }
+.DLdW_O2d4P1EMBWNaceT { display: flex; flex-wrap: wrap; align-items: center; gap: var(--uc-space-4); }
+.zaPIIqmmCwSjCoj9QksH { margin-left: var(--uc-space-2); font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
+
+/* LinkButton, a text-only action on uc- tokens (BoardUI Link Button look).
+   primary: ink · secondary: muted → ink on hover · disabled: subtle. */
+
+.F3TffuAmG5ropBRI_sPr {
+  --_fg: var(--uc-text-strong);
+  --_fg-hover: var(--uc-text-strong);
+  all: unset;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-4);
+  max-width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--_fg);
+  font-family: var(--uc-font-sans);
+  font-weight: var(--uc-weight-medium);
+  text-decoration: none;
+  text-underline-offset: 3px;
+  white-space: nowrap;
+  vertical-align: middle;
+  cursor: pointer;
+  transition: color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.B4VIceu3ndNJ1GNJupPV {
+  --_fg: var(--uc-text-muted);
+  --_fg-hover: var(--uc-text-strong);
+}
+
+/* Sizes: Button's scale, line-height = the control's text box. */
+.A4FxIVSomlGsL6P9FA56 { font-size: var(--uc-text-base); line-height: 20px; }
+.CVrVPq4uhKdWJoANTfEP { font-size: var(--uc-text-sm);   line-height: 18px; }
+.tu6uv4wksqk8_MdC2aEy { font-size: var(--uc-text-xs);   line-height: 16px; }
+
+/* Underline sits on the label only, so an icon never gets a stray line. */
+.AkUbZD5s9sdu22gDIZcQ { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.F3TffuAmG5ropBRI_sPr:hover:not(.ZPFdB1iXYP_FE2dRauOJ) { color: var(--_fg-hover); }
+.F3TffuAmG5ropBRI_sPr:hover:not(.ZPFdB1iXYP_FE2dRauOJ) .AkUbZD5s9sdu22gDIZcQ { text-decoration: underline; text-decoration-thickness: 1px; }
+
+.F3TffuAmG5ropBRI_sPr:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: 2px;
+  border-radius: var(--uc-radius-xs);
+}
+
+.ZPFdB1iXYP_FE2dRauOJ { --_fg: var(--uc-text-subtle); cursor: not-allowed; }
+
+/* Icons follow the size: 16 / 14 / 12px, currentColor. */
+.whjbd7LK38RZFapIzSAp { flex: none; display: inline-flex; }
+.whjbd7LK38RZFapIzSAp > svg { display: block; }
+.A4FxIVSomlGsL6P9FA56 .whjbd7LK38RZFapIzSAp > svg { width: 16px; height: 16px; }
+.CVrVPq4uhKdWJoANTfEP .whjbd7LK38RZFapIzSAp > svg { width: 14px; height: 14px; }
+.tu6uv4wksqk8_MdC2aEy .whjbd7LK38RZFapIzSAp > svg { width: 12px; height: 12px; }
+
+/* CloseButton, a circular ✕ on uc- tokens (BoardUI Close Button look).
+   rest: sunken fill + muted glyph · hover: ink glyph on a deeper fill. */
+
+.QOTbMy4b_y0ucC5M9MA5 {
+  all: unset;
+  box-sizing: border-box;
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  border-radius: var(--uc-radius-pill);
+  background: var(--uc-surface-sunken);
+  color: var(--uc-text-muted);
+  cursor: pointer;
+  transition: background var(--uc-dur-fast) var(--uc-ease-standard),
+    color var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.QOTbMy4b_y0ucC5M9MA5:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--uc-surface-sunken), var(--uc-text-strong) 8%);
+  color: var(--uc-text-strong);
+}
+.QOTbMy4b_y0ucC5M9MA5:active:not(:disabled) {
+  background: color-mix(in srgb, var(--uc-surface-sunken), var(--uc-text-strong) 14%);
+}
+.QOTbMy4b_y0ucC5M9MA5:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.QOTbMy4b_y0ucC5M9MA5:disabled { opacity: 0.5; cursor: not-allowed; }
+.QOTbMy4b_y0ucC5M9MA5 > svg { display: block; }
+
+/* Size classes can't start with a digit, hence the `size` prefix. */
+.WHBVgcb71sx41ukmtx_L { width: 16px; height: 16px; }
+.UEcQwCSg3YWnDDfAKPzE  { width: 20px; height: 20px; }
+.BDOXAhByJuaA7L8n8wpi  { width: 24px; height: 24px; }
+.JhTFTE5OcPS5hafm71v9  { width: 32px; height: 32px; }
+
 /* The shared DS Combobox supplies the search field and option list. This
    sets the global picker's popover width and token preview slots. */
 .uc-portal.gpk {
@@ -24020,14 +24498,6 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
 }
 .gw-search input::-moz-placeholder { color: var(--gw-dim); }
 .gw-search input::placeholder { color: var(--gw-dim); }
-.gw-search kbd {
-  font-family: inherit;
-  font-size: 10px;
-  color: var(--gw-dim);
-  border-radius: 4px;
-  padding: 1px 5px;
-  background: color-mix(in srgb, var(--gw-hi) 6%, transparent);
-}
 
 /* ---- body grid ---- */
 .gw-body {
@@ -24483,7 +24953,6 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
   .gw-insp { grid-column: 1; grid-row: 1 / span 2; z-index: 3; border-right: 0; }
   .gw-row:has(.gw-row__col) { grid-template-columns: 24px minmax(0, 1fr) 56px; }
   .gw-row__col { display: none; }
-  .gw-search kbd { display: none; }
 }
 
 /* ---- frames ---- */

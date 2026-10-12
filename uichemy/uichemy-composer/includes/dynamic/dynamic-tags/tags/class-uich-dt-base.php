@@ -103,7 +103,8 @@ if ( ! trait_exists( 'Uich_DT_Context' ) ) {
 			if ( '' === $key ) {
 				return false;
 			}
-			if ( '_' === $key[0] && ! current_user_can( 'edit_posts' ) ) {
+			// UiChemy Custom Fields post/term values are public by design; user/comment rows stay protected (same rule as Uich_Provider::is_native_field_key()).
+			if ( '_' === $key[0] && ! current_user_can( 'edit_posts' ) && ! preg_match( '/^_uichemy_gf_(?!user_|comment_)[a-z0-9]/', $key ) ) {
 				return false;
 			}
 			return ! (bool) apply_filters( 'uich_dynamic_block_meta', false, $key );

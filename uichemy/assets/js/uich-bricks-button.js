@@ -197,7 +197,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const li = document.createElement("li")
     li.className = 'preview-dimension';
-    li.setAttribute('data-balloon', 'Upload Media & Paste Using UiChemy')
+    li.setAttribute('data-balloon', __( 'Upload Media & Paste Using UiChemy', 'uichemy' ))
     li.setAttribute('data-balloon-pos','bottom')
     li.appendChild(openModalBtn)
     

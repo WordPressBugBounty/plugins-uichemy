@@ -365,7 +365,43 @@ if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
 
 			$blocks[] = self::guide();
 
+			$off = self::switched_off_section();
+			if ( '' !== $off ) {
+				$blocks[] = $off;
+			}
+
 			return $blocks;
+		}
+
+		/**
+		 * What the user switched off under Settings > Features, and what that
+		 * means for a build. Generated from the live switches, so the briefing
+		 * never describes a module that is not loaded as if it were.
+		 *
+		 * @return string Markdown, or '' when every feature is on.
+		 */
+		public static function switched_off_section() {
+			if ( ! function_exists( 'uich_feature_enabled' ) ) {
+				return '';
+			}
+
+			$notes = array(
+				'seo'           => '**SEO is switched off.** `uichemy-composer/seo` and the `improve-seo` skill are not available, and SEO tags written into page or site head code (`<title>`, meta description, canonical, robots, Open Graph, JSON-LD) are STRIPPED and never printed, so another SEO plugin can own them without duplicates. Do not write SEO tags; if the user asks for SEO work, tell them UiChemy SEO is off and that it is switched on under UiChemy > Settings > Features.',
+				'custom_fields' => '**Custom Fields is switched off.** UiChemy\'s own post types, taxonomies and field groups are not loaded; `uichemy-composer/cpt` and `uichemy-composer/custom-fields` work through ACF or JetEngine only, if one is installed.',
+			);
+
+			$lines = array();
+			foreach ( $notes as $slug => $note ) {
+				if ( ! uich_feature_enabled( $slug ) ) {
+					$lines[] = '- ' . $note;
+				}
+			}
+
+			if ( ! $lines ) {
+				return '';
+			}
+
+			return "## Switched off on this site\n\nThe user turned these features off under Settings > Features, usually because another plugin does the job. Never switch one back on yourself.\n\n" . implode( "\n", $lines );
 		}
 
 		/**
@@ -419,7 +455,7 @@ Apart from widget scoped code:
 
 Then, the moment you are about to write a dynamic binding, call **`uichemy-composer/dynamic` with `action: "list-fields"`**. `describe-site` carries the site's CUSTOM fields; that carries the BUILT-IN tokens - `post.*`, `product.*` (WooCommerce), `user.*`, `term.*`, `image.*`, `site.*`, `request.*`. An unknown token renders EMPTY rather than failing, so a guessed accessor produces a page that looks built and is blank, with nothing in the output to tell you.
 
-When the site needs a content type it does not have - "case studies", "team members", "properties" - the content MODEL comes before any markup. `uichemy-composer/cpt` with `action: "describe"` reports every post type and taxonomy, the plugin that registered it, and which field groups reach it; `register-post-type`, `register-taxonomy`, `register-field-group` and `add-fields` create them through ACF or JetEngine. UiChemy never registers a content type under its own storage, so with NEITHER plugin active it refuses and names the two ways forward, and with BOTH active it refuses until you pass `provider` - ask the user which plugin they want their model in rather than choosing. Field VALUES are `uichemy-composer/custom-fields`: `list` before you bind (an unknown field name renders empty rather than failing), `get` to read, `update` to write - batched, with `dry_run` and a revert token. Read `uichemy-composer/read-skill` `{ "name": "custom-fields-and-cpt" }` first: the storage rules differ between ACF and JetEngine in four places that all fail silently.
+When the site needs a content type it does not have - "case studies", "team members", "properties" - the content MODEL comes before any markup. `uichemy-composer/cpt` with `action: "describe"` reports every post type and taxonomy, the plugin that registered it, and which field groups reach it; `register-post-type`, `register-taxonomy`, `register-field-group` and `add-fields` create them through a modelling provider: UiChemy Custom Fields (built in, `provider: "uichemy"`), ACF or JetEngine. With ONE active it is used; with MORE than one active every write refuses until you pass `provider` - ask the user which one they want their model in rather than choosing, and tell them where the existing model already lives; with NONE active (Custom Fields switched off under Settings > Features, no ACF or JetEngine) it refuses and names the ways forward. Field VALUES are `uichemy-composer/custom-fields`: `list` before you bind (an unknown field name renders empty rather than failing), `get` to read, `update` to write - batched, with `dry_run` and a revert token. Read `uichemy-composer/read-skill` `{ "name": "custom-fields-and-cpt" }` first: the storage rules differ between the providers in places that all fail silently.
 
 When the ask is "what is this site missing", call **`uichemy-composer/theme-builder` with `action: "architecture"`** rather than `list`. `list` reports the templates that exist; `architecture` reports every slot the site HAS, which of them still fall through to the theme, and the exact call that fills each gap.
 
@@ -449,6 +485,8 @@ A few abilities are **not** action routed - `uichemy-composer/read-skill` is one
 Discovery lists each ability's actions, or shows none when it is not action routed. `get-ability-info` returns the exact parameter schema for the action you picked - read that instead of guessing parameter names.
 
 Before telling the user a build is finished, run `uichemy-composer/audit`. Each finding names the ability that fixes it.
+
+SEO lives in head code: a page's `<title>`, `<meta name="description">`, `<link rel="canonical">`, `<meta name="robots">`, `og:*` / `twitter:*` tags and `<script type="application/ld+json">` go in that page's before-`</head>` code (`uichemy-composer/page` `update-page-code`), with site-wide fallbacks in the site head code. UiChemy prints each one once, page over site. `uichemy-composer/seo` audits pages and the whole site and runs site settings, schema templates, redirects and permalinks - read the `improve-seo` skill before any SEO work.
 
 ## Design system
 

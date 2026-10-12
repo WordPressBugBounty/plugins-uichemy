@@ -1,0 +1,2377 @@
+/**
+ * Field Groups (Group Fields) metabox styles – admin post edit screen.
+ *
+ * @package Uichemy
+ * @since 5.2.6
+ */
+
+/*
+ * Design tokens, scoped to the metabox rather than :root — this stylesheet loads on shared admin
+ * screens (post edit, term edit, user edit) alongside every other plugin's CSS, so custom
+ * properties live under .uich-gf-metabox instead of leaking global names onto the page.
+ */
+.uich-gf-metabox {
+	--uich-gf-radius: 6px;
+	--uich-gf-radius-sm: 4px;
+	--uich-gf-radius-lg: 8px;
+	--uich-gf-border: #d5d8dc;
+	--uich-gf-border-hover: #b7bcc2;
+	--uich-gf-border-subtle: #e4e6e9;
+	--uich-gf-accent: #2271b1;
+	--uich-gf-accent-hover: #135e96;
+	--uich-gf-focus-ring: rgba(34, 113, 177, 0.15);
+	--uich-gf-text: #1e1e1e;
+	--uich-gf-text-muted: #646970;
+	--uich-gf-danger: #d63638;
+	--uich-gf-bg-subtle: #f6f7f7;
+	--uich-gf-bg-card: #ffffff;
+	--uich-gf-shadow-xs: 0 1px 2px rgba(16, 24, 40, 0.04);
+	--uich-gf-shadow-sm: 0 1px 3px rgba(16, 24, 40, 0.08);
+	--uich-gf-shadow-md: 0 4px 14px rgba(16, 24, 40, 0.10);
+	--uich-gf-transition: 130ms ease;
+
+	display: flex;
+	flex-wrap: wrap;
+	gap: 22px;
+}
+.uich-gf-metabox label.uich-gf-label {
+    padding: 0;
+    margin: 0;
+    font-weight: 600;
+    font-size: 13px;
+    line-height: 18px;
+    color: var(--uich-gf-text);
+    letter-spacing: 0.1px;
+}
+
+.uich-gf-metabox .uich-gf-field-row {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	width: 100%;
+}
+
+.uich-gf-metabox label.uich-gf-checkbox,
+.uich-gf-metabox label.uich-gf-radio {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--uich-gf-text);
+	cursor: pointer;
+	width: max-content;
+	max-width: 100%;
+	line-height: 1.3;
+	margin: 0 0 8px;
+}
+.uich-gf-metabox label.uich-gf-checkbox:last-child,
+.uich-gf-metabox label.uich-gf-radio:last-child {
+	margin-bottom: 0;
+}
+
+.uich-gf-metabox .uich-gf-checkbox-horizontal, .uich-gf-metabox .uich-gf-radio-horizontal {
+    display: inline-flex;
+    margin: 0 16px 8px 0;
+    font-size: 13px;
+    clear: none;
+    float: none;
+    vertical-align: middle;
+}
+
+.uich-gf-metabox .uich-gf-checkbox-toggle-all {
+	font-weight: 500;
+}
+
+/* Boolean toggle — a proper pill switch (rounded-full, elevated) instead of a flat segmented button. */
+.uich-gf-boolean-toggle-wrap {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.uich-gf-boolean-toggle-input {
+	display: none;
+}
+
+.uich-gf-boolean-toggle {
+	display: inline-flex;
+	align-items: center;
+	border-radius: 999px;
+	overflow: hidden;
+	border: 1px solid var(--uich-gf-accent);
+	cursor: pointer;
+	box-shadow: var(--uich-gf-shadow-xs);
+	transition: box-shadow var(--uich-gf-transition);
+}
+
+.uich-gf-boolean-toggle:hover {
+	box-shadow: var(--uich-gf-shadow-sm);
+}
+
+.uich-gf-boolean-on,
+.uich-gf-boolean-off {
+	padding: 5px 14px;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.2px;
+	line-height: 1.4;
+	transition: background-color var(--uich-gf-transition), color var(--uich-gf-transition);
+}
+
+.uich-gf-boolean-on {
+	background: var(--uich-gf-accent);
+	color: #fff;
+}
+
+.uich-gf-boolean-off {
+	background: #fff;
+	color: var(--uich-gf-accent);
+}
+
+.uich-gf-boolean-toggle-input:not(:checked) + .uich-gf-boolean-toggle .uich-gf-boolean-on {
+	background: #fff;
+	color: var(--uich-gf-accent);
+}
+
+.uich-gf-boolean-toggle-input:not(:checked) + .uich-gf-boolean-toggle .uich-gf-boolean-off {
+	background: var(--uich-gf-accent);
+	color: #fff;
+}
+
+.uich-gf-boolean-toggle-input:focus-visible + .uich-gf-boolean-toggle {
+	box-shadow: 0 0 0 3px var(--uich-gf-focus-ring);
+}
+
+.uich-gf-boolean-label {
+	font-size: 13px;
+	color: var(--uich-gf-text-muted);
+}
+
+/*
+ * Plain (non-"stylized") True/False — the default rendering, a bare checkbox with its label. Styled
+ * as a real toggle switch on the checkbox ITSELF, purely in CSS (appearance:none + a ::before thumb)
+ * rather than replacing the markup — this needs no PHP change, no JS, and stays a real checkbox for
+ * every assistive technology and existing selector that already expects one.
+ */
+.uich-gf-metabox label.uich-gf-boolean {
+	display: inline-flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 13px;
+	color: var(--uich-gf-text);
+	cursor: pointer;
+	/* Without this, the label stretched to fill the row (inline-flex still grows inside a flex/grid
+	   parent) and the switch drifted to whatever alignment the row happened to compute, instead of
+	   sitting inline with its own text. */
+	width: max-content;
+	max-width: 100%;
+	line-height: 1;
+}
+/*
+ * The switch itself: width/height define the pill, and every position on the thumb below is worked
+ * out FROM these two numbers — change one, change the other's matching top/left and translateX too.
+ */
+.uich-gf-metabox label.uich-gf-boolean input[type="checkbox"] {
+	-webkit-appearance: none;
+	appearance: none;
+	/*
+	 * Cancels the plugin-wide `accent-color` rule every other checkbox/radio in this metabox picks
+	 * up. On its own that rule is harmless — accent-color only paints a native control's OWN tick —
+	 * but paired with `appearance: none` here, Chromium keeps tinting this checkbox with it as if it
+	 * were still rendering its native widget, so the :checked background/::before below never showed:
+	 * the browser was drawing its own accent-coloured box on top of ours. `auto` hands rendering back
+	 * to the appearance:none + ::before pair, which is a real custom control with no native fallback.
+	 */
+	accent-color: auto;
+	position: relative;
+	flex: 0 0 auto;
+	display: inline-block;
+	width: 42px;
+	height: 24px;
+	margin: 0;
+	padding: 0;
+	border-radius: 999px;
+	background: var(--uich-gf-border);
+	border: none;
+	outline-offset: 2px;
+	cursor: pointer;
+	vertical-align: middle;
+	box-shadow: inset 0 1px 2px rgba(16, 24, 40, 0.06);
+	transition: background-color 180ms ease;
+}
+/*
+ * The thumb — positioned with top/left alone (no transform in this, the rest, state), so it starts
+ * flush left with a 3px gap on every side: (24px track − 18px thumb) / 2 = 3px top, 3px left.
+ */
+.uich-gf-metabox label.uich-gf-boolean input[type="checkbox"]::before,
+.uich-gf-metabox label.uich-gf-boolean input[type="checkbox"]:checked::before {
+	/*
+	 * The :checked selector is repeated on purpose. wp-admin's forms.css draws the native tick with
+	 * its own `input[type=checkbox]:checked::before { content: "\f147"; font: 21px dashicons }`, and
+	 * that rule only loses to a selector that also matches :checked — without it the glyph rendered
+	 * on top of the thumb and its 21px line-height stretched the pill.
+	 */
+	content: "";
+	font-size: 0;
+	line-height: 0;
+	color: transparent;
+	position: absolute;
+	/* 24px track − 16px thumb = 8px, so 4px on every side. Change one number, change the other two. */
+	top: 4px;
+	left: 4px;
+	width: 16px;
+	height: 16px;
+	margin: 0;
+	border-radius: 50%;
+	background: #fff;
+	box-shadow: 0 1px 3px rgba(16, 24, 40, 0.25);
+	transition: transform 180ms cubic-bezier(0.34, 1.3, 0.64, 1);
+}
+.uich-gf-metabox label.uich-gf-boolean input[type="checkbox"]:hover {
+	background: var(--uich-gf-border-hover);
+}
+.uich-gf-metabox label.uich-gf-boolean input[type="checkbox"]:checked {
+	background: var(--uich-gf-accent);
+}
+.uich-gf-metabox label.uich-gf-boolean input[type="checkbox"]:checked:hover {
+	background: var(--uich-gf-accent-hover);
+}
+/*
+ * Checked state slides the thumb right by exactly the leftover track width: 42px track − 16px thumb
+ * − 4px left gap − 4px right gap = 18px. Horizontal-only — the thumb's own top:4px already centres
+ * it vertically, so a translateY here would push it off-centre instead of sliding it sideways.
+ */
+.uich-gf-metabox label.uich-gf-boolean input[type="checkbox"]:checked::before {
+	transform: translateX(18px);
+}
+.uich-gf-metabox label.uich-gf-boolean input[type="checkbox"]:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px var(--uich-gf-focus-ring);
+}
+
+/* Prepend/append input group – single row, aligned borders */
+.uich-gf-metabox .uich-gf-input-group {
+	display: inline-flex;
+	align-items: stretch;
+	max-width: 100%;
+	width: 100%;
+}
+
+.uich-gf-metabox .uich-gf-input-group .uich-gf-prepend,
+.uich-gf-metabox .uich-gf-input-group .uich-gf-append {
+	display: inline-flex;
+	align-items: center;
+	padding: 0 12px;
+	font-size: 13px;
+	line-height: 2;
+	background: var(--uich-gf-bg-subtle); /* match ACF grey chip */
+	border: 1px solid var(--uich-gf-border);
+	color: var(--uich-gf-text);
+	white-space: nowrap;
+	box-sizing: border-box;
+}
+
+.uich-gf-metabox .uich-gf-input-group .uich-gf-prepend {
+	border-right: 0;
+	border-radius: var(--uich-gf-radius) 0 0 var(--uich-gf-radius);
+}
+
+.uich-gf-metabox .uich-gf-input-group .uich-gf-append {
+	border-left: 0;
+	border-radius: 0 var(--uich-gf-radius) var(--uich-gf-radius) 0;
+}
+
+.uich-gf-metabox .uich-gf-input {
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    border-radius: var(--uich-gf-radius);
+    border: 1px solid var(--uich-gf-border);
+    width: 100%;
+    color: var(--uich-gf-text);
+    font-size: 14px;
+    line-height: 20px;
+    padding: 9px 12px;
+	transition: border-color var(--uich-gf-transition), box-shadow var(--uich-gf-transition);
+	/*
+	 * White, like every native WordPress form control. This was `transparent`, which only looked
+	 * right inside a postbox — on the term add/edit screens the surrounding page is var(--uich-gf-bg-subtle), so
+	 * these fields came out grey while the Name / Slug / Description fields right above them
+	 * stayed white.
+	 *
+	 * background-COLOR, not the `background` shorthand: WordPress draws the <select> chevron as a
+	 * background-image and sets appearance:none, so a shorthand here wipes the arrow out and leaves
+	 * a select with no dropdown indicator at all (which is what `background: transparent` had been
+	 * doing).
+	 */
+	background-color: var(--uich-gf-bg-card);
+}
+
+.uich-gf-metabox .uich-gf-input:hover {
+	border-color: var(--uich-gf-border-hover);
+}
+
+/* No native `outline: none` without a replacement — the focus ring below IS the replacement. */
+.uich-gf-metabox .uich-gf-input:focus {
+	border-color: var(--uich-gf-accent);
+	outline: none;
+	box-shadow: 0 0 0 3px var(--uich-gf-focus-ring);
+}
+
+/*
+ * Every plugin <select>, not just the ones in the time panel, needs the same gutter the chevron is
+ * drawn into — the shared .uich-gf-input padding is 8px all round, which puts the arrow on top of
+ * the value. WordPress uses 24px for its own selects.
+ */
+.uich-gf-metabox select.uich-gf-input {
+	padding-right: 28px;
+}
+
+/*
+ * Every native WP `.button` rendered inside this metabox — Select Image, Select File, Select Link —
+ * rather than each one individually, so a new button added to any field type picks this up for free.
+ * Not the WYSIWYG editor's own toolbar buttons (.ed_button): this padding and display stacked them
+ * one per line. Inline-flex, so buttons keep sitting side by side.
+ */
+/* :where keeps this at the specificity of `.uich-gf-metabox .button`, so the DS button rules below still win. */
+.uich-gf-metabox .button:where(:not(.ed_button)) {
+	border-radius: var(--uich-gf-radius);
+	border-color: var(--uich-gf-accent);
+	color: var(--uich-gf-accent);
+	/* 32px, the height of the inputs beside it, whatever icon sits inside. */
+	padding: 0 12px;
+	font-size: 13px;
+    line-height: 18px;
+    height: 32px;
+    box-sizing: border-box;
+    box-shadow: none;
+    transition: background-color var(--uich-gf-transition), color var(--uich-gf-transition), box-shadow var(--uich-gf-transition);
+    min-height: auto;
+    display: inline-flex;
+    align-items: center;
+}
+.uich-gf-metabox .button:hover {
+	border-color: var(--uich-gf-accent);
+	background: rgba(0, 0, 0, 0.04);
+	color: var(--uich-gf-accent-hover);
+}
+.uich-gf-metabox .button:focus,
+.uich-gf-metabox .button:focus-visible {
+	border-color: var(--uich-gf-accent);
+	outline: none;
+	box-shadow: 0 0 0 3px var(--uich-gf-focus-ring);
+}
+.uich-gf-metabox .button:active {
+	background: rgba(0, 0, 0, 0.08);
+}
+.uich-gf-metabox .button.button-primary {
+	background: var(--uich-gf-accent);
+	border-color: var(--uich-gf-accent);
+	color: #fff;
+}
+.uich-gf-metabox .button.button-primary:hover {
+	background: var(--uich-gf-accent-hover);
+	border-color: var(--uich-gf-accent-hover);
+	color: #fff;
+}
+
+.uich-gf-image-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.uich-gf-image-preview {
+    position: relative;
+    width: 120px;
+    height: 120px;
+    border-radius: var(--uich-gf-radius-lg);
+    border: 1px solid var(--uich-gf-border);
+    background: var(--uich-gf-bg-subtle);
+    box-shadow: var(--uich-gf-shadow-xs);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.uich-gf-image-preview img {
+    max-width: 100%;
+    max-height: 100%;
+    display: block;
+}
+
+.uich-gf-image-edit,
+.uich-gf-image-remove {
+    position: absolute;
+    top: 6px;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(0,0,0,0.6);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background-color var(--uich-gf-transition), transform var(--uich-gf-transition);
+}
+
+.uich-gf-image-edit:hover,
+.uich-gf-image-remove:hover {
+    background: rgba(0,0,0,0.8);
+    transform: translateY(-1px);
+}
+
+.uich-gf-image-edit {
+    right: 38px;
+}
+
+.uich-gf-image-remove {
+    right: 6px;
+}
+
+.uich-gf-image-wrap:not(.uich-gf-image-has-value) .uich-gf-image-preview img {
+    display: none;
+}
+
+.uich-gf-image-wrap:not(.uich-gf-image-has-value) .uich-gf-image-edit,
+.uich-gf-image-wrap:not(.uich-gf-image-has-value) .uich-gf-image-remove {
+    display: none;
+}
+
+.uich-gf-metabox .uich-gf-media-button {
+    vertical-align: middle;
+}
+
+.uich-gf-file-wrap {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.uich-gf-file-preview {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 10px;
+    border: 1px solid var(--uich-gf-border);
+    border-left: 3px solid var(--uich-gf-accent);
+    border-radius: var(--uich-gf-radius);
+    padding: 10px 12px;
+    background: var(--uich-gf-bg-card);
+    box-shadow: var(--uich-gf-shadow-xs);
+    min-width: 260px;
+}
+
+.uich-gf-file-text {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    max-width: 100%;
+}
+
+.uich-gf-file-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--uich-gf-text);
+}
+
+.uich-gf-file-row {
+    font-size: 12px;
+    color: var(--uich-gf-text-muted);
+}
+
+.uich-gf-file-label {
+    font-weight: 500;
+}
+
+.uich-gf-file-link {
+    word-break: break-all;
+}
+
+.uich-gf-file-edit,
+.uich-gf-file-remove {
+    margin-left: 4px;
+    border: none;
+    border-radius: var(--uich-gf-radius-sm);
+    background: transparent;
+    cursor: pointer;
+    color: var(--uich-gf-text-muted);
+    transition: background-color var(--uich-gf-transition), color var(--uich-gf-transition);
+}
+
+.uich-gf-file-edit:hover,
+.uich-gf-file-remove:hover {
+    background: var(--uich-gf-bg-subtle);
+    color: var(--uich-gf-text);
+}
+
+.uich-gf-file-wrap:not(.uich-gf-file-has-value) .uich-gf-file-name {
+    display: none;
+}
+
+.uich-gf-file-wrap:not(.uich-gf-file-has-value) .uich-gf-file-edit,
+.uich-gf-file-wrap:not(.uich-gf-file-has-value) .uich-gf-file-remove {
+    display: none;
+}
+
+/* Link field — WordPress Insert/edit link (wplink) */
+button.uich-gf-link-open {
+    width: max-content;
+}
+.uich-gf-link-wrap {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	max-width: 100%;
+}
+
+.uich-gf-link-preview {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px 12px;
+	padding: 10px 14px;
+	border: 1px solid var(--uich-gf-border);
+	border-radius: var(--uich-gf-radius);
+	background: var(--uich-gf-bg-subtle);
+	box-shadow: var(--uich-gf-shadow-xs);
+}
+
+.uich-gf-link-title-text {
+	font-weight: 600;
+	font-size: 14px;
+	color: var(--uich-gf-text);
+	line-height: 1.4;
+}
+
+.uich-gf-link-url-a {
+	font-size: 13px;
+	line-height: 1.4;
+	color: var(--uich-gf-accent);
+	text-decoration: none;
+	word-break: break-all;
+}
+
+.uich-gf-link-url-a:hover {
+	color: var(--uich-gf-accent-hover);
+	text-decoration: underline;
+}
+
+.uich-gf-link-preview-actions {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	margin-left: auto;
+	flex-shrink: 0;
+}
+
+.uich-gf-link-edit,
+.uich-gf-link-remove {
+	border: none;
+	border-radius: var(--uich-gf-radius-sm);
+	background: transparent;
+	cursor: pointer;
+	color: var(--uich-gf-text-muted);
+	padding: 4px 6px;
+	line-height: 1;
+	transition: background-color var(--uich-gf-transition), color var(--uich-gf-transition);
+}
+
+.uich-gf-link-edit:hover,
+.uich-gf-link-remove:hover {
+	background: rgba(0, 0, 0, 0.05);
+	color: var(--uich-gf-text);
+}
+
+.uich-gf-link-edit .dashicons,
+.uich-gf-link-remove .dashicons {
+	width: 18px;
+	height: 18px;
+	font-size: 18px;
+}
+
+.uich-gf-link-wrap:not(.uich-gf-link-has-value) .uich-gf-link-preview {
+	display: none;
+}
+
+.uich-gf-link-wrap.uich-gf-link-has-value .uich-gf-link-open {
+	display: none;
+}
+
+.uich-gf-wrap-image .uich-gf-input-media {
+    display: none;
+}
+.uich-gf-metabox .uich-gf-input-group .uich-gf-prepend + .uich-gf-input-in-group {
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+.uich-gf-metabox .uich-gf-input-group .uich-gf-input-in-group:only-of-type {
+	border-radius: var(--uich-gf-radius);
+}
+
+.uich-gf-metabox .uich-gf-input-group .uich-gf-input-in-group:not(:first-child) {
+	border-top-left-radius: 0;
+	border-bottom-left-radius: 0;
+}
+
+.uich-gf-metabox .uich-gf-input-group .uich-gf-input-in-group:not(:last-child) {
+	border-top-right-radius: 0;
+	border-bottom-right-radius: 0;
+}
+.uich-gf-metabox .uich-gf-instruction {
+    font-size: 12.5px;
+    line-height: 1.5;
+    color: var(--uich-gf-text-muted);
+    margin: 0;
+}
+/*
+ * Match select2's box to .uich-gf-input's: 40px tall (9px+9px padding + 20px line-height + 2px
+ * border), so a Post Object / Page Link / User select2 sits at the same height as the text input
+ * next to it (Relationship's search box) instead of the ~28px select2 ships with by default.
+ */
+.uich-gf-input-wrap .select2-container--default .select2-selection--single {
+	height: 40px;
+	border-radius: var(--uich-gf-radius);
+	border-color: var(--uich-gf-border);
+	display: flex;
+	align-items: center;
+	transition: border-color var(--uich-gf-transition), box-shadow var(--uich-gf-transition);
+}
+.uich-gf-input-wrap .select2-container--default .select2-selection--single .select2-selection__rendered {
+	line-height: 20px;
+	padding-left: 12px;
+	padding-right: 28px;
+	color: var(--uich-gf-text);
+}
+.uich-gf-input-wrap .select2-container--default .select2-selection--single .select2-selection__arrow {
+	height: 38px;
+	right: 8px;
+}
+.uich-gf-input-wrap .select2-container--default .select2-selection--multiple {
+    min-height: 40px;
+    padding: 4px 6px;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    border-color: var(--uich-gf-border);
+    border-radius: var(--uich-gf-radius);
+    transition: border-color var(--uich-gf-transition), box-shadow var(--uich-gf-transition);
+}
+.uich-gf-input-wrap .select2-container--default.select2-container--focus .select2-selection--single,
+.uich-gf-input-wrap .select2-container--default.select2-container--open .select2-selection--single,
+.uich-gf-input-wrap .select2-container--default.select2-container--focus .select2-selection--multiple,
+.uich-gf-input-wrap .select2-container--default.select2-container--open .select2-selection--multiple {
+	border-color: var(--uich-gf-accent);
+	box-shadow: 0 0 0 3px var(--uich-gf-focus-ring);
+}
+.uich-gf-input-wrap .select2-container--default .select2-search--inline .select2-search__field{
+	margin-bottom: 5px;
+	line-height: 20px;
+}
+
+/* Page Link field — full-width Select2 (archives / posts / media groups) */
+.uich-gf-page-link-wrap {
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+}
+.uich-gf-page-link-wrap .select2-container {
+	width: 100% !important;
+	max-width: 100%;
+}
+/* User field — full-width Select2 (grouped by role) */
+.uich-gf-user-wrap {
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+}
+.uich-gf-user-wrap .select2-container {
+	width: 100% !important;
+	max-width: 100%;
+}
+.uich-gf-input-wrap .uich-gf-date-input,
+.uich-gf-input-wrap .uich-gf-datetime-input,
+.uich-gf-input-wrap .uich-gf-time-input {
+	/* Fixed, not max-width: three different placeholder lengths ("10:02 am" vs
+	   "18/09/2026 10:02 am") were sizing these three inputs to three different widths. */
+	width: 220px;
+	max-width: 100%;
+}
+
+/* Time Picker field — popover under input */
+.uich-gf-input-wrap .uich-gf-time-wrap {
+	position: relative;
+	display: inline-block;
+	max-width: 100%;
+}
+.uich-gf-time-panel {
+	display: none;
+	position: absolute;
+	left: 0;
+	top: 100%;
+	margin-top: 6px;
+	min-width: 280px;
+	z-index: 100001;
+	background: #fff;
+	border: 1px solid var(--uich-gf-border);
+	border-radius: var(--uich-gf-radius-lg);
+	box-shadow: var(--uich-gf-shadow-md);
+	padding: 0;
+}
+.uich-gf-time-panel-title {
+	text-align: center;
+	font-weight: 600;
+	font-size: 13px;
+	padding: 10px 12px 8px;
+	border-bottom: 1px solid var(--uich-gf-border-subtle);
+	color: var(--uich-gf-text);
+}
+.uich-gf-time-panel-body {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 8px;
+	padding: 10px 12px;
+	background: var(--uich-gf-bg-subtle);
+}
+.uich-gf-time-panel-body .uich-gf-tm-lbl {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--uich-gf-text);
+	margin-right: 4px;
+}
+.uich-gf-time-panel .uich-gf-input.uich-gf-tm-hour,
+.uich-gf-time-panel .uich-gf-input.uich-gf-tm-min,
+.uich-gf-time-panel .uich-gf-input.uich-gf-tm-sec,
+.uich-gf-time-panel .uich-gf-input.uich-gf-tm-ampm {
+	width: auto;
+	/*
+	 * WordPress paints the <select> chevron as a background image pinned to the right edge and
+	 * reserves room for it with padding-right: 24px. Overriding padding wholesale took that room
+	 * away, so the arrow sat on top of the value — "12" and "am" were both partly hidden behind it.
+	 * Keep the compact look, but leave the chevron its gutter, and widen the minimum to match.
+	 */
+	min-width: 4.5em;
+	max-width: 7em;
+	font-size: 13px;
+	padding: 3px 24px 3px 8px;
+	height: auto;
+	line-height: 1.4;
+}
+.uich-gf-time-panel .uich-gf-tm-sep {
+	color: var(--uich-gf-text-muted);
+	font-weight: 600;
+}
+.uich-gf-time-panel-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px 10px;
+	border-top: 1px solid var(--uich-gf-border-subtle);
+}
+.uich-gf-time-panel-actions .button {
+	margin: 0;
+	border-radius: var(--uich-gf-radius-sm);
+}
+/*
+ * Base theme for the jQuery UI datepicker popup. WordPress enqueues the
+ * datepicker SCRIPT but no jQuery UI theme stylesheet, so without these rules
+ * the calendar renders with a transparent background and no border — letting
+ * adjacent fields (Time / DateTime / Color) bleed through. These give it a
+ * solid, self-contained surface so it overlays cleanly.
+ */
+.ui-datepicker {
+	z-index: 100000 !important;
+	/*
+	 * 20em rather than jQuery UI's 18em: the DateTime field appends a time row (label + up to four
+	 * selects) below the calendar, which does not fit on one line at 18em. The calendar table is
+	 * width:100%, so it simply gets slightly roomier.
+	 */
+	width: 20em;
+	padding: 0.4em;
+	background: #fff;
+	border: 1px solid var(--uich-gf-border);
+	border-radius: 8px;
+	box-shadow: 0 4px 16px rgba(16, 24, 40, 0.14);
+	font-size: 13px;
+	line-height: 1.4;
+	display: none;
+}
+.ui-datepicker .ui-datepicker-header {
+	position: relative;
+	padding: 0.4em 0;
+	margin-bottom: 0.25em;
+	border-bottom: 1px solid var(--uich-gf-bg-subtle);
+}
+.ui-datepicker .ui-datepicker-title {
+	font-weight: 600;
+	text-align: center;
+	margin: 0 2.3em;
+	line-height: 1.8;
+}
+.ui-datepicker .ui-datepicker-title select {
+	margin: 0 2px;
+	font-size: 13px;
+}
+.ui-datepicker .ui-datepicker-prev,
+.ui-datepicker .ui-datepicker-next {
+	position: absolute;
+	top: 0.4em;
+	width: 1.8em;
+	height: 1.8em;
+	cursor: pointer;
+	border-radius: 4px;
+	overflow: hidden;
+	text-indent: -9999px;
+	transition: background-color 100ms ease;
+}
+.ui-datepicker .ui-datepicker-prev { left: 0.2em; }
+.ui-datepicker .ui-datepicker-next { right: 0.2em; }
+.ui-datepicker .ui-datepicker-prev:hover,
+.ui-datepicker .ui-datepicker-next:hover {
+	background: var(--uich-gf-bg-subtle);
+}
+.ui-datepicker .ui-datepicker-prev::before,
+.ui-datepicker .ui-datepicker-next::before {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 0.5em;
+	height: 0.5em;
+	margin: -0.3em 0 0 -0.3em;
+	border-top: 2px solid var(--uich-gf-text-muted);
+	border-left: 2px solid var(--uich-gf-text-muted);
+	text-indent: 0;
+}
+.ui-datepicker .ui-datepicker-prev::before { transform: rotate( -45deg ); }
+.ui-datepicker .ui-datepicker-next::before { transform: rotate( 135deg ); margin-left: -0.4em; }
+.ui-datepicker .ui-datepicker-prev.ui-state-disabled,
+.ui-datepicker .ui-datepicker-next.ui-state-disabled {
+	opacity: 0.4;
+	cursor: default;
+}
+.ui-datepicker table.ui-datepicker-calendar {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 0;
+	font-size: 13px;
+}
+.ui-datepicker th {
+	padding: 0.4em 0;
+	text-align: center;
+	font-weight: 600;
+	color: var(--uich-gf-text-muted);
+	border: 0;
+}
+.ui-datepicker td {
+	padding: 1px;
+	border: 0;
+	text-align: center;
+}
+.ui-datepicker td a,
+.ui-datepicker td span {
+	display: block;
+	padding: 0.35em 0;
+	text-align: center;
+	text-decoration: none;
+	color: var(--uich-gf-text);
+	border-radius: 4px;
+	transition: background-color 100ms ease;
+}
+.ui-datepicker td a:hover {
+	background: var(--uich-gf-bg-subtle);
+}
+.ui-datepicker td a.ui-state-active,
+.ui-datepicker td a.ui-state-highlight {
+	background: var(--uich-gf-accent);
+	color: #fff;
+}
+.ui-datepicker td span.ui-state-disabled {
+	color: var(--uich-gf-text-muted);
+}
+
+/* DateTime field — time + actions inside jQuery UI datepicker popup */
+.ui-datepicker .uich-gf-dp-time {
+	border-top: 1px solid var(--uich-gf-border-subtle);
+	margin: 0.35em -0.2em 0;
+	padding: 0.65em 0.35em 0.5em;
+	background: var(--uich-gf-bg-subtle);
+}
+.ui-datepicker .uich-gf-dp-time-row {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 6px 3px;
+	margin-bottom: 0.5em;
+}
+.ui-datepicker .uich-gf-dp-time .uich-gf-dt-time-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--uich-gf-text);
+	/*
+	 * No margin-right — the row is a flex container with its own gap, so this was adding a second
+	 * 4px on top of it. With seconds enabled that was the difference between the row fitting on one
+	 * line and am/pm wrapping underneath.
+	 */
+}
+.ui-datepicker .uich-gf-dp-time .uich-gf-input.uich-gf-dt-hour,
+.ui-datepicker .uich-gf-dp-time .uich-gf-input.uich-gf-dt-min,
+.ui-datepicker .uich-gf-dp-time .uich-gf-input.uich-gf-dt-sec,
+.ui-datepicker .uich-gf-dp-time .uich-gf-input.uich-gf-dt-ampm {
+	width: auto;
+	/*
+	 * WordPress paints the <select> chevron as a background image pinned to the right edge and
+	 * reserves room for it with padding-right: 24px. Overriding padding wholesale took that room
+	 * away, so the arrow sat on top of the value — "12" and "am" were both partly hidden behind it.
+	 *
+	 * These are TIGHTER than the standalone Time panel's equivalents, and deliberately so: this row
+	 * lives inside the datepicker popup, which is a fixed 18em wide. Sized to match that panel, the
+	 * label + three selects no longer fit on one line and am/pm wrapped underneath. The budget here
+	 * is ~226px of content width, so the three selects get ~46px each — still enough for "12" /
+	 * "pm" plus the chevron's gutter, and the row stays on one line.
+	 */
+	/*
+	 * An explicit width, not min-width + auto: a browser sizes an `auto` select from its widest
+	 * <option> plus its own internal chrome, which came out at 63px here regardless of any
+	 * min-width — wide enough that the label and three selects no longer fit the popup's line and
+	 * am/pm wrapped underneath. 48px leaves ~26px of text box, which clears "12" and "pm" with the
+	 * chevron's gutter intact.
+	 */
+	width: 47px;
+	min-width: 0;
+	max-width: none;
+	font-size: 13px;
+	padding: 2px 18px 2px 4px;
+	height: auto;
+	line-height: 1.4;
+}
+.ui-datepicker .uich-gf-dp-time .uich-gf-dt-sep {
+	color: var(--uich-gf-text-muted);
+	font-weight: 600;
+}
+.ui-datepicker .uich-gf-dp-time-actions {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	gap: 8px;
+	padding-top: 0.35em;
+	border-top: 1px solid var(--uich-gf-border-subtle);
+}
+.ui-datepicker .uich-gf-dp-time-actions .button {
+	margin: 0;
+	border-radius: 4px;
+}
+.uich-gf-input-wrap .select2-container--default .select2-results__option[role="group"] {
+	padding: 0;
+}
+.uich-gf-input-wrap .select2-container--default .select2-results__group {
+	font-weight: 600;
+	font-size: 13px;
+	color: var(--uich-gf-text-muted);
+	padding: 6px 8px 4px;
+}
+.uich-gf-input-wrap .select2-container--default .select2-results__options--nested .select2-results__option {
+	padding-left: 12px;
+	font-size: 13px;
+}
+/*
+ * Every checkbox/radio this module renders — Checkbox field, Radio field, and the Taxonomy field's
+ * checkbox/radio list — drawn the same way as the True/False toggle: appearance:none plus our own
+ * ::after mark, so all three read as one design instead of each browser's own native control (which
+ * varies by OS/browser and never matches --uich-gf-accent). Plain accent-color was tried first but
+ * only tints the browser's own shape — it can't fix the size/shape/focus-ring mismatch across types.
+ */
+.uich-gf-metabox input[type="checkbox"],
+.uich-gf-metabox input[type="radio"] {
+	-webkit-appearance: none;
+	appearance: none;
+	position: relative;
+	flex: 0 0 auto;
+	width: 18px;
+	height: 18px;
+	margin: 0;
+	border: 1.5px solid var(--uich-gf-border-hover);
+	background: var(--uich-gf-bg-card);
+	cursor: pointer;
+	transition: background-color var(--uich-gf-transition), border-color var(--uich-gf-transition);
+}
+.uich-gf-metabox input[type="checkbox"] {
+	border-radius: 5px;
+}
+.uich-gf-metabox input[type="radio"] {
+	border-radius: 50%;
+}
+.uich-gf-metabox input[type="checkbox"]:hover,
+.uich-gf-metabox input[type="radio"]:hover {
+	border-color: var(--uich-gf-accent);
+}
+.uich-gf-metabox input[type="checkbox"]:checked {
+	background: var(--uich-gf-accent);
+	border-color: var(--uich-gf-accent);
+}
+.uich-gf-metabox input[type="radio"]:checked {
+	border-color: var(--uich-gf-accent);
+}
+.uich-gf-metabox input[type="radio"]:checked::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	width: 9px;
+	height: 9px;
+	border-radius: 50%;
+	background: var(--uich-gf-accent);
+	transform: translate(-50%, -50%);
+}
+.uich-gf-metabox input[type="checkbox"]:focus-visible,
+.uich-gf-metabox input[type="radio"]:focus-visible {
+	outline: none;
+	box-shadow: 0 0 0 3px var(--uich-gf-focus-ring);
+}
+.uich-gf-wrap-checkbox, .uich-gf-wrap-radio {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.uich-gf-wrap-checkbox.uich-gf-wrap-horizontal, .uich-gf-wrap-radio.uich-gf-wrap-horizontal {
+    display: block;
+}
+
+/* Repeater field layout (post editor) — a card shell holding a stack of row cards. */
+.uich-gf-repeater-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%;
+    border: 1px solid var(--uich-gf-border);
+    padding: 14px;
+    border-radius: var(--uich-gf-radius-lg);
+    background: var(--uich-gf-bg-subtle);
+}
+
+.uich-gf-repeater-rows {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.uich-gf-repeater-row {
+    border: 1px solid var(--uich-gf-border-subtle);
+    border-radius: var(--uich-gf-radius);
+    padding: 14px;
+    background: var(--uich-gf-bg-card);
+    box-shadow: var(--uich-gf-shadow-xs);
+    transition: box-shadow var(--uich-gf-transition), border-color var(--uich-gf-transition);
+}
+
+.uich-gf-repeater-row:hover {
+    border-color: var(--uich-gf-border-hover);
+    box-shadow: var(--uich-gf-shadow-sm);
+}
+
+.uich-gf-repeater-row .uich-gf-repeater-cell {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-bottom: 10px;
+}
+
+.uich-gf-repeater-row .uich-gf-repeater-cell:last-of-type {
+    margin-bottom: 0;
+}
+
+.uich-gf-repeater-row .uich-gf-label {
+    font-weight: 600;
+    font-size: 12.5px;
+    color: var(--uich-gf-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+}
+
+.uich-gf-repeater-row .uich-gf-input-wrap,
+.uich-gf-repeater-row .uich-gf-input {
+    width: 100%;
+}
+
+.uich-gf-repeater-row .uich-gf-repeater-remove-row,
+.uich-gf-repeater-row .uich-gf-repeater-duplicate-row {
+    margin-top: 8px;
+    color: var(--uich-gf-text-muted);
+    text-decoration: none;
+    transition: color var(--uich-gf-transition);
+}
+
+.uich-gf-repeater-row .uich-gf-repeater-remove-row:hover,
+.uich-gf-repeater-row .uich-gf-repeater-duplicate-row:hover {
+    color: var(--uich-gf-text);
+}
+
+.uich-gf-repeater-row .uich-gf-repeater-remove-row {
+    color: var(--uich-gf-danger);
+}
+
+.uich-gf-repeater-row .uich-gf-repeater-remove-row:hover {
+    color: #a02224;
+}
+
+.uich-gf-repeater-actions {
+    margin-top: 6px;
+}
+
+.uich-gf-repeater-actions .uich-gf-repeater-add-row {
+    margin-top: 2px;
+    border-radius: var(--uich-gf-radius-sm);
+}
+
+/* Range field: slider + number input in one row */
+.uich-gf-metabox .uich-gf-range-wrap {
+    display: flex;
+    align-items: center;
+    gap: 0.9em;
+    flex: 1;
+    min-width: 0;
+}
+
+/*
+ * Track, fill and thumb are three real, JS-positioned DIVs (see the PHP comment above this markup)
+ * — not anything painted by the range input itself. Every CSS-only approach was tried first
+ * (gradient on the input's own background, on ::-webkit-slider-runnable-track, a div positioned
+ * BEHIND a "transparent" input) and each computed correctly under getComputedStyle but never
+ * actually painted, in both a headless test browser and a real desktop one: this <input>, however
+ * transparent by every CSS property that can be queried, still occupies an opaque native paint
+ * layer some Chromium builds draw for range controls regardless of `appearance: none`. `opacity: 0`
+ * is the one property that reliably removes that layer everywhere, so the input becomes a fully
+ * invisible but still real, focusable, keyboard- and screen-reader-operable hit-area stacked on top,
+ * and these three divs are the only thing actually drawn.
+ */
+.uich-gf-metabox .uich-gf-range-track-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    flex: 1;
+    min-width: 0;
+    height: 24px;
+}
+.uich-gf-metabox .uich-gf-range-track-bg {
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    height: 8px;
+    border-radius: 999px;
+    background: var(--uich-gf-border);
+    overflow: hidden;
+    pointer-events: none;
+}
+.uich-gf-metabox .uich-gf-range-track-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--uich-gf-accent);
+    border-radius: 999px;
+    /* JS (uichGfRangeUpdateFill) sets width on every input/change and on load — no transition on
+       drag, so the fill tracks the thumb exactly instead of lagging behind it. */
+}
+/* The visible thumb. `left` is a bare percentage (0%–100% of the track's own width, same number the
+   fill bar uses) rather than accounting for the thumb's own half-width, so at the extremes its
+   centre — not its edge — reaches the end of the track; a native range thumb behaves the same way. */
+.uich-gf-metabox .uich-gf-range-track-thumb {
+    position: absolute;
+    top: 50%;
+    left: 0%;
+    width: 18px;
+    height: 18px;
+    margin-left: -9px;
+    transform: translateY(-50%);
+    background: var(--uich-gf-accent);
+    border: 2px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    pointer-events: none;
+    transition: background-color var(--uich-gf-transition);
+}
+.uich-gf-metabox .uich-gf-range-wrap:hover .uich-gf-range-track-thumb {
+    background: var(--uich-gf-accent-hover);
+}
+
+.uich-gf-metabox .uich-gf-range-wrap .uich-gf-range-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    position: absolute;
+    inset: 0;
+    /* The real interactive surface — invisible (see the block comment above) but full-size, on top
+       of the three visual divs, and still a genuine range input for click/drag/keyboard/AT. */
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    opacity: 0;
+    background: transparent;
+    box-shadow: none !important;
+    cursor: pointer;
+}
+
+.uich-gf-metabox .uich-gf-range-wrap .uich-gf-range-slider:focus-visible ~ .uich-gf-range-track-thumb,
+.uich-gf-metabox .uich-gf-range-track-wrap:focus-within .uich-gf-range-track-thumb {
+    box-shadow: 0 0 0 3px var(--uich-gf-focus-ring);
+}
+
+/* Number input beside range */
+.uich-gf-metabox .uich-gf-range-wrap .uich-gf-range-number {
+    width: 5.5em;
+    flex: 0 0 auto;
+    min-width: 0;
+    margin: 0;
+    padding: 7px 8px;
+    font-size: 14px;
+    line-height: 1.4;
+    text-align: center;
+    border-radius: var(--uich-gf-radius);
+    border: 1px solid var(--uich-gf-border);
+    color: var(--uich-gf-text);
+    background: #fff;
+    transition: border-color var(--uich-gf-transition), box-shadow var(--uich-gf-transition);
+}
+
+.uich-gf-metabox .uich-gf-range-wrap .uich-gf-range-number:focus {
+    border-color: var(--uich-gf-accent);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--uich-gf-focus-ring);
+}
+
+/* Relationship field (dual list) */
+.uich-gf-metabox .uich-gf-relationship-wrap {
+	width: 100%;
+	max-width: 720px;
+}
+.uich-gf-metabox .uich-gf-relationship-toolbar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 10px;
+	margin-bottom: 12px;
+}
+.uich-gf-metabox .uich-gf-relationship-search-wrap {
+	flex: 1 1 160px;
+	min-width: 140px;
+}
+.uich-gf-metabox .uich-gf-relationship-search {
+	width: 100%;
+	box-sizing: border-box;
+	/* 9px, matching .uich-gf-input, so this sits at the same 40px height as the select2 boxes and
+	   the post-type <select> beside it. */
+	padding: 9px 12px;
+	line-height: 20px;
+	border: 1px solid var(--uich-gf-border);
+	border-radius: var(--uich-gf-radius);
+	transition: border-color var(--uich-gf-transition), box-shadow var(--uich-gf-transition);
+}
+.uich-gf-metabox .uich-gf-relationship-search:focus {
+	border-color: var(--uich-gf-accent);
+	box-shadow: 0 0 0 3px var(--uich-gf-focus-ring);
+	outline: none;
+}
+.uich-gf-metabox .uich-gf-relationship-pt-wrap,
+.uich-gf-metabox .uich-gf-relationship-tax-wrap {
+	flex: 0 1 200px;
+	min-width: 140px;
+}
+.uich-gf-metabox .uich-gf-relationship-pt,
+.uich-gf-metabox .uich-gf-relationship-tax {
+	width: 100%;
+	max-width: 220px;
+}
+.uich-gf-metabox .uich-gf-relationship-columns {
+	display: flex;
+	gap: 14px;
+	align-items: stretch;
+}
+.uich-gf-metabox .uich-gf-relationship-col {
+	flex: 1 1 0;
+	min-width: 0;
+	border: 1px solid var(--uich-gf-border-subtle);
+	border-radius: var(--uich-gf-radius-lg);
+	background: #fff;
+	box-shadow: var(--uich-gf-shadow-xs);
+	overflow: hidden;
+}
+.uich-gf-metabox .uich-gf-relationship-list {
+	list-style: none;
+	margin: 0;
+	padding: 6px 0;
+	max-height: 280px;
+	overflow-y: auto;
+	min-height: 120px;
+}
+.uich-gf-metabox .uich-gf-relationship-item {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 12px;
+	margin: 0 6px 2px;
+	border-radius: var(--uich-gf-radius-sm);
+	cursor: pointer;
+	font-size: 14px;
+	line-height: 1.35;
+	color: var(--uich-gf-text);
+	transition: background-color var(--uich-gf-transition);
+}
+.uich-gf-metabox .uich-gf-relationship-available .uich-gf-relationship-item:hover {
+	background: var(--uich-gf-bg-subtle);
+}
+.uich-gf-metabox .uich-gf-relationship-item.is-in-selected {
+	opacity: 0.45;
+	cursor: default;
+}
+.uich-gf-metabox .uich-gf-relationship-thumb {
+	flex: 0 0 auto;
+	width: 34px;
+	height: 34px;
+	overflow: hidden;
+	border-radius: var(--uich-gf-radius-sm);
+	background: var(--uich-gf-bg-subtle);
+}
+.uich-gf-metabox .uich-gf-relationship-thumb img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+.uich-gf-metabox .uich-gf-relationship-item-title {
+	flex: 1 1 auto;
+	min-width: 0;
+	word-break: break-word;
+}
+.uich-gf-metabox .uich-gf-relationship-selected .uich-gf-relationship-item {
+	cursor: default;
+	background: var(--uich-gf-bg-subtle);
+}
+.uich-gf-metabox .uich-gf-relationship-remove {
+	flex: 0 0 auto;
+	margin-left: auto;
+	border: none;
+	border-radius: var(--uich-gf-radius-sm);
+	background: transparent;
+	color: var(--uich-gf-text-muted);
+	font-size: 18px;
+	line-height: 1;
+	cursor: pointer;
+	padding: 2px 6px;
+	transition: background-color var(--uich-gf-transition), color var(--uich-gf-transition);
+}
+.uich-gf-metabox .uich-gf-relationship-remove:hover {
+	background: rgba(214, 54, 56, 0.08);
+	color: var(--uich-gf-danger);
+}
+.uich-gf-metabox .uich-gf-relationship-load-more-wrap {
+	margin: 6px 10px 10px;
+}
+.uich-gf-metabox .uich-gf-relationship-selected-inputs {
+	display: none;
+}
+
+/* Taxonomy field */
+.uich-gf-metabox .uich-gf-taxonomy-wrap {
+	width: 100%;
+	max-width: 640px;
+}
+.uich-gf-metabox .uich-gf-taxonomy-inner {
+	display: flex;
+	align-items: stretch;
+	gap: 12px;
+}
+.uich-gf-metabox .uich-gf-taxonomy-inner:not(.uich-gf-taxonomy-inner--stack) {
+	border: 1px solid var(--uich-gf-border);
+	border-radius: var(--uich-gf-radius-lg);
+	background: #fff;
+	padding: 12px 14px;
+	min-height: 48px;
+	box-sizing: border-box;
+	box-shadow: var(--uich-gf-shadow-xs);
+}
+.uich-gf-metabox .uich-gf-taxonomy-inner--stack {
+	flex-direction: column;
+	align-items: stretch;
+	gap: 8px;
+	border: 0;
+	border-radius: 0;
+	background: transparent;
+	padding: 0;
+	min-height: 0;
+}
+.uich-gf-metabox .uich-gf-taxonomy-list {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	flex: 1 1 auto;
+	min-width: 0;
+}
+.uich-gf-metabox .uich-gf-taxonomy-item {
+	margin: 0 0 8px;
+	padding: 0;
+	font-size: 14px;
+	line-height: 1.45;
+}
+.uich-gf-metabox .uich-gf-taxonomy-item:last-child {
+	margin-bottom: 0;
+}
+.uich-gf-metabox .uich-gf-taxonomy-check-label,
+.uich-gf-metabox .uich-gf-taxonomy-radio-label {
+	display: inline-flex;
+	align-items: flex-start;
+	gap: 8px;
+	cursor: pointer;
+	color: var(--uich-gf-text);
+}
+.uich-gf-metabox .uich-gf-taxonomy-cb,
+.uich-gf-metabox .uich-gf-taxonomy-radio {
+	margin: 2px 0 0;
+	flex: 0 0 auto;
+}
+.uich-gf-metabox .uich-gf-taxonomy-term-name {
+	word-break: break-word;
+}
+.uich-gf-metabox .uich-gf-taxonomy-inner--stack .uich-gf-taxonomy-select {
+	width: 100%;
+	max-width: 100%;
+}
+
+/* Color field — WordPress wp-color-picker (Iris) in metabox */
+.uich-gf-metabox .uich-gf-color-wrap {
+	display: block;
+	max-width: 100%;
+}
+.uich-gf-metabox .uich-gf-color-wrap .wp-picker-container {
+	display: inline-block;
+	vertical-align: middle;
+	max-width: 100%;
+}
+/* The swatch button — flat WP default (square, thin grey border) gets the same radius/shadow
+   language as every other control here. */
+.uich-gf-metabox .uich-gf-color-wrap .wp-color-result {
+	margin: 0;
+	border: 1px solid var(--uich-gf-border);
+	border-radius: var(--uich-gf-radius);
+	box-shadow: var(--uich-gf-shadow-xs);
+	height: 32px;
+	transition: box-shadow var(--uich-gf-transition), border-color var(--uich-gf-transition);
+}
+.uich-gf-metabox .uich-gf-color-wrap .wp-color-result:hover {
+	box-shadow: var(--uich-gf-shadow-sm);
+	border-color: var(--uich-gf-border-hover);
+}
+.uich-gf-metabox .uich-gf-color-wrap .wp-color-result:after {
+	border-radius: 0 calc(var(--uich-gf-radius) - 1px) calc(var(--uich-gf-radius) - 1px) 0;
+	height: 30px;
+	line-height: 30px;
+}
+.uich-gf-metabox .uich-gf-color-wrap .wp-picker-input-wrap .uich-gf-input.uich-gf-color-input {
+	min-width: 6em;
+	height: 32px;
+	padding: 5px 10px;
+	vertical-align: middle;
+}
+.uich-gf-metabox .uich-gf-color-wrap .wp-picker-input-wrap .button {
+	height: 32px;
+	padding: 0 12px;
+}
+/* The Iris popup itself — square corners and a bare 1px border by default. */
+.uich-gf-metabox .uich-gf-color-wrap .wp-picker-holder,
+.uich-gf-metabox .uich-gf-color-wrap .iris-picker {
+	border-radius: var(--uich-gf-radius-lg);
+	box-shadow: var(--uich-gf-shadow-md);
+	border: 1px solid var(--uich-gf-border);
+	overflow: hidden;
+}
+.uich-gf-metabox .uich-gf-color-wrap .iris-palette {
+	border-radius: 3px;
+	box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.08);
+}
+
+/*
+ * Alpha / opacity slider.
+ *
+ * Core's wp-color-picker (a thin wrapper over Automattic's Iris) has no alpha channel at all — the
+ * ~350-line patch that adds one to the picker's own UI (github.com/websymphony/wp-color-picker-alpha)
+ * hooks Iris internals this plugin does not vendor. Rather than reproduce that from memory and risk
+ * a subtly wrong RGBA blend shipping in a form field, opacity gets its own control: a plain range
+ * input (the same styled slider as the Range field type) that rewrites the stored value's alpha
+ * channel directly. It sits outside the picker rather than inside its popup, but it is a real,
+ * working alpha control rather than a half-correct copy of someone else's Iris patch.
+ */
+.uich-gf-metabox .uich-gf-color-alpha-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	margin-top: 10px;
+	max-width: 320px;
+}
+.uich-gf-metabox .uich-gf-color-alpha-label {
+	flex: 0 0 auto;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--uich-gf-text-muted);
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+}
+.uich-gf-metabox .uich-gf-color-alpha-value {
+	flex: 0 0 auto;
+	width: 3.2em;
+	text-align: right;
+	font-size: 12.5px;
+	color: var(--uich-gf-text-muted);
+	font-variant-numeric: tabular-nums;
+}
+/*
+ * Same native-paint-layer bug as the Range field (see .uich-gf-range-track-wrap): a gradient drawn
+ * on the input itself, or on its pseudo-track, computes correctly but the browser still paints an
+ * opaque native layer on top. Fixed the same way — real visuals in plain divs, the input reduced to
+ * an invisible (opacity:0) hit-area on top, position synced by JS.
+ */
+.uich-gf-metabox .uich-gf-color-alpha-wrap {
+	position: relative;
+	display: flex;
+	align-items: center;
+	flex: 1;
+	min-width: 0;
+	height: 20px;
+}
+.uich-gf-metabox .uich-gf-color-alpha-track-bg {
+	position: absolute;
+	left: 0;
+	right: 0;
+	top: 50%;
+	transform: translateY(-50%);
+	height: 8px;
+	border-radius: 999px;
+	overflow: hidden;
+	pointer-events: none;
+	/*
+	 * A checkerboard under the gradient, same trick browsers use for a transparency preview: 0%
+	 * shows the board through, 100% is solid current-colour. --uich-gf-alpha-color is the field's
+	 * live RGB (opaque) kept in sync by the inline script on every colour change.
+	 */
+	background-image:
+		linear-gradient(to right, transparent, var(--uich-gf-alpha-color)),
+		conic-gradient(var(--uich-gf-border) 90deg, transparent 90deg 180deg, var(--uich-gf-border) 180deg 270deg, transparent 270deg);
+	background-size: 100% 100%, 10px 10px;
+}
+.uich-gf-metabox .uich-gf-color-alpha-thumb {
+	position: absolute;
+	top: 50%;
+	left: 100%;
+	width: 16px;
+	height: 16px;
+	margin-left: -8px;
+	transform: translateY(-50%);
+	border-radius: 50%;
+	background: #fff;
+	border: 1px solid var(--uich-gf-border-hover);
+	box-shadow: var(--uich-gf-shadow-sm);
+	pointer-events: none;
+}
+.uich-gf-metabox .uich-gf-color-alpha-slider {
+	-webkit-appearance: none;
+	appearance: none;
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	border: none;
+	opacity: 0;
+	background: transparent;
+	box-shadow: none !important;
+	cursor: pointer;
+}
+.uich-gf-metabox .uich-gf-color-alpha-slider:focus {
+	outline: none;
+}
+.uich-gf-metabox .uich-gf-color-alpha-slider:focus-visible ~ .uich-gf-color-alpha-thumb,
+.uich-gf-metabox .uich-gf-color-alpha-wrap:focus-within .uich-gf-color-alpha-thumb {
+	box-shadow: 0 0 0 3px var(--uich-gf-focus-ring);
+}
+.uich-gf-metabox .uich-gf-color-no-wheel .iris-square {
+	display: none !important;
+}
+/**
+ * Label placement — "Left aligned" (group setting `label_placement`).
+ *
+ * Rows default to a stacked column (see .uich-gf-field-row above); this turns the row into two
+ * columns with the label and its instruction in the first. Scoped to the modifier class so the
+ * default top-aligned layout is untouched.
+ */
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left {
+	flex-direction: row;
+	align-items: flex-start;
+	gap: 16px;
+}
+
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left > .uich-gf-label-col {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	flex: 0 0 180px;
+	max-width: 180px;
+	padding-top: 8px;
+}
+
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left > .uich-gf-label-col .uich-gf-instruction {
+	margin: 0;
+}
+
+/* min-width:0 stops a long input or a select2 control from forcing the row wider than its column. */
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left > .uich-gf-input-wrap {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+/* Below the WP admin breakpoint two columns stop being readable — fall back to stacked. */
+@media screen and (max-width: 782px) {
+	.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left {
+		flex-direction: column;
+		gap: 6px;
+	}
+	.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left > .uich-gf-label-col {
+		flex-basis: auto;
+		max-width: none;
+		padding-top: 0;
+	}
+}
+
+/**
+ * Select2 multi-select tags — the "×" remove control.
+ *
+ * The vendored select2 theme sets `font-family:'dashicons'` on this button, but its text content is
+ * the literal × character (U+00D7), which Dashicons has no glyph for. The browser falls back for
+ * that one character while keeping the Dashicons metrics, so it renders tiny. The same rule
+ * positions the button absolutely with horizontal padding and no height, so its border-right draws
+ * a box shorter than the tag and the glyph never centres in it.
+ *
+ * Overridden here rather than in assets/css/extra/select2.css so a select2 upgrade doesn't drop the
+ * fix and other consumers of that vendored file are unaffected. Four classes beats select2's three,
+ * so this wins on specificity regardless of enqueue order.
+ *
+ * Covers every field that renders a multi-select: Post Object, Page Link, User, and Taxonomy.
+ */
+.uich-gf-input-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 20px;
+	height: 100%;
+	padding: 0;
+	font-family: inherit;
+	font-size: 15px;
+	font-weight: 400;
+	line-height: 1;
+	color: var(--uich-gf-text-muted);
+}
+
+.uich-gf-input-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover,
+.uich-gf-input-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice__remove:focus {
+	background-color: var(--uich-gf-bg-subtle);
+	color: var(--uich-gf-text);
+	outline: none;
+}
+
+/* The tag reserves exactly the button's width, so the label can't slide under it. */
+.uich-gf-input-wrap .select2-container--default .select2-selection--multiple .select2-selection__choice {
+	display: inline-flex;
+	align-items: center;
+	padding-left: 21px;
+	line-height: 22px;
+	border-radius: var(--uich-gf-radius-sm, 4px);
+}
+
+/*
+ * Required fields.
+ *
+ * The Required toggle used to be invisible in the rendered form — the first a user heard of it was
+ * a refused save. The asterisk marks the field up front; the inline message replaces a banner at
+ * the top of the page that named the fields but left the user to go find them.
+ */
+.uich-gf-label .uich-gf-required {
+	color: var(--uich-gf-danger);
+	font-weight: 400;
+	margin-left: 2px;
+}
+.uich-gf-field-error {
+	margin: 6px 0 0;
+	color: var(--uich-gf-danger);
+	font-size: 12px;
+	line-height: 1.5;
+}
+/*
+ * The red border goes on the control, not the row — the row is the label + input together, and
+ * outlining the whole thing reads as "this section is broken" rather than "fill this in".
+ */
+.uich-gf-field-has-error .uich-gf-input,
+.uich-gf-field-has-error .select2-container--default .select2-selection--single,
+.uich-gf-field-has-error .select2-container--default .select2-selection--multiple {
+	border-color: var(--uich-gf-danger);
+}
+.uich-gf-field-has-error .uich-gf-input:focus {
+	border-color: var(--uich-gf-danger);
+	box-shadow: 0 0 0 3px rgba(214, 54, 56, 0.15);
+}
+
+/* Conditional logic: a field whose "Show this field if" rule is unmet. Hidden rather than
+   disabled, because a disabled input is omitted from $_POST and would wipe the stored value. */
+.uich-gf-field-row.uich-gf-cond-hidden {
+	display: none !important;
+}
+
+/* Pro-locked field row — shown in place of the input for a field type this build may not use. */
+.uich-gf-pro-lock {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	padding: 14px 16px;
+	border: 1px dashed var(--uich-gf-border);
+	border-radius: 6px;
+	background: var(--uich-gf-bg-subtle);
+}
+
+.uich-gf-pro-lock-icon {
+	color: var(--uich-gf-text-muted);
+	flex: 0 0 auto;
+}
+
+.uich-gf-pro-lock-text {
+	flex: 1 1 auto;
+	min-width: 0;
+}
+
+.uich-gf-pro-lock-text .description {
+	margin: 4px 0 0;
+}
+
+/*
+ * align-self, not just the row's align-items: WP admin's `.button` is an inline-block with a
+ * baseline vertical-align and its own line-height, so in a flex row it sits on the text baseline of
+ * the block beside it rather than in the middle of the row — which shows as soon as that block has
+ * a second line (the "data is kept" note).
+ */
+.uich-gf-pro-lock-cta {
+	flex: 0 0 auto;
+	align-self: center;
+	margin: 0;
+	vertical-align: middle;
+}
+
+/* ==========================================================================================
+ * UiChemy design-system look for field groups on edit screens (post, term, user).
+ *
+ * The rules above are WordPress-flavoured (WP blue accent, 6px corners, a soft blue focus halo).
+ * Field groups are made in the UiChemy dashboard, so the boxes editors fill in should look like it:
+ * neutral accents (checked = near-black, as in the DS), DS borders and 8px corners, the DS brand
+ * focus outline, and DS-style outline buttons. Everything is re-pointed through the scoped tokens,
+ * so field types styled above follow without being restyled one by one.
+ * ========================================================================================== */
+.uich-gf-metabox {
+	--uich-gf-radius: 8px;
+	--uich-gf-radius-sm: 6px;
+	--uich-gf-radius-lg: 12px;
+	--uich-gf-border: rgba(0, 0, 0, 0.14);
+	--uich-gf-border-hover: rgba(0, 0, 0, 0.28);
+	--uich-gf-border-subtle: rgba(0, 0, 0, 0.08);
+	--uich-gf-accent: #171717;
+	--uich-gf-accent-hover: #000000;
+	--uich-gf-brand: #fd6a35;
+	--uich-gf-focus-ring: transparent;
+	/* The DS text tokens where the DS bundle is loaded (post screens), the same values elsewhere. */
+	--uich-gf-text: var(--uc-text-strong, #171717);
+	--uich-gf-text-muted: var(--uc-text-muted, #6b6b6b);
+	--uich-gf-bg-subtle: #f4f4f4;
+	--uich-gf-shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.05);
+	--uich-gf-gap-x: 16px;
+	--uich-gf-gap-y: 24px;
+	/* Label to control, and the readable cap on how wide a group's fields run. */
+	--uich-gf-label-gap: 8px;
+	--uich-gf-max-w: 960px;
+
+	gap: var(--uich-gf-gap-y) var(--uich-gf-gap-x);
+	/* The box's own width drives the layout (it may sit in the main column or the sidebar). */
+	container: uich-gf / inline-size;
+}
+
+/*
+ * The grid: 100 columns, so a field's Width setting (50, 33, 25…) is its column span. Gutters are
+ * half a gap of padding on each side of every field, with the box pulled out by the same amount,
+ * so 50 + 50 and 33 + 33 + 34 each fill exactly one line, edge to edge.
+ *
+ * Each top-labelled field spans three shared row tracks — label · help text · control — through
+ * subgrid. Fields side by side therefore line up: labels with labels, and inputs with inputs even
+ * when only one of them has help text under its label.
+ */
+@supports (grid-template-rows: subgrid) {
+	.uich-gf-metabox {
+		display: grid;
+		grid-template-columns: repeat(100, minmax(0, 1fr));
+		gap: 0;
+		margin-inline: calc(var(--uich-gf-gap-x) / -2);
+	}
+	.uich-gf-metabox > .uich-gf-field-row {
+		grid-column: span 100;
+		grid-row: span 3;
+		min-width: 0;
+		padding: 0 calc(var(--uich-gf-gap-x) / 2) var(--uich-gf-gap-y);
+		box-sizing: border-box;
+	}
+	.uich-gf-metabox > .uich-gf-field-row.uich-gf-has-width {
+		grid-column: span var(--uich-gf-w);
+	}
+	.uich-gf-metabox > .uich-gf-field-row.uich-gf-labels-top {
+		display: grid;
+		grid-template-rows: subgrid;
+		gap: 0;
+	}
+	.uich-gf-metabox > .uich-gf-labels-top > label.uich-gf-label { grid-row: 1; }
+	.uich-gf-metabox > .uich-gf-labels-top > .uich-gf-instruction { grid-row: 2; margin: 2px 0 0; }
+	.uich-gf-metabox > .uich-gf-labels-top > .uich-gf-input-wrap { grid-row: 3; margin-top: var(--uich-gf-label-gap); min-width: 0; }
+	/* The last line needs no space under it: the box's own padding follows. */
+	.uich-gf-metabox { margin-bottom: calc(var(--uich-gf-gap-y) * -1); }
+
+	/* In a narrow box (the sidebar, a small screen) side-by-side fields are too cramped: stack them. */
+	@container uich-gf (max-width: 560px) {
+		.uich-gf-metabox > .uich-gf-field-row.uich-gf-has-width { grid-column: span 100; }
+	}
+}
+
+/* Browsers without subgrid: the same widths on a wrapping flex line. */
+@supports not (grid-template-rows: subgrid) {
+	.uich-gf-metabox > .uich-gf-field-row.uich-gf-has-width {
+		flex: 0 0 calc(var(--uich-gf-w) * 1% - (100 - var(--uich-gf-w)) * var(--uich-gf-gap-x) / 100);
+		min-width: 0;
+	}
+	@container uich-gf (max-width: 560px) {
+		.uich-gf-metabox > .uich-gf-field-row.uich-gf-has-width { flex-basis: 100%; }
+	}
+}
+
+.uich-gf-metabox label.uich-gf-label {
+	font-weight: 500;
+	letter-spacing: 0;
+}
+
+/* DS focus: the field keeps its border, a 1px brand outline sits just outside it. */
+.uich-gf-metabox .uich-gf-input:focus,
+.uich-gf-metabox .select2-container--focus .select2-selection,
+.uich-gf-metabox .select2-container--open .select2-selection {
+	border-color: var(--uich-gf-border-hover);
+	box-shadow: none;
+	outline: 1px solid var(--uich-gf-brand);
+	outline-offset: 1px;
+}
+
+/* Buttons (Select image / file / link…): DS neutral outline button. */
+.uich-gf-metabox .button {
+	border-color: var(--uich-gf-border);
+	background: #ffffff;
+	color: var(--uich-gf-text);
+	font-weight: 500;
+	box-shadow: var(--uich-gf-shadow-xs);
+}
+.uich-gf-metabox .button:hover {
+	border-color: var(--uich-gf-border-hover);
+	background: var(--uich-gf-bg-subtle);
+	color: var(--uich-gf-text);
+}
+.uich-gf-metabox .button:active {
+	background: #ebebeb;
+}
+.uich-gf-metabox .button:focus,
+.uich-gf-metabox .button:focus-visible {
+	border-color: var(--uich-gf-border-hover);
+	box-shadow: var(--uich-gf-shadow-xs);
+	outline: 2px solid var(--uich-gf-brand);
+	outline-offset: 2px;
+}
+
+/*
+ * A group with no fields renders an empty box with only its title. Hide it: there is nothing for
+ * the editor to fill in. It reappears on its own as soon as the group gets a field.
+ */
+.postbox[id^="uich_gf_"]:not(:has(.uich-gf-field-row)) {
+	display: none;
+}
+
+/* The group's box title: DS heading weight instead of WordPress's bold. */
+/* #poststuff: WordPress sets this title with `.edit-post-meta-boxes-area #poststuff h2.hndle`. */
+#poststuff .postbox[id^="uich_gf_"] .postbox-header h2.hndle {
+	font-size: 14px;
+	font-weight: 500;
+	color: #171717;
+}
+
+/*
+ * Field types WordPress-side code still draws (post object, page link, user, taxonomy,
+ * relationship, password; every type on term and user screens) sized and set like the DS controls
+ * drawn beside them: 32px tall (DS control-h-md: 5px + 20px line + 5px + 1px rings), DS type.
+ * --uc-font-sans exists wherever the DS bundle loads; elsewhere the admin font stays.
+ */
+.uich-gf-metabox,
+.uich-gf-metabox input,
+.uich-gf-metabox select,
+.uich-gf-metabox textarea,
+.uich-gf-metabox .select2-selection {
+	font-family: var(--uc-font-sans, inherit);
+}
+.uich-gf-metabox .uich-gf-input:not(textarea),
+.uich-gf-metabox .uich-gf-relationship-search {
+	min-height: 32px;
+	padding-top: 5px;
+	padding-bottom: 5px;
+}
+.uich-gf-metabox select.uich-gf-input {
+	height: 32px;
+	padding-top: 0;
+	padding-bottom: 0;
+}
+.uich-gf-input-wrap .select2-container--default .select2-selection--single {
+	height: 32px;
+}
+.uich-gf-input-wrap .select2-container--default .select2-selection--single .select2-selection__arrow {
+	height: 30px;
+}
+.uich-gf-input-wrap .select2-container--default .select2-selection--multiple {
+	min-height: 32px;
+	padding-block: 2px;
+}
+.uich-gf-metabox select.uich-gf-relationship-pt,
+.uich-gf-metabox select.uich-gf-relationship-tax {
+	height: 32px;
+	min-height: 32px;
+}
+/* Left labels: centred on the 32px control's first line (was set for 40px inputs). */
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left > .uich-gf-label-col {
+	padding-top: 7px;
+}
+
+/*
+ * Option A, "roomy single card": the group box owns its padding (24px all round, so the title, the
+ * first field and the box edges keep the same distance on every screen: block editor, classic
+ * editor, the test pages), and the fields stop at a readable width instead of running across a
+ * 1400px box, the way form pages keep a line of fields within reach of the eye.
+ */
+#poststuff .postbox[id^="uich_gf_"] > .inside,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .inside {
+	margin: 0;
+	padding: 24px;
+}
+/* Boxes placed in the sidebar are ~280px wide: 24px a side would leave little for the fields. */
+#side-sortables .postbox[id^="uich_gf_"] > .inside,
+.edit-post-meta-boxes-area.is-side #poststuff .postbox[id^="uich_gf_"] > .inside {
+	padding: 16px;
+}
+.uich-gf-metabox {
+	max-width: var(--uich-gf-max-w);
+}
+@supports (grid-template-rows: subgrid) {
+	/* The grid pulls out half a gap each side; the cap counts that in. */
+	.uich-gf-metabox {
+		max-width: calc(var(--uich-gf-max-w) + var(--uich-gf-gap-x));
+	}
+}
+@supports not (grid-template-rows: subgrid) {
+	.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-top {
+		gap: var(--uich-gf-label-gap);
+	}
+}
+
+/*
+ * Option C, "settings rows", for groups set to labels on the left: label and help in a 240px column,
+ * the control beside it, a hairline under each row (the settings-list pattern). Fields that need
+ * the width (textarea, WYSIWYG, repeater, relationship) drop below their label. Half-width fields
+ * keep their width, with the label column shrinking to at most 35% of the cell.
+ */
+.uich-gf-metabox {
+	--uich-gf-label-w: 240px;
+	--uich-gf-label-col-gap: 24px;
+}
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left {
+	gap: var(--uich-gf-label-col-gap);
+}
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left > .uich-gf-label-col {
+	flex: 0 0 min(var(--uich-gf-label-w), 35%);
+	max-width: min(var(--uich-gf-label-w), 35%);
+}
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left:has(> .uich-gf-wrap-textarea, > .uich-gf-wrap-wysiwyg, > .uich-gf-wrap-repeater, > .uich-gf-wrap-relationship) {
+	flex-direction: column;
+	align-items: stretch;
+	gap: var(--uich-gf-label-gap);
+}
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left:has(> .uich-gf-wrap-textarea, > .uich-gf-wrap-wysiwyg, > .uich-gf-wrap-repeater, > .uich-gf-wrap-relationship) > .uich-gf-label-col {
+	flex-basis: auto;
+	max-width: none;
+	padding-top: 0;
+}
+/* On / off: the control at the row's right edge, like a settings switch. */
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left:has(> .uich-gf-wrap-true_false) > .uich-gf-input-wrap {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	justify-content: center;
+	min-height: 32px;
+}
+@supports (grid-template-rows: subgrid) {
+	.uich-gf-metabox > .uich-gf-field-row.uich-gf-labels-left {
+		position: relative;
+		padding-top: 16px;
+		padding-bottom: 16px;
+	}
+	.uich-gf-metabox > .uich-gf-field-row.uich-gf-labels-left::after {
+		content: "";
+		position: absolute;
+		left: calc(var(--uich-gf-gap-x) / 2);
+		right: calc(var(--uich-gf-gap-x) / 2);
+		bottom: 0;
+		border-bottom: 1px solid var(--uich-gf-border-subtle);
+		pointer-events: none;
+	}
+	.uich-gf-metabox > .uich-gf-field-row.uich-gf-labels-left:last-child::after {
+		display: none;
+	}
+	/* Rows carry 16px above and below; the box's 24px padding stays exact at both ends. */
+	.uich-gf-metabox:has(> .uich-gf-labels-left) {
+		margin-top: -16px;
+		margin-bottom: -16px;
+	}
+}
+/* Narrow box: label above the control again. */
+@container uich-gf (max-width: 560px) {
+	.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left {
+		flex-direction: column;
+		align-items: stretch;
+		gap: var(--uich-gf-label-gap);
+	}
+	.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left > .uich-gf-label-col {
+		flex-basis: auto;
+		max-width: none;
+		padding-top: 0;
+	}
+}
+/*
+ * Settings rows are one column: a field's Width setting does not apply when labels are on the left.
+ * Side by side, each half had its own narrower label column, so the controls no longer started on
+ * one line and the hairlines broke at the gap. (Width still applies when labels are on top.)
+ */
+@supports (grid-template-rows: subgrid) {
+	.uich-gf-metabox > .uich-gf-field-row.uich-gf-labels-left.uich-gf-has-width {
+		grid-column: span 100;
+	}
+}
+@supports not (grid-template-rows: subgrid) {
+	.uich-gf-metabox > .uich-gf-field-row.uich-gf-labels-left.uich-gf-has-width {
+		flex-basis: 100%;
+	}
+}
+
+/*
+ * The dashboard's own card, as on UiChemy > Settings: a light grey section container (16px radius,
+ * 12px padding) holding a white card with a hairline border (12px radius, 16px side padding), rows
+ * divided by the same hairline. The WordPress box body is the grey container; the fields are the
+ * white card. Values copied from the Settings page (bg-muted/50, border #e6e6e6, rounded-2xl / -xl).
+ */
+#poststuff .postbox[id^="uich_gf_"] > .inside,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .inside {
+	max-width: calc(960px + 58px);
+	margin: 16px 24px 24px;
+	padding: 12px;
+	border-radius: 16px;
+	background: rgba(245, 245, 245, 0.5);
+}
+#side-sortables .postbox[id^="uich_gf_"] > .inside,
+.edit-post-meta-boxes-area.is-side #poststuff .postbox[id^="uich_gf_"] > .inside {
+	margin: 12px;
+	padding: 8px;
+}
+.postbox[id^="uich_gf_"] > .inside > .uich-gf-metabox {
+	max-width: none;
+	margin: 0;
+	padding: 24px 16px;
+	border: 1px solid #e6e6e6;
+	border-radius: 12px;
+	background: #ffffff;
+}
+@supports (grid-template-rows: subgrid) {
+	/* Rows carry half a gap of side padding and a gap below, so the card pads the rest:
+	   16px to the content at the sides, 24px above, and the last row's gap below. */
+	.postbox[id^="uich_gf_"] > .inside > .uich-gf-metabox {
+		padding: 24px calc(16px - var(--uich-gf-gap-x) / 2) 0;
+	}
+	/* Settings rows bring their own 14px above and below, as on the Settings page. */
+	.postbox[id^="uich_gf_"] > .inside > .uich-gf-metabox:has(> .uich-gf-labels-left) {
+		padding-block: 0;
+	}
+	.uich-gf-metabox > .uich-gf-field-row.uich-gf-labels-left {
+		padding-top: 14px;
+		padding-bottom: 14px;
+	}
+	.uich-gf-metabox > .uich-gf-field-row.uich-gf-labels-left::after {
+		border-bottom-color: #e6e6e6;
+	}
+}
+/* Settings-row type: 14px title, 13px description, as on the Settings page. */
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left > .uich-gf-label-col > label.uich-gf-label {
+	font-size: 14px;
+	line-height: 18px;
+}
+.uich-gf-metabox .uich-gf-field-row.uich-gf-labels-left > .uich-gf-label-col .uich-gf-instruction {
+	font-size: 13px;
+	line-height: 1.45;
+}
+/*
+ * The section title sits inside the grey container, above the white card, as on Settings. The
+ * WordPress header keeps its move / collapse buttons; it just becomes the container's top edge.
+ */
+#poststuff .postbox[id^="uich_gf_"] > .postbox-header,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .postbox-header {
+	max-width: calc(960px + 58px);
+	margin: 16px 24px 0;
+	padding: 0 8px 0 16px;
+	border: 0;
+	border-radius: 16px 16px 0 0;
+	background: rgba(245, 245, 245, 0.5);
+}
+#poststuff .postbox[id^="uich_gf_"] > .postbox-header h2.hndle,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .postbox-header h2.hndle {
+	padding: 12px 0 10px;
+	font-size: 13px;
+	font-weight: 500;
+	line-height: 18px;
+	color: #171717;
+}
+#poststuff .postbox[id^="uich_gf_"] > .inside,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .inside {
+	margin-top: 0;
+	padding-top: 0;
+	border-radius: 0 0 16px 16px;
+}
+/* Collapsed: the header alone, fully rounded. */
+#poststuff .postbox[id^="uich_gf_"].closed > .postbox-header,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"].closed > .postbox-header {
+	margin-bottom: 16px;
+	border-radius: 16px;
+}
+/* Header and body are one container: same box model, same cap (960px of fields + card + container padding). */
+#poststuff .postbox[id^="uich_gf_"] > .postbox-header,
+#poststuff .postbox[id^="uich_gf_"] > .inside,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .postbox-header,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .inside {
+	box-sizing: border-box;
+	max-width: 1018px;
+}
+/*
+ * Form width: the section is 800px at most (744px of fields inside the card), the width a form reads
+ * comfortably at. Full-width text fields stop there; half-width pairs are ~364px each.
+ */
+#poststuff .postbox[id^="uich_gf_"] > .postbox-header,
+#poststuff .postbox[id^="uich_gf_"] > .inside,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .postbox-header,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .inside {
+	max-width: 800px;
+}
+/* Centred in the editor; at least 24px from each side when the screen is narrower than the cap. */
+#poststuff .postbox[id^="uich_gf_"] > .postbox-header,
+#poststuff .postbox[id^="uich_gf_"] > .inside,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .postbox-header,
+.edit-post-meta-boxes-area #poststuff .postbox[id^="uich_gf_"] > .inside {
+	width: calc(100% - 48px);
+	margin-left: auto;
+	margin-right: auto;
+}
+#side-sortables .postbox[id^="uich_gf_"] > .postbox-header,
+#side-sortables .postbox[id^="uich_gf_"] > .inside,
+.edit-post-meta-boxes-area.is-side #poststuff .postbox[id^="uich_gf_"] > .postbox-header,
+.edit-post-meta-boxes-area.is-side #poststuff .postbox[id^="uich_gf_"] > .inside {
+	width: calc(100% - 24px);
+}
+
+/*
+ * Button focus, the DS way. WordPress's own `.wp-core-ui .button:focus` (0,3,0) paints a blue
+ * border, blue text and a blue 1px ring; the focus rule above only overrode part of that and added
+ * an orange ring on top, so a CLICK left a blue-and-orange double border. The DS button shows no
+ * ring on a mouse click and, for the keyboard, one soft neutral ring outside the button
+ * (Button.module.css: 2px --uc-ring, offset 2px). `.button.button` (0,4,0) outranks WordPress's
+ * focus rule on every property, wherever its stylesheet loads; :where() leaves out the WYSIWYG
+ * toolbar's own buttons (.ed_button) without adding specificity, as the base button rule does.
+ */
+.uich-gf-metabox .button.button:where(:not(.ed_button)):focus {
+	border-color: var(--uich-gf-border);
+	background: #ffffff;
+	color: var(--uich-gf-text);
+	box-shadow: var(--uich-gf-shadow-xs);
+	outline: none;
+}
+.uich-gf-metabox .button.button:where(:not(.ed_button)):hover {
+	border-color: var(--uich-gf-border-hover);
+	background: var(--uich-gf-bg-subtle);
+	color: var(--uich-gf-text);
+}
+.uich-gf-metabox .button.button.button-primary:where(:not(.ed_button)):focus,
+.uich-gf-metabox .button.button.button-primary:where(:not(.ed_button)):hover {
+	border-color: var(--uich-gf-accent);
+	background: var(--uich-gf-accent);
+	color: #ffffff;
+}
+.uich-gf-metabox .button.button:where(:not(.ed_button)):focus-visible {
+	outline: 2px solid var(--uc-ring, rgba(23, 23, 23, 0.4));
+	outline-offset: 2px;
+}
+/* Text buttons (Remove row …): WordPress gives these a blue 2px focus ring and blue text too. */
+.uich-gf-metabox .button-link.button-link:focus {
+	box-shadow: none;
+	outline: none;
+}
+.uich-gf-metabox .button-link.button-link:focus-visible {
+	border-radius: var(--uich-gf-radius-sm);
+	outline: 2px solid var(--uc-ring, rgba(23, 23, 23, 0.4));
+	outline-offset: 2px;
+}
+
+/* …so their own colours are restated for focus, at a specificity WordPress's rule cannot beat. */
+.uich-gf-repeater-row .uich-gf-repeater-duplicate-row.button-link:focus {
+	color: var(--uich-gf-text-muted);
+}
+.uich-gf-repeater-row .uich-gf-repeater-remove-row.button-link:focus {
+	color: var(--uich-gf-danger);
+}
+
+/*
+ * Select2's clear "×" (Post Object / Page Link / User, single value). Select2 floats it right, but
+ * the selection box is display:flex here (to centre the value), and a float means nothing in a flex
+ * box — so the × became the box's first item, hard against the left edge, and pushed the value in.
+ * Pinned beside the chevron instead, sized like a DS icon button, and the value's right padding
+ * makes room for both.
+ */
+.uich-gf-input-wrap .select2-container--default .select2-selection--single {
+	position: relative;
+}
+.uich-gf-input-wrap .select2-container--default .select2-selection--single .select2-selection__clear {
+	position: absolute;
+	top: 50%;
+	right: 30px;
+	transform: translateY(-50%);
+	float: none;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 20px;
+	height: 20px;
+	margin: 0;
+	padding: 0;
+	border: 0;
+	border-radius: var(--uich-gf-radius-sm);
+	background: transparent;
+	color: var(--uich-gf-text-muted);
+	font-size: 16px;
+	font-weight: 400;
+	line-height: 1;
+	cursor: pointer;
+}
+.uich-gf-input-wrap .select2-container--default .select2-selection--single .select2-selection__clear:hover {
+	background: rgba(0, 0, 0, 0.05);
+	color: var(--uich-gf-text);
+}
+.uich-gf-input-wrap .select2-container--default .select2-selection--single .select2-selection__clear:focus-visible {
+	outline: 2px solid var(--uc-ring, rgba(23, 23, 23, 0.4));
+	outline-offset: 1px;
+}
+.uich-gf-input-wrap .select2-container--default .select2-selection--single:has(.select2-selection__clear) .select2-selection__rendered,
+.uich-gf-input-wrap .select2-container--default .select2-selection--single.select2-selection--clearable .select2-selection__rendered {
+	padding-right: 56px;
+}
+.uich-gf-input-wrap .select2-container--default[dir="rtl"] .select2-selection--single .select2-selection__clear {
+	right: auto;
+	left: 30px;
+}
+.uich-gf-input-wrap .select2-container--default[dir="rtl"] .select2-selection--single:has(.select2-selection__clear) .select2-selection__rendered,
+.uich-gf-input-wrap .select2-container--default[dir="rtl"] .select2-selection--single.select2-selection--clearable .select2-selection__rendered {
+	padding-right: 12px;
+	padding-left: 56px;
+}
+
+/*
+ * Select2 dropdowns (Post Object / Page Link / User / Taxonomy / Relationship filter). The
+ * dropdown is appended to <body>, so its wrapper (select2's body-level .select2-container, not the
+ * one in the field) is tagged .uich-gf-s2-dropdown when it opens (inline script on uich-select-js)
+ * and styled from that class; the --uich-gf-* tokens live on
+ * .uich-gf-metabox and do not reach it, so the values it needs are set here.
+ */
+.select2-container.uich-gf-s2-dropdown {
+	--uich-gf-s2-text: #171717;
+	--uich-gf-s2-muted: #737373;
+	--uich-gf-s2-border: rgba(0, 0, 0, 0.14);
+	--uich-gf-s2-border-hover: rgba(0, 0, 0, 0.28);
+	--uich-gf-s2-hover: rgba(0, 0, 0, 0.05);
+	font-family: var(--uc-font-sans, inherit);
+	font-size: 13px;
+}
+.select2-container.uich-gf-s2-dropdown .select2-dropdown {
+	border-color: var(--uich-gf-s2-border);
+	color: var(--uich-gf-s2-text);
+}
+/* Search box: the DS input focus (border kept, 1px brand outline just outside), not WordPress's blue. */
+.select2-container.uich-gf-s2-dropdown .select2-search--dropdown {
+	padding: 6px;
+}
+.select2-container.uich-gf-s2-dropdown .select2-search--dropdown .select2-search__field {
+	min-height: 32px;
+	padding: 5px 10px;
+	border: 1px solid var(--uich-gf-s2-border);
+	border-radius: 6px;
+	box-shadow: none;
+	color: var(--uich-gf-s2-text);
+	font-family: inherit;
+	font-size: 13px;
+}
+.select2-container.uich-gf-s2-dropdown .select2-search--dropdown .select2-search__field:focus {
+	border-color: var(--uich-gf-s2-border-hover);
+	box-shadow: none;
+	outline: 1px solid var(--uc-brand, #fd6a35);
+	outline-offset: 1px;
+}
+/* Options: a neutral wash for the highlighted row instead of select2's #5897fb blue. */
+.select2-container.uich-gf-s2-dropdown .select2-results__option {
+	padding: 6px 10px;
+}
+.select2-container.uich-gf-s2-dropdown .select2-results__option--highlighted.select2-results__option--selectable {
+	background-color: var(--uich-gf-s2-hover);
+	color: var(--uich-gf-s2-text);
+}
+.select2-container.uich-gf-s2-dropdown .select2-results__option--selected {
+	background-color: transparent;
+	font-weight: 500;
+}
+.select2-container.uich-gf-s2-dropdown .select2-results__option--selected.select2-results__option--highlighted {
+	background-color: var(--uich-gf-s2-hover);
+}
+/* Group headings (a user's role, a post type) and their nested options — the rules for these
+   further up are scoped to .uich-gf-input-wrap, which the body-level dropdown is never inside. */
+.select2-container.uich-gf-s2-dropdown .select2-results__option[role="group"] {
+	padding: 0;
+}
+.select2-container.uich-gf-s2-dropdown .select2-results__group {
+	padding: 8px 10px 4px;
+	color: var(--uich-gf-s2-muted);
+	font-size: 12px;
+	font-weight: 500;
+}
+.select2-container.uich-gf-s2-dropdown .select2-results__options--nested .select2-results__option {
+	padding-left: 16px;
+}
+.select2-container.uich-gf-s2-dropdown .select2-results__message {
+	color: var(--uich-gf-s2-muted);
+}

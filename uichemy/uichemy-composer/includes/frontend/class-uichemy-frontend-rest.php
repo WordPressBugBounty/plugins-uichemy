@@ -216,14 +216,14 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 
 			$data = $request->get_param( 'data' );
 			if ( ! is_array( $data ) ) {
-				return new WP_Error( 'uichemy_bad_history', 'data must be an object.', array( 'status' => 400 ) );
+				return new WP_Error( 'uichemy_bad_history', __( 'data must be an object.', 'uichemy' ), array( 'status' => 400 ) );
 			}
 			$json = wp_json_encode( $data );
 			if ( ! is_string( $json ) ) {
-				return new WP_Error( 'uichemy_bad_history', 'data is not encodable.', array( 'status' => 400 ) );
+				return new WP_Error( 'uichemy_bad_history', __( 'data is not encodable.', 'uichemy' ), array( 'status' => 400 ) );
 			}
 			if ( strlen( $json ) > self::HISTORY_MAX_BYTES ) {
-				return new WP_Error( 'uichemy_history_too_big', 'History log exceeds the size limit.', array( 'status' => 413 ) );
+				return new WP_Error( 'uichemy_history_too_big', __( 'History log exceeds the size limit.', 'uichemy' ), array( 'status' => 413 ) );
 			}
 			// Stored as a STRING (wp_slash'd) so nested text-diff arrays are not
 			// unslashed by update_metadata.
@@ -262,10 +262,10 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 				return $guard;
 			}
 			if ( '' === trim( $html ) && '' === trim( $css ) ) {
-				return new WP_Error( 'uichemy_empty_code', 'At least html or css must be provided.', array( 'status' => 400 ) );
+				return new WP_Error( 'uichemy_empty_code', __( 'At least html or css must be provided.', 'uichemy' ), array( 'status' => 400 ) );
 			}
 			if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
-				return new WP_Error( 'uichemy_no_dep', 'Composer manager class missing.', array( 'status' => 500 ) );
+				return new WP_Error( 'uichemy_no_dep', __( 'Composer manager class missing.', 'uichemy' ), array( 'status' => 500 ) );
 			}
 
 			// One path for every builder. insert_index is now HONOURED everywhere —
@@ -326,7 +326,17 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 					$post = $target; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 					setup_postdata( $post );
 				}
-				$resolved = Uich_Dynamic::render_html( $html, array( 'widget_id' => $uid ) );
+				// The template text comes from the request. Full engine only when the requester
+				// may publish code AND the target post's author may (see Uich_Dynamic::author_trusted()).
+				if ( current_user_can( 'unfiltered_html' ) && ( ! $post_id || Uich_Dynamic::author_trusted( $post_id ) ) ) {
+					$resolved = Uich_Dynamic::render_html( $html, array( 'widget_id' => $uid ) );
+				} else {
+					$resolved = (string) Uich_Dynamic::untrusted(
+						function () use ( $html, $uid ) {
+							return Uich_Dynamic::render_html( $html, array( 'widget_id' => $uid ) );
+						}
+					);
+				}
 				wp_reset_postdata();
 				$post = $prev_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
 			}
@@ -481,13 +491,13 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 		 */
 		private static function guard_post( $post_id ) {
 			if ( ! $post_id ) {
-				return new WP_Error( 'uichemy_bad_post', 'post_id is required.', array( 'status' => 400 ) );
+				return new WP_Error( 'uichemy_bad_post', __( 'post_id is required.', 'uichemy' ), array( 'status' => 400 ) );
 			}
 			if ( ! current_user_can( 'edit_post', $post_id ) ) {
-				return new WP_Error( 'uichemy_forbidden', 'You cannot edit this post.', array( 'status' => 403 ) );
+				return new WP_Error( 'uichemy_forbidden', __( 'You cannot edit this post.', 'uichemy' ), array( 'status' => 403 ) );
 			}
 			if ( ! class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
-				return new WP_Error( 'uichemy_no_dep', 'Composer server class missing.', array( 'status' => 500 ) );
+				return new WP_Error( 'uichemy_no_dep', __( 'Composer server class missing.', 'uichemy' ), array( 'status' => 500 ) );
 			}
 			return true;
 		}
@@ -525,10 +535,10 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 			$html      = (string) $request->get_param( 'html' );
 
 			if ( ! $post_id || ! $widget_id || '' === trim( $html ) ) {
-				return new WP_Error( 'uichemy_bad_selection', 'post_id, widget_id, and html are required.', array( 'status' => 400 ) );
+				return new WP_Error( 'uichemy_bad_selection', __( 'post_id, widget_id, and html are required.', 'uichemy' ), array( 'status' => 400 ) );
 			}
 			if ( ! current_user_can( 'edit_post', $post_id ) ) {
-				return new WP_Error( 'uichemy_forbidden', 'You cannot edit this post.', array( 'status' => 403 ) );
+				return new WP_Error( 'uichemy_forbidden', __( 'You cannot edit this post.', 'uichemy' ), array( 'status' => 403 ) );
 			}
 
 			self::save_selected_element(

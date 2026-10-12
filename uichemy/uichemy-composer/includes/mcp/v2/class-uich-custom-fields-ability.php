@@ -80,7 +80,7 @@ if ( ! class_exists( 'Uich_Custom_Fields_Ability' ) ) {
 				self::ABILITY_NAME,
 				array(
 					'label'               => 'UiChemy Builder: Custom Fields',
-					'description'         => 'Custom-field VALUES on posts, terms, users and options pages - ACF, JetEngine and registered meta, each written through the plugin that owns it. "list" is the field map for an object type and the call that has to happen before any binding is written; "get" reads values; "update" writes them (batched, with a dry run and a revert token); "delete" clears them. The field DEFINITIONS are uichemy-composer/cpt.',
+					'description'         => 'Custom-field VALUES on posts, terms, users and options pages - UiChemy Custom Fields, ACF, JetEngine and registered meta, each written through the provider that owns it. "list" is the field map for an object type and the call that has to happen before any binding is written; "get" reads values; "update" writes them (batched, with a dry run and a revert token); "delete" clears them. The field DEFINITIONS are uichemy-composer/cpt.',
 					'category'            => self::CATEGORY,
 					'input_schema'        => array(
 						'type'        => 'object',
@@ -138,6 +138,7 @@ if ( ! class_exists( 'Uich_Custom_Fields_Ability' ) ) {
 				. 'WHAT IS REFUSED, and why the refusal is the useful part: an unknown field name (with the list of real ones); protected meta and any key starting with "_"; _elementor_data and UiChemy\'s own template meta (a write there erases a page, silently); WooCommerce derived state like _price and _stock, which is computed and mirrored into its own lookup table - use uichemy-composer/store; the featured image, which is protected meta and has no UiChemy write path on a plain post (the WordPress editor, or store/set-images on a product); and ACF Pro field types on an ACF free install, because ACF stores those down a scalar path that reads back intact and becomes one empty row the moment Pro is installed. '
 				. 'VERIFICATION IS STRUCTURAL, not an echo. After every write UiChemy asserts the shape the owning plugin expects - ACF\'s reference row, a repeater\'s row count - and returns the RE-READ value. A response carrying "problems" means the values are in storage but the shape is wrong: do not report that as a success. '
 				. 'EVERY write and delete returns a revert_token; action="revert" restores exactly the fields that call changed, for 24 hours. '
+				. 'UICHEMY CUSTOM FIELDS (provider "uichemy"): fields built in UiChemy\'s own module. Same calls, same rules. Two differences: it has no options pages, and a field with conditional logic reads back with "formatted" null while its condition is unmet even though "value" is stored - set the field it depends on first. Its dates are stored in the field\'s return format; send ISO on a write. '
 				. 'RELATIONS ARE NOT META. JetEngine keeps them in its own tables, so a field write aimed at one goes nowhere and returns success. Use get-relations / update-relations - present only when a relation-capable provider is active. ACF relationship fields ARE meta and work through get/update. '
 				. 'THE BOUNDARY: this writes values into fields that already exist. Create the fields with uichemy-composer/cpt. Print them with uichemy-composer/dynamic and lay them out with uichemy-composer/page or theme-builder.';
 		}
@@ -170,8 +171,8 @@ if ( ! class_exists( 'Uich_Custom_Fields_Ability' ) ) {
 
 			$provider = array(
 				'type'        => 'string',
-				'enum'        => array( 'acf', 'jetengine', 'meta' ),
-				'description' => 'Pin which plugin owns the field. Only needed when ACF and JetEngine both define the same name - the response flags that as "also_claimed_by". Pinning the wrong one is refused, not silently routed.',
+				'enum'        => array( 'uichemy', 'acf', 'jetengine', 'meta' ),
+				'description' => 'Pin which provider owns the field: "uichemy" (UiChemy Custom Fields), "acf", "jetengine" or "meta". Only needed when two of them define the same name - "list" flags that as "also_claimed_by", and a WRITE to such a name refuses until it is pinned. Pinning the wrong one is refused, not silently routed.',
 			);
 
 			$names = array(
@@ -212,7 +213,7 @@ if ( ! class_exists( 'Uich_Custom_Fields_Ability' ) ) {
 				),
 				array(
 					'name'        => 'update',
-					'description' => 'Write field values. Each name is routed to its owning plugin and written through that plugin\'s own API - ACF through update_field() BY NAME (which writes the reference row ACF needs; update_post_meta() does not, and the value then renders on the front end, shows blank in the editor, and is erased by the next human save), JetEngine through raw meta, which is its storage. Values are coerced by declared type: an ISO date to the plugin\'s storage format, a boolean to "1"/"0" or \'true\'/\'\' depending on the plugin, a media URL already in the library to its attachment id, a term slug to its id. Every field is validated BEFORE anything is written, so one bad value cannot half-update the object. Afterwards the storage SHAPE is asserted and the re-read value returned, together with "renders_as" - what the token for that field actually resolves to right now - and "print_hint", the trap specific to printing that type. TWO DIFFERENT CHECKS: "stored" is the owning plugin\'s storage and "renders_as" is the render engine, they are separate systems, and they have disagreed - a number field storing "22" once printed an unrelated image URL. NEITHER is a check that the PAGE is right; the template, its conditions and the layout are not exercised here. Look at the rendered page before reporting a build done.',
+					'description' => 'Write field values. Each name is routed to its owning provider and written through that provider\'s own API - UiChemy Custom Fields through its own save (values live under internal keys, so update_post_meta() by the field name writes a row nothing reads), ACF through update_field() BY NAME (which writes the reference row ACF needs; update_post_meta() does not, and the value then renders on the front end, shows blank in the editor, and is erased by the next human save), JetEngine through raw meta, which is its storage. Values are coerced by declared type: an ISO date to the plugin\'s storage format, a boolean to "1"/"0" or \'true\'/\'\' depending on the plugin, a media URL already in the library to its attachment id, a term slug to its id. Every field is validated BEFORE anything is written, so one bad value cannot half-update the object. Afterwards the storage SHAPE is asserted and the re-read value returned, together with "renders_as" - what the token for that field actually resolves to right now - and "print_hint", the trap specific to printing that type. TWO DIFFERENT CHECKS: "stored" is the owning plugin\'s storage and "renders_as" is the render engine, they are separate systems, and they have disagreed - a number field storing "22" once printed an unrelated image URL. NEITHER is a check that the PAGE is right; the template, its conditions and the layout are not exercised here. Look at the rendered page before reporting a build done.',
 					'parameters'  => array(
 						'object_type'    => $object_type,
 						'object_subtype' => $object_subtype,

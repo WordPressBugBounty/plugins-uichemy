@@ -8,15 +8,17 @@
  * outlive the session, and filling one in is not, so they carry different
  * annotations and different refusals.
  *
- * UiChemy owns neither. Every write here delegates to ACF or JetEngine, so what
- * is created appears in that plugin's own admin screens and survives UiChemy
- * being removed - the alternative would make a design tool the owner of the
- * user's content model, which cannot be walked back once they have posts in it.
+ * Every write delegates to a modelling provider: UiChemy's own Custom Fields
+ * module, ACF or JetEngine. What is created appears in that provider's own
+ * screens and is edited there afterwards. With more than one active, a write
+ * refuses until "provider" is passed - choosing for the user would split their
+ * model across two plugins, which cannot be walked back once they have posts.
  *
- * Registered whether or not ACF or JetEngine is active. An ability that
- * disappears when a plugin is inactive teaches a model that the capability does
- * not exist here at all; one that is present and answers "install ACF or
- * JetEngine, or model this with plain posts and categories" tells it what to do.
+ * Registered whether or not any provider is active. An ability that disappears
+ * when a plugin is inactive teaches a model that the capability does not exist
+ * here at all; one that is present and answers "switch Custom Fields on,
+ * install ACF or JetEngine, or model this with plain posts and categories"
+ * tells it what to do.
  *
  * @link       https://posimyth.com/
  * @since      5.1.0
@@ -77,7 +79,7 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 				self::ABILITY_NAME,
 				array(
 					'label'               => 'UiChemy Builder: Content Model',
-					'description'         => 'The SHAPE of this site\'s data: post types, taxonomies, field groups and the fields in them, created through whichever plugin owns modelling here (ACF or JetEngine - never UiChemy\'s own storage). Start with "describe": it reports every type with its owning plugin, which field groups reach it, and what can and cannot be changed. Field VALUES are uichemy-composer/custom-fields; how any of it LOOKS is uichemy-composer/theme-builder plus uichemy-composer/dynamic.',
+					'description'         => 'The SHAPE of this site\'s data: post types, taxonomies, field groups and the fields in them, created through whichever modelling provider the site uses: UiChemy Custom Fields (built in), ACF or JetEngine. Start with "describe": it reports every type with its owning plugin, which field groups reach it, and what can and cannot be changed. Field VALUES are uichemy-composer/custom-fields; how any of it LOOKS is uichemy-composer/theme-builder plus uichemy-composer/dynamic.',
 					'category'            => self::CATEGORY,
 					'input_schema'        => array(
 						'type'        => 'object',
@@ -133,10 +135,10 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 				. 'START WITH "describe". It reports every post type and taxonomy with the plugin that registered it, whether UiChemy can write to it at all, which field groups target it, and the additive/identity boundary below. '
 				. 'ORDER: register-post-type -> register-taxonomy -> ensure-term -> register-field-group -> add-fields -> (write content) -> set-terms. A post type with no field group has no custom fields, a field group with no location rule shows nowhere, and a taxonomy with no terms renders as an empty archive and an empty filter - all three are silent, none of them errors. '
 				. 'TERMS ARE NOT OPTIONAL. Registering a taxonomy does not populate it. Create the terms in the same session with "ensure-term" and put them on posts with "set-terms"; if the values are a fixed list nobody will browse by - a status, a tier, a size - model it as a select field instead and skip the taxonomy entirely. Deciding this AFTER the content is written is expensive: the alternative at that point is a parallel select field driving the front end off a shadow copy of a taxonomy that stays decorative. '
-				. 'DELEGATION: UiChemy never registers a post type under its own storage; it calls ACF or JetEngine. With ONE of them active, "provider" is optional. With BOTH active every write REFUSES until you pass "provider" - ask the user which plugin they want their model in rather than choosing, because a model split across two plugins cannot be moved later without rewriting every template. With NEITHER active, the refusal names the two options: install one, or model the content with plain posts, categories and tags. '
+				. 'DELEGATION: every write goes through one modelling provider - "uichemy" (UiChemy Custom Fields, built in and edited under UiChemy > Custom Fields), "acf" or "jetengine". With ONE active, "provider" is optional. With MORE than one active every write REFUSES until you pass "provider" - ask the user which one they want their model in rather than choosing, and say where the existing model already lives ("owner" on each type, "provider" on each group), because a model split across two plugins cannot be moved later without rewriting every template. With NONE active the refusal names the options: switch UiChemy Custom Fields on (Settings > Features - the user\'s call, never yours), install ACF or JetEngine, or model the content with plain posts, categories and tags. UiChemy Custom Fields has no options pages and no gallery type (use a repeater of images). '
 				. 'THE BOUNDARY. Additive changes go through here: create a type, create a group, add a field, change a field\'s label / instructions / required / choices / default. Identity-changing ones are REFUSED and the refusal says what to do instead: renaming a field (every template binds by NAME, so a rename silently blanks every binding while the page still looks built), changing a field\'s type, deleting a field, changing or deleting a post type. '
 				. 'ACF FREE vs PRO matters here. repeater, flexible_content, gallery and clone do not exist as field types on ACF free, and ACF does not refuse them - it stores their value as a scalar, which reads back intact and becomes one empty row the moment ACF Pro is installed. UiChemy refuses those types on free instead, naming what is missing. "describe" reports the edition under "providers". '
-				. 'REGISTRATION TIMING: a JetEngine post type or taxonomy registers on the NEXT request, so anything that has to SEE it - a field group, a loop, a template condition - belongs in a separate call. ACF registers immediately. '
+				. 'REGISTRATION TIMING: a UiChemy Custom Fields or JetEngine post type or taxonomy registers on the NEXT request, so anything that has to SEE it - a field group, a loop, a template condition - belongs in a separate call. ACF registers immediately. '
 				. 'AFTERWARDS: fill values with uichemy-composer/custom-fields (action="update"), list what a type now has with the same ability (action="list"), and build the single/archive templates with uichemy-composer/theme-builder. A new post type has no template of its own until you make one.';
 		}
 
@@ -152,8 +154,8 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 		private static function actions() {
 			$provider = array(
 				'type'        => 'string',
-				'enum'        => array( 'acf', 'jetengine' ),
-				'description' => 'Which plugin performs the write. Optional while exactly one modelling plugin is active; REQUIRED when both are, and the refusal in that case is deliberate - ask the user rather than picking.',
+				'enum'        => array( 'uichemy', 'acf', 'jetengine' ),
+				'description' => 'Which modelling provider performs the write: "uichemy" (UiChemy Custom Fields), "acf" or "jetengine". Optional while exactly one is active; REQUIRED when more than one is, and the refusal in that case is deliberate - ask the user rather than picking.',
 			);
 
 			$field_item = array(
@@ -447,7 +449,7 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 		 * @return string
 		 */
 		private static function field_type_description() {
-			$base = 'UiChemy\'s provider-neutral type, mapped to the right ACF or JetEngine field for you. A type the active plugin does not have is refused with what it has instead - never substituted silently. '
+			$base = 'UiChemy\'s provider-neutral type, mapped to the right UiChemy Custom Fields, ACF or JetEngine field for you. A type the active plugin does not have is refused with what it has instead - never substituted silently. '
 				. 'NOT EVERY VALUE IN THIS ENUM IS AVAILABLE ON EVERY SITE: repeater, flexible_content, gallery and clone exist only in ACF PRO. On ACF free they are refused here - which is deliberate, because ACF itself does not refuse them, it stores the value down its scalar path and turns it into one empty row the day Pro is installed. ';
 
 			if ( ! class_exists( 'Uich_Field_Registry' ) ) {
@@ -462,7 +464,7 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 				}
 
 				return $base . sprintf(
-					'ON THIS SITE: ACF %s is active, so %s. (Also reported by action="describe" under providers[].)',
+					'ON THIS SITE: ACF %s is active, so for provider="acf" %s. This limit is ACF\'s only: UiChemy Custom Fields (provider="uichemy") has repeater on UiChemy Pro and no gallery at all. (Also reported by action="describe" under providers[].)',
 					strtoupper( isset( $row['edition'] ) ? $row['edition'] : 'free' ),
 					empty( $row['pro_types_available'] )
 						? 'these are REFUSED right now: ' . implode( ', ', (array) $row['pro_only_types'] ) . ' - use a group of plain fields, or a select, instead'
@@ -520,8 +522,13 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 				);
 			}
 
+			$unknown = self::unknown_params( $action, $params );
+			if ( is_wp_error( $unknown ) ) {
+				return $unknown;
+			}
+
 			// Terms are CONTENT, not schema. They belong to WordPress rather than
-			// to ACF or JetEngine, they are created identically whichever of them
+			// to any modelling provider, they are created identically whichever
 			// registered the taxonomy, and they are gated on WordPress's own
 			// term capabilities - not on the model-writing gate below, which
 			// exists for changes to the site's shape.
@@ -640,6 +647,40 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 			unset( $flat['action'], $flat['action_parameters'] );
 
 			return array( $action, array_merge( $flat, $params ) );
+		}
+
+		/**
+		 * Refuse parameters the action does not define, before anything is created.
+		 *
+		 * A guessed name ("singular", "plural") used to be dropped silently, so the
+		 * post type was created with labels derived from its slug - and this ability
+		 * never reconfigures a type, so the mistake could only be undone by hand.
+		 *
+		 * @param string $action Normalised action (underscores).
+		 * @param array  $params Action parameters.
+		 * @return true|WP_Error
+		 */
+		private static function unknown_params( $action, array $params ) {
+			foreach ( self::actions() as $def ) {
+				if ( str_replace( '-', '_', $def['name'] ) !== $action ) {
+					continue;
+				}
+				$allowed = array_keys( isset( $def['parameters'] ) ? (array) $def['parameters'] : array() );
+				$unknown = array_diff( array_keys( $params ), $allowed );
+				if ( ! $unknown ) {
+					return true;
+				}
+				return new WP_Error(
+					'uich_cpt_unknown_param',
+					sprintf(
+						'Unknown parameter(s) for "%1$s": %2$s. Nothing was changed. Valid parameters: %3$s.',
+						$def['name'],
+						implode( ', ', $unknown ),
+						implode( ', ', $allowed )
+					)
+				);
+			}
+			return true;
 		}
 
 		/**

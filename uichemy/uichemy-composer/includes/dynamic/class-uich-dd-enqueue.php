@@ -88,9 +88,11 @@ if ( ! class_exists( 'Uich_DD_Enqueue' ) ) {
 			self::enqueue_public();
 			wp_enqueue_style( 'uich-dd', UICHEMY_URL . 'assets/css/uich-dd.css', array( 'uich-dd-public' ), self::ver( 'assets/css/uich-dd.css' ) );
 
-			wp_enqueue_script( 'uich-dd-schema', UICHEMY_URL . 'assets/js/uich-dd-schema.js', array(), self::ver( 'assets/js/uich-dd-schema.js' ), true );
+			wp_enqueue_script( 'uich-dd-schema', UICHEMY_URL . 'assets/js/uich-dd-schema.js', array( 'wp-i18n' ), self::ver( 'assets/js/uich-dd-schema.js' ), true );
+			wp_set_script_translations( 'uich-dd-schema', 'uichemy' );
 			wp_enqueue_script( 'uich-dd-compile', UICHEMY_URL . 'assets/js/uich-dd-compile.js', array(), self::ver( 'assets/js/uich-dd-compile.js' ), true );
 			wp_enqueue_script( 'uich-dd-picker', UICHEMY_URL . 'assets/js/uich-uichemy-dd-picker.js', array( 'uich-dd-schema', 'uich-dd-compile' ), self::ver( 'assets/js/uich-uichemy-dd-picker.js' ), true );
+			wp_set_script_translations( 'uich-dd-picker', 'uichemy' );
 
 			// Endpoint the editor uses to server-render Twig for an accurate live preview.
 			wp_localize_script(

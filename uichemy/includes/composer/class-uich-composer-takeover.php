@@ -427,11 +427,11 @@ if ( ! class_exists( 'Uich_Composer_Takeover' ) ) {
 				// UiChemy having deactivated UiChemy, which is alarming and
 				// tells them nothing about what to look for on the Plugins screen.
 				echo '<div class="notice notice-success"><p><strong>';
-				echo esc_html__( 'UiChemy now includes Composer.', 'uichemy' );
+				echo esc_html__( 'This plugin now includes Composer.', 'uichemy' );
 				echo '</strong> ';
 				printf(
 					/* translators: %s: plugin file(s) that were deactivated, e.g. protuno/protuno.php */
-					esc_html__( 'The standalone plugin (%s) was deactivated because UiChemy now bundles Composer, and your existing sections are being migrated to the Composer widget. Your pages keep working. Nothing needs to be done.', 'uichemy' ),
+					esc_html__( 'The standalone plugin (%s) was deactivated because this plugin now bundles Composer, and your existing sections are being migrated to the Composer widget. Your pages keep working. Nothing needs to be done.', 'uichemy' ),
 					'<code>' . esc_html( implode( ', ', (array) $just_deactivated ) ) . '</code>'
 				);
 				echo '</p></div>';
@@ -455,7 +455,7 @@ if ( ! class_exists( 'Uich_Composer_Takeover' ) ) {
 			echo '<div class="notice notice-warning"><p>';
 			printf(
 				/* translators: %s: plugin file, e.g. uichemy/uichemy.php */
-				esc_html__( 'UiChemy finished migrating your Protuno content but could not remove the old plugin files (%s), because this site does not allow direct file writes. You can safely delete it from the Plugins screen.', 'uichemy' ),
+				esc_html__( 'Your Protuno content was migrated, but the old plugin files (%s) could not be removed, because this site does not allow direct file writes. You can safely delete it from the Plugins screen.', 'uichemy' ),
 				'<code>' . esc_html( implode( ', ', $state['delete_pending'] ) ) . '</code>'
 			);
 			echo '</p></div>';

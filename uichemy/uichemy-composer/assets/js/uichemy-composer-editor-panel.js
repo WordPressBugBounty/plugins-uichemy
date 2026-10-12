@@ -1,5 +1,15 @@
 (function ($) {
 	'use strict';
+	/* i18n helpers (wp-i18n is a declared script dependency). */
+	var __ = ( window.wp && window.wp.i18n && window.wp.i18n.__ ) || function ( text ) { return text; };
+	var sprintf = ( window.wp && window.wp.i18n && window.wp.i18n.sprintf ) || function ( fmt ) {
+	var args = Array.prototype.slice.call( arguments, 1 );
+	return String( fmt ).replace( /%(\d+\$)?s/g, function ( m, pos ) { return pos ? args[ parseInt( pos, 10 ) - 1 ] : args.shift(); } );
+};
+	function uichEsc( text ) {
+	return String( text ).replace( /[&<>"']/g, function ( c ) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[ c ]; } );
+}
+
 	var UichSHE = window.UichUiChemyComposerEditor;
 	if (!UichSHE || UichSHE.__uichUiChemyComposerPanelRegistered) {
 		return;
@@ -16,6 +26,37 @@
 		panel.innerHTML = typeof uiChemyComposerPanelCfg.panelHtml === 'string' ? uiChemyComposerPanelCfg.panelHtml : '';
 
 		UichSHE.removeLeadingBlankDropdownOptionRows(panel);
+
+		/*
+		 * Stay hidden while Elementor is still loading. The panel was injected
+		 * the moment this script ran, so it painted over Elementor's own
+		 * "Loading" screen with the editor not ready behind it (QA). Elementor
+		 * fades #elementor-loading out once the preview has loaded; reveal the
+		 * panel then. visibility (not display) keeps its space, so nothing in
+		 * the editor shifts when it appears. A 30s cap means a missing or
+		 * renamed loader can never leave the panel hidden for good.
+		 */
+		(function holdUntilElementorReady() {
+			const loader = document.getElementById('elementor-loading');
+			const loaderGone = function () {
+				if (!loader || !loader.isConnected) return true;
+				const cs = window.getComputedStyle(loader);
+				return cs.display === 'none' || cs.visibility === 'hidden' || parseFloat(cs.opacity) === 0;
+			};
+			if (loaderGone()) return;
+			panel.style.visibility = 'hidden';
+			panel.style.opacity = '0';
+			let timer = null;
+			const reveal = function () {
+				if (timer) { window.clearInterval(timer); timer = null; }
+				panel.style.transition = 'opacity .2s ease';
+				panel.style.visibility = '';
+				panel.style.opacity = '';
+				window.setTimeout(function () { panel.style.transition = ''; }, 250);
+			};
+			timer = window.setInterval(function () { if (loaderGone()) reveal(); }, 120);
+			window.setTimeout(reveal, 30000);
+		})();
 
 		function mountUiChemyComposerFloatingPanelToPreview() {
 			const previewRoot = document.getElementById('elementor-preview');
@@ -198,10 +239,10 @@
 		directLayerActionMenuEl.style.zIndex = '2147483647';
 		directLayerActionMenuEl.setAttribute('role', 'menu');
 		directLayerActionMenuEl.innerHTML = (
-			'<button type="button" class="uichemy-composer-direct-layer-menu-item" role="menuitem" data-layer-action="copy">Copy</button>'
-			+ '<button type="button" class="uichemy-composer-direct-layer-menu-item" role="menuitem" data-layer-action="cut">Cut</button>'
-			+ '<button type="button" class="uichemy-composer-direct-layer-menu-item" role="menuitem" data-layer-action="paste">Paste</button>'
-			+ '<button type="button" class="uichemy-composer-direct-layer-menu-item" role="menuitem" data-layer-action="delete">Delete</button>'
+			'<button type="button" class="uichemy-composer-direct-layer-menu-item" role="menuitem" data-layer-action="copy">' + uichEsc( __( "Copy", "uichemy" ) ) + '</button>'
+			+ '<button type="button" class="uichemy-composer-direct-layer-menu-item" role="menuitem" data-layer-action="cut">' + uichEsc( __( "Cut", "uichemy" ) ) + '</button>'
+			+ '<button type="button" class="uichemy-composer-direct-layer-menu-item" role="menuitem" data-layer-action="paste">' + uichEsc( __( "Paste", "uichemy" ) ) + '</button>'
+			+ '<button type="button" class="uichemy-composer-direct-layer-menu-item" role="menuitem" data-layer-action="delete">' + uichEsc( __( "Delete", "uichemy" ) ) + '</button>'
 		);
 		document.body.appendChild(directLayerActionMenuEl);
 		let activeTab = 'direct';
@@ -1554,7 +1595,7 @@
 			top = Math.max(margin, Math.min(top, window.innerHeight - maxPopoverHeight - margin));
 			directGlobalColorPopover.style.left = `${left}px`;
 			directGlobalColorPopover.style.top = `${top}px`;
-			directGlobalColorPopover.innerHTML = '<div class="uichemy-composer-direct-global-color-group-title">Loading global colors...</div>';
+			directGlobalColorPopover.innerHTML = '<div class="uichemy-composer-direct-global-color-group-title">' + uichEsc( __( "Loading global colors...", "uichemy" ) ) + '</div>';
 			directGlobalColorPopover.hidden = false;
 			activeDirectGlobalColorTarget = targetKey;
 
@@ -1590,15 +1631,15 @@
 					}).filter(Boolean).join('');
 				};
 				if (!elementorItems.length && !atomicItems.length) {
-					directGlobalColorPopover.innerHTML = '<div class="uichemy-composer-direct-global-color-group-title">No global colors found.</div>';
+					directGlobalColorPopover.innerHTML = '<div class="uichemy-composer-direct-global-color-group-title">' + uichEsc( __( "No global colors found.", "uichemy" ) ) + '</div>';
 					return;
 				}
 				const atomicHtml = atomicItems.length
-					? `<div class="uichemy-composer-direct-global-color-group-title">Elementor Atomic Variables</div>${renderRows(atomicItems, 'atomic')}`
+					? `<div class="uichemy-composer-direct-global-color-group-title">${uichEsc( __( "Elementor Atomic Variables", "uichemy" ) )}</div>${renderRows(atomicItems, 'atomic')}`
 					: '';
 				directGlobalColorPopover.innerHTML = `
 					${atomicHtml}
-					<div class="uichemy-composer-direct-global-color-group-title">Elementor Global Colors</div>
+					<div class="uichemy-composer-direct-global-color-group-title">${uichEsc( __( "Elementor Global Colors", "uichemy" ) )}</div>
 					${renderRows(elementorItems, 'elementor')}
 				`;
 			};
@@ -1618,7 +1659,7 @@
 					renderPopoverRows();
 				})
 				.catch(() => {
-					directGlobalColorPopover.innerHTML = '<div class="uichemy-composer-direct-global-color-group-title">Unable to load global colors.</div>';
+					directGlobalColorPopover.innerHTML = '<div class="uichemy-composer-direct-global-color-group-title">' + uichEsc( __( "Unable to load global colors.", "uichemy" ) ) + '</div>';
 				});
 		}
 
@@ -2180,8 +2221,8 @@
 					+ `</li>`;
 			}).join('');
 			pop.innerHTML = `<div class="uichemy-composer-direct-style-origin-header">`
-				+ `<span class="uichemy-composer-direct-style-origin-title">Style Origin</span>`
-				+ `<button type="button" class="uichemy-composer-direct-style-origin-close" aria-label="Close style origin">×</button>`
+				+ `<span class="uichemy-composer-direct-style-origin-title">${uichEsc( __( "Style Origin", "uichemy" ) )}</span>`
+				+ `<button type="button" class="uichemy-composer-direct-style-origin-close" aria-label="${uichEsc( __( "Close style origin", "uichemy" ) )}">×</button>`
 				+ `</div>`
 				+ `<ul class="uichemy-composer-direct-style-origin-list">${rowsHtml}</ul>`;
 			pop.dataset.activeProperty = propertyLabel;
@@ -2566,12 +2607,12 @@
 			const selectedSelectorTrim = String(selectedAppliedClassSelector || '').trim();
 			const selectedMediaTextTrim = String(selectedAppliedClassMediaText || '').trim();
 			const localChipClass = !selectedTokenLower ? 'is-selected' : '';
-			const localChipHtml = `<span class="uichemy-composer-class-chip ${localChipClass}" role="listitem" data-class-token="__uc_local__"><span class="uichemy-composer-class-chip-text">Local</span></span>`;
+			const localChipHtml = `<span class="uichemy-composer-class-chip ${localChipClass}" role="listitem" data-class-token="__uc_local__"><span class="uichemy-composer-class-chip-text">${uichEsc( __( "Local", "uichemy" ) )}</span></span>`;
 			const hasAnyClassChip = directTokens.length > 0 || extraContextual.length > 0;
 			if (!hasAnyClassChip) {
 				directClassesChips.innerHTML = interactive
 					? localChipHtml
-					: '<span class="uichemy-composer-direct-classes-empty">No classes on this element</span>';
+					: '<span class="uichemy-composer-direct-classes-empty">' + uichEsc( __( "No classes on this element", "uichemy" ) ) + '</span>';
 				return;
 			}
 			// Selection identity = (token, contextual selector). Breakpoint is intentionally NOT part
@@ -2622,7 +2663,7 @@
 				const mediaTextAttr = bpInfo ? ` data-class-media-text="${encodeURIComponent(bpInfo.mediaText)}"` : '';
 				const breakpointKeyAttr = bpInfo ? ` data-class-breakpoint-key="${encodeURIComponent(bpInfo.breakpointKey || '')}"` : '';
 				const isSelected = chipIsSelected(tokenLower, '', directMediaForSelected, directBpKeyForSelected);
-				const removeBtn = `<button type="button" class="uichemy-composer-class-chip-remove" title="Delete class" aria-label="Delete ${safe}" data-class-token="${enc}">×</button>`;
+				const removeBtn = `<button type="button" class="uichemy-composer-class-chip-remove" title="${uichEsc( __( "Delete class", "uichemy" ) )}" aria-label="${sprintf( uichEsc( __( 'Delete %s', 'uichemy' ) ), safe )}" data-class-token="${enc}">×</button>`;
 				tokenChipHtmlParts.push(`<span class="uichemy-composer-class-chip ${isSelected ? 'is-selected' : ''}" role="listitem" data-class-token="${enc}"${mediaTextAttr}${breakpointKeyAttr}>${globalDot}<span class="uichemy-composer-class-chip-text">${safe}</span>${removeBtn}</span>`);
 			});
 			extraContextual.forEach(({ token, selector }) => {
@@ -2635,7 +2676,7 @@
 					: '';
 				const isSelected = chipIsSelected(tokenLower, contextualSelector, '', '');
 				const contextualSelectorAttr = ` data-class-selector="${encodeURIComponent(contextualSelector)}"`;
-				const removeBtn = `<button type="button" class="uichemy-composer-class-chip-remove" title="Delete rule" aria-label="Delete ${safe}" data-class-token="${enc}">×</button>`;
+				const removeBtn = `<button type="button" class="uichemy-composer-class-chip-remove" title="${uichEsc( __( "Delete rule", "uichemy" ) )}" aria-label="${sprintf( uichEsc( __( 'Delete %s', 'uichemy' ) ), safe )}" data-class-token="${enc}">×</button>`;
 				tokenChipHtmlParts.push(`<span class="uichemy-composer-class-chip ${isSelected ? 'is-selected' : ''}" role="listitem" data-class-token="${enc}" data-class-contextual="true"${contextualSelectorAttr}>${globalDot}<span class="uichemy-composer-class-chip-text">${safe}</span>${removeBtn}</span>`);
 			});
 			directClassesChips.innerHTML = localChipHtml + tokenChipHtmlParts.join('');
@@ -3777,13 +3818,13 @@
 		function syncDirectInputsFromSelection() {
 			if (!UichSHE.activeWidgetSettings) {
 				if (directList) {
-					directList.innerHTML = '<div class="uichemy-composer-direct-empty">Open a UiChemy Composer widget to inspect its HTML layers.</div>';
+					directList.innerHTML = '<div class="uichemy-composer-direct-empty">' + uichEsc( __( "Open a UiChemy Composer widget to inspect its HTML layers.", "uichemy" ) ) + '</div>';
 				}
 				if (directMeta) {
-					directMeta.textContent = 'No active UiChemy Composer widget context found.';
+					directMeta.textContent = __( 'No active UiChemy Composer widget context found.', 'uichemy' );
 				}
 				if (directClassesChips) {
-					directClassesChips.innerHTML = '<span class="uichemy-composer-direct-classes-empty">No classes on this element</span>';
+					directClassesChips.innerHTML = '<span class="uichemy-composer-direct-classes-empty">' + uichEsc( __( "No classes on this element", "uichemy" ) ) + '</span>';
 				}
 				if (directClassInput) {
 					directClassInput.value = '';
@@ -3941,7 +3982,7 @@
 					directReset.disabled = true;
 				}
 				if (directStatus) {
-					directStatus.textContent = 'Layers are available after opening a UiChemy Composer widget in the editor.';
+					directStatus.textContent = __( 'Layers are available after opening a UiChemy Composer widget in the editor.', 'uichemy' );
 				}
 				syncDirectGlobalColorChip('text', '');
 				syncDirectGlobalColorChip('background', '');
@@ -4013,7 +4054,7 @@
 				const hasChildren = !!entry.hasChildren;
 				const isCollapsed = hasChildren && collapsedLayerIds.has(entry.id);
 				const toggleHtml = hasChildren
-					? `<button class="uichemy-composer-layer-toggle" type="button" draggable="false" data-layer-toggle="${entry.id}" aria-label="Toggle ${UichSHE.escapeHtml(entry.label)}">${isCollapsed ? '▸' : '▾'}</button>`
+					? `<button class="uichemy-composer-layer-toggle" type="button" draggable="false" data-layer-toggle="${entry.id}" aria-label="${sprintf( uichEsc( __( 'Toggle %s', 'uichemy' ) ), UichSHE.escapeHtml(entry.label) )}">${isCollapsed ? '▸' : '▾'}</button>`
 					: '<span class="uichemy-composer-layer-toggle-spacer"></span>';
 				const pKeyForSiblings = entry.parentId || '';
 				const parentIdAttr = UichSHE.escapeHtml(pKeyForSiblings);
@@ -4022,21 +4063,21 @@
 					: UichSHE.escapeHtml(entry.label);
 				const titleBlockHtml = `<span class="uichemy-composer-direct-item-title">${titleInnerHtml}</span>`;
 				listHtml += `
-					<div role="button" tabindex="0" class="uichemy-composer-direct-item ${isActive ? 'is-active' : ''} ${isEditable ? 'is-editable' : ''} is-layer-draggable" draggable="true" title="Drag to move layer; use ⋯ for copy, cut, paste, delete" data-layer-id="${entry.id}" data-layer-parent="${parentIdAttr}" ${slotAttr}>
+					<div role="button" tabindex="0" class="uichemy-composer-direct-item ${isActive ? 'is-active' : ''} ${isEditable ? 'is-editable' : ''} is-layer-draggable" draggable="true" title="${uichEsc( __( 'Drag to move layer; use ⋯ for copy, cut, paste, delete', 'uichemy' ) )}" data-layer-id="${entry.id}" data-layer-parent="${parentIdAttr}" ${slotAttr}>
 						<span class="uichemy-composer-direct-item-depth" style="--uc-layer-depth: ${entry.depth};">
 							<span class="uichemy-composer-direct-item-title-wrap">
 								<span class="uichemy-composer-layer-left">
 									${toggleHtml}
 									${titleBlockHtml}
 								</span>
-								<button type="button" class="uichemy-composer-layer-menu-btn" draggable="false" data-layer-menu="${entry.id}" aria-label="Layer actions" aria-haspopup="true" aria-expanded="false" title="Copy, cut, paste, delete">⋯</button>
+								<button type="button" class="uichemy-composer-layer-menu-btn" draggable="false" data-layer-menu="${entry.id}" aria-label="${uichEsc( __( 'Layer actions', 'uichemy' ) )}" aria-haspopup="true" aria-expanded="false" title="${uichEsc( __( 'Copy, cut, paste, delete', 'uichemy' ) )}">⋯</button>
 							</span>
 						</span>
 					</div>
 				`;
 			});
 
-			directList.innerHTML = listHtml || '<div class="uichemy-composer-direct-empty">No HTML layers were found in the current content.</div>';
+			directList.innerHTML = listHtml || '<div class="uichemy-composer-direct-empty">' + uichEsc( __( "No HTML layers were found in the current content.", "uichemy" ) ) + '</div>';
 
 			const activeSlotIndex = activeLayer && typeof activeLayer.slotIndex === 'number' ? activeLayer.slotIndex : null;
 			if (typeof activeSlotIndex === 'number') {
@@ -4816,7 +4857,7 @@
 				const svgMarkup = String(directText.value || '').trim();
 				if (!svgMarkup) {
 					if (directStatus) {
-						directStatus.textContent = 'Inline SVG code cannot be empty.';
+						directStatus.textContent = __( 'Inline SVG code cannot be empty.', 'uichemy' );
 					}
 					return;
 				}
@@ -4825,7 +4866,7 @@
 				const nextSvg = parsedWrap.querySelector('svg');
 				if (!nextSvg) {
 					if (directStatus) {
-						directStatus.textContent = 'Please provide valid inline SVG code starting with <svg>.';
+						directStatus.textContent = __( 'Please provide valid inline SVG code starting with <svg>.', 'uichemy' );
 					}
 					return;
 				}
@@ -5261,14 +5302,14 @@
 				|| null;
 			if (!mediaFactory) {
 				if (directStatus) {
-					directStatus.textContent = 'WordPress media library is unavailable in this context.';
+					directStatus.textContent = __( 'WordPress media library is unavailable in this context.', 'uichemy' );
 				}
 				return;
 			}
 
 			const frame = mediaFactory({
-				title: 'Select Image',
-				button: { text: 'Use Image' },
+				title: __( 'Select Image', 'uichemy' ),
+				button: { text: __( 'Use Image', 'uichemy' ) },
 				library: { type: 'image' },
 				multiple: false
 			});
@@ -5289,14 +5330,14 @@
 				|| null;
 			if (!mediaFactory) {
 				if (directStatus) {
-					directStatus.textContent = 'WordPress media library is unavailable in this context.';
+					directStatus.textContent = __( 'WordPress media library is unavailable in this context.', 'uichemy' );
 				}
 				return;
 			}
 
 			const frame = mediaFactory({
-				title: 'Select SVG',
-				button: { text: 'Use SVG' },
+				title: __( 'Select SVG', 'uichemy' ),
+				button: { text: __( 'Use SVG', 'uichemy' ) },
 				library: { type: 'image' },
 				multiple: false
 			});
@@ -5318,7 +5359,7 @@
 					|| UichSHE.isSvgUrlValue(attachmentUrl);
 				if (!isSvgAttachment) {
 					if (directStatus) {
-						directStatus.textContent = 'Please select an SVG file from the WordPress media library.';
+						directStatus.textContent = __( 'Please select an SVG file from the WordPress media library.', 'uichemy' );
 					}
 					return;
 				}
@@ -5347,7 +5388,7 @@
 					UichSHE.setUiChemyComposerEditorValueById('uichemy-composer-direct-svg-code', '', false);
 				}
 				if (directStatus) {
-					directStatus.textContent = 'SVG Type is set to SVG Code. Switch to SVG URL to apply a URL.';
+					directStatus.textContent = __( 'SVG Type is set to SVG Code. Switch to SVG URL to apply a URL.', 'uichemy' );
 				}
 				return;
 			}
@@ -5407,7 +5448,7 @@
 				const markup = String(svgMarkupText || '').trim();
 				if (!markup) {
 					if (directStatus) {
-						directStatus.textContent = 'Selected SVG file appears empty.';
+						directStatus.textContent = __( 'Selected SVG file appears empty.', 'uichemy' );
 					}
 					return;
 				}
@@ -5416,7 +5457,7 @@
 				const nextSvg = parsedWrap.querySelector('svg');
 				if (!nextSvg) {
 					if (directStatus) {
-						directStatus.textContent = 'Selected file is not valid SVG markup.';
+						directStatus.textContent = __( 'Selected file is not valid SVG markup.', 'uichemy' );
 					}
 					return;
 				}
@@ -5460,14 +5501,14 @@
 					})
 					.catch(() => {
 						if (directStatus) {
-							directStatus.textContent = 'Could not load SVG content from URL. Please use SVG Code mode or check file access.';
+							directStatus.textContent = __( 'Could not load SVG content from URL. Please use SVG Code mode or check file access.', 'uichemy' );
 						}
 					});
 				return;
 			}
 
 			if (directStatus) {
-				directStatus.textContent = 'This browser cannot load SVG URL content automatically.';
+				directStatus.textContent = __( 'This browser cannot load SVG URL content automatically.', 'uichemy' );
 			}
 		}
 
@@ -5493,7 +5534,7 @@
 			const svgMarkup = String(UichSHE.getUiChemyComposerEditorValueById('uichemy-composer-direct-svg-code') || '').trim();
 			if (!svgMarkup) {
 				if (directStatus) {
-					directStatus.textContent = 'Inline SVG code cannot be empty.';
+					directStatus.textContent = __( 'Inline SVG code cannot be empty.', 'uichemy' );
 				}
 				return;
 			}
@@ -5502,7 +5543,7 @@
 			const nextSvg = parsedWrap.querySelector('svg');
 			if (!nextSvg) {
 				if (directStatus) {
-					directStatus.textContent = 'Please provide valid inline SVG code starting with <svg>.';
+					directStatus.textContent = __( 'Please provide valid inline SVG code starting with <svg>.', 'uichemy' );
 				}
 				return;
 			}
@@ -5720,7 +5761,7 @@
 				if (ok) {
 					directLayerDragDidReorder = true;
 				} else if (directStatus) {
-					directStatus.textContent = 'Cannot move this layer here (for example into its own descendant).';
+					directStatus.textContent = __( 'Cannot move this layer here (for example into its own descendant).', 'uichemy' );
 				}
 				clearDirectLayerDragClasses();
 				directLayerDragSourceId = '';
@@ -5815,31 +5856,31 @@
 				closeDirectLayerActionMenu();
 				if (!lid) {
 					if (directStatus) {
-						directStatus.textContent = 'No layer selected for action.';
+						directStatus.textContent = __( 'No layer selected for action.', 'uichemy' );
 					}
 					return;
 				}
 				if (action === 'copy') {
 					const ok = directLayerCopyFromLayerId(lid, 'copy');
 					if (ok && directStatus) {
-						directStatus.textContent = 'Layer copied to clipboard.';
+						directStatus.textContent = __( 'Layer copied to clipboard.', 'uichemy' );
 					}
 				} else if (action === 'cut') {
 					const ok = directLayerCopyFromLayerId(lid, 'cut');
 					if (ok && directStatus) {
-						directStatus.textContent = 'Layer cut to clipboard.';
+						directStatus.textContent = __( 'Layer cut to clipboard.', 'uichemy' );
 					}
 				} else if (action === 'paste') {
 					const ok = directLayerPasteBeforeLayerId(lid);
 					if (ok && directStatus) {
-						directStatus.textContent = 'Layer pasted successfully.';
+						directStatus.textContent = __( 'Layer pasted successfully.', 'uichemy' );
 					} else if (directStatus) {
-						directStatus.textContent = 'Cannot paste: clipboard is empty or paste location invalid.';
+						directStatus.textContent = __( 'Cannot paste: clipboard is empty or paste location invalid.', 'uichemy' );
 					}
 				} else if (action === 'delete') {
 					const ok = directLayerDeleteLayerId(lid);
 					if (ok && directStatus) {
-						directStatus.textContent = 'Layer deleted.';
+						directStatus.textContent = __( 'Layer deleted.', 'uichemy' );
 					}
 				}
 			});
@@ -5889,7 +5930,7 @@
 				e.preventDefault();
 				const ok = directLayerCopyFromLayerId(selectedLayerId, 'copy');
 				if (ok && directStatus) {
-					directStatus.textContent = 'Layer copied (Ctrl/Cmd+C).';
+					directStatus.textContent = __( 'Layer copied (Ctrl/Cmd+C).', 'uichemy' );
 				}
 				return;
 			}
@@ -5900,7 +5941,7 @@
 				e.preventDefault();
 				const ok = directLayerCopyFromLayerId(selectedLayerId, 'cut');
 				if (ok && directStatus) {
-					directStatus.textContent = 'Layer cut (Ctrl/Cmd+X).';
+					directStatus.textContent = __( 'Layer cut (Ctrl/Cmd+X).', 'uichemy' );
 				}
 				return;
 			}
@@ -5915,23 +5956,23 @@
 							directLayerClipboardSerialized = txt;
 							const ok = directLayerPasteBeforeLayerId(selectedLayerId);
 							if (ok && directStatus) {
-								directStatus.textContent = 'Layer pasted from system clipboard (Ctrl/Cmd+V).';
+								directStatus.textContent = __( 'Layer pasted from system clipboard (Ctrl/Cmd+V).', 'uichemy' );
 							}
 						} else if (directStatus) {
-							directStatus.textContent = 'Clipboard does not contain a valid layer.';
+							directStatus.textContent = __( 'Clipboard does not contain a valid layer.', 'uichemy' );
 						}
 					}).catch(() => {
 						if (directStatus) {
-							directStatus.textContent = 'Cannot access system clipboard.';
+							directStatus.textContent = __( 'Cannot access system clipboard.', 'uichemy' );
 						}
 					});
 					return;
 				}
 				const ok = directLayerPasteBeforeLayerId(selectedLayerId);
 				if (ok && directStatus) {
-					directStatus.textContent = 'Layer pasted (Ctrl/Cmd+V).';
+					directStatus.textContent = __( 'Layer pasted (Ctrl/Cmd+V).', 'uichemy' );
 				} else if (directStatus) {
-					directStatus.textContent = 'Cannot paste: clipboard is empty.';
+					directStatus.textContent = __( 'Cannot paste: clipboard is empty.', 'uichemy' );
 				}
 				return;
 			}
@@ -5942,7 +5983,7 @@
 				e.preventDefault();
 				const ok = directLayerDeleteLayerId(selectedLayerId);
 				if (ok && directStatus) {
-					directStatus.textContent = 'Layer deleted.';
+					directStatus.textContent = __( 'Layer deleted.', 'uichemy' );
 				}
 			}
 		}, true);
@@ -7592,7 +7633,7 @@
 				if (typeof code === 'string' && code.length) {
 					const onCopied = () => {
 						const originalText = this.textContent;
-						this.textContent = 'Copied!';
+						this.textContent = __( 'Copied!', 'uichemy' );
 						setTimeout(() => this.textContent = originalText, 2000);
 					};
 					if (navigator.clipboard && typeof navigator.clipboard.writeText === 'function') {
@@ -8357,7 +8398,7 @@
 						true
 					);
 					if (statusEl) {
-						statusEl.textContent = 'Globals unavailable (open Site Settings or reload editor)';
+						statusEl.textContent = __( 'Globals unavailable (open Site Settings or reload editor)', 'uichemy' );
 					}
 				});
 		};

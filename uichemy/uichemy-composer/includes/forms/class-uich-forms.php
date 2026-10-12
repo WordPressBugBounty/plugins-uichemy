@@ -105,7 +105,7 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			$pid      = (int) $post_id;
 
 			$html = preg_replace_callback(
-				'/<form\b([^>]*\bdata-atom-form\b[^>]*)>/i',
+				'/<form\b([^>]*\bdata-atom-form\b[^>]*)>(.*?)<\/form>/is',
 				function ( $m ) use ( $endpoint, $nonce, $wid, $pid ) {
 					$attrs = $m[1];
 
@@ -160,7 +160,10 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 					$hidden .= '<input type="hidden" name="_uich_referer" value="' . esc_attr( get_permalink( $pid ) ) . '">';
 					$hidden .= '<input type="hidden" name="_uich_page_title" value="' . esc_attr( get_the_title( $pid ) ) . '">';
 
-					return '<form' . $attrs . '>' . $hidden;
+					// Infrastructure goes at the END of the form, not the start: author CSS
+					// like `.tabs>input:nth-of-type(2):checked~...` counts the form's own
+					// direct inputs, and prepended hidden inputs shift every index.
+					return '<form' . $attrs . '>' . $m[2] . $hidden . '</form>';
 				},
 				$html
 			);

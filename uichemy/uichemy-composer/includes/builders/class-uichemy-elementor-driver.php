@@ -97,7 +97,7 @@ if ( ! class_exists( 'UiChemy_Elementor_Driver' ) ) {
 		 */
 		public function create_post( array $attrs ) {
 			if ( ! $this->is_available() ) {
-				return new WP_Error( 'uich_elementor_missing', 'Elementor is not active.' );
+				return new WP_Error( 'uich_elementor_missing', __( 'Elementor is not active.', 'uichemy' ) );
 			}
 
 			// The document type stays 'page' whatever the post type is: it picks
@@ -118,7 +118,7 @@ if ( ! class_exists( 'UiChemy_Elementor_Driver' ) ) {
 
 			$post_id = $document ? (int) $document->get_main_id() : 0;
 			if ( ! $post_id ) {
-				return new WP_Error( 'uich_page_create_failed', 'Failed to create Elementor page document.' );
+				return new WP_Error( 'uich_page_create_failed', __( 'Failed to create Elementor page document.', 'uichemy' ) );
 			}
 
 			update_post_meta( $post_id, '_elementor_edit_mode', 'builder' );
@@ -143,7 +143,7 @@ if ( ! class_exists( 'UiChemy_Elementor_Driver' ) ) {
 
 			$elements = json_decode( $raw, true );
 			if ( ! is_array( $elements ) ) {
-				return new WP_Error( 'uich_invalid_elementor_data', 'Elementor data is not valid JSON.' );
+				return new WP_Error( 'uich_invalid_elementor_data', __( 'Elementor data is not valid JSON.', 'uichemy' ) );
 			}
 
 			return $elements;

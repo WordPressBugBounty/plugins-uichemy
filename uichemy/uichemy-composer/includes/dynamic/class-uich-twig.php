@@ -610,7 +610,15 @@ if ( ! class_exists( 'Uich_Twig_Runtime' ) ) {
 			}
 			// Twig auto-escapes by default; callers that need raw use the |raw filter (handled in Filters).
 			if ( is_string( $v ) && class_exists( 'Uich_Filters' ) && Uich_Filters::is_marked_raw( $v ) ) {
-				return Uich_Filters::unmark_raw( $v );
+				$html = Uich_Filters::unmark_raw( $v );
+				// An untrusted template (author without unfiltered_html) may print raw HTML only
+				// as far as the author could have saved it: |raw, |format then |raw, shortcodes
+				// and the like are filtered like the author's own HTML. The template's static
+				// markup is left as stored - it already went through kses when it was saved.
+				if ( class_exists( 'Uich_Dynamic' ) && method_exists( 'Uich_Dynamic', 'is_untrusted' ) && Uich_Dynamic::is_untrusted() ) {
+					return wp_kses_post( $html );
+				}
+				return $html;
 			}
 			return esc_html( (string) $v );
 		}

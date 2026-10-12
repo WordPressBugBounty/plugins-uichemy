@@ -476,7 +476,7 @@ if ( ! class_exists( 'Uich_Field_Service' ) ) {
 					return $allowed;
 				}
 
-				$resolved = Uich_Field_Registry::resolve( $name, $target, $prefer );
+				$resolved = Uich_Field_Registry::resolve( $name, $target, $prefer, true );
 				if ( is_wp_error( $resolved ) ) {
 					return $resolved;
 				}
@@ -755,7 +755,7 @@ if ( ! class_exists( 'Uich_Field_Service' ) ) {
 			$prior   = array();
 
 			foreach ( $names as $name ) {
-				$resolved = Uich_Field_Registry::resolve( $name, $target, $prefer );
+				$resolved = Uich_Field_Registry::resolve( $name, $target, $prefer, true );
 				if ( is_wp_error( $resolved ) ) {
 					return $resolved;
 				}

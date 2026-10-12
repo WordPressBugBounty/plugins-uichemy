@@ -201,7 +201,7 @@ if ( ! class_exists( 'Uich_ND_Api' ) ) {
 			if ( ! class_exists( 'Uich_ND_Auth' ) || ! Uich_ND_Auth::is_authed() ) {
 				return new WP_Error(
 					'uich_not_connected',
-					__( 'No UiChemy account is connected to this site.', 'uichemy' ),
+					__( 'No account is connected to this site.', 'uichemy' ),
 					array( 'status' => 401 )
 				);
 			}

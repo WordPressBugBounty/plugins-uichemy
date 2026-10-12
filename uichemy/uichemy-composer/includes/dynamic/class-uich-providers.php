@@ -98,6 +98,43 @@ if ( ! class_exists( 'Uich_Provider' ) ) {
 		}
 
 		/**
+		 * Whether a key is a UiChemy Custom Fields post or term value row.
+		 *
+		 * User and comment values stay protected: they hold per-person data the field never marked public.
+		 *
+		 * @param string $key Meta key.
+		 * @return bool
+		 */
+		public static function is_native_field_key( $key ) {
+			return 1 === preg_match( '/^_uichemy_gf_(?!user_|comment_)[a-z0-9]/', (string) $key );
+		}
+
+		/**
+		 * The value of a UiChemy Custom Field by name, or null when the module does not own it.
+		 *
+		 * Native values sit under protected `_uichemy_gf_*` keys that meta_allowed() refuses to a
+		 * visitor, so they are read through the module's own API instead. An untrusted template gets
+		 * nothing, the same rule hidden meta follows.
+		 *
+		 * @param string     $key       Field name.
+		 * @param int|string $object_id Post id, 'user_N' or 'term_N'.
+		 * @return mixed|null
+		 */
+		protected function native_field_value( $key, $object_id ) {
+			$key = (string) $key;
+			if ( '' === $key || ! function_exists( 'uich_field_value' ) || ! function_exists( 'uich_maybe_get_field_info' ) ) {
+				return null;
+			}
+			if ( class_exists( 'Uich_Dynamic' ) && Uich_Dynamic::is_untrusted() ) {
+				return null;
+			}
+			if ( ! uich_maybe_get_field_info( $key, $object_id ) ) {
+				return null;
+			}
+			return uich_field_value( $key, $object_id, true );
+		}
+
+		/**
 		 * Decide whether a meta key may be read in a template. Protected/hidden meta
 		 * (keys beginning with "_", e.g. _edit_lock, license keys, payment tokens) is
 		 * blocked for users who cannot edit content, preventing private-data exposure
@@ -111,7 +148,11 @@ if ( ! class_exists( 'Uich_Provider' ) ) {
 			if ( '' === $key ) {
 				return false;
 			}
-			if ( '_' === $key[0] && ! current_user_can( 'edit_posts' ) ) {
+			// Hidden meta is closed to an untrusted template whoever is viewing: when an admin
+			// previews it, their access must not flow into markup its author controls.
+			// UiChemy Custom Fields post/term values are public by design, so their own keys stay readable
+			// to a visitor - but never to an untrusted template.
+			if ( '_' === $key[0] && ( ( ! current_user_can( 'edit_posts' ) && ! self::is_native_field_key( $key ) ) || ( class_exists( 'Uich_Dynamic' ) && Uich_Dynamic::is_untrusted() ) ) ) {
 				return false;
 			}
 			return ! (bool) apply_filters( 'uich_dynamic_block_meta', false, $key );
@@ -163,6 +204,11 @@ if ( ! class_exists( 'Uich_Post_Provider' ) ) {
 				case 'permalink':
 					return get_permalink( $p );
 				case 'content':
+					// A password-protected post the viewer has not unlocked shows the password
+					// form, exactly as the_content() does in a theme; its text never prints.
+					if ( post_password_required( $p ) ) {
+						return get_the_password_form( $p );
+					}
 					return apply_filters( 'the_content', $p->post_content ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Intentional WordPress core integration hook (the_content) so post content renders identically to the theme.
 				case 'thumbnail':
 				case 'featured_image':

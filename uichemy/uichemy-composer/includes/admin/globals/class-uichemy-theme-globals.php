@@ -43,7 +43,13 @@ if ( ! class_exists( 'UiChemy_Theme_Globals' ) ) {
 		 * from the theme's own — the name is the single place the UI shows where
 		 * a colour came from (swatch tooltip + the detail panel).
 		 */
-		const LABEL_PREFIX = 'UiChemy: ';
+		const LABEL_PREFIX = 'Globals: ';
+
+		/**
+		 * Palette slugs whose generated `.has-{slug}-color` class is one of core's
+		 * generic "has a custom colour" classes (see slug()).
+		 */
+		const RESERVED_SLUGS = array( 'text', 'link' );
 
 		/**
 		 * Register hooks.
@@ -52,6 +58,13 @@ if ( ! class_exists( 'UiChemy_Theme_Globals' ) ) {
 		 */
 		public static function init() {
 			add_filter( 'wp_theme_json_data_theme', array( __CLASS__, 'filter_theme_json' ) );
+
+			// Content saved while these colours were published as "text" / "link" (before
+			// RESERVED_SLUGS) keeps working with no re-conversion: the old variable stays
+			// defined, and blocks that picked the old swatch get the new class on render.
+			add_filter( 'render_block', array( __CLASS__, 'upgrade_block_colour_classes' ), 10, 2 );
+			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'print_legacy_aliases' ), 20 );
+			add_filter( 'block_editor_settings_all', array( __CLASS__, 'editor_legacy_aliases' ) );
 
 			// Global styles are cached per request (and in the non-persistent
 			// `theme_json` group), so a save made in the same request that then
@@ -98,6 +111,104 @@ if ( ! class_exists( 'UiChemy_Theme_Globals' ) ) {
 			}
 
 			return $theme_json->update_with( $data );
+		}
+
+		/**
+		 * Reserved slugs this site actually publishes under the prefixed name.
+		 *
+		 * @return string[] e.g. array( 'text' ).
+		 */
+		private static function remapped_slugs() {
+			static $remapped = null;
+			if ( null === $remapped ) {
+				$remapped = array();
+				$presets  = self::build_presets();
+				foreach ( array_merge( $presets['palette'], $presets['gradients'] ) as $p ) {
+					if ( 0 === strpos( $p['slug'], 'uich-' ) && in_array( substr( $p['slug'], 5 ), self::RESERVED_SLUGS, true ) ) {
+						$remapped[] = substr( $p['slug'], 5 );
+					}
+				}
+			}
+			return $remapped;
+		}
+
+		/**
+		 * `render_block` — a block that picked the old "text" / "link" swatch carries
+		 * `textColor: "text"`, i.e. only the (now generic) `has-text-color` class. Add the
+		 * class of the renamed preset so it keeps its colour.
+		 *
+		 * @param string $html  Block HTML.
+		 * @param array  $block Parsed block.
+		 * @return string
+		 */
+		public static function upgrade_block_colour_classes( $html, $block ) {
+			if ( '' === $html || empty( $block['attrs'] ) || ! class_exists( 'WP_HTML_Tag_Processor' ) ) {
+				return $html;
+			}
+			$map = array(
+				'textColor'       => '-color',
+				'backgroundColor' => '-background-color',
+				'borderColor'     => '-border-color',
+			);
+			$add = array();
+			foreach ( $map as $attr => $suffix ) {
+				$slug = isset( $block['attrs'][ $attr ] ) ? (string) $block['attrs'][ $attr ] : '';
+				if ( '' !== $slug && in_array( $slug, self::RESERVED_SLUGS, true ) && in_array( $slug, self::remapped_slugs(), true ) ) {
+					$add[] = 'has-uich-' . $slug . $suffix;
+				}
+			}
+			if ( ! $add ) {
+				return $html;
+			}
+			$p = new WP_HTML_Tag_Processor( $html );
+			if ( $p->next_tag() ) {
+				foreach ( $add as $class ) {
+					$p->add_class( $class );
+				}
+				return $p->get_updated_html();
+			}
+			return $html;
+		}
+
+		/**
+		 * Keep `--wp--preset--color--text` (and link) defined for anything that still
+		 * references the old variable (`var:preset|color|text` in block styles, custom CSS).
+		 *
+		 * @return void
+		 */
+		public static function print_legacy_aliases() {
+			$css = self::legacy_alias_css();
+			if ( '' !== $css && wp_style_is( 'global-styles', 'enqueued' ) ) {
+				wp_add_inline_style( 'global-styles', $css );
+			}
+		}
+
+		/**
+		 * The same aliases inside the block editor canvas.
+		 *
+		 * @param array $settings Editor settings.
+		 * @return array
+		 */
+		public static function editor_legacy_aliases( $settings ) {
+			$css = self::legacy_alias_css();
+			if ( '' !== $css && is_array( $settings ) ) {
+				$settings['styles']   = isset( $settings['styles'] ) && is_array( $settings['styles'] ) ? $settings['styles'] : array();
+				$settings['styles'][] = array( 'css' => $css );
+			}
+			return $settings;
+		}
+
+		/**
+		 * `:root{ --wp--preset--color--text: var(--wp--preset--color--uich-text) }`.
+		 *
+		 * @return string
+		 */
+		private static function legacy_alias_css() {
+			$css = '';
+			foreach ( self::remapped_slugs() as $slug ) {
+				$css .= '--wp--preset--color--' . $slug . ':var(--wp--preset--color--uich-' . $slug . ');';
+			}
+			return '' === $css ? '' : ':root{' . $css . '}';
 		}
 
 		/**
@@ -340,7 +451,16 @@ if ( ! class_exists( 'UiChemy_Theme_Globals' ) ) {
 		 * @return string
 		 */
 		private static function slug( $id ) {
-			return sanitize_title( str_replace( '_', '-', (string) $id ) );
+			$slug = sanitize_title( str_replace( '_', '-', (string) $id ) );
+			// WordPress prints `.has-{slug}-color { color: … !important }` for every palette
+			// colour. A token named "text" or "link" therefore produced `.has-text-color` /
+			// `.has-link-color` — the generic classes core adds to EVERY block given a custom
+			// colour — and forced that one colour onto all of them, overriding the colour
+			// the author picked. Publish those under a prefixed slug instead.
+			if ( in_array( $slug, self::RESERVED_SLUGS, true ) ) {
+				$slug = 'uich-' . $slug;
+			}
+			return $slug;
 		}
 
 		/**

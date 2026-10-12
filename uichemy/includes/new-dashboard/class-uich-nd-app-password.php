@@ -336,7 +336,7 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 				wp_send_json_error(
 					array(
 						'code'    => 'noop',
-						'message' => __( 'No UiChemy override is active for your account.', 'uichemy' ),
+						'message' => __( 'No override is active for your account.', 'uichemy' ),
 					),
 					400
 				);
