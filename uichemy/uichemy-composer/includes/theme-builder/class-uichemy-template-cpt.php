@@ -50,11 +50,11 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 		const META_EDITOR = '_uichemy_tpl_editor';
 
 		/**
-		 * Meta key: the context a single/archive template targets. String form:
-		 *   'any'                    — any singular / any archive (fallback)
+		 * Meta key: the context a single/archive/search template targets. Form:
+		 *   'any'                    — any singular / archive / search (fallback)
 		 *   'front'                  — the front page (single)
 		 *   'blog' | 'author' | 'date' — special archives
-		 *   'pt:{post_type}'         — a specific post type (single)
+		 *   'pt:{post_type}'         — a specific post type (single, search)
 		 *   'tax:{taxonomy}'         — a specific taxonomy archive
 		 * Absent meta means 'any' (back-compat: pre-targeting templates were global).
 		 */

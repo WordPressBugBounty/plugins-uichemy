@@ -61,9 +61,9 @@ if ( ! function_exists( 'uich_fields_ability_is_ours' ) ) {
 	/**
 	 * Whether an ability belongs to Custom Fields.
 	 *
-	 * Membership, not a name prefix: other abilities can share the `uichemy/` namespace, and
-	 * matching on the prefix would put them under this lifecycle - forced private, behind the
-	 * Custom Fields read-only switch, lock and journal.
+	 * Membership, not a name prefix: other abilities (Module Studio's among them) share the
+	 * same namespaces, and matching on a prefix would put them under this lifecycle - forced
+	 * private, behind the Custom Fields read-only switch, lock and journal.
 	 *
 	 * @param string $name     Ability name.
 	 * @param bool   $register Record the name as ours (uich_fields_register_ability() only).

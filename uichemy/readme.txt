@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.3.0
+Stable tag: 5.4.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -271,6 +271,12 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.4.0 = 19 October 2026
+- Added: Introducing Module Studio, build anything on top of your site with your own code or your AI assistant.
+- Improved: Gutenberg is now available as a builder.
+- Fixed: WooCommerce website kit import.
+- Fixed: Various minor bugs and design improvements.
 
 = 5.3.0 = 12 October 2026
 - Added: Built-in SEO: meta titles, social previews, schema, sitemaps, redirects, llms.txt and a site audit.

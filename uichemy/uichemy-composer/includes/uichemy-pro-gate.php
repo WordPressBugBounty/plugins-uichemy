@@ -348,8 +348,9 @@ if ( ! function_exists( 'uichemy_pro_feature_map' ) ) {
 		$is_pro = uichemy_is_pro();
 
 		return array(
-			'role_manager' => ! $is_pro,
-			'white_label'  => ! $is_pro,
+			'role_manager'  => ! $is_pro,
+			'white_label'   => ! $is_pro,
+			'module_studio' => ! $is_pro,
 		);
 	}
 }

@@ -299,6 +299,7 @@ custom-fields revert  { revert_token }
 
 Names that are easy to get wrong:
 
+- always pass `menu_icon` with a Dashicon that matches what the type holds (`dashicons-groups` for team, `dashicons-calendar-alt` for events, `dashicons-editor-help` for FAQs). Never leave the default pushpin;
 - the plural label is `label`, not `plural` or `name`;
 - values go in `fields`, not `values`;
 - the object is `object_id`, not `post_id` (only `set-terms` takes `post_id`);

@@ -380,17 +380,18 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 
 		/**
 		 * The "slot" a template occupies — the unit within which only one template
-		 * may be active. search/404/single_product/order_received are one slot per
-		 * type; single/archive split further by their target so a "Single Post" and
-		 * a "Single Page" template can both be active at once; header, footer and
+		 * may be active. 404/single_product/order_received are one slot per type;
+		 * single/archive split further by their target so a "Single Post" and a
+		 * "Single Page" template can both be active at once; header, footer and
 		 * product_archive split by their display conditions, so a shop layout and a
-		 * product-category layout (or two headers) coexist.
+		 * product-category layout (or two headers) coexist; search splits by BOTH,
+		 * since it is narrowed by post type and then by conditions within it.
 		 *
 		 * @param string $type   Template type.
 		 * @param string $target Template target.
 		 * @return string
 		 */
-		private static function slot_key( $type, $target, $post_id = 0 ) {
+		private static function slot_key( $type, $target, $post_id = 0, $conditions = null ) {
 			if ( in_array( $type, array( 'single', 'archive' ), true ) ) {
 				return $type . '|' . $target;
 			}
@@ -410,7 +411,22 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			 * which is the real conflict.
 			 */
 			if ( in_array( $type, array( 'header', 'footer', 'product_archive' ), true ) ) {
-				return $type . '|' . self::conditions_key( (int) $post_id );
+				return $type . '|' . self::conditions_key( (int) $post_id, $conditions );
+			}
+
+			/*
+			 * search splits BOTH ways, because it is narrowed both ways: by target
+			 * (a Product Search and a Post Search are different requests, resolved
+			 * by UiChemy_Template_Resolver::search_priority) and then by display
+			 * conditions within that target.
+			 *
+			 * As one flat slot, activating any search template silently
+			 * deactivated every other one — so a site could only ever have a
+			 * single working search layout no matter how many it built, and the
+			 * conditions set on them were saved, shown, and never consulted.
+			 */
+			if ( 'search' === $type ) {
+				return $type . '|' . $target . '|' . self::conditions_key( (int) $post_id, $conditions );
 			}
 
 			return $type;
@@ -471,9 +487,12 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			// On the create path the new template's conditions meta is not written
 			// yet, so the caller passes them in; elsewhere they are read back off
 			// the post.
-			$slot  = in_array( $type, array( 'header', 'footer' ), true )
-				? $type . '|' . self::conditions_key( (int) $except_id, $conditions )
-				: self::slot_key( $type, $target, (int) $except_id );
+			// $conditions is forwarded rather than read back off the post: on the
+			// create path deactivate_others_in_slot() runs BEFORE the conditions
+			// meta is written, so reading it there yields an empty set and the new
+			// template would displace whatever sits in the unconditioned slot
+			// instead of its own.
+			$slot  = self::slot_key( $type, $target, (int) $except_id, $conditions );
 			$count = 0;
 			foreach ( self::get_by_type( $type ) as $id ) {
 				if ( (int) $id === (int) $except_id ) {

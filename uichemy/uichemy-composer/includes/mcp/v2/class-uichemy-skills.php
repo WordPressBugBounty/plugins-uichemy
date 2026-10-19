@@ -287,6 +287,8 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 			 *
 			 * Keys are skill names; each value takes the same shape as the
 			 * built-in definitions (description, keywords, files, additional_parts).
+			 * An add-on that ships its own markdown sets `base` (on the skill or on a
+			 * part) to the folder its `files` are relative to.
 			 *
 			 * @since 5.1.0
 			 *
@@ -481,13 +483,15 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 				}
 
 				$files = isset( $parts[ $part ]['files'] ) ? $parts[ $part ]['files'] : array();
+				$base  = isset( $parts[ $part ]['base'] ) ? $parts[ $part ]['base'] : ( isset( $skill['base'] ) ? $skill['base'] : '' );
 				$uri   = 'uichemy://skill/' . $name . '/' . $part;
 			} else {
 				$files = isset( $skill['files'] ) ? $skill['files'] : array();
+				$base  = isset( $skill['base'] ) ? $skill['base'] : '';
 				$uri   = 'uichemy://skill/' . $name;
 			}
 
-			$body = self::read_files( $files );
+			$body = self::read_files( $files, $base );
 			if ( is_wp_error( $body ) ) {
 				return $body;
 			}
@@ -506,23 +510,27 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 		/**
 		 * Concatenate a skill's markdown files.
 		 *
-		 * @param array<int,string> $files Paths relative to includes/mcp/.
+		 * @param array<int,string> $files Paths relative to $base.
+		 * @param string            $base  Folder the paths are relative to. Empty: this
+		 *                                 plugin's includes/mcp/. A skill an add-on
+		 *                                 registers through `uichemy_skills` names its own
+		 *                                 folder here (`base` on the skill or the part).
 		 * @return string|WP_Error
 		 */
-		private static function read_files( $files ) {
+		private static function read_files( $files, $base = '' ) {
 			if ( ! is_array( $files ) || empty( $files ) ) {
 				return '';
 			}
 
 			// The documents live in includes/mcp/, one level above this v2 folder, and
 			// are shared with v1 — so anchor on the plugin path rather than __FILE__.
-			$base = UICHEMY_PATH . 'includes/mcp/';
+			$base = '' !== (string) $base ? trailingslashit( (string) $base ) : UICHEMY_PATH . 'includes/mcp/';
 			$parts = array();
 
 			foreach ( $files as $relative ) {
 				$path = $base . ltrim( (string) $relative, '/' );
 
-				// Keep reads inside the plugin's mcp directory.
+				// Keep reads inside the declared folder.
 				$real = realpath( $path );
 				if ( false === $real || 0 !== strpos( $real, realpath( $base ) ) ) {
 					continue;

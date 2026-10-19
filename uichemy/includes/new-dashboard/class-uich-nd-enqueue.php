@@ -232,9 +232,11 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 				return;
 			}
 			// Only the types that HAVE display conditions. Mirrors CONDITION_TYPES
-			// in ThemeBuilder.jsx — a Search or 404 template has nowhere to target,
-			// and the dashboard hides the menu item for those too.
-			if ( ! in_array( $tpl['type'], array( 'header', 'footer', 'single', 'archive' ), true ) ) {
+			// in ThemeBuilder.jsx and the narrowing in
+			// UiChemy_Template_Resolver::resolve(). A 404 or single-product
+			// template is one whole context with nothing to narrow by; search and
+			// product_archive ARE narrowed, so they get the launcher too.
+			if ( ! in_array( $tpl['type'], array( 'header', 'footer', 'single', 'archive', 'product_archive', 'search' ), true ) ) {
 				return;
 			}
 

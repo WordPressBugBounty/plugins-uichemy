@@ -37,6 +37,47 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 		}
 
 		/**
+		 * Vet a slot link URL before it is written into an href.
+		 *
+		 * Rejects any URL whose scheme is not in wp_allowed_protocols() (javascript:,
+		 * vbscript:, data:, …) — the same allowlist esc_url() enforces. Allowed URLs
+		 * are returned unchanged rather than via esc_url_raw(), which would prefix
+		 * scheme-less relative links ("about-us") with http://. The value is still
+		 * raw: DOMDocument escapes it on saveHTML(), so callers must not pre-escape.
+		 *
+		 * @param mixed $url Link URL from the slot setting.
+		 * @return string The URL, or '' when its scheme is not allowed.
+		 */
+		public static function sanitize_slot_link_url( $url ) {
+			$url = trim( (string) $url );
+			if ( '' === $url ) {
+				return '';
+			}
+			// wp_kses_bad_protocol() strips a disallowed scheme (also when obfuscated
+			// with entities, case or embedded whitespace) and leaves allowed ones and
+			// scheme-less URLs untouched — so any change means the URL was unsafe.
+			return wp_kses_bad_protocol( $url, wp_allowed_protocols() ) === $url ? $url : '';
+		}
+
+		/**
+		 * Whether a slot link custom attribute name may be written to the anchor.
+		 *
+		 * Blocks event handlers (on*) and the URL-bearing / identity attributes the
+		 * link control already owns, so a custom attribute can never smuggle script
+		 * or override the vetted href.
+		 *
+		 * @param string $name Attribute name.
+		 * @return bool
+		 */
+		public static function is_safe_slot_link_attribute( $name ) {
+			$name = strtolower( trim( (string) $name ) );
+			if ( ! preg_match( '/^[a-z_:][a-z0-9_:.\-]*$/', $name ) || 0 === strpos( $name, 'on' ) ) {
+				return false;
+			}
+			return ! in_array( $name, array( 'href', 'xlink:href', 'src', 'action', 'formaction', 'style' ), true );
+		}
+
+		/**
 		 * Icon fonts render a glyph through `content:"\fXXX"` plus a `font-family`
 		 * pointing at the icon font. Any rule that forces a different family onto
 		 * the icon element wins that glyph away and the browser paints a blank
@@ -902,7 +943,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 
 			if ( 'anchor' === $kind && $node instanceof \DOMElement ) {
 				$link_setting = isset( $settings[ "slot_{$slot_index}_link" ] ) ? $settings[ "slot_{$slot_index}_link" ] : array();
-				$url          = isset( $link_setting['url'] ) ? trim( $link_setting['url'] ) : '';
+				$url          = self::sanitize_slot_link_url( isset( $link_setting['url'] ) ? $link_setting['url'] : '' );
 				if ( ! empty( $url ) ) {
 					$node->setAttribute( 'href', htmlspecialchars( $url, ENT_QUOTES, 'UTF-8' ) );
 				}
@@ -922,7 +963,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 					$custom_attributes = preg_split( '/((\r?\n)|\|\||\|)/', $link_setting['custom_attributes'] );
 					foreach ( $custom_attributes as $attr ) {
 						$attr = explode( '|', trim( $attr ), 2 );
-						if ( isset( $attr[0], $attr[1] ) ) {
+						if ( isset( $attr[0], $attr[1] ) && self::is_safe_slot_link_attribute( $attr[0] ) ) {
 							$node->setAttribute( trim( $attr[0] ), trim( $attr[1] ) );
 						}
 					}

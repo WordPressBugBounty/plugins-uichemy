@@ -64,6 +64,64 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 			// Front-end admin-bar shortcuts to edit whichever UiChemy templates
 			// render on the current page.
 			add_action( 'admin_bar_menu', array( __CLASS__, 'admin_bar_links' ), 100 );
+
+			// Keep a post-type-scoped search actually scoped. Priority 99 so this
+			// runs after other plugins' pre_get_posts: WooCommerce, SEO and
+			// filter plugins all widen or rewrite the main search query, and a
+			// "Product Search" template that renders a list with blog posts in it
+			// is the exact complaint this targets.
+			add_action( 'pre_get_posts', array( __CLASS__, 'scope_search_to_post_type' ), 99 );
+		}
+
+		/**
+		 * Hold a post-type-scoped search to that post type.
+		 *
+		 * Only acts when the request already names ONE post type (so a bare
+		 * `/?s=term` stays a site-wide search and keeps reaching the `any`
+		 * fallback template) and a matching `pt:{type}` search template exists.
+		 * Without that second check this would silently change search behaviour
+		 * on sites that never built a per-type search template at all.
+		 *
+		 * @param WP_Query $query Query being prepared.
+		 * @return void
+		 */
+		public static function scope_search_to_post_type( $query ) {
+			if ( ! $query instanceof WP_Query || ! $query->is_main_query() || ! $query->is_search() ) {
+				return;
+			}
+			if ( ! class_exists( 'UiChemy_Template_Resolver' ) || ! class_exists( 'UiChemy_Template_Store' ) ) {
+				return;
+			}
+
+			$post_type = UiChemy_Template_Resolver::searched_post_type( $query );
+			if ( '' === $post_type ) {
+				return;
+			}
+
+			$has_template = false;
+			foreach ( UiChemy_Template_Store::get_active( 'search' ) as $id ) {
+				if ( UiChemy_Template_CPT::target_for( (int) $id ) === 'pt:' . $post_type ) {
+					$has_template = true;
+					break;
+				}
+			}
+			if ( ! $has_template ) {
+				return;
+			}
+
+			/**
+			 * Filter the post type a scoped search is held to, or return '' to
+			 * leave the query untouched.
+			 *
+			 * @param string   $post_type Post type the search is scoped to.
+			 * @param WP_Query $query     The main search query.
+			 */
+			$post_type = (string) apply_filters( 'uichemy/theme_builder/search_post_type', $post_type, $query );
+			if ( '' === $post_type ) {
+				return;
+			}
+
+			$query->set( 'post_type', $post_type );
 		}
 
 		/**

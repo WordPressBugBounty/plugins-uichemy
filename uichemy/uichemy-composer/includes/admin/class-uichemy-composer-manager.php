@@ -1613,7 +1613,41 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					}
 					return new \WP_Error( 'uich_bad_archive', 'placement.archive must be one of: blog, author, date, tax:{taxonomy}, all.' );
 
-				// Whole-context types: single_product, product_archive, search, error_404.
+				case 'search':
+					/*
+					 * A site search is not one context: `/?s=x` and
+					 * `/?s=x&post_type=product` are different requests, and
+					 * UiChemy_Template_Resolver::search_priority() picks the
+					 * template whose target names the searched post type.
+					 * Without this case every imported search template landed on
+					 * `any`, so a kit shipping both a blog search and a shop
+					 * search had the second one silently replace the first.
+					 */
+					$spt = isset( $placement['post_type'] ) ? sanitize_key( (string) $placement['post_type'] ) : '';
+					if ( '' === $spt || 'all' === $spt || 'any' === $spt ) {
+						return array(
+							'conditions' => array( 'scope' => 'entire' ),
+							'target'     => 'any',
+							'summary'    => 'all search results',
+						);
+					}
+					if ( ! post_type_exists( $spt ) ) {
+						return new \WP_Error( 'uich_bad_post_type', 'placement.post_type "' . $spt . '" is not a registered post type.' );
+					}
+					$spt_obj = get_post_type_object( $spt );
+					if ( $spt_obj && ! empty( $spt_obj->exclude_from_search ) ) {
+						return new \WP_Error(
+							'uich_post_type_not_searchable',
+							'placement.post_type "' . $spt . '" is registered with exclude_from_search, so it can never produce search results.'
+						);
+					}
+					return array(
+						'conditions' => array( 'scope' => 'entire' ),
+						'target'     => 'pt:' . $spt,
+						'summary'    => '"' . $spt . '" search results',
+					);
+
+				// Whole-context types: single_product, product_archive, error_404.
 				default:
 					$summaries = array(
 						'single_product'  => 'all products',

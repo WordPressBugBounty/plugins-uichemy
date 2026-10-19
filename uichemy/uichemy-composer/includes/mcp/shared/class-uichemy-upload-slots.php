@@ -32,6 +32,15 @@
  * something unspecified was forbidden, is worth more than closing an oracle
  * that yields nothing. Change `validate()` if that trade ever stops holding.
  *
+ * The slot follows the presigned-upload-URL pattern of cloud object storage:
+ * a short-lived URL that the client sends the file to with `curl -X PUT`, as in
+ * Amazon S3 presigned URLs
+ * (https://docs.aws.amazon.com/AmazonS3/latest/userguide/PresignedUrlUploadObject.html)
+ * and Google Cloud Storage V4 signed URLs, whose sample uses a 15-minute expiry
+ * (https://cloud.google.com/storage/docs/samples/storage-generate-upload-signed-url-v4).
+ * Unlike a presigned URL, a slot is stored hashed, tied to the issuing user,
+ * limited in uses, and the bytes go through the caller's own write checks.
+ *
  * @package UiChemy
  */
 
@@ -45,6 +54,13 @@ if ( ! class_exists( 'UiChemy_Upload_Slots' ) ) {
 
 		/**
 		 * The one header every UiChemy upload endpoint reads the token from.
+		 *
+		 * The token travels in a request header, not in the URL, as RFC 6750 does
+		 * for bearer tokens (section 2.1, https://www.rfc-editor.org/rfc/rfc6750#section-2.1;
+		 * section 5.3 advises against putting them in URLs, which end up in server
+		 * logs and browser history). The WordPress REST API sends its own credential
+		 * the same way, in the X-WP-Nonce header. The name has no "X-" prefix, following
+		 * RFC 6648 (https://www.rfc-editor.org/rfc/rfc6648).
 		 *
 		 * Deliberately not `Sec-` prefixed: browsers treat `Sec-*` as forbidden
 		 * header names, so `fetch()` could never set it and any future in-browser
@@ -520,9 +536,6 @@ if ( ! class_exists( 'UiChemy_Upload_Slots' ) ) {
 			$candidates = array(
 				$request->get_header( 'uich_token' ),
 				$request->get_header( self::TOKEN_HEADER ),
-				// Superseded spelling, still accepted so a slot issued before the
-				// rename can still be spent by a client that cached the header.
-				$request->get_header( 'x_uichemy_upload_token' ),
 			);
 
 			foreach ( $candidates as $value ) {

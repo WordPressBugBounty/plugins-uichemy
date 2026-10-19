@@ -3586,6 +3586,13 @@ class Uich_Webpage_Import {
 		// Set home page directly (WDesignKit approach): first page with "Home" or "Landing" in title.
 		$this->set_home_page_from_created( $created_pages );
 
+		// SEO values and the site icon the project carries. After the home page is
+		// set, so the front page is known.
+		$seo_result = $this->apply_seo_from_import( $import_meta, $created_pages );
+		if ( ! empty( $seo_result['warnings'] ) ) {
+			$warnings = array_merge( $warnings, $seo_result['warnings'] );
+		}
+
 		// Import blog posts from blog-post-content.json (fetched via downloadUrls).
 		$blog_posts_result = $this->import_blog_posts_from_json();
 
@@ -3615,7 +3622,296 @@ class Uich_Webpage_Import {
 			'warnings'       => $warnings,
 			'blog_posts'     => $blog_posts_result,
 			'widgets_enable' => $widgets_result,
+			'seo'            => $seo_result,
 		);
+	}
+
+	/**
+	 * Apply the SEO values and site icon a project carries in its replacement meta.
+	 *
+	 * The project API sends, next to the download URLs (stored with the import meta under 'meta'):
+	 *   pageSettings  { "<page name>": { slug, seo: { title, description, share_image: { url }, og_locale } } }
+	 *   seoSettings   UiChemy SEO site settings, keyed exactly as Uich_SEO_Settings (robots_mode, …)
+	 *   siteSettings  { metaTitle, metaDescription, ogImage, faviconLight, robotsTxt }
+	 *   siteIcon      favicon URL
+	 *
+	 * The dashboard imports one page per request (import-single-page) and finishes with
+	 * import-cleanup, so the work is split the same way: each page takes its values as it is
+	 * created, and the site-wide part runs once at the end. This wrapper serves the bulk path
+	 * (run_import_pages_only), which has every page at once.
+	 *
+	 * @param array $import_meta   Import meta (the API's meta under 'meta').
+	 * @param array $created_pages List of { post_id, title, filename }.
+	 * @return array { pages: int, site: string[], site_icon: bool, warnings: string[] }
+	 */
+	protected function apply_seo_from_import( array $import_meta, array $created_pages ) {
+		$warnings = array();
+		$pages    = 0;
+		$meta     = $this->seo_import_meta( $import_meta );
+		$names    = isset( $meta['pageSettings'] ) && is_array( $meta['pageSettings'] ) ? array_keys( $meta['pageSettings'] ) : array();
+		foreach ( $names as $page_name ) {
+			$post_id = $this->find_created_page_id( (string) $page_name, $created_pages );
+			if ( ! $post_id ) {
+				continue;
+			}
+			$this->apply_page_slug_from_import( (string) $page_name, $post_id, $import_meta );
+			$page = $this->apply_page_seo_from_import( (string) $page_name, $post_id, $import_meta );
+			$pages += $page['applied'] ? 1 : 0;
+			$warnings = array_merge( $warnings, $page['warnings'] );
+		}
+		$site             = $this->apply_site_seo_from_import( $import_meta );
+		$site['pages']    = $pages;
+		$site['warnings'] = array_merge( $warnings, $site['warnings'] );
+		return $site;
+	}
+
+	/**
+	 * The API meta of the current import: from the given import meta, else the stored one.
+	 *
+	 * @param array|null $import_meta Import meta, or null to read the stored option.
+	 * @return array
+	 */
+	protected function seo_import_meta( $import_meta = null ) {
+		if ( null === $import_meta ) {
+			$import_meta = get_option( self::OPTION_IMPORT_META, array() );
+		}
+		return ( is_array( $import_meta ) && isset( $import_meta['meta'] ) && is_array( $import_meta['meta'] ) ) ? $import_meta['meta'] : array();
+	}
+
+	/**
+	 * Write one imported page's SEO values (pageSettings[<page name>].seo) into its head code,
+	 * the way the SEO panel writes them. The sharing image is imported into the Media Library
+	 * first, deduplicated like every other import image.
+	 *
+	 * Records the page in the import's SEO state, so the site-wide step at the end knows which
+	 * pages this import created and whether the front page already has its own title.
+	 *
+	 * @param string     $page_name   Project page name (e.g. "Home").
+	 * @param int        $post_id     The page just created.
+	 * @param array|null $import_meta Import meta, or null to read the stored option.
+	 * @return array { applied: bool, warnings: string[] }
+	 */
+	protected function apply_page_seo_from_import( $page_name, $post_id, $import_meta = null ) {
+		$out = array(
+			'applied'  => false,
+			'warnings' => array(),
+		);
+		$post_id = (int) $post_id;
+		if ( ! $post_id ) {
+			return $out;
+		}
+		try {
+			$state            = get_option( 'uich_webpage_import_seo_state', array() );
+			$state            = is_array( $state ) ? $state : array();
+			$state['pages']   = isset( $state['pages'] ) && is_array( $state['pages'] ) ? $state['pages'] : array();
+			$state['pages'][ $post_id ] = false;
+
+			$settings = $this->import_page_settings( $page_name, $import_meta );
+			$seo      = isset( $settings['seo'] ) && is_array( $settings['seo'] ) ? $settings['seo'] : array();
+
+			if ( $seo && class_exists( 'Uich_SEO_Record' ) ) {
+				// Every page field the SEO panel knows. A redirect is never taken from an
+				// import: it would send the page just built somewhere else.
+				$fields = array_diff( Uich_SEO_Record::FIELDS, array( 'redirect_to' ) );
+				$patch  = array_intersect_key( $seo, array_flip( $fields ) );
+				if ( isset( $patch['share_image'] ) ) {
+					$url = is_array( $patch['share_image'] ) ? ( $patch['share_image']['url'] ?? '' ) : ( is_string( $patch['share_image'] ) ? $patch['share_image'] : '' );
+					if ( '' !== $url ) {
+						$image                = $this->import_asset( $url );
+						$patch['share_image'] = ( $image && ! empty( $image['id'] ) ) ? array( 'id' => (int) $image['id'] ) : array( 'url' => $url );
+					}
+				}
+				$patch = array_filter(
+					$patch,
+					static function ( $v ) {
+						return null !== $v && '' !== $v && array() !== $v;
+					}
+				);
+				if ( $patch ) {
+					$saved = Uich_SEO_Record::set_fields( $post_id, $patch, '', 'imported' );
+					if ( is_wp_error( $saved ) ) {
+						$out['warnings'][] = sprintf( 'SEO import: "%s" kept its automatic SEO values: %s', $page_name, $saved->get_error_message() );
+					} else {
+						$out['applied']             = true;
+						$state['pages'][ $post_id ] = ! empty( $patch['title'] );
+					}
+				}
+			}
+			update_option( 'uich_webpage_import_seo_state', $state, false );
+		} catch ( \Throwable $e ) {
+			$out['warnings'][] = 'SEO import failed for "' . $page_name . '": ' . $e->getMessage();
+		}
+		return $out;
+	}
+
+	/**
+	 * pageSettings["<page name>"] of the current import, matched case-insensitively.
+	 *
+	 * @param string     $page_name   Project page name.
+	 * @param array|null $import_meta Import meta, or null to read the stored option.
+	 * @return array
+	 */
+	protected function import_page_settings( $page_name, $import_meta = null ) {
+		$meta = $this->seo_import_meta( $import_meta );
+		if ( empty( $meta['pageSettings'] ) || ! is_array( $meta['pageSettings'] ) ) {
+			return array();
+		}
+		$want = strtolower( trim( (string) $page_name ) );
+		foreach ( $meta['pageSettings'] as $name => $settings ) {
+			if ( strtolower( trim( (string) $name ) ) === $want && is_array( $settings ) ) {
+				return $settings;
+			}
+		}
+		return array();
+	}
+
+	/**
+	 * Give an imported page the slug the project chose (pageSettings[<page name>].slug).
+	 * Without it WordPress derives the slug from the title. Runs before the menus are
+	 * refreshed, so their links already use the new address. A slug another page holds
+	 * gets WordPress's usual "-2" suffix rather than taking that page's address.
+	 *
+	 * @param string     $page_name   Project page name.
+	 * @param int        $post_id     The page just created.
+	 * @param array|null $import_meta Import meta, or null to read the stored option.
+	 * @return string The page's slug after the step, or '' when the project sets none.
+	 */
+	protected function apply_page_slug_from_import( $page_name, $post_id, $import_meta = null ) {
+		$settings = $this->import_page_settings( $page_name, $import_meta );
+		if ( empty( $settings['slug'] ) || ! is_string( $settings['slug'] ) ) {
+			return '';
+		}
+		// "/about-us/" and "company/about-us" both mean the last part: pages are imported flat.
+		$parts = array_filter( explode( '/', trim( $settings['slug'] ) ) );
+		$slug  = sanitize_title( (string) end( $parts ) );
+		$post  = get_post( (int) $post_id );
+		if ( '' === $slug || ! $post ) {
+			return '';
+		}
+		if ( $post->post_name !== $slug ) {
+			wp_update_post(
+				array(
+					'ID'        => $post->ID,
+					'post_name' => $slug,
+				)
+			);
+			clean_post_cache( $post->ID );
+		}
+		return (string) get_post_field( 'post_name', $post->ID );
+	}
+
+	/**
+	 * The site-wide half: site icon, SEO site settings, and the site's meta title on the front
+	 * page. Runs once, after every page exists (import-cleanup, or the bulk path).
+	 *
+	 * @param array|null $import_meta Import meta, or null to read the stored option.
+	 * @return array { site: string[], site_icon: bool, warnings: string[] }
+	 */
+	protected function apply_site_seo_from_import( $import_meta = null ) {
+		$result = array(
+			'site'      => array(),
+			'site_icon' => false,
+			'warnings'  => array(),
+		);
+		$meta   = $this->seo_import_meta( $import_meta );
+		$state  = get_option( 'uich_webpage_import_seo_state', array() );
+		$state  = is_array( $state ) ? $state : array();
+		delete_option( 'uich_webpage_import_seo_state' );
+		if ( empty( $meta ) ) {
+			return $result;
+		}
+
+		try {
+			$site_settings = isset( $meta['siteSettings'] ) && is_array( $meta['siteSettings'] ) ? $meta['siteSettings'] : array();
+
+			// Site icon: WordPress itself, so it applies even with UiChemy SEO switched off.
+			$icon_url = '';
+			if ( ! empty( $meta['siteIcon'] ) && is_string( $meta['siteIcon'] ) ) {
+				$icon_url = $meta['siteIcon'];
+			} elseif ( ! empty( $site_settings['faviconLight'] ) && is_string( $site_settings['faviconLight'] ) ) {
+				$icon_url = $site_settings['faviconLight'];
+			}
+			if ( '' !== $icon_url ) {
+				$icon = $this->import_asset( $icon_url );
+				if ( $icon && ! empty( $icon['id'] ) ) {
+					update_option( 'site_icon', (int) $icon['id'] );
+					$result['site_icon'] = true;
+				} else {
+					$result['warnings'][] = 'SEO import: the site icon could not be downloaded.';
+				}
+			}
+
+			if ( ! class_exists( 'Uich_SEO_Settings' ) || ! class_exists( 'Uich_SEO_Record' ) ) {
+				return $result;
+			}
+
+			// Site settings. seoSettings already uses UiChemy's own keys; siteSettings
+			// is mapped. sanitize() drops any key it does not know.
+			$site_patch = isset( $meta['seoSettings'] ) && is_array( $meta['seoSettings'] ) ? $meta['seoSettings'] : array();
+			if ( ! empty( $site_settings['metaDescription'] ) && ! isset( $site_patch['home_description'] ) ) {
+				$site_patch['home_description'] = (string) $site_settings['metaDescription'];
+			}
+			if ( ! empty( $site_settings['ogImage'] ) && ! isset( $site_patch['default_share_image'] ) ) {
+				$image                             = $this->import_asset( (string) $site_settings['ogImage'] );
+				$site_patch['default_share_image'] = ( $image && ! empty( $image['id'] ) ) ? (int) $image['id'] : (string) $site_settings['ogImage'];
+			}
+			if ( ! empty( $site_settings['robotsTxt'] ) && ! isset( $site_patch['robots_content'] ) ) {
+				$site_patch['robots_mode']    = 'custom';
+				$site_patch['robots_content'] = (string) $site_settings['robotsTxt'];
+			}
+			if ( $site_patch ) {
+				$saved = Uich_SEO_Settings::update( $site_patch );
+				if ( is_wp_error( $saved ) ) {
+					$result['warnings'][] = 'SEO import: site settings were not saved: ' . $saved->get_error_message();
+				} else {
+					$result['site'] = array_keys( $site_patch );
+				}
+			}
+
+			// The site's meta title belongs to the front page, but only a front page this
+			// import created and that got no title of its own. A front page that was already
+			// there is the site owner's and is left alone.
+			$front_id = 'page' === get_option( 'show_on_front' ) ? (int) get_option( 'page_on_front' ) : 0;
+			$imported = isset( $state['pages'] ) && is_array( $state['pages'] ) ? $state['pages'] : array();
+			if ( $front_id && array_key_exists( $front_id, $imported ) && ! $imported[ $front_id ] && ! empty( $site_settings['metaTitle'] ) ) {
+				$saved = Uich_SEO_Record::set_fields( $front_id, array( 'title' => (string) $site_settings['metaTitle'] ), '', 'imported' );
+				if ( is_wp_error( $saved ) ) {
+					$result['warnings'][] = 'SEO import: the home page title was not saved: ' . $saved->get_error_message();
+				}
+			}
+		} catch ( \Throwable $e ) {
+			$result['warnings'][] = 'SEO import failed: ' . $e->getMessage();
+		}
+
+		return $result;
+	}
+
+	/**
+	 * The created page for a project page name, matched on title, then on filename.
+	 *
+	 * @param string $page_name     Page name from the project (e.g. "Home", "About Us").
+	 * @param array  $created_pages List of { post_id, title, filename }.
+	 * @return int Post id, or 0.
+	 */
+	protected function find_created_page_id( $page_name, array $created_pages ) {
+		$want = strtolower( trim( $page_name ) );
+		if ( '' === $want ) {
+			return 0;
+		}
+		$slug = sanitize_title( $page_name );
+		foreach ( $created_pages as $page ) {
+			if ( ! empty( $page['post_id'] ) && strtolower( trim( (string) ( $page['title'] ?? '' ) ) ) === $want ) {
+				return (int) $page['post_id'];
+			}
+		}
+		foreach ( $created_pages as $page ) {
+			$file = strtolower( (string) ( $page['filename'] ?? '' ) );
+			$base = sanitize_title( preg_replace( '/\.json$/', '', basename( $file ) ) );
+			if ( ! empty( $page['post_id'] ) && '' !== $base && $base === $slug ) {
+				return (int) $page['post_id'];
+			}
+		}
+		return 0;
 	}
 
 	/**
@@ -5085,10 +5381,42 @@ class Uich_Webpage_Import {
 			'product detail page' => 'product details.json',
 			'product single page' => 'product details.json',
 			'product page'        => 'product details.json',
+			/*
+			 * The WooCommerce thank-you view. Exports name it after the page the
+			 * designer drew ("Order Details", "Thank You", "Order Confirmation"),
+			 * and none of those spellings used to resolve to a template at all —
+			 * the file fell through to the page loop and was imported as an
+			 * ordinary page, while the real endpoint kept rendering
+			 * WooCommerce's own default thank-you markup.
+			 */
+			'order details'       => 'order details.json',
+			'order detail'        => 'order details.json',
+			'order detail page'   => 'order details.json',
+			'order details page'  => 'order details.json',
+			'order received'      => 'order details.json',
+			'order confirmation'  => 'order details.json',
+			'order complete'      => 'order details.json',
+			'order success'       => 'order details.json',
+			'thank you'           => 'order details.json',
+			'thank you page'      => 'order details.json',
+			'thankyou'            => 'order details.json',
 			'search result'       => 'search results page.json',
 			'search results'      => 'search results page.json',
 			'search result page'  => 'search results page.json',
 			'search page'         => 'search results page.json',
+			/*
+			 * Per-post-type search templates get their OWN key, not the generic
+			 * one. create_pages_from_import() keeps a single file per key
+			 * ($claimed_keys), so folding these into 'search results page.json'
+			 * would import the first and silently drop the rest — which is what a
+			 * kit shipping a blog search and a shop search used to hit.
+			 */
+			'blog search'            => 'blog search.json',
+			'blog search results'    => 'blog search.json',
+			'post search'            => 'blog search.json',
+			'product search'         => 'product search.json',
+			'product search results' => 'product search.json',
+			'shop search'            => 'product search.json',
 			'blog detail'         => 'blog detail page.json',
 			'blog single'         => 'blog detail page.json',
 			'single post'         => 'blog detail page.json',
@@ -5160,6 +5488,19 @@ class Uich_Webpage_Import {
 				'el_type'      => 'search-results',
 				'archive_rule' => 'nxt_search',
 			),
+			// Same template type; the post type they scope to comes from each
+			// file's own placement.post_type, read in
+			// create_or_update_uichemy_template().
+			'blog search.json'         => array(
+				'title'        => 'Blog Search',
+				'el_type'      => 'search-results',
+				'archive_rule' => 'nxt_search',
+			),
+			'product search.json'      => array(
+				'title'        => 'Product Search',
+				'el_type'      => 'search-results',
+				'archive_rule' => 'nxt_search',
+			),
 			'tag featured page.json'   => array(
 				'title'        => 'Tag Featured Page',
 				'el_type'      => 'archive',
@@ -5188,6 +5529,11 @@ class Uich_Webpage_Import {
 				'el_type'      => 'single_product',
 				'archive_rule' => '',
 			),
+			'order details.json'       => array(
+				'title'        => 'Order Details',
+				'el_type'      => 'order-received',
+				'archive_rule' => '',
+			),
 			'category page.json'       => array(
 				'title'        => 'Category Page',
 				'el_type'      => 'archive',
@@ -5210,7 +5556,16 @@ class Uich_Webpage_Import {
 		 * groups them, but a store's listing belongs in a product-archive
 		 * template, not at a page URL of its own.
 		 */
-		$bucket_exempt = array( 'shop.json', 'shop home.json', 'product listing.json', 'product details.json' );
+		/*
+		 * Designs the API files under shop_pages / static_pages that nonetheless
+		 * belong in a theme-builder template, not at a page URL. Verified against
+		 * a real export: "Order details" ships in static_pages, so without the
+		 * exemption the bucket check below skips it as a template and the page
+		 * loop imports it as an ordinary page — while the real thank-you endpoint
+		 * keeps rendering WooCommerce's default confirmation. That is the whole
+		 * "order details design does not apply" report.
+		 */
+		$bucket_exempt = array( 'shop.json', 'shop home.json', 'product listing.json', 'product details.json', 'order details.json' );
 
 		$theme_builder_files = array();
 		$claimed_keys        = array();
@@ -6127,6 +6482,23 @@ class Uich_Webpage_Import {
 			return array( 'type' => 'single_product', 'placement' => array( 'post_type' => 'product' ) );
 		}
 
+		/*
+		 * The thank-you / order-received endpoint. It is its own type rather than
+		 * a `single` scoped to the order, because WooCommerce renders it through
+		 * its own endpoint handling — a page template never gets the chance, and
+		 * that is why an "Order Details" design imported as a page sat at its own
+		 * URL while customers still saw WooCommerce's default confirmation.
+		 */
+		if ( 'order_received' === $el || 'thank_you' === $el || 'order_details' === $el ) {
+			if ( ! class_exists( 'WooCommerce' ) ) {
+				return new WP_Error(
+					'IMPORT_UICHEMY_TMPL_NO_WOO',
+					__( 'Skipped the order-details template. It needs WooCommerce, which is not active.', 'uichemy' )
+				);
+			}
+			return array( 'type' => 'order_received', 'placement' => array() );
+		}
+
 		if ( 'product_archive' === $el || 'shop' === $el ) {
 			if ( ! class_exists( 'WooCommerce' ) ) {
 				return new WP_Error(
@@ -6225,6 +6597,32 @@ class Uich_Webpage_Import {
 		if ( is_wp_error( $mapped ) ) {
 			return $mapped;
 		}
+
+		/*
+		 * A search template scopes itself through its own file. The mapping above
+		 * works off the Nexter el_type / archive_rule pair, which has no way to
+		 * say "products only", so every imported search template used to land on
+		 * the `any` target no matter what the export asked for — a kit shipping a
+		 * blog search and a shop search got one template and both searches showed
+		 * it.
+		 *
+		 * Validation stays in UiChemy_Composer_Manager::normalize_theme_builder_placement(),
+		 * which rejects an unregistered post type (uich_bad_post_type) and one
+		 * registered with exclude_from_search (uich_post_type_not_searchable),
+		 * so there is exactly one place that decides what a legal target is.
+		 */
+		if ( 'search' === $mapped['type']
+			&& is_array( $data )
+			&& isset( $data['placement']['post_type'] )
+			&& is_scalar( $data['placement']['post_type'] ) ) {
+			$search_pt = sanitize_key( (string) $data['placement']['post_type'] );
+			// '', 'all' and 'any' all mean the unscoped fallback, which is what an
+			// empty placement already produces — leave it alone.
+			if ( '' !== $search_pt && ! in_array( $search_pt, array( 'all', 'any' ), true ) ) {
+				$mapped['placement'] = array( 'post_type' => $search_pt );
+			}
+		}
+
 		$type      = $mapped['type'];
 		$placement = $mapped['placement'];
 
@@ -7069,7 +7467,7 @@ class Uich_Webpage_Import {
 			// product template skipped for "needs WooCommerce".
 			$key = $this->theme_builder_template_key( $filename );
 			if ( in_array( $lower, array( 'shop.json', 'product details.json', 'cart.json', 'my cart.json', 'checkout.json' ), true )
-				|| in_array( $key, array( 'shop.json', 'shop home.json', 'product listing.json', 'product details.json' ), true ) ) {
+				|| in_array( $key, array( 'shop.json', 'shop home.json', 'product listing.json', 'product details.json', 'order details.json' ), true ) ) {
 				$needs = true;
 				break;
 			}
@@ -12391,6 +12789,23 @@ class Uich_Webpage_Import {
 						'message' => $post_id->get_error_message(),
 					);
 				}
+				/*
+				 * Same reasoning for a search template whose post type this site
+				 * cannot serve — a Product Search on a site without WooCommerce,
+				 * or a CPT whose plugin is not installed. The template is simply
+				 * not applicable here; failing would abort the whole finalize
+				 * phase (widgets, plugin settings, theme settings) over one
+				 * template the user was never going to be able to use.
+				 */
+				if ( in_array( $post_id->get_error_code(), array( 'uich_bad_post_type', 'uich_post_type_not_searchable' ), true ) ) {
+					return array(
+						'success' => true,
+						'skipped' => true,
+						'reason'  => 'post_type_unavailable',
+						'title'   => $page_name,
+						'message' => $post_id->get_error_message(),
+					);
+				}
 				return new WP_Error( 'IMPORT_THEME_TEMPLATE_FAILED', $post_id->get_error_message(), array( 'status' => 500 ) );
 			}
 			$stored_id_map = $this->get_stored_template_id_map();
@@ -12580,6 +12995,7 @@ class Uich_Webpage_Import {
 			if ( ! empty( $stored_id_map ) ) {
 				$this->remap_template_ids_in_pages( array( array( 'post_id' => $post_id ) ), $stored_id_map );
 			}
+			$this->apply_page_slug_from_import( $page_name, $post_id );
 			// Enable widgets used in this blog listing page.
 			$widgets_result = $this->enable_widgets_for_single_file( $files[ $filename ] );
 			$this->refresh_gutenberg_header_nav_links();
@@ -12592,6 +13008,7 @@ class Uich_Webpage_Import {
 				'permalink'      => get_permalink( $post_id ),
 				'title'          => $page_name,
 				'widgets_enable' => $widgets_result,
+				'seo'            => $this->apply_page_seo_from_import( $page_name, $post_id ),
 			);
 		}
 
@@ -12623,6 +13040,10 @@ class Uich_Webpage_Import {
 			update_option( 'page_on_front', $post_id );
 		}
 
+		// This page's slug and SEO values from the project (pageSettings). The site-wide part runs in import-cleanup.
+		$this->apply_page_slug_from_import( $page_name, $post_id );
+		$seo_result = $this->apply_page_seo_from_import( $page_name, $post_id );
+
 		// Remap widget template references (e.g. tp-switcher content_a_template / content_b_template)
 		// from source-site post IDs to the new local WordPress post IDs. The map was built during
 		// the fetch phase when elementor_template files were imported via run_fetch_only().
@@ -12645,6 +13066,7 @@ class Uich_Webpage_Import {
 			'permalink'      => get_permalink( $post_id ),
 			'title'          => $page_name,
 			'widgets_enable' => $widgets_result,
+			'seo'            => $seo_result,
 		);
 	}
 
@@ -12999,9 +13421,12 @@ class Uich_Webpage_Import {
 			'payment' => $this->ensure_woocommerce_cod_enabled(),
 		);
 
+		// Site icon, SEO site settings and the front page's meta title: once every page exists.
+		$seo = $this->apply_site_seo_from_import();
+
 		$this->cleanup_stale_import_options();
 
-		return rest_ensure_response( array( 'success' => true, 'woocommerce' => $woo ) );
+		return rest_ensure_response( array( 'success' => true, 'woocommerce' => $woo, 'seo' => $seo ) );
 	}
 
 	/**

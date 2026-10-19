@@ -69,8 +69,16 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 				// product_archive is narrowed by page-level conditions too, so a
 				// shop template and a product-category template can both be active.
 				//
+				// search is narrowed by TARGET too: a site search is not one
+				// context either. A shop and a blog on the same site want
+				// different result layouts, and before this a second search
+				// template had nowhere to go — "newest active wins" handed every
+				// search to whichever was saved last, and any display conditions
+				// set on a search template were saved, shown in the UI, and then
+				// never evaluated.
+				//
 				// The remaining whole-context types (404, single_product,
-				// order_received, search) are not narrowed — newest active wins.
+				// order_received) are not narrowed — newest active wins.
 				if ( in_array( $type, array( 'header', 'footer' ), true ) ) {
 					$id = self::best_match( $active );
 					// UiChemy WINS the slot. If another theme-builder system
@@ -95,6 +103,8 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 					$id = self::pick_by_target( $active, self::single_priority() );
 				} elseif ( 'archive' === $type ) {
 					$id = self::pick_by_target( $active, self::archive_priority() );
+				} elseif ( 'search' === $type ) {
+					$id = self::pick_by_target( $active, self::search_priority() );
 				} elseif ( 'product_archive' === $type ) {
 					/*
 					 * A store's listings are not one context. /shop/ and a product
@@ -218,6 +228,63 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 			}
 			$priorities[] = 'any';
 			return $priorities;
+		}
+
+		/**
+		 * Target keys to try for a search request, most specific first.
+		 *
+		 * The post type comes from the query itself, so `/?s=shirt&post_type=product`
+		 * reaches a `pt:product` template while a bare `/?s=shirt` falls through to
+		 * `any`. A multi-post-type search ( `post_type[]=post&post_type[]=page` )
+		 * is deliberately treated as a general search: no single template owns it,
+		 * so it belongs to the fallback rather than to whichever type happens to
+		 * be listed first.
+		 *
+		 * @return string[]
+		 */
+		private static function search_priority() {
+			$priorities = array();
+
+			$post_type = self::searched_post_type();
+			if ( '' !== $post_type ) {
+				$priorities[] = 'pt:' . $post_type;
+			}
+
+			$priorities[] = 'any';
+			return $priorities;
+		}
+
+		/**
+		 * The single post type a search request is scoped to, or '' when it spans
+		 * several (or none).
+		 *
+		 * Reads the query rather than $_GET: a search can be narrowed by a
+		 * rewrite rule or by another plugin's pre_get_posts, and both are
+		 * invisible to the raw query string.
+		 *
+		 * @param WP_Query|null $query Query to read. Defaults to the global one,
+		 *                             which is right at template_include time but
+		 *                             NOT inside pre_get_posts: query_posts()
+		 *                             replaces $GLOBALS['wp_query'], so a caller
+		 *                             holding the query being prepared must pass
+		 *                             it rather than let this read a different one.
+		 * @return string
+		 */
+		public static function searched_post_type( $query = null ) {
+			$post_type = ( $query instanceof WP_Query ) ? $query->get( 'post_type' ) : get_query_var( 'post_type' );
+
+			if ( is_array( $post_type ) ) {
+				$post_type = ( 1 === count( $post_type ) ) ? reset( $post_type ) : '';
+			}
+
+			$post_type = is_string( $post_type ) ? sanitize_key( $post_type ) : '';
+
+			// 'any' is WordPress's own "every searchable type" keyword, not a type.
+			if ( '' === $post_type || 'any' === $post_type ) {
+				return '';
+			}
+
+			return post_type_exists( $post_type ) ? $post_type : '';
 		}
 
 		/**

@@ -143,7 +143,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				: 'uichemy-composer/instructions';
 
 			return 'Call ' . $instructions . ' FIRST if you have not already - it carries the build order and the rules this one schema cannot. '
-				. 'TWO LEVELS OF NESTING: the gateway envelope is "ability_name" plus "parameters"; this ability\'s "action" and "action_parameters" go INSIDE "parameters", never as envelope keys. '
+				. 'TWO LEVELS OF NESTING: the execute-ability envelope is "name" plus "arguments"; this ability\'s "action" and "action_parameters" go INSIDE "arguments", never as envelope keys. '
 				. 'Pick "action", then pass that action\'s own parameters as "action_parameters" - meta.actions carries the exact schema for each one.';
 		}
 

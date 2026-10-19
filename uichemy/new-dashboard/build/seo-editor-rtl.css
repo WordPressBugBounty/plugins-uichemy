@@ -614,6 +614,17 @@
 .ZShdqkg6btw_9kcxTgYx.P6iUGKQ9CuUmhTY4IDx4 { color: var(--uc-text); }
 .ZShdqkg6btw_9kcxTgYx:hover:not(:disabled) { background: var(--_glow, var(--uc-brand-glow-hover)); color: var(--uc-text-strong); }
 
+/* ---- Hold the fill through hover / focus / press ---------------------------
+   The dashboard's theme-isolation reset (composer-isolation.css) clears
+   `background` on every link and button under the pointer or focus at (0,2,0),
+   which outranks the single-class variant rules above. A Button rendered as a link
+   (asChild, e.g. "Upgrade to Pro") then went transparent on hover: white text on
+   white. These restate each variant's fill at (0,3,0)+ for those states. */
+.nx448XS4JGEoBYKJ_Xeh:is(:hover, :focus, :focus-visible, :focus-within, :active):not(:disabled) { background-color: var(--_fill, var(--uc-brand)); }
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :focus-visible, :focus-within, :active):not(:disabled) { background-color: var(--uc-inverse-bg); }
+.lSxxR32yQ7uBGKoReA0d:is(:hover, :focus, :focus-visible, :focus-within, :active):not(:disabled) { background-color: var(--_soft, var(--uc-brand-soft)); }
+.uEkFBKngy5ABC8BavrlF:is(:hover, :focus, :focus-visible, :focus-within, :active):not(:disabled) { background-color: var(--uc-surface-control); }
+
 /* ---- Tones (feed the --_* channels the variants read) --------------------- */
 .BDHV_0n6wKsmpw3p3s1i   { --_fill: var(--uc-brand);   --_fg: var(--uc-brand-fg);   --_soft: var(--uc-brand-soft);   --_border: var(--uc-brand-border);   --_glow: var(--uc-brand-glow-hover);   --_shadow: var(--uc-shadow-control-brand); }
 .keLGBcvAq5oELzJZ2XbZ { --_fill: var(--uc-success); --_fg: var(--uc-success-fg); --_soft: var(--uc-success-soft); --_border: var(--uc-success-border); --_glow: var(--uc-success-glow-hover); --_shadow: var(--uc-shadow-control-brand); }

@@ -1431,7 +1431,8 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 
 			if ( 'anchor' === $kind && $node instanceof \DOMElement ) {
 				$link_setting = isset( $settings[ "slot_{$slot_index}_link" ] ) ? $settings[ "slot_{$slot_index}_link" ] : array();
-				$url          = isset( $link_setting['url'] ) ? trim( $link_setting['url'] ) : '';
+				// Protocol-vetted (javascript:, data: … become ''), otherwise unchanged.
+				$url          = UiChemy_Composer_Renderer::sanitize_slot_link_url( isset( $link_setting['url'] ) ? $link_setting['url'] : '' );
 				if ( ! empty( $url ) ) {
 					// Raw — saveHTML() escapes; pre-escaping double-encodes, which
 					// corrupts any link carrying a query string (?a=1&b=2).
@@ -1451,7 +1452,7 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 					$custom_attributes = preg_split( '/((\r?\n)|\|\||\|)/', $link_setting['custom_attributes'] );
 					foreach ( $custom_attributes as $attr ) {
 						$attr = explode( '|', trim( $attr ), 2 );
-						if ( isset( $attr[0], $attr[1] ) ) {
+						if ( isset( $attr[0], $attr[1] ) && UiChemy_Composer_Renderer::is_safe_slot_link_attribute( $attr[0] ) ) {
 							$node->setAttribute( trim( $attr[0] ), trim( $attr[1] ) );
 						}
 					}

@@ -75,7 +75,7 @@ SUMMARY (86 packages)
   @radix-ui/react-use-previous@1.1.4 — MIT
   @radix-ui/react-use-size@1.1.4 — MIT
   @radix-ui/react-visually-hidden@1.2.11 — MIT
-  @reduxjs/toolkit@2.13.0 — MIT
+  @reduxjs/toolkit@2.12.0 — MIT
   @remix-run/router@1.23.3 — MIT
   aria-hidden@1.2.6 — MIT
   class-variance-authority@0.7.1 — Apache-2.0
@@ -85,7 +85,7 @@ SUMMARY (86 packages)
   css-loader@6.11.0 — MIT
   detect-node-es@1.1.0 — MIT
   get-nonce@1.0.1 — MIT
-  immer@11.1.21 — MIT
+  immer@11.1.18 — MIT
   jsondiffpatch@0.7.6 — MIT
   lottie-web@5.13.0 — MIT
   raf-schd@4.0.3 — MIT
@@ -1548,7 +1548,7 @@ SOFTWARE.
 
 
 ====================================================================
-@reduxjs/toolkit@2.13.0
+@reduxjs/toolkit@2.12.0
 Licence: MIT
 ====================================================================
 
@@ -1986,7 +1986,7 @@ SOFTWARE.
 
 
 ====================================================================
-immer@11.1.21
+immer@11.1.18
 Licence: MIT
 ====================================================================
 

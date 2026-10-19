@@ -250,8 +250,30 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 			$slots[] = self::arch_slot( 'archive', __( 'Date Archive', 'uichemy' ), 'archive', 'date', false );
 			$slots[] = self::arch_slot( 'archive', __( 'Any Archive (fallback)', 'uichemy' ), 'archive', 'any', false );
 
-			// Special.
-			$slots[] = self::arch_slot( 'search', __( 'Search Results', 'uichemy' ), 'special', '', true );
+			// Search: one node per searchable post type + fallback. Scoped the same
+			// way archives are, because a site search is not one context either —
+			// a shop and a blog want different result layouts, and `/?s=x` and
+			// `/?s=x&post_type=product` are different requests.
+			foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $pt ) {
+				if ( in_array( $pt->name, $exclude_pt, true ) ) {
+					continue;
+				}
+				// A type WordPress refuses to put in search results cannot reach a
+				// template here, so listing one would only promise a page that
+				// never renders.
+				if ( ! empty( $pt->exclude_from_search ) ) {
+					continue;
+				}
+				/* translators: %s: post type plural name. */
+				$slots[] = self::arch_slot( 'search', sprintf( __( '%s Search', 'uichemy' ), $pt->labels->name ), 'special', 'pt:' . $pt->name, false, $pt->labels->name );
+			}
+			$slots[] = self::arch_slot( 'search', __( 'Any Search (fallback)', 'uichemy' ), 'special', 'any', true );
+			// The thank-you view. Listed only with WooCommerce, since without it
+			// the endpoint does not exist and the template could never render —
+			// the same gate the other Woo types use.
+			if ( class_exists( 'WooCommerce' ) ) {
+				$slots[] = self::arch_slot( 'order_received', __( 'Order Received / Thank You', 'uichemy' ), 'special', '', false );
+			}
 			$slots[] = self::arch_slot( 'error_404', __( '404 Page', 'uichemy' ), 'special', '', true );
 
 			return $slots;
@@ -269,7 +291,7 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 		 * @return array
 		 */
 		private static function arch_slot( $type, $label, $group, $target, $critical, $sub_label = '' ) {
-			$is_targeted = in_array( $type, array( 'single', 'archive' ), true );
+			$is_targeted = in_array( $type, array( 'single', 'archive', 'search' ), true );
 			$templates   = array();
 
 			foreach ( UiChemy_Template_Store::get_by_type( $type ) as $id ) {
@@ -684,7 +706,7 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 		/**
 		 * Human-readable label for a single/archive template's target context
 		 * (see UiChemy_Template_CPT::META_TARGET). Returns '' for types that do
-		 * not use targeting (header/footer/search/404/Woo), whose scope is fixed.
+		 * not use targeting (header/footer/404/Woo), whose scope is fixed.
 		 *
 		 * @param string $type   Template type.
 		 * @param string $target Target key.
@@ -720,6 +742,15 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 					return $obj ? sprintf( __( '%s archives', 'uichemy' ), $obj->labels->singular_name ) : $target;
 				}
 				return __( 'All archives', 'uichemy' );
+			}
+
+			if ( 'search' === $type ) {
+				if ( 0 === strpos( $target, 'pt:' ) ) {
+					$obj = get_post_type_object( substr( $target, 3 ) );
+					/* translators: %s: post type plural name. */
+					return $obj ? sprintf( __( '%s search results', 'uichemy' ), $obj->labels->name ) : $target;
+				}
+				return __( 'All search results', 'uichemy' );
 			}
 
 			return '';

@@ -59,6 +59,10 @@ if ( ! function_exists( 'uich_features' ) ) {
 					'path'   => array( 'langs', 'default', 'module_enabled' ),
 				),
 			),
+			'module_studio' => array(
+				'label'       => 'Module Studio',
+				'description' => 'Modules: PHP, CSS, JS and HTML placed site-wide or by condition, or small features of their own. Turn off if you manage custom code with another plugin.',
+			),
 		);
 	}
 }

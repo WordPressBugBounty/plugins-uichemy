@@ -121,6 +121,20 @@ never rename an entry already in the block.
 
 Print one line: `📋 Design system: N colors · M typography · content width 1280px`, then after the call `✅ Saved: N colors · M typography · content width 1280px`.
 
+**Brand assets.** If the user gave no logo, favicon or share banner, make the missing ones yourself. Use the site name, heading font and palette, and draw them with code, never an image model. The easiest way: build each one as an HTML page at its exact size, using the site font (the banner on the mesh background below), and screenshot it to a PNG with a headless browser. A drawing script also works:
+- logo: 160px tall, mark + name;
+- icon: 512×512;
+- banner: 1200×630, the logo mark first, then the site name, the tagline right under it.
+
+Check each file's pixel size before you upload it. Set the logo and icon with `uichemy-composer/platform (action="update-site-settings") { logo_url, icon_url }`, and the banner with `uichemy-composer/seo (action="update-site-settings") { values: { default_share_image } }`. Keep any the owner already set.
+
+**Banner background.** Put the banner on a soft mesh gradient. The style reference is https://feralui.dev/gradients (Mesh type). It is an online tool with no public repo or package, so build the gradient yourself in CSS:
+- 3–4 neighbouring palette tints as stacked elliptical `radial-gradient`s, each solid to ~22% and transparent by ~72%;
+- laid over the lightest tint, blurred, with a faint grain;
+- text at least 4.5:1 on every tint. Measure this on the background with the text hidden.
+
+This is for the banner only. Page sections keep their own backgrounds.
+
 **3c — Build lookup tables from the block you just wrote** (do NOT call `uichemy-composer/design-system (action="get")` again):
 
 ```js
