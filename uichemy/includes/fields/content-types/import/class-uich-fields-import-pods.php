@@ -51,9 +51,9 @@ class Uich_Fields_Import_Pods extends Uich_Fields_Import_Source {
 	 */
 	public static function skip_reasons() {
 		return array(
-			'password' => 'Password fields store cleartext. UiChemy does not offer this type, and Pods stores the value unencrypted.',
-			'heading'  => 'Layout-only field, stores no value.',
-			'html'     => 'Layout-only field, stores no value.',
+			'password' => __( 'Password fields store cleartext. UiChemy does not offer this type, and Pods stores the value unencrypted.', 'uichemy' ),
+			'heading'  => __( 'Layout-only field, stores no value.', 'uichemy' ),
+			'html'     => __( 'Layout-only field, stores no value.', 'uichemy' ),
 		);
 	}
 
@@ -553,7 +553,7 @@ class Uich_Fields_Import_Pods extends Uich_Fields_Import_Source {
 					$skipped[] = array(
 						'field'  => $name,
 						'type'   => 'pick/' . ( isset( $m['pick_object'] ) ? $m['pick_object'] : '?' ),
-						'reason' => 'This Pods relationship target has no UiChemy equivalent.',
+						'reason' => __( 'This Pods relationship target has no UiChemy equivalent.', 'uichemy' ),
 					);
 					continue;
 				}
@@ -571,7 +571,7 @@ class Uich_Fields_Import_Pods extends Uich_Fields_Import_Source {
 				$skipped[] = array(
 					'field'  => $name,
 					'type'   => $type,
-					'reason' => 'No UiChemy equivalent for this Pods type.',
+					'reason' => __( 'No UiChemy equivalent for this Pods type.', 'uichemy' ),
 				);
 				continue;
 			}

@@ -390,6 +390,11 @@
 				hydrateLazyMedia( pageFragOut );
 				parent.replaceChildren( pageFragOut );
 				scrollIntoViewIfAbove( parent );
+				// The page shown is a real URL: shareable, and Back returns to the
+				// page before (E-11).
+				if ( window.history && window.history.pushState ) {
+					window.history.pushState( { uichLoopPage: true }, '', href );
+				}
 				parent.dispatchEvent( new CustomEvent( 'uichemy:loop-page', { bubbles: true } ) );
 			}
 		} ).catch( function () {
@@ -760,6 +765,13 @@
 
 	// Back/forward across filter states: re-request the URL the browser restored
 	// rather than trusting a cached DOM, so the result always matches the address.
+	// Back/forward across loop pages: load the page the address names.
+	window.addEventListener( 'popstate', function ( ev ) {
+		if ( ev.state && ev.state.uichLoopPage ) {
+			window.location.reload();
+		}
+	} );
+
 	window.addEventListener( 'popstate', function ( ev ) {
 		var raw = ev.state && ev.state.uichFilter;
 		if ( ! raw ) {

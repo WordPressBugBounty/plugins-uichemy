@@ -128,6 +128,22 @@ if ( ! class_exists( 'Uich_SEO_Admin' ) ) {
 		}
 
 		/**
+		 * The panel's config for the Composer Builder's own editor, or null when
+		 * this page gets no SEO panel (a template, a type with SEO switched off,
+		 * a user who cannot edit it) — the same rule every other editor uses.
+		 *
+		 * The builder bundles the panel itself, so this only hands it
+		 * `window.uichemySeo`; nothing is enqueued here.
+		 *
+		 * @param int $post_id Post id.
+		 * @return array|null
+		 */
+		public static function builder_config( $post_id ) {
+			$post = get_post( absint( $post_id ) );
+			return self::panel_for( $post ) ? self::config( $post->ID, 'builder' ) : null;
+		}
+
+		/**
 		 * Gutenberg: PluginSidebar.
 		 *
 		 * @return void

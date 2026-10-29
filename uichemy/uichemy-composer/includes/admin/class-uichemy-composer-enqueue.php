@@ -30,6 +30,42 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 		public static $frontend_editor_active = false;
 
 		/**
+		 * The one instance (created at the bottom of this file), so other hosts
+		 * can read the panel config through panel_access_cfg().
+		 *
+		 * @var UiChemy_Composer_Enqueue|null
+		 */
+		public static $instance = null;
+
+		/**
+		 * The account / role / brand part of `uichComposerEditorCfg` — the keys
+		 * every host has to send for the panel to gate features the same way.
+		 *
+		 * Shared with the Composer Builder (composer-builder/includes/
+		 * class-uich-cb-enqueue.php), which mounts the same panel: without these
+		 * the panel reads an absent config as "free plan, no restrictions", so a
+		 * Pro user saw Pro controls locked and a content-only role kept the Code
+		 * tab. Elementor, Gutenberg and Bricks still build their own arrays.
+		 *
+		 * @return array
+		 */
+		public static function panel_access_cfg() {
+			$self   = self::$instance ? self::$instance : null;
+			$access = $self ? $self->access_flags() : array( 'contentOnly' => false, 'features' => array() );
+			return array(
+				'brand'       => self::brand_cfg(),
+				'isPro'       => function_exists( 'uichemy_is_pro' ) ? uichemy_is_pro() : false,
+				'proUrl'      => function_exists( 'uichemy_upgrade_url' ) ? uichemy_upgrade_url( 'composer' ) : '',
+				'proFeatures' => $self ? $self->pro_feature_flags() : array(),
+				'contentOnly' => $access['contentOnly'],
+				'features'    => $access['features'],
+				'editorMode'  => $self ? $self->editor_mode() : 'both',
+				'customFonts' => class_exists( 'UiChemy_Fonts' ) ? UiChemy_Fonts::custom_font_names() : array(),
+				'wpAgent'     => $self ? $self->get_wp_agent_config() : array(),
+			);
+		}
+
+		/**
 		 * Initialize the class and set its properties.
 		 *
 		 * @since   1.0.0
@@ -58,6 +94,13 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			// composer CSS last makes its own rules win, matching the Elementor editor.
 			add_action( 'wp_enqueue_scripts', array( $this, 'enqueue_frontend_editor' ), 100 );
 			add_action( 'wp_footer', array( $this, 'render_frontend_panel_root' ), 100 );
+			// First thing in <head>, ahead of the page's own head code (priority 100),
+			// so the page's scripts cannot take the editor's keys, wheel or clicks.
+			add_action( 'wp_head', array( $this, 'print_editor_guard' ), -99999 );
+			// Right after the page's head code (100), and before the footer scripts
+			// (20): undo what it did to the built-in prototypes (see the guard).
+			add_action( 'wp_head', array( $this, 'print_editor_depollute' ), 101 );
+			add_action( 'wp_footer', array( $this, 'print_editor_depollute' ), 19 );
 			add_filter( 'body_class', array( $this, 'frontend_body_class' ) );
 
 			// GSAP: load the GSAP libraries inside the Elementor preview iframe so a
@@ -159,6 +202,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					// config as "no restrictions", so a content-only role would keep
 					// the Code tab in Gutenberg while losing it in Elementor.
 					'contentOnly'    => $access['contentOnly'],
+					'noAccess'       => $access['noAccess'],
 					'features'       => $access['features'],
 					'editorMode'     => $this->editor_mode(),
 					// Settings › Fonts uploads, so the Font Family list offers them.
@@ -665,6 +709,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'proFeatures'    => $this->pro_feature_flags(),
 					// Role Manager flags — see the Gutenberg context above.
 					'contentOnly'    => $access['contentOnly'],
+					'noAccess'       => $access['noAccess'],
 					'features'       => $access['features'],
 					'editorMode'     => $this->editor_mode(),
 					// Settings › Fonts uploads, so the Font Family list offers them.
@@ -774,13 +819,116 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			wp_add_inline_script( 'underscore', 'window.uichemyUnderscore = window._;', 'after' );
 			// Repair on DOMContentLoaded, registered before jQuery so it runs ahead of
 			// every ready handler (wp.media builds its views there and calls `_.isArray`).
-			// Underscore's methods are copied onto the page's `_` instead of taking the
-			// name back, so the page code that declared it keeps working.
+			// The name is not simply taken back, so the page code that declared it keeps
+			// working. A page `_` that is a function becomes a hybrid: called with nothing,
+			// a plain object or an array (how WordPress wraps values: `_( options )`) it is
+			// underscore; called with anything else (a selector string, a number, an element)
+			// it is the page's own function. Either way it carries underscore's methods.
 			wp_add_inline_script(
 				'jquery-core',
-				'window.uichemyRepairUnderscore=function(){var u=window.uichemyUnderscore,c=window._,k;if(!u||c===u){return;}if(c&&("function"===typeof c||"object"===typeof c)){for(k in u){if("function"===typeof u[k]&&"function"!==typeof c[k]){try{c[k]=u[k];}catch(e){}}}}if(!window._||"function"!==typeof window._.isArray){window._=u;}};document.addEventListener("DOMContentLoaded",function(){window.uichemyRepairUnderscore();});',
+				'window.uichemyRepairUnderscore=function(){var u=window.uichemyUnderscore,c=window._,k,h,ts=Object.prototype.toString;if(!u||c===u||(c&&c.__uichHybrid)){return;}if("function"===typeof c){h=function(a){var plain=arguments.length===0||a===undefined||Array.isArray(a)||"[object Object]"===ts.call(a);return plain?u.apply(this,arguments):c.apply(this,arguments);};for(k in u){if("function"===typeof u[k]){h[k]=u[k];}}for(k in c){if(Object.prototype.hasOwnProperty.call(c,k)&&!(k in h)){h[k]=c[k];}}h.prototype=u.prototype;h.__uichHybrid=1;window._=h;return;}if(c&&"object"===typeof c){for(k in u){if("function"===typeof u[k]&&"function"!==typeof c[k]){try{c[k]=u[k];}catch(e){}}}}if(!window._||"function"!==typeof window._.isArray){window._=u;}};document.addEventListener("DOMContentLoaded",function(){window.uichemyRepairUnderscore();});',
 				'before'
 			);
+			// DOMContentLoaded is too late when underscore loads in <head>: a page's own
+			// `var _ = …` (head code prints after the head scripts) has replaced it before
+			// Backbone and the media models run in the footer, and wp.media never builds.
+			// Repair right before each of them as well.
+			foreach ( array( 'backbone', 'wp-util', 'wp-backbone', 'media-models' ) as $handle ) {
+				wp_add_inline_script( $handle, 'window.uichemyRepairUnderscore&&window.uichemyRepairUnderscore();', 'before' );
+			}
+		}
+
+		/**
+		 * Print the editor guard (assets/js/uichemy-editor-guard.js) inline, as the
+		 * first script in <head>, on a request where the live-page editor loads or
+		 * where Elementor's preview hosts the on-canvas toolbar for an editor.
+		 *
+		 * The editor's UI shares the document with the page being edited. The guard
+		 * keeps the page's own listeners (a carousel eating Space and the arrows, a
+		 * full-page slider cancelling the wheel, a right-click blocker) away from
+		 * events that start in the editor, and keeps a transform/filter on <body>
+		 * from dragging the docked panel along with the page. Inline because it must
+		 * run before any other script registers a listener. A visitor never gets it.
+		 *
+		 * @return void
+		 */
+		public function print_editor_guard() {
+			if ( ! $this->frontend_editor_allowed() && ! $this->elementor_preview_for_editor() ) {
+				return;
+			}
+			$file = UICHEMY_PATH . 'assets/js/uichemy-editor-guard.js';
+			if ( ! is_readable( $file ) ) {
+				return;
+			}
+			$js = (string) file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local plugin file.
+			if ( '' === $js ) {
+				return;
+			}
+			// Where our own scripts load from, so the guard can tell its frames
+			// from the page's on any install (a renamed plugin or content folder).
+			$own = array();
+			foreach ( array( defined( 'UICH_URL' ) ? UICH_URL : '', defined( 'UICH_PRO_URL' ) ? UICH_PRO_URL : '', includes_url( 'js/' ) ) as $url ) {
+				$path = $url ? wp_parse_url( $url, PHP_URL_PATH ) : '';
+				if ( $path ) {
+					$own[] = $path;
+				}
+			}
+			$js = 'var uichGuardOwnPaths=' . wp_json_encode( $own ) . ';' . $js;
+			wp_print_inline_script_tag( $js, array( 'id' => 'uichemy-editor-guard' ) );
+		}
+
+		/**
+		 * Re-run the guard's prototype clean-up (uichemyDepollute) at this point of
+		 * the page. Same audience as the guard: editors only.
+		 *
+		 * @return void
+		 */
+		public function print_editor_depollute() {
+			if ( ! $this->frontend_editor_allowed() && ! $this->elementor_preview_for_editor() ) {
+				return;
+			}
+			wp_print_inline_script_tag( 'window.uichemyDepollute&&window.uichemyDepollute();' );
+		}
+
+		/**
+		 * Elementor's preview iframe, opened by someone who can edit: the document
+		 * the on-canvas toolbar and inline text editing draw into.
+		 *
+		 * @return bool
+		 */
+		protected function elementor_preview_for_editor() {
+			if ( ! isset( $_GET['elementor-preview'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				return false;
+			}
+			return is_user_logged_in() && current_user_can( 'edit_posts' );
+		}
+
+		/**
+		 * Keep WordPress's UMD libraries global when the page loads an AMD loader.
+		 *
+		 * React, ReactDOM, underscore, Backbone and moment are UMD builds: when they
+		 * find `define.amd` (a page that loads require.js, or the Monaco editor's
+		 * loader) they register as AMD modules and never set their window global, so
+		 * the editor, which reads window.React, did not load at all. `define.amd` is
+		 * hidden for the moment each of those scripts runs and put back right after,
+		 * so the page's own AMD modules keep working.
+		 *
+		 * @return void
+		 */
+		public static function shield_umd_from_amd() {
+			static $done = false;
+			if ( $done ) {
+				return;
+			}
+			$done = true;
+			$hide = '(function(w){var d=w.define;if(typeof d==="function"&&d.amd){w.__uichAmd={define:d,amd:d.amd};try{delete d.amd;}catch(e){d.amd=undefined;}}}(window));';
+			$show = '(function(w){var s=w.__uichAmd;if(s){if(w.define===s.define&&!s.define.amd){s.define.amd=s.amd;}w.__uichAmd=null;}}(window));';
+			foreach ( array( 'react', 'react-dom', 'react-jsx-runtime', 'underscore', 'backbone', 'moment', 'lodash' ) as $handle ) {
+				if ( wp_script_is( $handle, 'registered' ) ) {
+					wp_add_inline_script( $handle, $hide, 'before' );
+					wp_add_inline_script( $handle, $show, 'after' );
+				}
+			}
 		}
 
 		public function frontend_editor_allowed() {
@@ -812,6 +960,13 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			// A plain WordPress preview (?preview=true) is a real front-end view where
 			// the editor SHOULD appear, so it is intentionally allowed.
 			if ( isset( $_GET['elementor-preview'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
+				return false;
+			}
+			// The Composer Builder's canvas (?uipb_canvas=1) is the real front end
+			// shown inside the builder, which already is the editor. A second
+			// Composer loaded in there is an invisible panel whose pickers listen
+			// to every canvas click.
+			if ( class_exists( 'Uich_CB_Canvas' ) && Uich_CB_Canvas::is_canvas() ) {
 				return false;
 			}
 			if ( class_exists( '\Elementor\Plugin' )
@@ -892,8 +1047,12 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 		/**
 		 * Role-based access flags shared with the React composer (both the
 		 * Elementor-editor and front-end contexts). `contentOnly` restricts the
-		 * UI to content editing; `features` gates optional surfaces (theme
-		 * builder, design system, AI chat) per the Role Manager settings.
+		 * UI to content editing; `noAccess` marks a user whose role is set to
+		 * "No Access" in the Role Manager (can't open the editor — the panel
+		 * shows a notice instead of its tabs; administrators are never affected,
+		 * see UiChemy_Roles::access_for_user()); `features` gates optional
+		 * surfaces (theme builder, design system, AI chat) per the Role Manager
+		 * settings.
 		 *
 		 * When the resolver is unavailable the flags open everything, preserving
 		 * the composer's historical behaviour.
@@ -904,6 +1063,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			if ( ! class_exists( 'UiChemy_Roles' ) ) {
 				return array(
 					'contentOnly' => false,
+					'noAccess'    => false,
 					'features'    => array(
 						'theme_builder' => true,
 						'design_system' => true,
@@ -913,6 +1073,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			}
 			return array(
 				'contentOnly' => UiChemy_Roles::is_content_only(),
+				'noAccess'    => ! UiChemy_Roles::can_edit(),
 				'features'    => array(
 					'theme_builder' => UiChemy_Roles::can_use( 'theme_builder' ),
 					'design_system' => UiChemy_Roles::can_use( 'design_system' ),
@@ -1058,6 +1219,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			wp_enqueue_style( 'code-editor' );
 			wp_enqueue_script( 'code-editor' );
 			self::keep_underscore_reference();
+			self::shield_umd_from_amd();
 			wp_enqueue_script( 'wp-theme-plugin-editor' );
 
 			// The panel uses position:absolute (correct inside Elementor's preview
@@ -1165,6 +1327,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'proUrl'      => uichemy_upgrade_url( 'composer' ),
 					'proFeatures' => $this->pro_feature_flags(),
 					'contentOnly' => $access['contentOnly'],
+					'noAccess'    => $access['noAccess'],
 					'features'    => $access['features'],
 					'siteCode'   => \UiChemy_Composer_Manager::get_site_custom_code_option(),
 					'kitGlobals' => $kit_globals,
@@ -1212,6 +1375,11 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 				// read as "the user turned this off".
 				$fe_gsap_timeline = ! isset( $uich_fe_settings['enable_gsap_timeline'] )
 					|| ! empty( $uich_fe_settings['enable_gsap_timeline'] );
+				// A UiChemy Builder page has the timeline in its own editor; its
+				// front end stays the page a visitor sees.
+				if ( class_exists( 'Uich_CB_Content' ) && Uich_CB_Content::is_enabled( $fe_post_id ) ) {
+					$fe_gsap_timeline = false;
+				}
 
 				wp_localize_script(
 					'uichemy-frontend-bridge',
@@ -1237,7 +1405,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			if ( ! $this->frontend_editor_allowed() ) {
 				return;
 			}
-			echo '<div id="uichemy-composer-floating-panel" class="uichemy-composer-floating-panel uich-dock-right" data-uich-composer-theme="dark" data-uichemy-frontend="1"></div>';
+			echo '<div id="uichemy-composer-floating-panel" class="uichemy-composer-floating-panel uich-dock-right" data-uich-composer-theme="dark" data-uichemy-frontend="1" data-lenis-prevent data-lenis-prevent-wheel data-lenis-prevent-touch></div>';
 		}
 
 		/**
@@ -1383,6 +1551,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'proUrl'         => uichemy_upgrade_url( 'composer' ),
 					'proFeatures'    => $this->pro_feature_flags(),
 					'contentOnly'    => $access['contentOnly'],
+					'noAccess'       => $access['noAccess'],
 					'features'       => $access['features'],
 					'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 					'ajaxNonce'      => wp_create_nonce( \UiChemy_Composer_Manager::EDITOR_AJAX_NONCE_ACTION ),
@@ -1533,6 +1702,22 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					 * look like a bug that reproduces on one computer and not another.
 					 */
 					'cssUrl'           => $css_url ? add_query_arg( 'ver', $css_ver, $css_url ) : '',
+					// The plugin's base URL: the editor tells its own stylesheets
+					// from the page's by it (composer-shadow.js), whatever the
+					// plugin folder is called.
+					'pluginUrl'        => defined( 'UICH_URL' ) ? UICH_URL : '',
+					/*
+					 * The live-page editor UI in a shadow root (composer-shadow.js), so
+					 * a design's own CSS and JS cannot restyle or rewrite it. Off when
+					 * an older UiChemy Pro is active: its chat looks the panel up in
+					 * the document and would lose it. Pro releases that know about the
+					 * shadow root define UICH_PRO_SHADOW_AWARE. Sites can turn it off
+					 * with the `uichemy_composer_shadow_ui` filter.
+					 */
+					'shadowUi'         => (bool) apply_filters(
+						'uichemy_composer_shadow_ui',
+						! defined( 'UICH_PRO_VERSION' ) || defined( 'UICH_PRO_SHADOW_AWARE' )
+					),
 					'ajaxUrl'          => admin_url( 'admin-ajax.php' ),
 					'ajaxNonce'        => class_exists( '\UiChemy_Composer_Manager' )
 						? wp_create_nonce( \UiChemy_Composer_Manager::EDITOR_AJAX_NONCE_ACTION )
@@ -1554,5 +1739,5 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 		}
 	}
 
-	new UiChemy_Composer_Enqueue();
+	UiChemy_Composer_Enqueue::$instance = new UiChemy_Composer_Enqueue();
 }

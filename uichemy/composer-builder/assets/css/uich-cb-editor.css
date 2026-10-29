@@ -1,0 +1,292 @@
+/**
+ * UiChemy Composer Builder — editor host document.
+ *
+ * The builder screen is NOT a wp-admin page: Uich_CB_Editor prints its own
+ * document so the editor owns the whole viewport. This static file covers only
+ * what must be painted BEFORE the editor bundle runs — the viewport reset and
+ * the pre-mount background — plus the message shown when no bundle is built.
+ *
+ * Everything the editor itself looks like comes from composer-builder/src/editor
+ * (vendored, not hand-edited), which compiles to editor.css and loads after this.
+ */
+
+html,
+body.uich-cb-body {
+	height: 100%;
+	margin: 0;
+	padding: 0;
+	/* The editor owns the viewport; the page never scrolls, its panes do. */
+	overflow: hidden;
+}
+
+/*
+ * The editor is DARK, and React takes a moment to mount — without a background
+ * here the browser paints its default white first and every load opens with a
+ * flash.
+ *
+ * A literal, NOT var(--uc-surface-sunken). That token is surface-scoped: the
+ * editor's root carries `.uc-chrome`, where it resolves to #101010, but <body>
+ * is outside every scope, so on :root the same token is the LIGHT surface
+ * (#EBEBEB) and using it here would paint light grey and flash anyway. #101010
+ * is the value `.uc-chrome` resolves to, which is what actually appears.
+ */
+body.uich-cb-body {
+	background: #101010;
+	color: #f5f5f5;
+	font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+	font-size: 13px;
+	line-height: 1.5;
+	-webkit-font-smoothing: antialiased;
+}
+
+/* Light Composer theme: `uipb-theme-light` on <html>, set by the head script in
+   Uich_CB_Editor before first paint. #F5F5F5 is the light canvas ground. */
+.uipb-theme-light body.uich-cb-body {
+	background: #f5f5f5;
+	color: #171717;
+}
+
+/* ------------------------------------------------------------------ *
+ * The WordPress media library (image / video pickers). Its frame and
+ * styles come from wp_enqueue_media() (media-views, buttons, dashicons),
+ * but this screen is not wp-admin, so two things wp-admin's own CSS gives
+ * it are missing here:
+ *  - the base text colour, font and size: without them the dialog took
+ *    this body's light text and its title and labels vanished on white;
+ *  - .screen-reader-text (wp-admin common.css): without it the dialog's
+ *    hidden labels ("Close dialog", "Filter media", "Actions") showed.
+ * Scoped to the media dialog, so nothing else on the screen changes.
+ * ------------------------------------------------------------------ */
+body.uich-cb-body .media-modal,
+body.uich-cb-body .media-modal-backdrop + .media-modal {
+	color: #3c434a;
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen-Sans, Ubuntu, Cantarell, "Helvetica Neue", sans-serif;
+	font-size: 13px;
+	line-height: 1.4em;
+	-webkit-font-smoothing: auto;
+}
+body.uich-cb-body .media-modal .media-frame-title h1,
+body.uich-cb-body .media-modal h2,
+body.uich-cb-body .media-modal h3 {
+	color: #1d2327;
+}
+body.uich-cb-body .media-modal .screen-reader-text,
+body.uich-cb-body .media-modal .screen-reader-text span {
+	border: 0;
+	clip: rect(1px, 1px, 1px, 1px);
+	-webkit-clip-path: inset(50%);
+	clip-path: inset(50%);
+	height: 1px;
+	margin: -1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	width: 1px;
+	word-wrap: normal !important;
+}
+/* wp-admin's form controls, for the dialog's search box and date filter. */
+body.uich-cb-body .media-modal input[type="search"],
+body.uich-cb-body .media-modal input[type="text"],
+body.uich-cb-body .media-modal input[type="url"],
+body.uich-cb-body .media-modal textarea,
+body.uich-cb-body .media-modal select {
+	box-sizing: border-box;
+	padding: 0 8px;
+	min-height: 30px;
+	border: 1px solid #8c8f94;
+	border-radius: 4px;
+	background-color: #fff;
+	color: #2c3338;
+	font-size: 14px;
+	line-height: 2;
+	box-shadow: 0 0 0 transparent;
+}
+body.uich-cb-body .media-modal textarea { padding: 2px 6px; line-height: 1.4; }
+body.uich-cb-body .media-modal select { padding: 0 24px 0 8px; }
+body.uich-cb-body .media-modal input:focus,
+body.uich-cb-body .media-modal textarea:focus,
+body.uich-cb-body .media-modal select:focus {
+	border-color: #2271b1;
+	box-shadow: 0 0 0 1px #2271b1;
+	outline: 2px solid transparent;
+}
+body.uich-cb-body .media-modal label { color: inherit; }
+/* The Upload files / Media Library tabs: an editor stylesheet colours bare
+   buttons white, which made the inactive tab vanish on white. */
+body.uich-cb-body .media-modal .media-router .media-menu-item { color: #50575e; }
+body.uich-cb-body .media-modal .media-router .media-menu-item:hover,
+body.uich-cb-body .media-modal .media-router .media-menu-item:focus { color: #135e96; }
+body.uich-cb-body .media-modal .media-router .media-menu-item.active { color: #1d2327; }
+
+/* The editor's mount. Left empty for the bundle to fill — see Uich_CB_Editor. */
+#uipb-editor {
+	height: 100%;
+}
+
+/* ------------------------------------------------------------------ *
+ * Full-screen editor loader, after app.uichemy.com's: the UiChemy mark
+ * centred, a loading bar under it, and a warm glow over a faint dot grid
+ * along the bottom.
+ * ------------------------------------------------------------------ */
+
+.uich-cb-loader {
+	position: fixed;
+	inset: 0;
+	z-index: 999999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow: hidden;
+	background: #ffffff;
+	opacity: 1;
+	visibility: visible;
+	transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.4s ease;
+	user-select: none;
+	-webkit-user-select: none;
+}
+
+.uich-cb-loader--fade-out {
+	opacity: 0;
+	visibility: hidden;
+	pointer-events: none;
+}
+
+/* Peach, orange, yellow and pink rising from the bottom edge. */
+.uich-cb-loader__glow {
+	position: absolute;
+	left: -10%;
+	right: -10%;
+	bottom: -30vh;
+	height: 70vh;
+	background:
+		radial-gradient(40% 60% at 20% 70%, rgba(255, 138, 101, 0.55), transparent 70%),
+		radial-gradient(45% 60% at 50% 80%, rgba(255, 196, 120, 0.6), transparent 70%),
+		radial-gradient(40% 60% at 80% 70%, rgba(255, 128, 150, 0.45), transparent 70%);
+	filter: blur(40px);
+	pointer-events: none;
+	animation: uichLoaderGlow 6s ease-in-out infinite alternate;
+}
+
+/* The dot grid, fading out towards the middle of the screen. */
+.uich-cb-loader__dots {
+	position: absolute;
+	inset: 0;
+	background-image: radial-gradient(rgba(0, 0, 0, 0.09) 1px, transparent 1.2px);
+	background-size: 22px 22px;
+	-webkit-mask-image: linear-gradient(to top, #000 0%, transparent 45%);
+	mask-image: linear-gradient(to top, #000 0%, transparent 45%);
+	pointer-events: none;
+}
+
+.uich-cb-loader__mark {
+	position: relative;
+	display: block;
+	width: 64px;
+	height: 64px;
+}
+
+/* The mark, and the loading bar under it. */
+.uich-cb-loader__stack {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 24px;
+}
+
+/* A progress bar: the mark's orange filling a faint track from the left as
+   the editor loads, 0 to 100% (the template's script sets the scale). One flat
+   colour, no gradient. */
+.uich-cb-loader__bar {
+	position: relative;
+	width: 120px;
+	height: 3px;
+	overflow: hidden;
+	border-radius: 999px;
+	background: rgba(0, 0, 0, 0.08);
+}
+.uich-cb-loader__bar span {
+	position: absolute;
+	top: 0;
+	bottom: 0;
+	left: 0;
+	width: 100%;
+	border-radius: inherit;
+	background: #F6765F;
+	transform-origin: left center;
+	transform: scaleX(0);
+	transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Dark Composer theme: the same screen on the editor's own dark ground, the
+   glow a little quieter and the dots light instead of dark. */
+html:not(.uipb-theme-light) .uich-cb-loader {
+	background: #101010;
+}
+html:not(.uipb-theme-light) .uich-cb-loader__glow {
+	opacity: 0.55;
+}
+html:not(.uipb-theme-light) .uich-cb-loader__dots {
+	background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1.2px);
+}
+html:not(.uipb-theme-light) .uich-cb-loader__bar {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+@keyframes uichLoaderGlow {
+	0% {
+		transform: translateY(0) scale(1);
+	}
+	100% {
+		transform: translateY(-2vh) scale(1.04);
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	.uich-cb-loader__glow {
+		animation: none;
+	}
+	/* The bar still fills, without easing. */
+	.uich-cb-loader__bar span {
+		transition: none;
+	}
+}
+
+/* ------------------------------------------------------------------ *
+ * No-build fallback. Only rendered when the bundle is missing, so it
+ * cannot rely on any token the editor's stylesheet would have defined.
+ * ------------------------------------------------------------------ */
+
+.uich-cb-boot {
+	display: flex;
+	height: 100%;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 12px;
+	padding: 24px;
+	color: #a3a3a3;
+	text-align: center;
+}
+
+.uich-cb-boot__text {
+	margin: 0;
+	color: #f5f5f5;
+	font-weight: 600;
+}
+
+.uich-cb-boot__hint {
+	margin: 0;
+}
+
+.uich-cb-boot__hint code {
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: #242424;
+	font-family: ui-monospace, Menlo, monospace;
+	font-size: 12px;
+}
+
+.uich-cb-boot__link {
+	color: #fd6a35;
+}

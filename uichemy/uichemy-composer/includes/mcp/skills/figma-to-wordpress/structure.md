@@ -19,6 +19,8 @@ Recognised types: `Header · Hero · Features/Cards · About · Stats · Testimo
 
 If URL has no `node-id` → ask user which frame, then stop and wait.
 
+On a Composer Builder site (`platform.builder: "composer"`) skip the choice above: every design is ONE document, and `sectionPlan[]` is its region plan.
+
 ### 1c — Print and freeze
 
 ```

@@ -17,6 +17,10 @@ remembers to call it. The Composer also re-runs a section's JS on every edit, so
 a section that makes its own renderer makes a **new one on every keystroke**.
 `mount()` owns all of that for you.
 
+<!-- mode:composer -->
+**Composer Builder sites** (`platform.builder: "composer"`): "a section's `js`" is the page's one `js`, and its host element is the canvas wrapper inside its region. The page has **one** `uichemy_controller_bridge` declaration, first in its `js`, holding the variables of every scene and every other animation on the page - never one per scene (see "Composer Builder sites" in motion-and-animation). Prefix the names by region (`hero_spin`, `orb_colour`). Everything else on this page applies unchanged - the context limit matters even more here, because every region shares one page.
+<!-- /mode -->
+
 ---
 
 ## The shape of a WebGL section
@@ -375,5 +379,12 @@ el.contains(hit);   // must be true, or the picker cannot select it
 
 If that is false, `hit` names the element doing the blocking.
 
+<!-- mode:sections -->
 **One scene per section.** If a page needs several, that is several sections,
 each mounting once — not several renderers in one.
+<!-- /mode -->
+<!-- mode:composer -->
+**One scene per region.** If a page needs several, each region mounts once on
+its own canvas wrapper - not several renderers in one region - and all of them
+read from the page's one bridge declaration.
+<!-- /mode -->

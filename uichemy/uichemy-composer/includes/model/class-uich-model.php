@@ -75,6 +75,9 @@ if ( ! class_exists( 'Uich_Model' ) ) {
 				'color',
 				'link',
 				'post_relation',
+				'page_link',
+				'user',
+				'range',
 				'taxonomy',
 				'repeater',
 			);
@@ -696,6 +699,30 @@ if ( ! class_exists( 'Uich_Model' ) ) {
 			}
 
 			return $out ? $out : null;
+		}
+
+		/**
+		 * Choices as callers should see them in a JSON response.
+		 *
+		 * A value => label map whose values are "0", "1", "2"… has integer keys in PHP and encodes as a
+		 * JSON list of labels, which reads as "the labels are the values". Send that case as a list of
+		 * { value, label } instead; every other map is sent unchanged.
+		 *
+		 * @param array<string,string>|null $choices value => label.
+		 * @return array|null
+		 */
+		public static function choices_for_output( $choices ) {
+			if ( ! is_array( $choices ) || ! $choices ) {
+				return $choices;
+			}
+			if ( array_keys( $choices ) !== range( 0, count( $choices ) - 1 ) ) {
+				return $choices;
+			}
+			$out = array();
+			foreach ( $choices as $value => $label ) {
+				$out[] = array( 'value' => (string) $value, 'label' => (string) $label );
+			}
+			return $out;
 		}
 
 		/**

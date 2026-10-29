@@ -571,6 +571,11 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 						}
 					}
 
+					$clash = self::name_clash( $provider, $fields );
+					if ( is_wp_error( $clash ) ) {
+						return $clash;
+					}
+
 					return $provider->register_field_group( $params, $fields );
 
 				case 'add_fields':
@@ -578,6 +583,11 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 
 					if ( is_wp_error( $fields ) ) {
 						return $fields;
+					}
+
+					$clash = self::name_clash( $provider, $fields );
+					if ( is_wp_error( $clash ) ) {
+						return $clash;
 					}
 
 					return $provider->add_fields(
@@ -607,6 +617,43 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 						sprintf( 'Unknown action "%s". Valid: %s.', $action, self::action_list() )
 					);
 			}
+		}
+
+		/**
+		 * Refuse a field whose name another modelling provider already uses.
+		 *
+		 * `post.meta('price')` reads ACF first, then UiChemy's own fields, so a
+		 * same-named ACF field silently changed what every existing UiChemy
+		 * binding printed (E-12). Checked by name across the site: the binding is.
+		 *
+		 * @param object $provider Target provider.
+		 * @param array  $fields   Normalised fields.
+		 * @return true|WP_Error
+		 */
+		private static function name_clash( $provider, $fields ) {
+			$slug  = method_exists( $provider, 'slug' ) ? (string) $provider->slug() : '';
+			$names = array();
+			foreach ( (array) $fields as $field ) {
+				if ( is_array( $field ) && ! empty( $field['name'] ) ) {
+					$names[] = (string) $field['name'];
+				}
+			}
+			$taken = array();
+			foreach ( $names as $name ) {
+				if ( 'acf' !== $slug && function_exists( 'acf_get_field' ) && acf_get_field( $name ) ) {
+					$taken[] = $name . ' (ACF)';
+				} elseif ( 'uichemy' !== $slug && function_exists( 'uich_get_all_groups_for_context' ) && function_exists( '_uich_find_field_in_groups' )
+					&& _uich_find_field_in_groups( $name, uich_get_all_groups_for_context( array( 'screen' => 'option' ) ), 'post', 0, false ) ) {
+					$taken[] = $name . ' (UiChemy Custom Fields)';
+				}
+			}
+			if ( $taken ) {
+				return new WP_Error(
+					'uich_model_field_name_taken',
+					sprintf( 'These field names already exist in another field plugin: %s. Bindings read one name from every plugin, so a second field with the same name changes what existing pages print. Choose different names.', implode( ', ', $taken ) )
+				);
+			}
+			return true;
 		}
 
 		/**

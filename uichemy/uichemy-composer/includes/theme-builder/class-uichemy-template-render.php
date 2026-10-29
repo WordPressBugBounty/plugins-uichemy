@@ -35,6 +35,11 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 		 * @return void
 		 */
 		public static function init() {
+			// Which post a Composer Builder single template previews against in
+			// its editor. Before the admin bail: the editor's live render is a
+			// REST request, and the canvas a front-end one — both need it.
+			add_filter( 'uich_cb/preview_post_id', array( __CLASS__, 'composer_preview_post' ), 10, 2 );
+
 			if ( is_admin() ) {
 				return;
 			}
@@ -44,6 +49,170 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 
 			// Isolated canvas preview of a single template (admin "Preview" button).
 			add_action( 'template_redirect', array( __CLASS__, 'maybe_preview' ), 0 );
+
+			// A Composer Builder template carries its own head / body-end code;
+			// tell the builder which of them render on this request so that
+			// code prints wherever the template does.
+			add_filter( 'uich_cb/page_code_sources', array( __CLASS__, 'composer_code_sources' ) );
+		}
+
+		/**
+		 * The Composer Builder templates rendering on this request.
+		 *
+		 * Asked while wp_head / wp_footer run, so template_include has already
+		 * chosen any full-page template (self::$render_id), and the header and
+		 * footer resolve exactly as the location handlers resolve them. Only
+		 * templates built in the Composer Builder are added — the builder
+		 * prints nothing for any other kind.
+		 *
+		 * Print order is page order: header, the full-page template, footer.
+		 *
+		 * @param int[] $sources Post IDs so far.
+		 * @return int[]
+		 */
+		public static function composer_code_sources( $sources ) {
+			if ( ! class_exists( 'UiChemy_Template_Resolver' ) || ! class_exists( 'UiChemy_Template_CPT' ) ) {
+				return $sources;
+			}
+
+			$ids = array(
+				UiChemy_Template_Resolver::resolve( 'header' ),
+				self::get_current_render_id(),
+				UiChemy_Template_Resolver::resolve( 'footer' ),
+			);
+
+			foreach ( $ids as $id ) {
+				if ( $id && 'composer' === UiChemy_Template_CPT::editor_for( (int) $id ) ) {
+					$sources[] = (int) $id;
+				}
+			}
+
+			return $sources;
+		}
+
+		/**
+		 * The post a single template's `{{ post.* }}` tokens preview against in
+		 * the Composer Builder: the newest published post of the type it is for.
+		 *
+		 * On its own canvas a template is the post in scope, so `post` was the
+		 * template — `{{ post.content }}` empty, `{{ post.title }}` the
+		 * template's name — and there was nothing real to design against.
+		 *
+		 *  - single, target pt:{type} → that post type (an "Attorney Profile"
+		 *    previews the newest attorney)
+		 *  - single, target front     → the front page, else the newest page
+		 *  - single, target any       → the newest post
+		 *  - single_product           → the newest product
+		 *
+		 * A template limited to specific posts previews the first of those that
+		 * is published. Every other type (header, footer, archive, 404, …) has
+		 * no one post it is about, so it keeps the template.
+		 *
+		 * @param int $post_id     Post to preview against so far.
+		 * @param int $document_id Builder document ID.
+		 * @return int
+		 */
+		public static function composer_preview_post( $post_id, $document_id ) {
+			static $cache = array();
+
+			$document_id = (int) $document_id;
+
+			// Someone earlier on the filter already chose; or not a template.
+			if ( (int) $post_id !== $document_id
+				|| ! class_exists( 'UiChemy_Template_CPT' )
+				|| UiChemy_Template_CPT::POST_TYPE !== get_post_type( $document_id )
+			) {
+				return $post_id;
+			}
+
+			if ( isset( $cache[ $document_id ] ) ) {
+				return $cache[ $document_id ] ? $cache[ $document_id ] : $post_id;
+			}
+
+			$cache[ $document_id ] = self::find_preview_post( $document_id );
+
+			return $cache[ $document_id ] ? $cache[ $document_id ] : $post_id;
+		}
+
+		/**
+		 * The preview post for a template, or 0 when it has none.
+		 *
+		 * @param int $template_id Template post ID.
+		 * @return int
+		 */
+		private static function find_preview_post( $template_id ) {
+			$type = (string) get_post_meta( $template_id, UiChemy_Template_CPT::META_TYPE, true );
+
+			if ( 'single_product' === $type ) {
+				$post_type = 'product';
+			} elseif ( 'single' === $type ) {
+				$target = UiChemy_Template_CPT::target_for( $template_id );
+
+				if ( 'front' === $target ) {
+					$front = (int) get_option( 'page_on_front' );
+					if ( $front && 'publish' === get_post_status( $front ) ) {
+						return $front;
+					}
+					$post_type = 'page';
+				} else {
+					$post_type = 0 === strpos( $target, 'pt:' ) ? substr( $target, 3 ) : 'post';
+					// What its display conditions show it on wins over the target:
+					// "All of a post type › Doctor" previews a doctor, "Particular
+					// Post / Page" that very post. A template made from "Single
+					// (Post / Page)" keeps the target `pt:post` after its rule is
+					// set to Doctor, and previewed against Posts — none here — so
+					// the canvas fell back to the template itself.
+					$conditions = get_post_meta( $template_id, UiChemy_Template_CPT::META_CONDITIONS, true );
+					$rules      = ( is_array( $conditions ) && isset( $conditions['rules'] ) && is_array( $conditions['rules'] ) ) ? $conditions['rules'] : array();
+					foreach ( $rules as $rule ) {
+						if ( ! is_array( $rule ) || ( isset( $rule['match'] ) && 'exclude' === $rule['match'] ) || empty( $rule['value'] ) ) {
+							continue;
+						}
+						$rule_type = isset( $rule['type'] ) ? (string) $rule['type'] : '';
+						if ( 'singular' === $rule_type ) {
+							$id = absint( $rule['value'] );
+							if ( $id && 'publish' === get_post_status( $id ) ) {
+								return $id;
+							}
+						} elseif ( 'post_type' === $rule_type && post_type_exists( (string) $rule['value'] ) ) {
+							$post_type = (string) $rule['value'];
+							break;
+						}
+					}
+				}
+			} else {
+				return 0;
+			}
+
+			if ( ! post_type_exists( $post_type ) ) {
+				return 0;
+			}
+
+			// Limited to specific posts: preview one the template will really be
+			// shown on.
+			$conditions = get_post_meta( $template_id, UiChemy_Template_CPT::META_CONDITIONS, true );
+			if ( is_array( $conditions ) && isset( $conditions['scope'] ) && 'specific' === $conditions['scope'] && ! empty( $conditions['include'] ) ) {
+				foreach ( (array) $conditions['include'] as $id ) {
+					$id = absint( $id );
+					if ( $id && 'publish' === get_post_status( $id ) && $post_type === get_post_type( $id ) ) {
+						return $id;
+					}
+				}
+			}
+
+			$ids = get_posts(
+				array(
+					'post_type'      => $post_type,
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'orderby'        => 'date',
+					'order'          => 'DESC',
+					'fields'         => 'ids',
+					'no_found_rows'  => true,
+				)
+			);
+
+			return empty( $ids ) ? 0 : (int) $ids[0];
 		}
 
 		/**
@@ -108,6 +277,21 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				return $template;
 			}
 
+			// An earlier filter already printed the whole page and returned ''
+			// so nothing else renders — WooCommerce's coming-soon screen on a
+			// block theme does this. A template here would print under it (J2-01).
+			if ( '' === $template ) {
+				return $template;
+			}
+
+			// A template's own URL is where the Composer Builder's canvas loads
+			// it. It is a single view, so without this an active "single"
+			// template matching everything would replace the template being
+			// edited with a different one.
+			if ( class_exists( 'UiChemy_Template_CPT' ) && is_singular( UiChemy_Template_CPT::POST_TYPE ) ) {
+				return $template;
+			}
+
 			// Elementor is NOT required to swap a full page. A uichemy_template is
 			// rendered by UiChemy's own engine, and Composer sections come from
 			// whichever builder authored them — so gating the whole injector on
@@ -133,8 +317,11 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				// is_checkout(), so leaving that guard alone keeps a generic
 				// "single" template out of the thank-you page while still allowing
 				// a template built for it. Only the order_received type resolves
-				// here — nothing else can claim the endpoint.
-				$id = UiChemy_Template_Resolver::resolve( 'order_received' );
+				// here — nothing else can claim the endpoint. A visitor Woo would
+				// not show the order to keeps Woo's page (login / verify email).
+				if ( class_exists( 'UiChemy_Woo_Tags' ) && UiChemy_Woo_Tags::viewable_received_order() ) {
+					$id = UiChemy_Template_Resolver::resolve( 'order_received' );
+				}
 			} elseif ( is_singular() && ! self::is_protected_singular() ) {
 				// A single template applies to single post/page views whose
 				// display conditions match (entire = all singular views), EXCEPT
@@ -172,12 +359,48 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 		 * @return void
 		 */
 		public static function enqueue_elementor_styles() {
-			if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->frontend ) ) {
+			self::enqueue_styles_for( array( self::$render_id ) );
+		}
+
+		/**
+		 * The base stylesheets the given templates' builders need, and only those.
+		 *
+		 * Elementor's frontend styles (its kit, Font Awesome, eicons and the
+		 * kit's Google fonts) for an Elementor template, the block library for a
+		 * Gutenberg one. A Composer Builder template needs neither — its renderer
+		 * prints its own code — yet both used to load on every page that had a
+		 * header, footer or full-page template: six render-blocking stylesheets
+		 * and two font families the page never used.
+		 *
+		 * @param int[] $ids Template post IDs (0 / empty ones are skipped).
+		 * @return void
+		 */
+		public static function enqueue_styles_for( array $ids ) {
+			$need_elementor = false;
+			$need_blocks    = false;
+			foreach ( $ids as $id ) {
+				$id = (int) $id;
+				if ( ! $id ) {
+					continue;
+				}
+				$editor = class_exists( 'UiChemy_Template_CPT' ) ? UiChemy_Template_CPT::editor_for( $id ) : 'elementor';
+				// A Composer template the renderer cannot draw falls back to its
+				// post_content mirror, which is block markup (render_template_html).
+				if ( 'composer' === $editor && ! ( class_exists( 'Uich_CB_Render' ) && Uich_CB_Render::renderer_available() ) ) {
+					$editor = 'gutenberg';
+				}
+				if ( 'elementor' === $editor ) {
+					$need_elementor = true;
+				} elseif ( 'gutenberg' === $editor ) {
+					$need_blocks = true;
+				}
+			}
+			if ( $need_elementor && class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->frontend ) ) {
 				\Elementor\Plugin::$instance->frontend->enqueue_styles();
 			}
-			// A template on this request may be Gutenberg-authored; ensure block
-			// styles are available too (harmless when unused).
-			self::enqueue_block_styles();
+			if ( $need_blocks ) {
+				self::enqueue_block_styles();
+			}
 		}
 
 		/**
@@ -286,6 +509,23 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 		 */
 		private static function render_template_html( $id ) {
 			$editor = class_exists( 'UiChemy_Template_CPT' ) ? UiChemy_Template_CPT::editor_for( $id ) : 'elementor';
+
+			// The Composer Builder renders from its stored document through the
+			// same renderer the builder's canvas uses, so a header looks the same
+			// on the site as it did in the editor. Without the canvas markers
+			// (false): this is a template embedded in some other page, and on
+			// that page's canvas the bridge must not mistake it for the page.
+			// The post_content mirror is the fallback, for a document the
+			// renderer returns nothing for.
+			if ( 'composer' === $editor ) {
+				$html = class_exists( 'Uich_CB_Render' ) && Uich_CB_Render::renderer_available()
+					? Uich_CB_Render::render_page( $id, false )
+					: '';
+				if ( '' !== $html ) {
+					return $html;
+				}
+				$editor = 'gutenberg';
+			}
 
 			if ( 'gutenberg' === $editor ) {
 				$post = get_post( $id );

@@ -198,8 +198,16 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				$option = array();
 			}
 
+			$head = isset( $option['head'] ) ? (string) $option['head'] : '';
+			// Theme-style rules saved before they spared `.text-*` classes are read
+			// in the new form everywhere (front end, editors, MCP); the next save
+			// stores it.
+			if ( '' !== $head && class_exists( 'UiChemy_Globals_CSS' ) ) {
+				$head = UiChemy_Globals_CSS::spare_text_classes_in_head( $head );
+			}
+
 			return array(
-				'head'   => isset( $option['head'] ) ? (string) $option['head'] : '',
+				'head'   => $head,
 				'footer' => isset( $option['footer'] ) ? (string) $option['footer'] : '',
 			);
 		}
@@ -697,7 +705,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// underlying WordPress role happens to hold `unfiltered_html` (e.g. an
 			// Editor placed in content-only). On the free build / with no Role Manager
 			// configured, is_content_only() is always false, so this is a no-op there.
-			if ( class_exists( 'UiChemy_Roles' ) && UiChemy_Roles::is_content_only() ) {
+			// A role set to No Access can't open the editor, so it never stores raw code either.
+			if ( class_exists( 'UiChemy_Roles' ) && ( UiChemy_Roles::is_content_only() || ! UiChemy_Roles::can_edit() ) ) {
 				return false;
 			}
 			return current_user_can( 'unfiltered_html' );
@@ -785,7 +794,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return new \WP_Error( 'uich_empty_generated_code', 'At least one of html, css, or js must be provided.' );
 			}
 
-			$prepared = UiChemy_Section_Ops::prepare_code( $raw_html, $raw_css, $upload_images );
+			// The front-end editor sends the code the person edited by hand. The
+			// globals pass is for generated imports: it rebuilds every rule with a
+			// flat regex (a rule inside @media, a comment holding `;`, the author's
+			// formatting all come back changed), so a one-property edit there
+			// rewrote the whole stylesheet. The Elementor editor never ran it.
+			$match_globals = 'frontend' !== $source;
+			$prepared = UiChemy_Section_Ops::prepare_code( $raw_html, $raw_css, $upload_images, $match_globals );
 			$raw_html = $prepared['html'];
 			$raw_css  = $prepared['css'];
 
@@ -1312,6 +1327,12 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			if ( is_wp_error( $resolved ) ) {
 				return $resolved;
 			}
+			// An explicit `target` (the form `architecture` hints use, e.g.
+			// `pt:listing`) wins over the one placement resolved; it was
+			// silently ignored (E-19).
+			if ( ! empty( $payload['target'] ) && is_string( $payload['target'] ) && preg_match( '/^(any|front|blog|author|date|pt:[a-z0-9_-]+|tax:[a-z0-9_-]+)$/', $payload['target'] ) ) {
+				$resolved['target'] = $payload['target'];
+			}
 
 			$title         = isset( $payload['title'] ) ? sanitize_text_field( (string) $payload['title'] ) : ( ucfirst( str_replace( 'error_404', '404', $type ) ) . ' UiChemy' );
 			$label         = isset( $payload['label'] ) ? sanitize_text_field( (string) $payload['label'] ) : ucfirst( $type );
@@ -1322,21 +1343,41 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$site_css      = isset( $payload['site_css'] ) ? (string) $payload['site_css'] : '';
 			$site_js       = isset( $payload['site_js'] ) ? (string) $payload['site_js'] : '';
 			$upload_images = isset( $payload['upload_images'] ) ? (bool) $payload['upload_images'] : true;
-			$status        = ( isset( $payload['status'] ) && 'inactive' === $payload['status'] ) ? 'inactive' : 'active';
+			// active | inactive. "draft" reads as "not live yet", so it maps to
+			// inactive; anything else unknown is refused - it used to fall through
+			// to active, putting a template meant as a draft live site-wide.
+			$status = isset( $payload['status'] ) && '' !== $payload['status'] ? sanitize_key( (string) $payload['status'] ) : 'active';
+			if ( in_array( $status, array( 'draft', 'pending', 'private' ), true ) ) {
+				$status = 'inactive';
+			} elseif ( 'publish' === $status ) {
+				$status = 'active';
+			}
+			if ( ! in_array( $status, array( 'active', 'inactive' ), true ) ) {
+				return new \WP_Error( 'uich_invalid_status', 'status must be "active" (renders where its conditions match) or "inactive" (saved, renders nowhere). Got "' . $status . '".' );
+			}
 			// The editor follows the RESOLVED builder. Hardcoding elementor|gutenberg
 			// here is what made every header, footer and single template impossible
 			// on Bricks — and this is the path the uichemy-composer/theme-builder
 			// ability takes, which is not the one mcp_create_header_footer_template()
 			// serves, so fixing that one did not fix this one.
-			$tb_driver = self::mcp_driver_for_post( 0, isset( $payload['builder'] ) ? (string) $payload['builder'] : '', true );
-			if ( is_wp_error( $tb_driver ) ) {
-				return $tb_driver;
-			}
-			$editor = $tb_driver->template_editor_slug();
-			if ( isset( $payload['editor'] ) ) {
-				$asked = sanitize_key( (string) $payload['editor'] );
-				if ( in_array( $asked, array( 'elementor', 'gutenberg', 'bricks' ), true ) ) {
-					$editor = $asked;
+			//
+			// With the Composer Builder selected there is no driver to resolve: the
+			// template is one document stored through Uich_CB_Content (see
+			// UiChemy_Template_Store::create()).
+			$wants_composer = class_exists( 'Uich_CB_Content' ) && class_exists( 'UiChemy_Builder_Context' ) && UiChemy_Builder_Context::is_composer_mode();
+			if ( $wants_composer ) {
+				$editor = 'composer';
+			} else {
+				$tb_driver = self::mcp_driver_for_post( 0, isset( $payload['builder'] ) ? (string) $payload['builder'] : '', true );
+				if ( is_wp_error( $tb_driver ) ) {
+					return $tb_driver;
+				}
+				$editor = $tb_driver->template_editor_slug();
+				if ( isset( $payload['editor'] ) ) {
+					$asked = sanitize_key( (string) $payload['editor'] );
+					if ( in_array( $asked, array( 'elementor', 'gutenberg', 'bricks' ), true ) ) {
+						$editor = $asked;
+					}
 				}
 			}
 
@@ -1420,11 +1461,19 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$widget_id    = strtolower( wp_generate_password( 7, false, false ) );
 			$container_id = strtolower( wp_generate_password( 7, false, false ) );
 
-			$widget_settings = array(
-				'raw_html' => self::build_mcp_tagged_code_block( 'html', $raw_html, $source, $label ),
-				'raw_css'  => self::build_mcp_tagged_code_block( 'css', $raw_css, $source, $label ),
-				'raw_js'   => self::build_mcp_tagged_code_block( 'js', $raw_js, $source, $label ),
-			);
+			// A Composer Builder document is edited as plain code, so it gets the
+			// code as written rather than the section's tagged blocks.
+			$widget_settings = 'composer' === $editor
+				? array(
+					'raw_html' => $raw_html,
+					'raw_css'  => $raw_css,
+					'raw_js'   => $raw_js,
+				)
+				: array(
+					'raw_html' => self::build_mcp_tagged_code_block( 'html', $raw_html, $source, $label ),
+					'raw_css'  => self::build_mcp_tagged_code_block( 'css', $raw_css, $source, $label ),
+					'raw_js'   => self::build_mcp_tagged_code_block( 'js', $raw_js, $source, $label ),
+				);
 
 			$container_html_tag = UiChemy_Template_CPT::container_tag_for_type( $type );
 
@@ -1523,6 +1572,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				$out['warning'] = 'active:true means the flag was written, NOT that anything appears on the site. Read "render_check".';
 			}
 
+			if ( 'composer' === $editor ) {
+				unset( $out['elementor_link'] );
+				$out['editor']    = 'composer';
+				$out['edit_link'] = Uich_CB_Content::edit_url( $post_id );
+				$out['edit_with'] = 'uichemy-composer/post (action="get-code" / "patch-code", post_id=' . $post_id . ')';
+			}
+
 			return $out;
 		}
 
@@ -1611,7 +1667,20 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					if ( in_array( $arch, array( 'blog', 'author', 'date' ), true ) ) {
 						return array( 'conditions' => array( 'scope' => 'entire' ), 'target' => $arch, 'summary' => $arch . ' archive' );
 					}
-					return new \WP_Error( 'uich_bad_archive', 'placement.archive must be one of: blog, author, date, tax:{taxonomy}, all.' );
+					// A custom post type's own archive (/projects/), which the
+					// resolver serves as pt:{type}.
+					if ( 0 === strpos( $arch, 'pt:' ) ) {
+						$apt     = sanitize_key( substr( $arch, 3 ) );
+						$apt_obj = $apt ? get_post_type_object( $apt ) : null;
+						if ( ! $apt_obj ) {
+							return new \WP_Error( 'uich_bad_post_type', 'placement.archive post type "' . $apt . '" is not registered.' );
+						}
+						if ( empty( $apt_obj->has_archive ) ) {
+							return new \WP_Error( 'uich_no_archive', 'Post type "' . $apt . '" has no archive (has_archive is off), so there is no page for this template to render on.' );
+						}
+						return array( 'conditions' => array( 'scope' => 'entire' ), 'target' => 'pt:' . $apt, 'summary' => '"' . $apt . '" post type archive' );
+					}
+					return new \WP_Error( 'uich_bad_archive', 'placement.archive must be one of: blog, author, date, tax:{taxonomy}, pt:{post_type}, all.' );
 
 				case 'search':
 					/*
@@ -2379,6 +2448,23 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$params  = '' !== (string) $builder ? array( 'builder' => (string) $builder ) : array();
 			$post_id = absint( $post_id );
 
+			// A Composer Builder page is one document with no sections, and no
+			// driver here claims it - so resolve_for_post() would treat it as
+			// unclaimed and let the session builder adopt it, writing data the
+			// page never renders. Refuse, and point at the ability that owns it.
+			if ( $post_id && self::is_composer_builder_post( $post_id ) ) {
+				return new \WP_Error(
+					'uich_composer_builder_page',
+					// Already in Composer Builder mode the document actions are right
+					// there; telling the caller to "select the Composer Builder" sent
+					// it looking for a switch that was already on.
+					( class_exists( 'UiChemy_Builder_Context' ) && UiChemy_Builder_Context::is_composer_mode() )
+						? sprintf( 'Post %d is built with the UiChemy Composer Builder: one document (html, css, js, head_code, body_end_code) with no sections, so section tools do not apply. Edit it with uichemy-composer/page or /post (action="get-code", then "patch-code" or "set-code"); its css prints before </head> and its js before </body>.', $post_id )
+						: sprintf( 'Post %d is built with the UiChemy Composer Builder: one document (html, css, js, head_code, body_end_code) with no sections, so the section tools cannot edit it. It is edited with get-code / set-code / patch-code, which are offered when the Composer Builder is the selected page builder (UiChemy onboarding) or on the /wp-json/uichemy/v2/mcp endpoint with ?builder=composer.', $post_id ),
+					array( 'status' => 409, 'builder' => 'composer' )
+				);
+			}
+
 			$slug = $post_id
 				? UiChemy_Builder_Context::resolve_for_post( $params, $post_id, $for_write )
 				: UiChemy_Builder_Context::resolve( $params, 0 );
@@ -2388,6 +2474,16 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			return UiChemy_Builder_Context::driver( $slug );
+		}
+
+		/**
+		 * Is this post built with the Composer Builder (composer-builder/)?
+		 *
+		 * @param int $post_id Post ID.
+		 * @return bool
+		 */
+		public static function is_composer_builder_post( $post_id ) {
+			return class_exists( 'Uich_CB_Content' ) && Uich_CB_Content::is_enabled( (int) $post_id );
 		}
 
 		/**
@@ -2872,6 +2968,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			};
 
 			if ( '' !== trim( $html ) && $needs_dom ) {
+				// Twig is code, and DOMDocument reads it as markup: tokens in an
+				// attribute were URL-encoded and tokens between attributes were
+				// torn apart (E-04). They go through the DOM as placeholders and
+				// come back verbatim after saveHTML().
+				$twig_tokens = array();
+				$html        = self::protect_twig_tokens( $html, $twig_tokens );
+
 				$doc = new \DOMDocument();
 				$libxml_previous = libxml_use_internal_errors( true );
 				$loaded = $doc->loadHTML(
@@ -2959,7 +3062,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 						foreach ( $body->childNodes as $child ) {
 							$rewritten_html .= $doc->saveHTML( $child );
 						}
-						$result['html'] = $rewritten_html;
+						$result['html'] = self::restore_twig_tokens( $rewritten_html, $twig_tokens );
 					}
 				}
 			}
@@ -3908,7 +4011,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// nothing it built would render — on a site where everything works.
 			if ( class_exists( 'UiChemy_Builder_Registry' ) ) {
 				$usable = UiChemy_Builder_Registry::available();
-				if ( empty( $usable ) ) {
+				// The Composer Builder has no driver in the registry, but it is a
+				// builder all the same: with it loaded, pages still render.
+				if ( empty( $usable ) && ! class_exists( 'Uich_CB_Content' ) ) {
 					$add( 'blocker', 'page_builder', 'No page builder is available, so nothing UiChemy builds will render.', 'Activate Elementor, switch to the Bricks theme, or enable the block editor in UiChemy settings.' );
 				}
 			} elseif ( ! class_exists( '\Elementor\Plugin' ) ) {
@@ -3947,7 +4052,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			// --- Theme-builder templates that exist but render nowhere --------
-			if ( post_type_exists( 'elementor_library' ) ) {
+			// Elementor Pro's display conditions, fixed through
+			// uichemy-composer/template - so only checked where that ability is
+			// offered (Elementor mode with Elementor Pro or Nexter). Elsewhere the
+			// warning pointed at a tool the agent cannot call and failed `ok`.
+			if ( post_type_exists( 'elementor_library' )
+				&& class_exists( 'UiChemy_Abilities' )
+				&& UiChemy_Abilities::template_tool_available() ) {
 				$inactive = array();
 				foreach ( get_posts( array( 'post_type' => 'elementor_library', 'post_status' => 'publish', 'posts_per_page' => 50, 'no_found_rows' => true ) ) as $tpl ) {
 					$type = (string) get_post_meta( $tpl->ID, '_elementor_template_type', true );
@@ -4017,7 +4128,10 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				$code_blob = (string) $code_scan['head'] . "\n" . (string) $code_scan['footer'];
 
 				$scan_post_id = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
-				if ( $scan_post_id ) {
+				if ( $scan_post_id && self::is_composer_builder_post( $scan_post_id ) ) {
+					$cb_code    = Uich_CB_Content::get_cb_content_fields( $scan_post_id );
+					$code_blob .= "\n" . implode( "\n", array_map( 'strval', $cb_code ) );
+				} elseif ( $scan_post_id ) {
 					$page_blob = get_post_meta( $scan_post_id, '_elementor_data', true );
 					if ( is_string( $page_blob ) ) {
 						$code_blob .= "\n" . $page_blob;
@@ -4046,6 +4160,12 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 				$stored = Uich_Code_Files::all();
 				if ( is_array( $stored ) ) {
+					// A file is referenced if ANY page, post or template points at
+					// it, or another code file loads it - not only the site code and
+					// the one post being audited. Without this every file a page
+					// loads from its own head/body code was reported as an orphan.
+					$used_anywhere = self::code_files_referenced_anywhere( $stored );
+					$referenced    = array_values( array_unique( array_merge( $referenced, $used_anywhere ) ) );
 					$orphans = array();
 					foreach ( $stored as $stored_file ) {
 						$stored_name = is_array( $stored_file ) && isset( $stored_file['filename'] )
@@ -4071,7 +4191,17 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			// --- Page-scoped check --------------------------------------------
 			$post_id = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
-			if ( $post_id ) {
+			if ( $post_id && self::is_composer_builder_post( $post_id ) ) {
+				// A Composer Builder page is one document: it is empty or it is
+				// not, and there are no sections to count.
+				$cb_code = Uich_CB_Content::get_cb_content_fields( $post_id );
+				if ( '' === trim( (string) $cb_code['html'] ) ) {
+					$add( 'warning', 'cb_page_empty', "Composer Builder page {$post_id} has no html, so it renders nothing.", 'uichemy-composer/page (action="set-code", html="…")' );
+				}
+				if ( class_exists( 'Uich_CB_Code_Policy' ) && ( ! Uich_CB_Code_Policy::can_author_code() || ! Uich_CB_Code_Policy::custom_code_allowed() ) ) {
+					$add( 'notice', 'cb_js_blocked', "Composer Builder page {$post_id}: JavaScript cannot be stored here (the current user lacks unfiltered_html, or custom code is switched off), so any js sent is dropped.", 'Move behaviour into CSS, or save the js as a user with unfiltered_html.' );
+				}
+			} elseif ( $post_id ) {
 				$structure = self::mcp_load_elements_for_structural_op( $post_id );
 				if ( is_wp_error( $structure ) ) {
 					$add( 'warning', 'page_empty', "Post {$post_id} has no Elementor content.", 'uichemy-composer/page (action="create-with-sections")' );
@@ -4126,8 +4256,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			$by_severity = array( 'blocker' => 0, 'warning' => 0, 'notice' => 0 );
-			foreach ( $findings as $f ) {
+			foreach ( $findings as $i => $f ) {
 				++$by_severity[ $f['severity'] ];
+				// Fix hints are written for sections; Composer Builder mode names the
+				// document actions instead.
+				if ( class_exists( 'UiChemy_Builder_Context' ) ) {
+					$findings[ $i ]['fix'] = UiChemy_Builder_Context::for_mode( $f['fix'], $post_id && self::is_composer_builder_post( $post_id ) );
+				}
 			}
 
 			return array(
@@ -4138,6 +4273,68 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					? count( $findings ) . ' finding(s). Each names the ability that fixes it.'
 					: 'No findings the site looks ready.',
 			);
+		}
+
+		/**
+		 * Which of the stored code files something on the site loads: page and
+		 * template documents (Composer Builder, Elementor, Bricks, SEO page meta)
+		 * and the other code files themselves (a loader script importing its
+		 * modules by name).
+		 *
+		 * @param array $stored Uich_Code_Files::all().
+		 * @return string[] File names referenced somewhere.
+		 */
+		private static function code_files_referenced_anywhere( array $stored ) {
+			global $wpdb;
+
+			$names = array();
+			foreach ( $stored as $file ) {
+				$name = is_array( $file ) && isset( $file['filename'] ) ? (string) $file['filename'] : (string) $file;
+				if ( '' !== $name ) {
+					$names[] = $name;
+				}
+			}
+			if ( ! $names ) {
+				return array();
+			}
+
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One read-only sweep per audit run.
+			$rows = $wpdb->get_col(
+				$wpdb->prepare(
+					"SELECT pm.meta_value FROM {$wpdb->postmeta} pm INNER JOIN {$wpdb->posts} p ON p.ID = pm.post_id
+					WHERE p.post_status NOT IN ('trash','auto-draft','inherit') AND pm.meta_value LIKE %s",
+					'%' . $wpdb->esc_like( 'uichemy-composer' ) . '%'
+				)
+			);
+
+			$blob = implode( "\n", array_map( 'strval', (array) $rows ) );
+			// JSON-stored documents escape the slash.
+			$blob = str_replace( '\\/', '/', $blob );
+
+			$found = array();
+			if ( preg_match_all( '#uichemy-composer/([A-Za-z0-9._-]+\.(?:css|js|wasm))#i', $blob, $m ) ) {
+				$found = array_unique( $m[1] );
+			}
+
+			// Code files that load other code files ("./vg-three.js", "holmhus-gsap-min.js"),
+			// followed through chains: a loader can import a module that imports another.
+			$used  = array_fill_keys( array_intersect( $names, $found ), true );
+			$queue = array_keys( $used );
+			while ( $queue ) {
+				$name = array_shift( $queue );
+				$text = Uich_Code_Files::read( $name );
+				if ( ! is_string( $text ) || '' === $text ) {
+					continue;
+				}
+				foreach ( $names as $other ) {
+					if ( ! isset( $used[ $other ] ) && false !== strpos( $text, $other ) ) {
+						$used[ $other ] = true;
+						$queue[]        = $other;
+					}
+				}
+			}
+
+			return array_keys( $used );
 		}
 
 		/**
@@ -4162,6 +4359,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					array( 'check' => 'code_file_unreferenced', 'scope' => 'code files', 'severity' => 'warning' ),
 					array( 'check' => 'page_empty', 'scope' => 'page (needs post_id)', 'severity' => 'warning' ),
 					array( 'check' => 'page_sections', 'scope' => 'page (needs post_id)', 'severity' => 'warning' ),
+					array( 'check' => 'cb_page_empty', 'scope' => 'Composer Builder page (needs post_id)', 'severity' => 'warning' ),
+					array( 'check' => 'cb_js_blocked', 'scope' => 'Composer Builder page (needs post_id)', 'severity' => 'notice' ),
 				),
 			);
 
@@ -5111,7 +5310,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 						'target'       => UiChemy_Template_CPT::target_for( $tid ),
 						'editor'       => UiChemy_Template_CPT::editor_for( $tid ),
 						'conditions'   => is_array( $conditions ) ? $conditions : array(),
-						'edit_link'    => add_query_arg( array( 'post' => $tid, 'action' => 'elementor' ), admin_url( 'post.php' ) ),
+						'edit_link'    => UiChemy_Template_CPT::edit_url_for( $tid ),
 						'preview_link' => get_permalink( $tid ),
 					);
 
@@ -5542,7 +5741,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'token'    => $token,
 				'natives'  => $natives[ $provider ],
 				'message'  => $is_native
-					? 'Paste this token straight into your section HTML.'
+					? 'Paste this token straight into your markup.'
 					: 'Treated as a meta key. Confirm it against the field map from uichemy-composer/describe-site a key that does not exist renders empty rather than failing.',
 			);
 		}
@@ -5563,7 +5762,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			$tags = array(
 				'post-content' => 'The post/page body, rendered by WordPress. Required in a single template; never put it on a normal page.',
-				'nav-menu'     => 'The nav menu assigned to the theme location. Renders empty when no menu is assigned uichemy-composer/platform update-menu fixes that.',
+				'nav-menu'     => 'The nav menu assigned to the theme location. Renders empty when no menu is assigned uichemy-composer/platform update-menu fixes that. To show a different menu (a footer menu, say), add menu="<slug, name or id>" or location="<theme location slug>" to the tag; an unknown one renders an empty nav.',
 				'site-logo'    => 'The site custom_logo. Set it with uichemy-composer/platform update-site-settings.',
 				'site-icon'    => 'The site icon (favicon).',
 				'toc'          => 'A table of contents built from the headings in the post content.',
@@ -5700,7 +5899,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					);
 				}
 				$call = $fn . '(' . $raw . ')';
-				$html = "{% for {$item_var} in {$call} %}\n" . rtrim( $item_html ) . "\n{% endfor %}";
+				$html = "{% for {$item_var} in {$call} %}\n" . rtrim( $item_html ) . "\n" . self::loop_empty_branch( $payload ) . '{% endfor %}';
 
 				return array(
 					'source'   => $source,
@@ -5740,7 +5939,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			$call = $fn . '(' . $args . ')';
-			$html = "{% for {$item_var} in {$call} %}\n" . rtrim( $item_html ) . "\n{% endfor %}";
+			$html = "{% for {$item_var} in {$call} %}\n" . rtrim( $item_html ) . "\n" . self::loop_empty_branch( $payload ) . '{% endfor %}';
 
 			return array(
 				'source'   => $source,
@@ -5749,6 +5948,24 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'html'     => $html,
 				'message'  => 'Pass this html as a section to uichemy-composer/page, post or template. Inside the loop the item is "' . $item_var . '" e.g. {{ ' . $item_var . '.title }}. Custom fields need meta(): {{ ' . $item_var . ".meta('key') }}. Token names: uichemy-composer/dynamic (action=\"list-fields\").",
 			);
+		}
+
+		/**
+		 * The {% else %} branch of a create-loop listing.
+		 *
+		 * A loop with none renders a hollow container when its query returns no
+		 * rows, which reads as a broken page; the skill asks for an empty state
+		 * on every loop, so the builder supplies one. `empty_html` overrides it,
+		 * and an empty string leaves the branch out.
+		 *
+		 * @param array $payload create-loop parameters.
+		 * @return string
+		 */
+		private static function loop_empty_branch( $payload ) {
+			$empty = array_key_exists( 'empty_html', (array) $payload )
+				? (string) $payload['empty_html']
+				: '<p class="uich-loop-empty">' . esc_html__( 'Nothing to show yet.', 'uichemy' ) . '</p>';
+			return '' === trim( $empty ) ? '' : "{% else %}\n" . rtrim( $empty ) . "\n";
 		}
 
 		// ============================================================
@@ -6011,26 +6228,35 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				$tags[] = '<link rel="canonical" href="' . esc_url( $canonical ) . '">';
 			}
 
-			$block = self::SEO_HEAD_BLOCK_START . "\n" . implode( "\n", $tags ) . "\n" . self::SEO_HEAD_BLOCK_END;
+			$block    = self::SEO_HEAD_BLOCK_START . "\n" . implode( "\n", $tags ) . "\n" . self::SEO_HEAD_BLOCK_END;
+			$previous = '/' . preg_quote( self::SEO_HEAD_BLOCK_START, '/' ) . '.*?' . preg_quote( self::SEO_HEAD_BLOCK_END, '/' ) . '/s';
 
-			$existing = self::mcp_get_page_code( array( 'post_id' => $post_id ) );
-			$head     = ( is_array( $existing ) && isset( $existing['page_before_head'] ) ) ? (string) $existing['page_before_head'] : '';
-			$cleaned  = trim(
-				(string) preg_replace(
-					'/' . preg_quote( self::SEO_HEAD_BLOCK_START, '/' ) . '.*?' . preg_quote( self::SEO_HEAD_BLOCK_END, '/' ) . '/s',
-					'',
-					$head
-				)
-			);
+			if ( self::is_composer_builder_post( $post_id ) ) {
+				// A Composer Builder page keeps its own head code inside its
+				// document, not on a section - write it there, through the same
+				// save the editor uses.
+				$document = Uich_CB_Content::get_cb_content( $post_id );
+				$cleaned  = trim( (string) preg_replace( $previous, '', (string) $document['content']['before_head_end_html'] ) );
 
-			$written = self::mcp_set_page_site_code(
-				array(
-					'post_id'  => $post_id,
-					'page_css' => trim( $cleaned . "\n" . $block ),
-				)
-			);
-			if ( is_wp_error( $written ) ) {
-				return $written;
+				$document['content']['before_head_end_html'] = trim( $cleaned . "\n" . $block );
+
+				if ( ! Uich_CB_Content::save_cb_content( $post_id, $document ) ) {
+					return new \WP_Error( 'uich_seo_write_failed', 'The SEO tags could not be written into this Composer Builder page.' );
+				}
+			} else {
+				$existing = self::mcp_get_page_code( array( 'post_id' => $post_id ) );
+				$head     = ( is_array( $existing ) && isset( $existing['page_before_head'] ) ) ? (string) $existing['page_before_head'] : '';
+				$cleaned  = trim( (string) preg_replace( $previous, '', $head ) );
+
+				$written = self::mcp_set_page_site_code(
+					array(
+						'post_id'  => $post_id,
+						'page_css' => trim( $cleaned . "\n" . $block ),
+					)
+				);
+				if ( is_wp_error( $written ) ) {
+					return $written;
+				}
 			}
 
 			$updated = array();
@@ -6689,7 +6915,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * WooCommerce products, so a plain post had no route to one at all and
 		 * every `{% if post.thumbnail %}` branch was dead.
 		 *
-		 * @param array $payload { post_id, status?, date?, title?, slug?, excerpt?, featured_image?, parent?, menu_order? }.
+		 * @param array $payload { post_id, status?, date?, title?, slug?, excerpt?, featured_image?, parent?, menu_order?, template? }.
 		 * @return array|\WP_Error
 		 */
 		public static function mcp_update_post_attributes( $payload ) {
@@ -6719,6 +6945,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'featured_image' => (int) get_post_thumbnail_id( $post_id ),
 				'parent'         => (int) $post->post_parent,
 				'menu_order'     => (int) $post->menu_order,
+				'template'       => (string) get_page_template_slug( $post_id ),
 			);
 
 			$update  = array( 'ID' => $post_id );
@@ -6822,6 +7049,35 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				$changed[] = 'featured_image';
 			}
 
+			// --- page template ----------------------------------------------------
+			// '' / "default" is the theme's own template. Anything else must be one
+			// the theme offers for this post, or the page 500s on the front end
+			// looking for a file that is not there. Validated BEFORE any write.
+			$template = null;
+
+			if ( array_key_exists( 'template', $payload ) && null !== $payload['template'] ) {
+				$template = sanitize_text_field( (string) $payload['template'] );
+				$template = 'default' === $template ? '' : $template;
+
+				if ( '' !== $template ) {
+					$available = wp_get_theme()->get_page_templates( $post );
+
+					if ( ! isset( $available[ $template ] ) ) {
+						return new \WP_Error(
+							'uich_mcp_error',
+							sprintf(
+								'"%s" is not a page template the active theme offers for this %s. Valid: "default"%s.',
+								$template,
+								$post->post_type,
+								$available ? ', "' . implode( '", "', array_keys( $available ) ) . '"' : ''
+							)
+						);
+					}
+				}
+
+				$changed[] = 'template';
+			}
+
 			if ( count( $update ) > 1 ) {
 				$saved = wp_update_post( $update, true );
 
@@ -6830,10 +7086,14 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				}
 			}
 
+			if ( null !== $template ) {
+				update_post_meta( $post_id, '_wp_page_template', '' === $template ? 'default' : $template );
+			}
+
 			if ( ! $changed ) {
 				return new \WP_Error(
 					'uich_mcp_error',
-					'Nothing to change. Pass at least one of: status, date, title, slug, excerpt, featured_image, parent, menu_order.'
+					'Nothing to change. Pass at least one of: status, date, title, slug, excerpt, featured_image, parent, menu_order, template.'
 				);
 			}
 
@@ -6850,6 +7110,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'featured_image' => (int) get_post_thumbnail_id( $post_id ),
 				'parent'         => (int) $fresh->post_parent,
 				'menu_order'     => (int) $fresh->menu_order,
+				'template'       => (string) get_page_template_slug( $post_id ),
 			);
 
 			$out = array(
@@ -7212,6 +7473,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			$fields = in_array( $field, array( 'html', 'css', 'js' ), true ) ? array( $field ) : array( 'html', 'css', 'js' );
 
+			$composer_mode = class_exists( 'Uich_CB_Content' ) && class_exists( 'UiChemy_Builder_Context' ) && UiChemy_Builder_Context::is_composer_mode();
+
 			if ( $is_regex ) {
 				$delimited = '~' . str_replace( '~', '\~', $pattern ) . '~' . ( $ignore_case ? 'i' : '' );
 				// Validate before walking the whole site, so a bad pattern is one
@@ -7238,9 +7501,23 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				);
 
 				$post_ids = array();
-				foreach ( UiChemy_Builder_Registry::available() as $available ) {
-					$post_ids = array_merge( $post_ids, (array) get_posts( $available->grep_query_args( $base ) ) );
+
+				// Composer Builder mode searches documents ONLY - every other page is
+				// section data this mode cannot edit. Documents have no driver, so
+				// they get a query of their own, across every type the builder can
+				// store unless the caller narrowed it.
+				if ( $composer_mode ) {
+					$cb_args               = $base;
+					$cb_args['post_type']  = $post_type ? $post_type : Uich_CB_Content::storable_post_types();
+					$cb_args['meta_key']   = Uich_CB_Content::META_ENABLED; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Narrowing query, same as the drivers' grep_query_args.
+					$cb_args['meta_value'] = '1'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- As above.
+					$post_ids              = (array) get_posts( $cb_args );
+				} else {
+					foreach ( UiChemy_Builder_Registry::available() as $available ) {
+						$post_ids = array_merge( $post_ids, (array) get_posts( $available->grep_query_args( $base ) ) );
+					}
 				}
+
 				$post_ids = array_values( array_unique( array_map( 'absint', $post_ids ) ) );
 			}
 
@@ -7249,15 +7526,41 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$truncated = false;
 
 			foreach ( $post_ids as $pid ) {
-				// Each post is read through the driver that actually owns it, so a
-				// site holding pages from more than one builder greps all of them.
-				$pid_driver = self::mcp_driver_for_post( $pid, '', false );
-				if ( is_wp_error( $pid_driver ) ) {
+				$is_cb = self::is_composer_builder_post( $pid );
+
+				// Each mode greps only what it can edit: documents in Composer
+				// Builder mode, sections everywhere else.
+				if ( $is_cb !== $composer_mode ) {
 					continue;
 				}
-				$widgets = $pid_driver->load_sections( $pid );
-				if ( is_wp_error( $widgets ) ) {
-					continue;
+
+				if ( $is_cb ) {
+					// One document, read as a single unit: its matches carry no
+					// section_index, because there is nothing to index.
+					$cb_code  = Uich_CB_Content::get_cb_content_fields( $pid );
+					$pid_slug = 'composer';
+					$widgets  = array(
+						array(
+							'uid'      => '',
+							'settings' => array(
+								'raw_html' => $cb_code['html'],
+								'raw_css'  => $cb_code['css'],
+								'raw_js'   => $cb_code['js'],
+							),
+						),
+					);
+				} else {
+					// Each post is read through the driver that actually owns it, so a
+					// site holding pages from more than one builder greps all of them.
+					$pid_driver = self::mcp_driver_for_post( $pid, '', false );
+					if ( is_wp_error( $pid_driver ) ) {
+						continue;
+					}
+					$widgets = $pid_driver->load_sections( $pid );
+					if ( is_wp_error( $widgets ) ) {
+						continue;
+					}
+					$pid_slug = $pid_driver->slug();
 				}
 
 				foreach ( $widgets as $index => $widget ) {
@@ -7286,17 +7589,27 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 								$truncated = true;
 								break 4;
 							}
-							$matches[] = array(
-								'post_id'       => (int) $pid,
-								'post_title'    => get_the_title( $pid ),
-								'section_index' => (int) $index,
-								'element_id'    => (string) $widget['uid'],
-								'builder'       => $pid_driver->slug(),
-								'label'         => isset( $settings['_title'] ) ? (string) $settings['_title'] : '',
-								'field'         => $f,
-								'line'          => $line_no + 1,
-								'text'          => mb_substr( trim( $line ), 0, 300 ),
-							);
+							$matches[] = $is_cb
+								? array(
+									'post_id'    => (int) $pid,
+									'post_title' => get_the_title( $pid ),
+									'builder'    => 'composer',
+									'field'      => $f,
+									'line'       => $line_no + 1,
+									'text'       => mb_substr( trim( $line ), 0, 300 ),
+									'edit_with'  => 'patch-code',
+								)
+								: array(
+									'post_id'       => (int) $pid,
+									'post_title'    => get_the_title( $pid ),
+									'section_index' => (int) $index,
+									'element_id'    => (string) $widget['uid'],
+									'builder'       => $pid_slug,
+									'label'         => isset( $settings['_title'] ) ? (string) $settings['_title'] : '',
+									'field'         => $f,
+									'line'          => $line_no + 1,
+									'text'          => mb_substr( trim( $line ), 0, 300 ),
+								);
 						}
 					}
 				}
@@ -7307,7 +7620,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'regex'            => $is_regex,
 				'fields'           => $fields,
 				'pages_searched'   => count( $post_ids ),
-				'sections_scanned' => $scanned,
+				// A Composer Builder page is one document, not a set of sections.
+				( $composer_mode ? 'documents_scanned' : 'sections_scanned' ) => $scanned,
 				'match_count'      => count( $matches ),
 				'truncated'        => $truncated,
 				'matches'          => $matches,
@@ -7346,6 +7660,10 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			check_ajax_referer( self::EDITOR_AJAX_NONCE_ACTION, 'nonce' );
 
 			if ( ! current_user_can( 'edit_posts' ) ) {
+				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+			}
+			// A role set to No Access in the Role Manager can't open the editor at all.
+			if ( class_exists( 'UiChemy_Roles' ) && ! UiChemy_Roles::can_edit() ) {
 				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 			}
 
@@ -7412,6 +7730,11 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			if ( ! current_user_can( 'unfiltered_html' ) ) {
 				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 			}
+			// A content-only role (Pro Role Manager) has no code or global-design access. Editors keep
+			// `unfiltered_html`, so that capability alone must not let one rewrite site-wide code.
+			if ( class_exists( 'UiChemy_Roles' ) && ( UiChemy_Roles::is_content_only() || ! UiChemy_Roles::can_edit() ) ) {
+				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+			}
 
 			// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized immediately below via self::update_site_custom_code_option() → self::sanitize_custom_code(), which is capability-scoped: only unfiltered_html users store raw markup, everyone else is passed through wp_kses_post().
 			$head   = isset( $_POST['head'] ) ? wp_unslash( $_POST['head'] ) : '';
@@ -7467,6 +7790,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			if ( ! current_user_can( 'edit_posts' ) ) {
 				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 			}
+			if ( class_exists( 'UiChemy_Roles' ) && ! UiChemy_Roles::can_edit() ) {
+				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+			}
 
 			wp_send_json_success( self::get_site_deps_option() );
 		}
@@ -7486,6 +7812,10 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// multisite; nobody when DISALLOW_UNFILTERED_HTML is defined). Reading
 			// the list stays at edit_posts so lower roles can still see what is set.
 			if ( ! current_user_can( 'unfiltered_html' ) ) {
+				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
+			}
+			// Content-only roles have no code access, whatever `unfiltered_html` they hold.
+			if ( class_exists( 'UiChemy_Roles' ) && ( UiChemy_Roles::is_content_only() || ! UiChemy_Roles::can_edit() ) ) {
 				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 			}
 
@@ -7607,6 +7937,44 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		}
 
 		/**
+		 * Swap every Twig token for an inert placeholder a DOM parser leaves
+		 * alone: lowercase letters and digits only, so it survives as text, as
+		 * an attribute value and as an attribute name.
+		 *
+		 * @param string $html   HTML.
+		 * @param array  $tokens Filled with placeholder => token.
+		 * @return string
+		 */
+		private static function protect_twig_tokens( $html, array &$tokens ) {
+			return (string) preg_replace_callback(
+				'/\{\{.*?\}\}|\{%.*?%\}|\{#.*?#\}/s',
+				static function ( $m ) use ( &$tokens ) {
+					$key            = 'uichtwig' . count( $tokens ) . 'zz';
+					$tokens[ $key ] = $m[0];
+					return $key;
+				},
+				(string) $html
+			);
+		}
+
+		/**
+		 * Undo protect_twig_tokens(). A placeholder that stood between attributes
+		 * came back as an empty attribute (`uichtwig0zz=""`); that `=""` was never
+		 * the author's, so it goes too.
+		 *
+		 * @param string $html   HTML.
+		 * @param array  $tokens Placeholder => token.
+		 * @return string
+		 */
+		private static function restore_twig_tokens( $html, array $tokens ) {
+			if ( ! $tokens ) {
+				return $html;
+			}
+			$html = (string) preg_replace( '/((?:[a-z0-9_-]*uichtwig\d+zz)+[a-z0-9_-]*)=""/', '$1', (string) $html );
+			return strtr( $html, $tokens );
+		}
+
+		/**
 		 * Whether the currently queried post's author may emit raw code. Mirrors
 		 * the widget-level check; used to gate page-level custom-code output that
 		 * may have been written directly to post meta by an import path.
@@ -7617,6 +7985,10 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$post_id = get_queried_object_id();
 			if ( ! $post_id ) {
 				return current_user_can( 'unfiltered_html' );
+			}
+			// Author and last editor (Uich_Dynamic::author_trusted()).
+			if ( class_exists( 'Uich_Dynamic' ) ) {
+				return Uich_Dynamic::author_trusted( $post_id );
 			}
 			$author_id = (int) get_post_field( 'post_author', $post_id );
 			return $author_id > 0 && user_can( $author_id, 'unfiltered_html' );
@@ -7727,12 +8099,70 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return array();
 			}
 
+			// A Composer Builder page prints its own page code from its builder
+			// document (Uich_CB_Render::print_page_code). Code still sitting in its
+			// Elementor data belongs to sections that are no longer on the page.
+			if ( class_exists( 'Uich_CB_Content' ) && Uich_CB_Content::is_enabled( $post_id ) ) {
+				return array();
+			}
+
 			$elements = $this->get_elementor_data_from_post( $post_id );
+			if ( empty( $elements ) ) {
+				// Bricks and block-editor pages keep their Composer sections elsewhere; page code saved
+				// on them (by the panel or the chat's set_page_code) was never printed.
+				$elements = $this->get_composer_nodes_from_other_builders( $post_id );
+			}
 			if ( empty( $elements ) ) {
 				return array();
 			}
 
 			return $this->extract_widget_custom_code_from_elements( $elements, $location, 'page' );
+		}
+
+		/**
+		 * Composer sections of a Bricks or block-editor page, shaped like `_elementor_data` widget
+		 * nodes so extract_widget_custom_code_from_elements() can read them.
+		 *
+		 * @param int $post_id Post ID.
+		 * @return array
+		 */
+		private function get_composer_nodes_from_other_builders( $post_id ) {
+			$nodes = array();
+
+			// Bricks: flat element list; each Composer element carries its code as a JSON blob.
+			$bricks = get_post_meta( $post_id, '_bricks_page_content_2', true );
+			if ( is_array( $bricks ) ) {
+				foreach ( $bricks as $el ) {
+					if ( ! is_array( $el ) || ! isset( $el['name'] ) || 'uichemy-composer' !== $el['name'] ) {
+						continue;
+					}
+					$raw      = isset( $el['settings']['uichemy_settings'] ) ? (string) $el['settings']['uichemy_settings'] : '';
+					$settings = '' !== $raw ? json_decode( $raw, true ) : array();
+					if ( is_array( $settings ) ) {
+						$nodes[] = array( 'elType' => 'widget', 'widgetType' => 'uichemy-composer', 'settings' => $settings );
+					}
+				}
+			}
+
+			// Block editor: uichemy/composer blocks, nested anywhere.
+			if ( empty( $nodes ) && function_exists( 'parse_blocks' ) ) {
+				$post = get_post( $post_id );
+				if ( $post && false !== strpos( (string) $post->post_content, 'wp:uichemy/composer' ) ) {
+					$walk = function ( $blocks ) use ( &$walk, &$nodes ) {
+						foreach ( (array) $blocks as $b ) {
+							if ( isset( $b['blockName'] ) && 'uichemy/composer' === $b['blockName'] && isset( $b['attrs']['settings'] ) && is_array( $b['attrs']['settings'] ) ) {
+								$nodes[] = array( 'elType' => 'widget', 'widgetType' => 'uichemy-composer', 'settings' => $b['attrs']['settings'] );
+							}
+							if ( ! empty( $b['innerBlocks'] ) ) {
+								$walk( $b['innerBlocks'] );
+							}
+						}
+					};
+					$walk( parse_blocks( $post->post_content ) );
+				}
+			}
+
+			return $nodes;
 		}
 
 		/**

@@ -29,11 +29,8 @@
  * abilities stay separable from anything UiChemy itself registers later. That
  * separation is exactly what NAMESPACE_SLUG below filters on.
  *
- * The flat v1 tool table (UiChemy_MCP_Server_V1) is NOT registered in this
- * merged build. It used to live at /wp-json/uichemy/v1/mcp; those same tools
- * already reach /wp-json/uichemy/v1/mcp through the `uichemy_mcp_tools` bridge
- * in class-uichemy-mcp-loader.php, so a second copy of them under a uichemy/
- * route would only be a duplicate surface to keep in sync.
+ * This is UiChemy's only MCP endpoint. The legacy flat-tool endpoint at
+ * /wp-json/uichemy/v1/mcp was removed.
  *
  * @link       https://posimyth.com/
  * @since      5.1.0
@@ -395,7 +392,46 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 				);
 			}
 
+			$refused = self::refuse_unoffered_action( $ability, $input );
+			if ( $refused ) {
+				return $refused;
+			}
+
 			return $ability->execute( $input );
+		}
+
+		/**
+		 * page / post: answer an action this mode does not offer with the
+		 * router's explanation, before the Abilities API's enum check answers
+		 * with a bare "input[action] is not one of ...".
+		 *
+		 * Only refuses - an action outside the enum never reaches a handler.
+		 *
+		 * @param \WP_Ability $ability Resolved ability.
+		 * @param array       $input   Ability input.
+		 * @return WP_Error|null
+		 */
+		private static function refuse_unoffered_action( $ability, array $input ) {
+			$name = $ability->get_name();
+			if ( ! in_array( $name, array( self::NAMESPACE_SLUG . '/page', self::NAMESPACE_SLUG . '/post' ), true ) ) {
+				return null;
+			}
+			if ( ! isset( $input['action'] ) || ! is_string( $input['action'] ) || '' === $input['action'] ) {
+				return null;
+			}
+			if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) || ! method_exists( 'UiChemy_MCP_V2_Router', 'unavailable_action_error' ) ) {
+				return null;
+			}
+
+			$schema = $ability->get_input_schema();
+			$enum   = isset( $schema['properties']['action']['enum'] ) && is_array( $schema['properties']['action']['enum'] )
+				? $schema['properties']['action']['enum']
+				: array();
+			if ( ! $enum || in_array( $input['action'], $enum, true ) ) {
+				return null;
+			}
+
+			return UiChemy_MCP_V2_Router::unavailable_action_error( $input['action'] );
 		}
 
 		/**

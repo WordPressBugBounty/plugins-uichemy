@@ -63,13 +63,13 @@ class Uich_Fields_Import_ACF extends Uich_Fields_Import_Source {
 	 */
 	public static function skip_reasons() {
 		return array(
-			'password'         => 'Password fields store cleartext. UiChemy does not offer this type; importing would copy the secret into a second place.',
-			'flexible_content' => 'No UiChemy equivalent. Needs a repeater-per-layout split — planned, not in this importer.',
-			'gallery'          => 'No UiChemy gallery type yet. Interim: a repeater of image fields.',
-			'clone'            => 'Clone fields are resolved at render time in ACF; there is nothing stored to copy.',
-			'tab'              => 'Layout-only field, stores no value.',
-			'accordion'        => 'Layout-only field, stores no value.',
-			'message'          => 'Layout-only field, stores no value.',
+			'password'         => __( 'Password fields store cleartext. UiChemy does not offer this type; importing would copy the secret into a second place.', 'uichemy' ),
+			'flexible_content' => __( 'No UiChemy equivalent. Needs a repeater-per-layout split — planned, not in this importer.', 'uichemy' ),
+			'gallery'          => __( 'No UiChemy gallery type yet. Interim: a repeater of image fields.', 'uichemy' ),
+			'clone'            => __( 'Clone fields are resolved at render time in ACF; there is nothing stored to copy.', 'uichemy' ),
+			'tab'              => __( 'Layout-only field, stores no value.', 'uichemy' ),
+			'accordion'        => __( 'Layout-only field, stores no value.', 'uichemy' ),
+			'message'          => __( 'Layout-only field, stores no value.', 'uichemy' ),
 		);
 	}
 
@@ -537,7 +537,7 @@ class Uich_Fields_Import_ACF extends Uich_Fields_Import_Source {
 				$skipped[] = array(
 					'field'  => $r->post_title,
 					'type'   => $type,
-					'reason' => isset( $skips[ $type ] ) ? $skips[ $type ] : 'Field has no name, so it stores no value.',
+					'reason' => isset( $skips[ $type ] ) ? $skips[ $type ] : __( 'Field has no name, so it stores no value.', 'uichemy' ),
 				);
 				continue;
 			}
@@ -566,7 +566,7 @@ class Uich_Fields_Import_ACF extends Uich_Fields_Import_Source {
 					$skipped[] = array(
 						'field'  => $prefix . $name,
 						'type'   => 'group',
-						'reason' => 'Group has no readable sub-fields (neither child posts nor inline sub_fields).',
+						'reason' => __( 'Group has no readable sub-fields (neither child posts nor inline sub_fields).', 'uichemy' ),
 					);
 				}
 				$fields = array_merge( $fields, $sub );
@@ -577,7 +577,7 @@ class Uich_Fields_Import_ACF extends Uich_Fields_Import_Source {
 				$skipped[] = array(
 					'field'  => $name,
 					'type'   => $type,
-					'reason' => 'No UiChemy equivalent for this ACF type.',
+					'reason' => __( 'No UiChemy equivalent for this ACF type.', 'uichemy' ),
 				);
 				continue;
 			}
@@ -653,7 +653,7 @@ class Uich_Fields_Import_ACF extends Uich_Fields_Import_Source {
 				$skipped[] = array(
 					'field'  => $label,
 					'type'   => $type,
-					'reason' => isset( $skips[ $type ] ) ? $skips[ $type ] : 'Field has no name, so it stores no value.',
+					'reason' => isset( $skips[ $type ] ) ? $skips[ $type ] : __( 'Field has no name, so it stores no value.', 'uichemy' ),
 				);
 				continue;
 			}
@@ -675,7 +675,7 @@ class Uich_Fields_Import_ACF extends Uich_Fields_Import_Source {
 					$skipped[] = array(
 						'field'  => $prefix . $name,
 						'type'   => 'group',
-						'reason' => 'Group has no readable sub-fields (neither child posts nor inline sub_fields).',
+						'reason' => __( 'Group has no readable sub-fields (neither child posts nor inline sub_fields).', 'uichemy' ),
 					);
 				}
 				$fields = array_merge( $fields, $sub );
@@ -686,7 +686,7 @@ class Uich_Fields_Import_ACF extends Uich_Fields_Import_Source {
 				$skipped[] = array(
 					'field'  => $prefix . $name,
 					'type'   => $type,
-					'reason' => 'No UiChemy equivalent for this ACF type.',
+					'reason' => __( 'No UiChemy equivalent for this ACF type.', 'uichemy' ),
 				);
 				continue;
 			}

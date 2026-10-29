@@ -70,6 +70,8 @@ if ( ! class_exists( 'Uich_DD_Catalog' ) ) {
 							'key'   => 'link',
 							'label' => 'Link',
 							'type'  => 'url',
+							// The provider answers all three; skills and older builds use permalink.
+							'note'  => 'Also reachable as post.permalink and post.url - the same value.',
 						),
 						array(
 							'key'   => 'date',
@@ -120,6 +122,16 @@ if ( ! class_exists( 'Uich_DD_Catalog' ) ) {
 							'label'     => 'Tags',
 							'type'      => 'array',
 							'chains_to' => 'term',
+						),
+						array(
+							'key'       => 'terms',
+							'label'     => 'Terms of a taxonomy',
+							'type'      => 'array',
+							'chains_to' => 'term',
+							'args'      => array( 'taxonomy' ),
+							// categories / tags cover the two core taxonomies only; a
+							// custom taxonomy (services, brands) is reached here.
+							'note'      => 'Any taxonomy by slug, e.g. {% for t in post.terms(\'service\') %}{{ t.name }}{% endfor %}. Defaults to category.',
 						),
 						array(
 							'key'       => 'prev',

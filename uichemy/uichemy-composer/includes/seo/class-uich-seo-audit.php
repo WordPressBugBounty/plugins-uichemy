@@ -387,6 +387,15 @@ if ( ! class_exists( 'Uich_SEO_Audit' ) ) {
 				return false; // The template owns the page and has no H1: report it.
 			}
 			$theme_title = in_array( $source, array( 'blocks', 'classic' ), true );
+			// A Composer Builder document builds its own H1 only on the UiChemy
+			// Canvas / Full width layouts, which print no title. On the theme's
+			// own layout ("Standard", and every post by default) the theme prints
+			// the title above it, so the H1 is outside the content like any
+			// block-editor post - otherwise those pages reported a missing H1.
+			if ( 'composer:cb' === $source ) {
+				$layout      = (string) get_post_meta( $post_id, '_wp_page_template', true );
+				$theme_title = ! in_array( $layout, array( 'uichemy-canvas', 'uichemy-full-width' ), true );
+			}
 			/**
 			 * Does the theme print this post's title as the H1?
 			 *
@@ -687,7 +696,8 @@ if ( ! class_exists( 'Uich_SEO_Audit' ) ) {
 						'severity' => $row['severity'],
 						'check'    => 'seo_' . $row['check'],
 						'message'  => $row['message'],
-						'fix'      => 'uichemy-composer/seo describe post_id=' . $post_id . ( $row['node_path'] ? ' (node ' . $row['node_path'] . ')' : '' ),
+						// audit-page-seo is the action that explains this finding and names its fix.
+						'fix'      => 'uichemy-composer/seo (action="audit-page-seo", post_id=' . $post_id . ')' . ( $row['node_path'] ? ' (node ' . $row['node_path'] . ')' : '' ),
 					);
 				}
 			}

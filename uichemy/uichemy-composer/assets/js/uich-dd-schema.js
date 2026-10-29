@@ -36,6 +36,9 @@
 				{ key: 'thumbnail', label: __( 'Featured image', 'uichemy' ), type: 'provider', provider: 'image' },
 				{ key: 'categories', label: __( 'Categories', 'uichemy' ), type: 'array', provider: 'term' },
 				{ key: 'tags', label: __( 'Tags', 'uichemy' ), type: 'array', provider: 'term' },
+				// Any taxonomy by slug - categories / tags only cover the two core ones.
+				// Uich_Post_Provider_Pro answers terms('<taxonomy>').
+				{ key: 'terms', label: __( 'Terms of a taxonomy', 'uichemy' ), type: 'array', provider: 'term', args: [ { name: 'taxonomy', label: __( 'Taxonomy', 'uichemy' ), default: 'category' } ] },
 				// Adjacent-post navigation. Chainable back into `post`, so the picker
 				// drills Previous post -> Title / Link / Featured image; resolves to
 				// nothing at the first / last post so the link can be hidden with

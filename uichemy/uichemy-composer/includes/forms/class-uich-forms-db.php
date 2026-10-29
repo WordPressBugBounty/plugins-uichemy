@@ -16,7 +16,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'Uich_Forms_DB' ) ) {
 	class Uich_Forms_DB {
 
-		const DB_VERSION = '1.2.0';
+		const DB_VERSION = '1.2.3';
 
 		public static function table_submissions() {
 			global $wpdb;
@@ -108,10 +108,25 @@ if ( ! class_exists( 'Uich_Forms_DB' ) ) {
 		}
 
 		public static function maybe_upgrade() {
+			// Only on a version change: ensure_columns() runs SHOW COLUMNS, which
+			// is a query on every front-end request otherwise (K-01).
 			if ( get_option( 'uich_forms_db_version' ) !== self::DB_VERSION ) {
 				self::install();
+				self::ensure_columns();
+				self::clear_ips();
 			}
-			self::ensure_columns();
+		}
+
+		/**
+		 * Blank the visitor IPs (1.2.2) and user agents (1.2.3) older
+		 * submissions kept. New ones are never written with either; this
+		 * removes what was stored before. Runs once per site, with the bump.
+		 */
+		private static function clear_ips() {
+			global $wpdb;
+			$subs = self::table_submissions();
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery, WordPress.DB.PreparedSQL, PluginCheck.Security.DirectDB.UnescapedDBParameter -- Table name is a trusted $wpdb->prefix constant and the statement carries no user input.
+			$wpdb->query( "UPDATE `{$subs}` SET user_ip = '', user_agent = '' WHERE user_ip <> '' OR ( user_agent IS NOT NULL AND user_agent <> '' )" );
 		}
 
 		/**

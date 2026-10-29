@@ -32,6 +32,22 @@ if ( ! class_exists( 'Uich_SEO_Emitter' ) ) {
 		public static function init() {
 			add_action( 'wp', array( __CLASS__, 'maybe_take_head' ), 20 );
 			add_filter( 'template_include', array( __CLASS__, 'dedupe_title_tag' ), 1000 );
+			add_filter( 'wp_robots', array( __CLASS__, 'noindex_previews' ) );
+		}
+
+		/**
+		 * wp_robots: a preview is never indexed. Drafts emit no SEO tags at all
+		 * (should_emit()), so a preview link that leaked got indexed (F-05).
+		 *
+		 * @param array $robots Directives.
+		 * @return array
+		 */
+		public static function noindex_previews( $robots ) {
+			if ( is_preview() ) {
+				$robots['noindex']  = true;
+				$robots['nofollow'] = true;
+			}
+			return $robots;
 		}
 
 		/**

@@ -29,7 +29,7 @@ if ( ! function_exists( 'uichemy_load_plugin_modules' ) ) {
 	/**
 	 * Require + init the modules that belong to THIS build.
 	 *
-	 * Called once from UiChemy_MCP_Loader (see includes/mcp/class-uichemy-mcp-loader.php),
+	 * Called once from includes/mcp/class-uichemy-mcp-loader.php,
 	 * which runs after UICHEMY_PATH is defined and after the shared MCP/abilities
 	 * layer is in place.
 	 *

@@ -303,6 +303,9 @@ if ( ! class_exists( 'Uich_ND_Api' ) ) {
 			$done    = (bool) $req->get_param( 'done' );
 			$consent = (bool) $req->get_param( 'consent' );
 			Uich_ND_Settings::set_onboarded( $done );
+			if ( $done ) {
+				Uich_ND_Settings::ensure_builder();
+			}
 
 			// Best-effort analytics ping — only on completion, only once,
 			// and only with the user's explicit opt-in consent. WordPress.org

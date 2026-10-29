@@ -17,6 +17,60 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 	class UiChemy_Composer_Renderer {
 
+		/*
+		 * GSAP and three.js live HERE, not on the Elementor widget, because the
+		 * widget extends \Elementor\Widget_Base and therefore cannot load at all
+		 * on a Gutenberg-only site. The block render needs the same libraries, so
+		 * a home on an always-loaded class is the only one that serves both.
+		 */
+		public static function enqueue_gsap_runtime() {
+			if ( ! defined( 'UICHEMY_URL' ) ) {
+				return;
+			}
+			// Versioned by the bundled GSAP release, not the plugin version: a GSAP
+			// update ships inside a plugin update that may keep the same number, and
+			// a browser or CDN still serving the old file mixes core and plugins.
+			$ver = '3.15.0';
+			wp_enqueue_script( 'uichemy-gsap-core', UICHEMY_URL . 'assets/js/vendor/gsap/gsap.min.js', array(), $ver, true );
+			wp_enqueue_script( 'uichemy-gsap-scrolltrigger', UICHEMY_URL . 'assets/js/vendor/gsap/ScrollTrigger.min.js', array( 'uichemy-gsap-core' ), $ver, true );
+			wp_enqueue_script( 'uichemy-gsap-motionpath', UICHEMY_URL . 'assets/js/vendor/gsap/MotionPathPlugin.min.js', array( 'uichemy-gsap-core' ), $ver, true );
+			wp_enqueue_script( 'uichemy-gsap-drawsvg', UICHEMY_URL . 'assets/js/vendor/gsap/DrawSVGPlugin.min.js', array( 'uichemy-gsap-core' ), $ver, true );
+
+			// For the editor only: keep a reference to this copy of GSAP, and to one the
+			// page may have loaded before it. A design that pulls its own GSAP from a CDN
+			// replaces window.gsap / window.ScrollTrigger, and the triggers made with the
+			// other copy then vanished from the scroll timeline and from the clean-up
+			// sweeps after an edit (src/uichemy-composer/composer-scroll-registry.js).
+			static $refs_added = false;
+			if ( ! $refs_added && is_user_logged_in() && current_user_can( 'edit_posts' ) ) {
+				$refs_added = true;
+				wp_add_inline_script( 'uichemy-gsap-core', 'window.uichemyPrevGsap=window.gsap||null;window.uichemyPrevScrollTrigger=window.ScrollTrigger||null;', 'before' );
+				wp_add_inline_script( 'uichemy-gsap-core', 'window.uichemyGsap=window.gsap;', 'after' );
+				wp_add_inline_script( 'uichemy-gsap-scrolltrigger', 'window.uichemyScrollTrigger=window.ScrollTrigger;', 'after' );
+			}
+		}
+
+		public static function enqueue_three_runtime() {
+			if ( ! defined( 'UICHEMY_BUILD_URL' ) ) {
+				return;
+			}
+			$path = defined( 'UICHEMY_BUILD_PATH' ) ? UICHEMY_BUILD_PATH . 'three.js' : '';
+			$ver  = ( $path && file_exists( $path ) )
+				? filemtime( $path )
+				: ( defined( 'UICHEMY_VERSION' ) ? UICHEMY_VERSION : false );
+
+			wp_enqueue_script( 'uichemy-three', UICHEMY_BUILD_URL . 'three.js', array(), $ver, true );
+		}
+
+		/**
+		 * The post whose form settings apply to forms rendered right now, when
+		 * that is not the queried page - set by the Composer Builder while it
+		 * renders a theme-builder template (Uich_CB_Render::render_section()).
+		 *
+		 * @var int
+		 */
+		public static $form_config_post = 0;
+
 		/**
 		 * Whether the icon-font guard has already been emitted on this request.
 		 *
@@ -233,8 +287,33 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			if ( ! class_exists( 'UiChemy_Motion' ) ) {
 				return (string) $code;
 			}
-			return UiChemy_Motion::compile( (string) $code );
+			$code = (string) $code;
+			if ( false === strpos( $code, self::JS_SECTION_MARK ) ) {
+				return UiChemy_Motion::compile( $code );
+			}
+
+			// A builder page joins its sections' JS as blocks, each declaring its
+			// own `uichemy_controller_bridge`. UiChemy_Motion::compile() replaces
+			// only the FIRST declaration, so every later section kept its
+			// `{ value, label, … }` specs and read objects where it expected
+			// values. Compiled one block at a time, each gets its own values.
+			$parts = preg_split( '/(?=' . preg_quote( self::JS_SECTION_MARK, '/' ) . ')/', $code );
+			$out   = '';
+			foreach ( (array) $parts as $part ) {
+				$compiled = UiChemy_Motion::compile( $part );
+				// compile() binds the values with `var`, which a block does not
+				// scope: every section would share the last section's values once
+				// a callback reads them later. `let` keeps them in the block.
+				if ( 0 === strpos( ltrim( $part ), self::JS_SECTION_MARK ) ) {
+					$compiled = preg_replace( '/\bvar(\s+uichemy_controller_bridge\s*=)/', 'let$1', $compiled, 1 );
+				}
+				$out .= $compiled;
+			}
+			return $out;
 		}
+
+		/** What opens one section's block in a builder page's joined JS (Uich_CB_Content::JS_SCOPE_MARK). */
+		const JS_SECTION_MARK = '/* uich-cb:section */';
 
 		public static function decode_code_entities( $code ) {
 			$code = (string) $code;
@@ -242,6 +321,42 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 				return $code;
 			}
 			return html_entity_decode( $code, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+		}
+
+		/**
+		 * Keep the author's straight quotes on the front end. Composer output is
+		 * printed inside the post content, where wptexturize curls " and ' into
+		 * smart quotes. Writing them as &#34; / &#39; in TEXT nodes renders the same
+		 * characters but gives wptexturize nothing to match (it leaves numeric
+		 * entities alone). Tags, attributes, comments, CDATA and the bodies of
+		 * script / style / textarea / pre / code / noscript are left as they are.
+		 *
+		 * @param string $html Rendered Composer HTML.
+		 * @return string
+		 */
+		public static function protect_text_quotes( $html ) {
+			$html = (string) $html;
+			if ( false === strpos( $html, '"' ) && false === strpos( $html, "'" ) ) {
+				return $html;
+			}
+			$out = preg_replace_callback(
+				'#<!--.*?-->|<!\[CDATA\[.*?\]\]>|<(script|style|textarea|pre|code|noscript)(?![\w-])(?:[^>"\']++|"[^"]*+"|\'[^\']*+\')*+>.*?</\1\s*>|<[a-zA-Z/!?](?:[^>"\']++|"[^"]*+"|\'[^\']*+\')*+>|([^<]+)#is',
+				static function ( $m ) {
+					if ( isset( $m[2] ) && '' !== $m[2] ) {
+						return strtr(
+							$m[2],
+							array(
+								'"' => '&#34;',
+								"'" => '&#39;',
+							)
+						);
+					}
+					return $m[0];
+				},
+				$html
+			);
+			// A regex failure (backtrack limit) must never blank the widget.
+			return null === $out ? $html : $out;
 		}
 
 		/**
@@ -483,6 +598,11 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 				$output = strtr( $output, $protected_code );
 			}
 
+			// Keep straight quotes in text from being curled by wptexturize (front end only).
+			if ( ! $is_editor ) {
+				$output = self::protect_text_quotes( $output );
+			}
+
 			// Lazy-load images that carry no loading attribute (front end only).
 			if ( ! $is_editor && class_exists( 'UiChemy_Fast_Load' ) ) {
 				$output = UiChemy_Fast_Load::optimize_images( $output, $uid );
@@ -494,7 +614,9 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 				$is_editor
 			);
 
-			$out = self::icon_font_guard();
+			// Only where an icon font is used: 602 bytes of guard on every page
+			// with none was waste (K-06).
+			$out = preg_match( '/(?<![\w-])(?:fa[srlbdk]?|fa-[a-z0-9-]+|eicon-[a-z0-9-]+|dashicons(?:-[a-z0-9-]+)?)(?![\w])/', $output ) ? self::icon_font_guard() : '';
 
 			if ( '' !== $deps_before ) {
 				$out .= $deps_before;
@@ -559,7 +681,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			// authored in either Elementor or Gutenberg actually submits somewhere —
 			// previously this never ran anywhere, so forms rendered inert markup.
 			if ( class_exists( 'Uich_Forms' ) ) {
-				$out = Uich_Forms::process_output( $out, (string) $uid, (int) get_the_ID() );
+				$out = Uich_Forms::process_output( $out, (string) $uid, (int) get_the_ID(), (int) self::$form_config_post );
 			}
 
 			return $out;
@@ -935,7 +1057,9 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			$slot_val = isset( $settings[ "slot_{$slot_index}" ] ) ? trim( $settings[ "slot_{$slot_index}" ] ) : '';
 			if ( '' !== $slot_val ) {
 				if ( XML_TEXT_NODE === $node->nodeType ) {
-					$node->nodeValue = htmlspecialchars( $slot_val, ENT_QUOTES, 'UTF-8' );
+					// Text-node nodeValue is taken literally and escaped on
+					// saveHTML(); pre-escaping here double-encoded ("&amp;amp;").
+					$node->nodeValue = $slot_val;
 				} elseif ( XML_ELEMENT_NODE === $node->nodeType ) {
 					$node->nodeValue = htmlspecialchars( $slot_val, ENT_QUOTES, 'UTF-8' );
 				}
@@ -1121,6 +1245,14 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			$template = <<<'JS'
 (function(){
   var SCOPE=%1$s, BODY=%2$s;
+  // Run a widget's script once per page. The same widget's code can reach the page twice (a page rendered a second time, head and footer
+  // placement both active, cache/optimizer merges...); every click handler was then added twice, so an accordion opened and closed in
+  // the same click (QA: FAQ built by chat does not open on the front end).
+  var RAN=(window.__uichComposerJsRan=window.__uichComposerJsRan||{}), HASH=5381, hi;
+  for(hi=0;hi<BODY.length;hi++){ HASH=((HASH<<5)+HASH+BODY.charCodeAt(hi))|0; }
+  var KEY=SCOPE+'#'+HASH;
+  if(RAN[KEY]){ return; }
+  RAN[KEY]=1;
   var root=null; try{ root=document.querySelector(SCOPE); }catch(e){}
   var oQS=document.querySelector, oQSA=document.querySelectorAll,
       owA=window.addEventListener, odA=document.addEventListener;
@@ -1839,11 +1971,33 @@ JS;
 		 *
 		 * @return array{ top: WP_Post[], by_parent: array<int, WP_Post[]> }|array Empty on failure.
 		 */
-		private function get_active_nav_menu_items() {
+		private function get_active_nav_menu_items( $menu = '', $location = '' ) {
 			$locations = get_nav_menu_locations();
 			$menu_id   = 0;
 
-			if ( ! empty( $locations ) && is_array( $locations ) ) {
+			// An explicit menu (id, slug or name) wins, then an explicit location.
+			// An unknown one renders an empty nav rather than another menu: a
+			// footer silently showing the header's links is the harder bug to see.
+			if ( '' !== (string) $menu ) {
+				$picked = wp_get_nav_menu_object( ctype_digit( (string) $menu ) ? (int) $menu : (string) $menu );
+				if ( ! $picked ) {
+					return array();
+				}
+				$menu_id = (int) $picked->term_id;
+			} elseif ( '' !== (string) $location ) {
+				$wanted = strtolower( (string) $location );
+				foreach ( (array) $locations as $loc_slug => $loc_menu_id ) {
+					if ( strtolower( (string) $loc_slug ) === $wanted ) {
+						$menu_id = (int) $loc_menu_id;
+						break;
+					}
+				}
+				if ( ! $menu_id ) {
+					return array();
+				}
+			}
+
+			if ( ! $menu_id && ! empty( $locations ) && is_array( $locations ) ) {
 				// Normalize keys to lowercase for a case-insensitive search
 				$normalized_locations = array();
 				foreach ( $locations as $k => $v ) {
@@ -2267,7 +2421,19 @@ JS;
 
 			// ── nav-menu ──────────────────────────────────────────────────────────
 			if ( 'nav-menu' === $type ) {
-				$menu_data = $this->get_active_nav_menu_items();
+				// menu="footer-menu" (slug, name or id) or location="footer" picks
+				// one menu; without either it is the header's location menu, as
+				// before. Both attributes are consumed here, not printed.
+				$pick = array( 'menu' => '', 'location' => '' );
+				if ( $attrs_str ) {
+					foreach ( array_keys( $pick ) as $pick_key ) {
+						if ( preg_match( '/(?:^|\s)' . $pick_key . '\s*=\s*(["\'])(.*?)\1/i', $attrs_str, $pm ) ) {
+							$pick[ $pick_key ] = trim( $pm[2] );
+							$attrs_str         = trim( str_replace( $pm[0], ' ', $attrs_str ) );
+						}
+					}
+				}
+				$menu_data = $this->get_active_nav_menu_items( $pick['menu'], $pick['location'] );
 				if ( empty( $menu_data ) ) {
 					$nav_attr = $attrs_str ? ' ' . $attrs_str : '';
 					return $is_wrapped_in_nav ? '<ul' . $nav_attr . '></ul>' : '<nav' . $nav_attr . '></nav>';

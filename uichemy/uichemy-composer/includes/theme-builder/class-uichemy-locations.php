@@ -149,12 +149,6 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 				'header' => sprintf( /* translators: %s: plugin name. */ __( 'Edit Header (%s)', 'uichemy' ), $brand ),
 				'footer' => sprintf( /* translators: %s: plugin name. */ __( 'Edit Footer (%s)', 'uichemy' ), $brand ),
 			);
-			if ( is_singular() ) {
-				$candidates['single'] = sprintf( /* translators: %s: plugin name. */ __( 'Edit Single Template (%s)', 'uichemy' ), $brand );
-			}
-			if ( is_404() ) {
-				$candidates['error_404'] = sprintf( /* translators: %s: plugin name. */ __( 'Edit 404 Template (%s)', 'uichemy' ), $brand );
-			}
 
 			$nodes = array();
 			foreach ( $candidates as $type => $label ) {
@@ -165,6 +159,21 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 						'id'    => $id,
 					);
 				}
+			}
+
+			// The full-page template this request actually rendered with, whatever
+			// its type. Only `single` and `error_404` were looked up here, so a
+			// product, shop, archive, search or order-received page showed just
+			// the header and footer — the template drawing the page itself had no
+			// link. The admin bar prints after template_include, so the render id
+			// is known by now.
+			$page_id = class_exists( 'UiChemy_Template_Render' ) ? UiChemy_Template_Render::get_current_render_id() : 0;
+			if ( $page_id && current_user_can( 'edit_post', $page_id ) ) {
+				$type = (string) get_post_meta( $page_id, UiChemy_Template_CPT::META_TYPE, true );
+				$nodes[ 'page-' . ( '' !== $type ? $type : 'template' ) ] = array(
+					'label' => sprintf( /* translators: 1: template kind, e.g. "Product", 2: plugin name. */ __( 'Edit %1$s Template (%2$s)', 'uichemy' ), self::template_kind_label( $type ), $brand ),
+					'id'    => $page_id,
+				);
 			}
 
 			if ( empty( $nodes ) ) {
@@ -187,15 +196,36 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 						'parent' => 'uichemy-theme-builder',
 						'id'     => 'uichemy-tb-' . $type,
 						'title'  => $node['label'],
-						'href'   => add_query_arg(
-							array(
-								'post'   => $node['id'],
-								'action' => 'elementor',
-							),
-							admin_url( 'post.php' )
-						),
+						'href'   => UiChemy_Template_CPT::edit_url_for( $node['id'] ),
 					)
 				);
+			}
+		}
+
+		/**
+		 * The name of a full-page template type, as the admin bar shows it.
+		 *
+		 * @param string $type Template type (UiChemy_Template_CPT::TYPES).
+		 * @return string
+		 */
+		private static function template_kind_label( $type ) {
+			switch ( $type ) {
+				case 'single':
+					return __( 'Single', 'uichemy' );
+				case 'archive':
+					return __( 'Archive', 'uichemy' );
+				case 'single_product':
+					return __( 'Product', 'uichemy' );
+				case 'product_archive':
+					return __( 'Shop', 'uichemy' );
+				case 'order_received':
+					return __( 'Order Received', 'uichemy' );
+				case 'search':
+					return __( 'Search Results', 'uichemy' );
+				case 'error_404':
+					return __( '404', 'uichemy' );
+				default:
+					return __( 'Page', 'uichemy' );
 			}
 		}
 
@@ -569,6 +599,22 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 						'default_class'  => '\\Bricks\\Frontend',
 						'default_method' => 'render_header',
 					),
+					// Astra, GeneratePress and Kadence each fire an action that
+					// only prints the site header. Their callbacks differ by
+					// version (Astra's header builder is a class, its legacy
+					// header a function), so the whole action is taken (J1-01).
+					array(
+						'action'   => 'astra_header',
+						'take_all' => true,
+					),
+					array(
+						'action'   => 'generate_header',
+						'take_all' => true,
+					),
+					array(
+						'action'   => 'kadence_header',
+						'take_all' => true,
+					),
 				),
 				'footer' => array(
 					// Bricks theme — see the header slot above.
@@ -580,6 +626,20 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 					array(
 						'action'           => 'nexter_footer',
 						'default_callback' => 'nexter_footer_template',
+					),
+					// See the header slots above. GeneratePress prints its footer
+					// widgets and its site info as two callbacks; both go.
+					array(
+						'action'   => 'astra_footer',
+						'take_all' => true,
+					),
+					array(
+						'action'   => 'generate_footer',
+						'take_all' => true,
+					),
+					array(
+						'action'   => 'kadence_footer',
+						'take_all' => true,
 					),
 				),
 			);
@@ -632,6 +692,25 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 						}
 					}
 
+					// An action that only prints the theme's header or footer:
+					// every callback on it is the theme's, so all of them go —
+					// taken when it fires, so a theme that hooks it late is
+					// still replaced.
+					if ( ! empty( $slot['take_all'] ) ) {
+						add_action(
+							$action,
+							static function () use ( $action, $type ) {
+								$taken = self::detach_all_callbacks( $action );
+								if ( $taken ) {
+									self::$replaced_defaults[ $type ] = $taken['callback'];
+								}
+								'header' === $type ? self::render_header_location() : self::render_footer_location();
+							},
+							PHP_INT_MIN
+						);
+						continue;
+					}
+
 					// A theme that hooks an instance method (Bricks) exposes no
 					// callable string to remove, so the slot is taken by class.
 					if ( ! empty( $slot['default_class'] ) ) {
@@ -655,6 +734,39 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 					);
 				}
 			}
+		}
+
+		/**
+		 * Remove every callback on an action, and hand back the first one (by
+		 * priority) so it can still be used as a fallback.
+		 *
+		 * @param string $action Hook name.
+		 * @return array{priority:int,callback:callable}|null The displaced callback.
+		 */
+		private static function detach_all_callbacks( $action ) {
+			global $wp_filter;
+
+			if ( empty( $wp_filter[ $action ] ) || ! isset( $wp_filter[ $action ]->callbacks ) ) {
+				return null;
+			}
+
+			$displaced = null;
+			$callbacks = $wp_filter[ $action ]->callbacks;
+			ksort( $callbacks );
+			foreach ( $callbacks as $priority => $list ) {
+				foreach ( $list as $cb ) {
+					// PHP_INT_MIN is UiChemy's own taker (register_theme_action_handlers()).
+					if ( null === $displaced && PHP_INT_MIN !== (int) $priority ) {
+						$displaced = array(
+							'priority' => (int) $priority,
+							'callback' => $cb['function'],
+						);
+					}
+					remove_action( $action, $cb['function'], $priority );
+				}
+			}
+
+			return $displaced;
 		}
 
 		/**
@@ -748,7 +860,7 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 			$html = $id ? UiChemy_Template_Render::get_render_html_for( $id ) : '';
 
 			if ( '' !== $html ) {
-				echo $html; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Trusted Elementor/UiChemy builder output.
+				echo self::mark_for_builder_canvas( $html, $type, $id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Trusted Elementor/UiChemy builder output.
 				return;
 			}
 
@@ -791,7 +903,7 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 			}
 
 			$rendered = UiChemy_Template_Render::get_render_html_for( $id );
-			return ( '' !== $rendered ) ? $rendered : $html;
+			return ( '' !== $rendered ) ? self::mark_for_builder_canvas( $rendered, $type, $id ) : $html;
 		}
 
 		/**
@@ -820,8 +932,54 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 
 			// Trusted Elementor builder output (CSS inlined). Echoed as-is like
 			// Elementor's own location renderer.
-			echo UiChemy_Template_Render::get_render_html_for( $id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			echo self::mark_for_builder_canvas( UiChemy_Template_Render::get_render_html_for( $id ), $map[ $location ], $id ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
 			return true;
+		}
+
+		/**
+		 * On the Composer Builder's canvas, tag a header / footer so the canvas
+		 * can offer "Edit Header" / "Edit Footer" on hover.
+		 *
+		 * The page being built cannot edit its header — the header is its own
+		 * template, and the canvas deliberately leaves it unpickable — but it is
+		 * right there on screen, so the way to it should be too. This wraps the
+		 * template in a marker carrying what the canvas needs: which location it
+		 * is and the URL that opens it in the editor it was built in
+		 * (UiChemy_Template_CPT::edit_url_for — the admin bar's answer, so the
+		 * two can never send you to different editors).
+		 *
+		 * Only on the canvas and only for someone who may edit the template;
+		 * everywhere else the markup is returned untouched. `display: contents`
+		 * so the wrapper makes no box of its own: a sticky header stays sticky
+		 * to the page, not to a div wrapped round it.
+		 *
+		 * @param string $html Rendered template markup.
+		 * @param string $type 'header' or 'footer'.
+		 * @param int    $id   Template post ID.
+		 * @return string
+		 */
+		private static function mark_for_builder_canvas( $html, $type, $id ) {
+			$id = (int) $id;
+			if ( '' === (string) $html || ! $id || ! in_array( $type, array( 'header', 'footer' ), true ) ) {
+				return $html;
+			}
+			if ( ! class_exists( 'Uich_CB_Canvas' ) || ! Uich_CB_Canvas::is_canvas() || ! current_user_can( 'edit_post', $id ) ) {
+				return $html;
+			}
+
+			$label = 'header' === $type ? __( 'Edit Header', 'uichemy' ) : __( 'Edit Footer', 'uichemy' );
+
+			return '<div class="uipb-location" style="display:contents"'
+				. ' data-uipb-location="' . esc_attr( $type ) . '"'
+				. ' data-uipb-template="' . esc_attr( (string) $id ) . '"'
+				. ' data-uipb-edit="' . esc_url( UiChemy_Template_CPT::edit_url_for( $id ) ) . '"'
+				// Name and editor for the builder's top-bar template switcher,
+				// which lists the header / footer this page actually rendered.
+				. ' data-uipb-title="' . esc_attr( get_the_title( $id ) ) . '"'
+				. ' data-uipb-editor="' . esc_attr( UiChemy_Template_CPT::editor_for( $id ) ) . '"'
+				. ' data-uipb-label="' . esc_attr( $label ) . '">'
+				. $html
+				. '</div>';
 		}
 
 		/**
@@ -834,16 +992,16 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 				return;
 			}
 			if ( UiChemy_Template_Resolver::has_active( 'header' ) || UiChemy_Template_Resolver::has_active( 'footer' ) ) {
-				// Elementor's base stylesheet only when Elementor is here; its
-				// absence must not stop the block styles below from loading.
-				if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->frontend ) ) {
-					\Elementor\Plugin::$instance->frontend->enqueue_styles();
-				}
-				// Header/footer may be Gutenberg-authored — ensure block styles too,
-				// including the per-template stylesheet its block addon generates
-				// (which is keyed to the template's own post id, not the query's).
+				// The base styles of the builder each one was made in — Elementor's
+				// for an Elementor header, the block library for a Gutenberg one,
+				// nothing for a Composer Builder one (see enqueue_styles_for) —
+				// plus the per-template stylesheet a block addon generates (keyed
+				// to the template's own post id, not the query's).
 				if ( class_exists( 'UiChemy_Template_Render' ) ) {
-					UiChemy_Template_Render::enqueue_block_styles();
+					UiChemy_Template_Render::enqueue_styles_for( array(
+						UiChemy_Template_Resolver::resolve( 'header' ),
+						UiChemy_Template_Resolver::resolve( 'footer' ),
+					) );
 					foreach ( array( 'header', 'footer' ) as $location ) {
 						UiChemy_Template_Render::enqueue_block_addon_css(
 							UiChemy_Template_Resolver::resolve( $location )

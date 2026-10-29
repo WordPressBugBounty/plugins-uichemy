@@ -31,12 +31,24 @@ Do not upload until PASS.
 
 ## Step 9 — Upload to WordPress
 
+### Composer Builder sites (`platform.builder: "composer"`)
+
+The page is ONE document, so Step 9 writes into it instead of uploading sections:
+
+- **Fonts** → `uichemy-composer/platform (action="update-site-code") { site_before_head }` once, before the first write (instead of `site_before_head` on the first upload).
+- **Header / Footer / single post template** → `uichemy-composer/theme-builder (action="create") { type:"header"|"footer"|"single", title, html, css, js }` (a single template also takes `placement:{ post_type:"post" }`). Edit a template later with `uichemy-composer/post (action="get-code" / "patch-code")`. Page-only header/footer → the first / last region of the page.
+- **The page** → once every regular region is generated, ONE `uichemy-composer/page (action="create") { title:"<pipelineState.pageTitle>", status:"draft", html, css, js, head_code, upload_images:true }` with the whole page: the regions in order inside one `<main>`, each `<!-- region: <Label> -->` + its `<section>`. Save `post_id` and `hash`.
+- **Only if the page is too large for one call** → `create` with the first regions, then add the rest in as few calls as possible: `uichemy-composer/page (action="patch-code") { post_id, field:"html"|"css"|"js", expected_hash, edits:[{ find, replace }] }`, one call per field, each adding SEVERAL regions. In `html` find `</main>` and replace it with `<new regions></main>`; in `css` and `js` anchor on the last lines you wrote. Carry each `hash` into the next `expected_hash`. Never leave marker comments in the code. A `uich_cb_stale` refusal means the page changed: `get-code`, then redo the patch.
+- `page_before_head` / `page_before_body` → `head_code` / `body_end_code`. `image_failures` is returned by every write, as below. After the first write, read it back with `get-code`.
+
+Everything else in this step applies to other builders only.
+
 ### Tool routing decision tree ⚠️ MANDATORY
 
 ```
 Header or Footer section?
-  YES → uichemy-composer/template (action="create", type="header"|"footer")  ← UiChemy's native Theme Builder, works on
-        ANY Elementor (Pro/Nexter NOT required), activates site-wide immediately.
+  YES → uichemy-composer/theme-builder (action="create", type="header"|"footer")  ← UiChemy's native Theme Builder, works on
+        EVERY builder (Elementor incl. free, Bricks, block editor, Composer Builder), activates site-wide immediately.
         header_footer_system from uichemy-composer/describe-site (Step 2a) is informational only — do not
         branch on it. Only skip this ability and inline the section instead if the user has
         explicitly asked for page-only placement:
@@ -46,16 +58,16 @@ Header or Footer section?
   NO  → Single-post / blog-article design?
         (signals: post title hero, author/date meta, long article body,
          comments, related posts, ToC sidebar)
-         YES → Theme builder active (Elementor Pro or Nexter)?
-                NO  → uichemy-composer/page (action="create") (fallback)
-                YES → User confirmed "build as single post template"?
-                       NO  → ask user first, wait for answer
-                       YES → uichemy-composer/template (action="create", type="single")(force_deactivate=false)
-                              status="existing_templates_found"?
-                                ask user → YES: call again force_deactivate=true
-                                         → NO:  use uichemy-composer/page (action="create")
-                              published_posts_count=0?
-                                offer sample post → YES: call again create_sample_post=true
+         YES → User confirmed "build as single post template"?
+                NO  → ask user first, wait for answer
+                YES → uichemy-composer/theme-builder (action="list", type="single") first:
+                       an ACTIVE single already targets the same post type?
+                         ask user "replace it?" → YES: create (it deactivates the old one)
+                                                → NO:  create with status="inactive"
+                       → uichemy-composer/theme-builder (action="create", type="single",
+                                                        placement:{ post_type:"post" })
+                       will_render:false? → follow render_check.what_to_do; if it cannot
+                                            be fixed, use uichemy-composer/page (action="create")
 
          NO  → First regular section? → uichemy-composer/page (action="create")
                Subsequent sections?  → uichemy-composer/page (action="append-section")
@@ -63,7 +75,7 @@ Header or Footer section?
 
 ---
 
-### Single post template → `uichemy-composer/template (action="create", type="single")`
+### Single post template → `uichemy-composer/theme-builder (action="create", type="single")`
 
 ⚠️ **Critical rules:**
 1. **NO header, NO footer** — generate ONLY the article body area.
@@ -91,14 +103,16 @@ Rules: `for=` on `<li>`, `if=` on `<ul>`. Never hardcode `<li>` items. Must be `
 
 Payload:
 ```
-{ title, post_type:"post", label, html, css, js,
+{ type:"single", title, label, html, css, js,
+  placement:{ post_type:"post" },          ← or the CPT the design is for
   site_before_head:"<Google Fonts — only if not sent yet>",
-  force_deactivate:false, upload_images:true }
+  upload_images:true }
 ```
 
-Save from response: `post_id`, `system`, `active`, `preview_link` → `pipelineState`.
-- `system="elementor_pro"` or `"nexter"` → ACTIVE immediately on all posts
-- `system="none"` → fall back to `uichemy-composer/page (action="create")`
+Save from response: `post_id`, `will_render`, `placement_summary` → `pipelineState`.
+- `will_render:true` → live on every post of that type (UiChemy's native engine; no Elementor Pro or Nexter needed)
+- `will_render:false` → read `render_check` and do what it says; do not report the template as done
+- To see it, open any real post of that type - there is no sample post to create.
 
 ---
 
@@ -113,9 +127,9 @@ Using `pipelineState.branding_action` from Step 2d:
 
 Call `uichemy-composer/platform (action="update-site-settings")` **before** the header upload (default path) or **before** the page is created (page-only exception).
 
-#### Default — site-wide via `uichemy-composer/template (action="create", type="header"|"footer")`
+#### Default — site-wide via `uichemy-composer/theme-builder (action="create", type="header"|"footer")`
 
-UiChemy's native Theme Builder engine — works on ANY Elementor (Pro/Nexter NOT required). `platform.header_footer_system` is informational only; do not branch on it.
+UiChemy's native Theme Builder engine — works on every builder (Elementor incl. free, Bricks, block editor, Composer Builder). Placement defaults to the entire site, so omit it. `platform.header_footer_system` is informational only; do not branch on it.
 
 Payload:
 ```
@@ -124,13 +138,13 @@ Payload:
   upload_images:true }
 ```
 
-Response has `active:true` and `system:"uichemy_native"` immediately — no manual activation step. Old active templates of the same type (header or footer) are deactivated automatically on import.
+Response has `system:"uichemy_native"` and is active immediately — no manual activation step. Old active templates of the same type (header or footer) are deactivated automatically on import. Check **`will_render:true`**, not `active`: `active` only means the flag was written. When `will_render` is false, `render_check` says why and what to do.
 
-Save: push `{ type, post_id, system, active }` to `pipelineState.templates[]`.
+Save: push `{ type, post_id, system, will_render }` to `pipelineState.templates[]`.
 
 #### Page-only exception — only if the user explicitly requested this
 
-Skip `uichemy-composer/template (action="create", type="header"|"footer")` and embed Header and Footer as page sections instead:
+Skip `uichemy-composer/theme-builder (action="create", type="header"|"footer")` and embed Header and Footer as page sections instead:
 
 1. **Header** → make it the section that goes into `uichemy-composer/page (action="create")` (label:"Header", html/css = the header markup). Pass `site_before_head` with the Google Fonts links on this call (since this is now your first upload). Set `pipelineState.headerInline = true`.
 2. **Body sections** → `uichemy-composer/page (action="append-section")` per section as usual.

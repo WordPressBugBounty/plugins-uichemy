@@ -74,7 +74,12 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			$status     = ( isset( $args['status'] ) && 'active' === $args['status'] ) ? 'active' : 'inactive';
 			$conditions = isset( $args['conditions'] ) ? self::sanitize_conditions( $args['conditions'] ) : array();
 			$editor     = isset( $args['editor'] ) ? sanitize_key( (string) $args['editor'] ) : '';
-			$editor     = in_array( $editor, array( 'gutenberg', 'bricks' ), true ) ? $editor : 'elementor';
+			// "composer" is the Composer Builder. It does not own META_EDITOR: its
+			// own enabled flag marks the template (UiChemy_Template_CPT::editor_for()),
+			// and the stored editor stays "gutenberg" - the fallback that renders
+			// the builder's post_content mirror if the builder is ever unloaded.
+			$composer   = 'composer' === $editor && class_exists( 'Uich_CB_Content' );
+			$editor     = $composer ? 'gutenberg' : ( in_array( $editor, array( 'gutenberg', 'bricks' ), true ) ? $editor : 'elementor' );
 			$target     = self::sanitize_target( isset( $args['target'] ) ? $args['target'] : 'any' );
 
 			$postarr = array(
@@ -149,7 +154,20 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			// uichemy_template is rendered by UiChemy's own theme builder, outside
 			// any Bricks page render, so UiChemy_Section_Ops::render_html_for()
 			// serves it through the same shared renderer the Bricks element calls.
-			if ( in_array( $editor, array( 'bricks', 'gutenberg' ), true ) && ! isset( $args['content'] ) ) {
+			if ( $composer ) {
+				$document = Uich_CB_Content::empty_cb_content();
+
+				$document['content']['html'] = isset( $args['html'] ) ? (string) $args['html'] : '';
+				$document['content']['css']  = isset( $args['css'] ) ? (string) $args['css'] : '';
+				$document['content']['js']   = isset( $args['js'] ) ? (string) $args['js'] : '';
+
+				// save_cb_content() also sets the enabled flag, which is what makes
+				// editor_for() answer "composer" for this template.
+				if ( ! Uich_CB_Content::save_cb_content( $post_id, $document ) ) {
+					wp_delete_post( $post_id, true );
+					return new WP_Error( 'uichemy_tb_composer_failed', 'The template could not be saved as a Composer Builder document.' );
+				}
+			} elseif ( in_array( $editor, array( 'bricks', 'gutenberg' ), true ) && ! isset( $args['content'] ) ) {
 				if ( 'bricks' === $editor ) {
 					update_post_meta( $post_id, '_bricks_editor_mode', 'bricks' );
 				}
@@ -392,8 +410,12 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 		 * @return string
 		 */
 		private static function slot_key( $type, $target, $post_id = 0, $conditions = null ) {
+			// By target AND conditions: two Single Post templates for different
+			// categories are not competing, and activating one used to switch
+			// the other off (D-01). The resolver picks between them by
+			// condition specificity within the target.
 			if ( in_array( $type, array( 'single', 'archive' ), true ) ) {
-				return $type . '|' . $target;
+				return $type . '|' . $target . '|' . self::conditions_key( (int) $post_id, $conditions );
 			}
 
 			/*
@@ -444,13 +466,43 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			if ( null === $conditions ) {
 				$conditions = $post_id ? get_post_meta( $post_id, UiChemy_Template_CPT::META_CONDITIONS, true ) : array();
 			}
-			if ( ! is_array( $conditions ) || empty( $conditions ) ) {
+			if ( ! is_array( $conditions ) || empty( $conditions ) || self::is_entire_site( $conditions ) ) {
 				return 'any';
 			}
 			// Order must not matter: two templates set to the same places are the
 			// same slot however the UI happened to store them.
 			$normalized = wp_json_encode( self::normalize_conditions_for_key( $conditions ) );
 			return $normalized ? md5( $normalized ) : 'any';
+		}
+
+		/**
+		 * Do these conditions mean "the entire site" and nothing more?
+		 *
+		 * Older templates store no conditions at all for the site-wide default;
+		 * newer ones store scope "entire" with an explicit `entire` include rule.
+		 * Both mean the same place, so they must share one slot - otherwise a new
+		 * site-wide header leaves the old one active beside it.
+		 *
+		 * @param array $conditions Stored or incoming conditions.
+		 * @return bool
+		 */
+		private static function is_entire_site( array $conditions ) {
+			if ( isset( $conditions['scope'] ) && 'entire' !== $conditions['scope'] ) {
+				return false;
+			}
+			if ( ! empty( $conditions['include'] ) || ! empty( $conditions['exclude'] ) ) {
+				return false;
+			}
+			$rules = isset( $conditions['rules'] ) && is_array( $conditions['rules'] ) ? $conditions['rules'] : array();
+			foreach ( $rules as $rule ) {
+				$type  = is_array( $rule ) && isset( $rule['type'] ) ? $rule['type'] : '';
+				$match = is_array( $rule ) && isset( $rule['match'] ) ? $rule['match'] : 'include';
+				if ( 'entire' !== $type || 'include' !== $match ) {
+					return false;
+				}
+			}
+			$known = array( 'scope', 'include', 'exclude', 'rules' );
+			return ! array_diff( array_keys( $conditions ), $known );
 		}
 
 		/**
@@ -605,9 +657,29 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			$match = ( isset( $rule['match'] ) && 'exclude' === $rule['match'] ) ? 'exclude' : 'include';
 
 			switch ( $type ) {
+				case 'search':
+					/*
+					 * Optional: the post type the search is pinned to. Kept through
+					 * sanitising so an imported "product searches only" header rule
+					 * survives a round trip through the editor; an empty or unknown
+					 * type degrades to "any search" rather than a rule that can
+					 * never match.
+					 */
+					$searched = isset( $rule['value'] ) ? sanitize_key( (string) $rule['value'] ) : '';
+					if ( '' === $searched || 'any' === $searched || ! post_type_exists( $searched ) ) {
+						return array(
+							'match' => $match,
+							'type'  => $type,
+						);
+					}
+					return array(
+						'match' => $match,
+						'type'  => $type,
+						'value' => $searched,
+					);
+
 				// Context rules that carry no value of their own.
 				case 'entire':
-				case 'search':
 				case 'all_singulars':
 				case 'all_archives':
 				case 'front_page':
@@ -672,12 +744,32 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 						'value' => isset( $rule['value'] ) ? absint( $rule['value'] ) : 0,
 					);
 				case 'singular':
-					$id = isset( $rule['value'] ) ? absint( $rule['value'] ) : 0;
-					return $id ? array(
+					/*
+					 * One rule can name SEVERAL posts. The editor used to allow a
+					 * single page per rule, which meant "this header on these five
+					 * pages" needed five identical rules — and each one then showed
+					 * as its own row. A list is the same condition, written once.
+					 *
+					 * A single id is still stored as an int, so existing rules keep
+					 * the exact shape they had (the conditions hash that decides
+					 * which templates share an activation slot is built from it).
+					 */
+					$raw = isset( $rule['value'] ) ? $rule['value'] : 0;
+					$ids = array();
+					foreach ( (array) $raw as $one ) {
+						$one = absint( $one );
+						if ( $one > 0 && ! in_array( $one, $ids, true ) ) {
+							$ids[] = $one;
+						}
+					}
+					if ( empty( $ids ) ) {
+						return null;
+					}
+					return array(
 						'match' => $match,
 						'type'  => $type,
-						'value' => $id,
-					) : null;
+						'value' => ( 1 === count( $ids ) ) ? $ids[0] : $ids,
+					);
 			}
 			return null;
 		}

@@ -191,7 +191,7 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_REST' ) ) {
 				'conditions'   => is_array( $conditions ) ? $conditions : array(),
 				'date'         => get_post_time( 'c', true, $id ),
 				'modified'     => get_post_modified_time( 'c', true, $id ),
-				'edit_link'    => self::edit_link( $id, $editor ),
+				'edit_link'    => self::edit_link( $id ),
 				'preview_link' => self::preview_link( $id ),
 			);
 
@@ -203,24 +203,13 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_REST' ) ) {
 		}
 
 		/**
-		 * The editor URL for a template (Elementor canvas or the block editor).
+		 * The editor URL for a template.
 		 *
-		 * @param int    $id     Template post ID.
-		 * @param string $editor 'elementor'|'gutenberg'.
+		 * @param int $id Template post ID.
 		 * @return string
 		 */
-		private static function edit_link( $id, $editor ) {
-			if ( 'elementor' === $editor ) {
-				return add_query_arg(
-					array(
-						'post'   => $id,
-						'action' => 'elementor',
-					),
-					admin_url( 'post.php' )
-				);
-			}
-			$link = get_edit_post_link( $id, 'raw' );
-			return $link ? $link : '';
+		private static function edit_link( $id ) {
+			return UiChemy_Template_CPT::edit_url_for( $id );
 		}
 
 		/**

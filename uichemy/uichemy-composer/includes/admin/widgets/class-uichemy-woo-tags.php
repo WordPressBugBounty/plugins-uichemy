@@ -383,35 +383,17 @@ if ( ! class_exists( 'UiChemy_Woo_Tags' ) ) {
 		 * `order.*` tokens looks complete and silently drops all of it.
 		 *
 		 * Renders nothing anywhere but the order-received endpoint, and nothing at
-		 * all unless the request is entitled to the order — the same two grounds
-		 * Uich_Order_Provider uses, enforced here by Woo's own template, which
-		 * checks the order key itself.
+		 * all unless the request may see the order (viewable_received_order()).
 		 *
 		 * @return string
 		 */
 		private static function capture_thankyou() {
-			if ( ! function_exists( 'is_order_received_page' ) || ! is_order_received_page() ) {
-				return '';
-			}
-			if ( ! function_exists( 'wc_get_template' ) || ! function_exists( 'wc_get_order' ) ) {
+			if ( ! function_exists( 'wc_get_template' ) ) {
 				return '';
 			}
 
-			global $wp;
-			$order_id = isset( $wp->query_vars['order-received'] ) ? absint( $wp->query_vars['order-received'] ) : 0;
-			if ( ! $order_id ) {
-				return '';
-			}
-
-			$order = wc_get_order( $order_id );
+			$order = self::viewable_received_order();
 			if ( ! $order ) {
-				return '';
-			}
-
-			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a receipt link; the order key is the credential.
-			$key = isset( $_GET['key'] ) ? sanitize_text_field( wp_unslash( $_GET['key'] ) ) : '';
-			$own = get_current_user_id() && (int) $order->get_customer_id() === get_current_user_id();
-			if ( ! $own && ! hash_equals( (string) $order->get_order_key(), $key ) ) {
 				return '';
 			}
 
@@ -422,6 +404,66 @@ if ( ! class_exists( 'UiChemy_Woo_Tags' ) ) {
 				$html = ob_get_clean();
 			}
 			return (string) $html;
+		}
+
+		/**
+		 * The order on this order-received request, when the visitor may see it.
+		 *
+		 * The checks WC_Shortcode_Checkout::order_received() makes before it shows
+		 * an order: the order key from the receipt link, then a member order only
+		 * to that customer logged in, and a guest order past Woo's grace period
+		 * only after the visitor has verified its email. A logged-in customer's
+		 * own order needs no key. Anything else gets null, and the Theme Builder
+		 * leaves the page to Woo, which shows its login or verify-email form.
+		 *
+		 * @return WC_Order|null
+		 */
+		public static function viewable_received_order() {
+			if ( ! function_exists( 'is_order_received_page' ) || ! is_order_received_page() || ! function_exists( 'wc_get_order' ) ) {
+				return null;
+			}
+
+			global $wp;
+			/** This filter is documented in woocommerce/includes/shortcodes/class-wc-shortcode-checkout.php */
+			$order_id = (int) apply_filters( 'woocommerce_thankyou_order_id', isset( $wp->query_vars['order-received'] ) ? absint( $wp->query_vars['order-received'] ) : 0 );
+			$order    = $order_id ? wc_get_order( $order_id ) : null;
+			if ( ! $order instanceof WC_Order ) {
+				return null;
+			}
+
+			$user_id     = get_current_user_id();
+			$customer_id = (int) $order->get_customer_id();
+			if ( $user_id && $customer_id === $user_id ) {
+				return $order;
+			}
+
+			// phpcs:ignore WordPress.Security.NonceVerification.Recommended -- a receipt link; the order key is the credential.
+			$key = ( empty( $_GET['key'] ) || ! is_string( $_GET['key'] ) ) ? '' : sanitize_text_field( wp_unslash( $_GET['key'] ) );
+			/** This filter is documented in woocommerce/includes/shortcodes/class-wc-shortcode-checkout.php */
+			$key = (string) apply_filters( 'woocommerce_thankyou_order_key', $key );
+			if ( '' === $key || ! hash_equals( (string) $order->get_order_key(), $key ) ) {
+				return null;
+			}
+
+			// A member's order: only that member, logged in.
+			/** This filter is documented in woocommerce/includes/shortcodes/class-wc-shortcode-checkout.php */
+			if ( $customer_id && apply_filters( 'woocommerce_order_received_verify_known_shoppers', true ) ) {
+				return null;
+			}
+
+			// A guest's order: Woo's email check (grace period, session, verify form).
+			$users = 'Automattic\WooCommerce\Internal\Utilities\Users';
+			if ( ! $customer_id && class_exists( $users ) && method_exists( $users, 'should_user_verify_order_email' ) ) {
+				$supplied = null;
+				if ( wp_verify_nonce( (string) filter_input( INPUT_POST, 'check_submission' ), 'wc_verify_email' ) ) {
+					$supplied = sanitize_email( wp_unslash( (string) filter_input( INPUT_POST, 'email' ) ) );
+				}
+				if ( $users::should_user_verify_order_email( $order->get_id(), $supplied, 'order-received' ) ) {
+					return null;
+				}
+			}
+
+			return $order;
 		}
 
 		/**

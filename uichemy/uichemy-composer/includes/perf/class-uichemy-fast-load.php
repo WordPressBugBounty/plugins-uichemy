@@ -127,6 +127,14 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 					'label' => __( 'Disable Emojis script', 'uichemy' ),
 					'desc'  => __( 'Stops the WordPress emoji detection script and its styles. Emojis still show through the browser\'s own fonts.', 'uichemy' ),
 				),
+				array(
+					'name'  => 'remove-js',
+					'key'   => 'perf_remove_js',
+					'group' => 'optimizations',
+					'tag'   => __( 'JS', 'uichemy' ),
+					'label' => __( 'Remove unused JavaScript', 'uichemy' ),
+					'desc'  => __( 'Removes jQuery, and Elementor\'s scripts, from UiChemy pages that do not use them.', 'uichemy' ),
+				),
 				// ---- Elementor Optimisations: Elementor's own assets. They only apply to pages
 				// built from Composer widgets alone; a page with any native Elementor widget
 				// keeps all of them.
@@ -137,14 +145,6 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 					'tag'   => __( 'CSS', 'uichemy' ),
 					'label' => __( 'Disable CSS', 'uichemy' ),
 					'desc'  => __( 'Stops the CSS on pages that have no Elementor widgets.', 'uichemy' ),
-				),
-				array(
-					'name'  => 'remove-js',
-					'key'   => 'perf_remove_js',
-					'group' => 'elementor',
-					'tag'   => __( 'JS', 'uichemy' ),
-					'label' => __( 'Remove unused JavaScript', 'uichemy' ),
-					'desc'  => __( 'Removes jQuery and the scripts on pages that have no Elementor widgets.', 'uichemy' ),
 				),
 				array(
 					'name'  => 'elementor-fonts',
@@ -203,6 +203,43 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 					'desc'  => __( 'Stops the slider, animation, lightbox and gallery CSS.', 'uichemy' ),
 				),
 			);
+			// ---- WooCommerce: its own assets, on pages that show nothing from it
+			// (see woo_assets_unused()). Listed only while WooCommerce is active,
+			// and off until the site owner turns them on.
+			if ( class_exists( 'WooCommerce' ) ) {
+				self::$registry_cache = array_merge(
+					self::$registry_cache,
+					array(
+						array(
+							'name'    => 'woo-css',
+							'key'     => 'perf_woo_css',
+							'group'   => 'woocommerce',
+							'default' => 0,
+							'tag'     => __( 'CSS', 'uichemy' ),
+							'label'   => __( 'Disable CSS', 'uichemy' ),
+							'desc'    => __( 'Stops WooCommerce\'s CSS on pages that show nothing from WooCommerce.', 'uichemy' ),
+						),
+						array(
+							'name'    => 'woo-js',
+							'key'     => 'perf_woo_js',
+							'group'   => 'woocommerce',
+							'default' => 0,
+							'tag'     => __( 'JS', 'uichemy' ),
+							'label'   => __( 'Remove unused JavaScript', 'uichemy' ),
+							'desc'    => __( 'Removes WooCommerce\'s scripts on pages that show nothing from WooCommerce, and jQuery when nothing else needs it.', 'uichemy' ),
+						),
+						array(
+							'name'    => 'woo-order-attribution',
+							'key'     => 'perf_woo_order_attribution',
+							'group'   => 'woocommerce',
+							'tag'     => __( 'JS', 'uichemy' ),
+							'label'   => __( 'Delay order attribution', 'uichemy' ),
+							'desc'    => __( 'Loads WooCommerce\'s order attribution scripts on the visitor\'s first scroll, click or key press, on pages that show nothing from WooCommerce.', 'uichemy' ),
+							'default' => 0,
+						),
+					)
+				);
+			}
 			return self::$registry_cache;
 		}
 
@@ -329,6 +366,31 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 		private static $body_printed = false;
 
 		/**
+		 * Cached result of woo_assets_unused().
+		 *
+		 * @var bool|null
+		 */
+		private static $woo_unused = null;
+
+		/**
+		 * Whether the delayed-script loader was printed this request.
+		 *
+		 * @var bool
+		 */
+		private static $delay_loader_printed = false;
+
+		/**
+		 * WooCommerce's order attribution scripts, in load order.
+		 */
+		const WOO_ATTRIBUTION = array( 'sourcebuster-js', 'wc-order-attribution' );
+
+		/**
+		 * Code that shows something from WooCommerce: UiChemy's woo tags, its
+		 * blocks, shortcodes, classic markup and Elementor's WooCommerce widgets.
+		 */
+		const WOO_MARKUP = '/uichemy-woo-|wp:woocommerce\/|wc-block-|\[(?:woocommerce_[a-z_]+|products?|product_page|product_category|product_categories|add_to_cart(?:_url)?|recent_products|featured_products|sale_products|best_selling_products|top_rated_products|related_products|shop_messages)\b|add_to_cart_button|widget_shopping_cart|woocommerce-mini-cart|"widgetType":"(?:woocommerce-|wc-)/i';
+
+		/**
 		 * Sections loaded per post this request.
 		 *
 		 * @var array<int,array|null>
@@ -375,6 +437,9 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			// non-blocking (see optimize_head_html()).
 			add_action( 'wp_head', array( __CLASS__, 'start_head_buffer' ), 0 );
 			add_action( 'wp_head', array( __CLASS__, 'end_head_buffer' ), 9999 );
+
+			// WooCommerce's order attribution scripts, delayed until the visitor acts.
+			add_filter( 'script_loader_tag', array( __CLASS__, 'delay_order_attribution' ), 10, 3 );
 
 			// Remove WordPress's emoji detection script and styles. Runs on `init`
 			// (before any wp_head output), so the actions are gone before they print.
@@ -618,7 +683,7 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 					'group'       => 'master',
 					'type'        => 'toggle',
 					'enabled'     => self::opt( 'enable_fast_load' ),
-					'description' => __( 'Master switch for every optimization in the "optimizations" and "elementor" groups.', 'uichemy' ),
+					'description' => __( 'Master switch for every optimization in the "optimizations", "elementor" and "woocommerce" groups.', 'uichemy' ),
 				),
 			);
 			foreach ( self::registry() as $row ) {
@@ -893,6 +958,14 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 				return true;
 			}
 
+			// 1b. A Composer Builder page (one document of html, css and js).
+			if ( self::is_cb_document( $post_id ) ) {
+				if ( 0 === $post_id || get_queried_object_id() === $post_id ) {
+					self::$is_uichemy_page_cache = true;
+				}
+				return true;
+			}
+
 			// 2. Webpage import marker meta
 			if ( '' !== (string) get_post_meta( $post_id, '_uich_webpage_source', true ) ) {
 				if ( 0 === $post_id || get_queried_object_id() === $post_id ) {
@@ -1038,7 +1111,13 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			}
 			self::$composer_only = false;
 
-			$ids = array( (int) get_queried_object_id() );
+			// A Composer Builder page's content is its builder document
+			// (_uichemy_content), which prints its own code (Uich_CB_Render): it
+			// is read from there, never from the sections left in its Elementor
+			// data, which are not on the page. Header / footer / single templates
+			// are checked the same way below.
+			$page_id = (int) get_queried_object_id();
+			$ids     = array( $page_id );
 			if ( class_exists( 'UiChemy_Template_Resolver' ) ) {
 				foreach ( array( 'header', 'footer', 'single' ) as $loc ) {
 					$tid = (int) UiChemy_Template_Resolver::resolve( $loc );
@@ -1055,6 +1134,12 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			$blob    = '';
 			$widgets = 0;
 			foreach ( $ids as $id ) {
+				// A Composer Builder document is UiChemy code from end to end.
+				if ( self::is_cb_document( $id ) ) {
+					$blob .= self::cb_code( $id );
+					$widgets++;
+					continue;
+				}
 				$raw  = get_post_meta( $id, '_elementor_data', true );
 				$tree = is_string( $raw ) && '' !== $raw ? json_decode( $raw, true ) : null;
 				if ( ! is_array( $tree ) ) {
@@ -1082,11 +1167,78 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			// code that mentions it, and scripts loaded by URL, which are not read here and
 			// may need jQuery themselves. Elementor's own scripts are a separate question:
 			// they stay only when the code actually uses Elementor's front-end API.
-			self::$needs_jquery        = (bool) preg_match( '/jQuery|\$\(|\$\./i', $blob ) || self::scripts_may_need_jquery( $blob );
+			self::$needs_jquery        = self::code_needs_jquery( $blob ) || self::scripts_may_need_jquery( $blob );
 			self::$needs_elementor_js = (bool) preg_match( '/elementorFrontend|elementor-frontend|elementorProFrontend|waypoint/i', $blob );
 
 			self::$composer_only = (bool) apply_filters( 'uichemy/perf/drop_elementor_assets', true );
 			return self::$composer_only;
+		}
+
+		/**
+		 * The code a Composer Builder document prints: html (with any inline
+		 * script), js, and its own head / body-end code.
+		 *
+		 * @param int $post_id Post ID.
+		 * @return string
+		 */
+		private static function cb_code( $post_id ) {
+			$doc  = Uich_CB_Content::get_cb_content( (int) $post_id );
+			$code = isset( $doc['content'] ) && is_array( $doc['content'] ) ? $doc['content'] : array();
+			$out  = '';
+			foreach ( array( 'html', 'js', 'before_head_end_html', 'before_body_end_html' ) as $part ) {
+				$out .= isset( $code[ $part ] ) ? "\n" . (string) $code[ $part ] : '';
+			}
+			return $out;
+		}
+
+		/**
+		 * Does this code use jQuery?
+		 *
+		 * `jQuery` itself always counts. `$(` / `$.` count too, unless the code
+		 * declares its own `$` (a querySelector helper is common in hand-written
+		 * and generated code), in which case they are that helper.
+		 *
+		 * @param string $code JavaScript or markup with inline scripts.
+		 * @return bool
+		 */
+		private static function code_needs_jquery( $code ) {
+			$code = (string) $code;
+			if ( preg_match( '/jQuery/i', $code ) ) {
+				return true;
+			}
+			if ( preg_match( '/(?:\b(?:var|let|const)\s+\$\s*=|\bfunction\s+\$\s*\()/', $code ) ) {
+				return false;
+			}
+			return (bool) preg_match( '/\$\(|\$\./', $code );
+		}
+
+		/**
+		 * Read a script file served from this site, so its own code can be
+		 * checked instead of assuming it needs jQuery.
+		 *
+		 * @param string $url Script URL (absolute, or root-relative).
+		 * @return string|null File contents, or null when it is not a readable local .js file.
+		 */
+		private static function local_script_code( $url ) {
+			$host = wp_parse_url( $url, PHP_URL_HOST );
+			$path = (string) wp_parse_url( $url, PHP_URL_PATH );
+			if ( '' === $path || ( $host && wp_parse_url( home_url(), PHP_URL_HOST ) !== $host ) || ( ! $host && 0 !== strpos( $path, '/' ) ) ) {
+				return null;
+			}
+			if ( '.js' !== strtolower( substr( $path, -3 ) ) ) {
+				return null;
+			}
+			$home = untrailingslashit( (string) wp_parse_url( home_url( '/' ), PHP_URL_PATH ) );
+			if ( '' !== $home && 0 === strpos( $path, $home . '/' ) ) {
+				$path = substr( $path, strlen( $home ) );
+			}
+			$root = realpath( ABSPATH );
+			$file = realpath( ABSPATH . ltrim( rawurldecode( $path ), '/' ) );
+			if ( ! $root || ! $file || 0 !== strpos( $file, $root ) || ! is_readable( $file ) || filesize( $file ) > 2 * MB_IN_BYTES ) {
+				return null;
+			}
+			$code = file_get_contents( $file ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local file, read-only.
+			return false === $code ? null : $code;
 		}
 
 		/**
@@ -1118,6 +1270,11 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			foreach ( array_unique( $urls ) as $url ) {
 				$url = html_entity_decode( (string) $url );
 				$ok  = (bool) preg_match( $free, wp_parse_url( $url, PHP_URL_HOST ) . ' ' . wp_parse_url( $url, PHP_URL_PATH ) );
+				// A script served from this site is read, not guessed about.
+				if ( ! $ok ) {
+					$local = self::local_script_code( $url );
+					$ok    = null !== $local && ! self::code_needs_jquery( $local );
+				}
 
 				/**
 				 * Filter whether a script URL is known not to need jQuery.
@@ -1165,7 +1322,14 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 		 * @return void
 		 */
 		public static function drop_unused_assets() {
-			if ( ! self::should_optimize() || ! self::composer_only_page() ) {
+			if ( ! self::should_optimize() ) {
+				return;
+			}
+
+			// WooCommerce first: once its scripts are gone, jQuery may be too.
+			self::drop_woocommerce_assets();
+
+			if ( ! self::composer_only_page() ) {
 				return;
 			}
 
@@ -1178,6 +1342,182 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			if ( $drop_css ) {
 				self::drop_unused_styles();
 			}
+		}
+
+		/**
+		 * True when this page shows nothing from WooCommerce, so its assets can go:
+		 * it is not a shop, product, cart, checkout or account page; its own code
+		 * and its UiChemy header / footer / single templates hold no WooCommerce
+		 * element, block, shortcode or widget; and the theme cannot be showing
+		 * WooCommerce itself - UiChemy owns the header and footer, or a classic
+		 * theme has no WooCommerce widget in a sidebar.
+		 *
+		 * @return bool
+		 */
+		private static function woo_assets_unused() {
+			if ( null !== self::$woo_unused ) {
+				return self::$woo_unused;
+			}
+			self::$woo_unused = false;
+
+			if ( ! class_exists( 'WooCommerce' ) || ! self::should_optimize() ) {
+				return false;
+			}
+			foreach ( array( 'is_woocommerce', 'is_cart', 'is_checkout', 'is_account_page' ) as $is ) {
+				if ( function_exists( $is ) && $is() ) {
+					return false;
+				}
+			}
+
+			$ids = array( (int) get_queried_object_id() );
+			$own = array();
+			if ( class_exists( 'UiChemy_Template_Resolver' ) ) {
+				foreach ( array( 'header', 'footer', 'single' ) as $loc ) {
+					$tid = (int) UiChemy_Template_Resolver::resolve( $loc );
+					if ( $tid ) {
+						$ids[]       = $tid;
+						$own[ $loc ] = true;
+					}
+				}
+			}
+			if ( empty( $own['header'] ) || empty( $own['footer'] ) ) {
+				if ( function_exists( 'wp_is_block_theme' ) && wp_is_block_theme() ) {
+					return false;
+				}
+				if ( self::theme_shows_woo_widget() ) {
+					return false;
+				}
+			}
+
+			$code = '';
+			foreach ( array_filter( array_unique( $ids ) ) as $id ) {
+				$code .= self::is_cb_document( $id ) ? self::cb_code( $id ) : '';
+				$code .= (string) get_post_field( 'post_content', $id );
+				$code .= (string) get_post_meta( $id, '_elementor_data', true );
+				$bricks = get_post_meta( $id, '_bricks_page_content_2', true );
+				$code  .= is_array( $bricks ) ? (string) wp_json_encode( $bricks ) : '';
+			}
+			if ( preg_match( self::WOO_MARKUP, $code ) ) {
+				return false;
+			}
+
+			/**
+			 * Filter whether this page's WooCommerce assets may be removed.
+			 *
+			 * @param bool $unused True when the page shows nothing from WooCommerce.
+			 */
+			self::$woo_unused = (bool) apply_filters( 'uichemy/perf/drop_woocommerce_assets', true );
+			return self::$woo_unused;
+		}
+
+		/**
+		 * Does an active sidebar hold a WooCommerce widget (classic or block)?
+		 *
+		 * @return bool
+		 */
+		private static function theme_shows_woo_widget() {
+			$blocks = get_option( 'widget_block', array() );
+			foreach ( (array) wp_get_sidebars_widgets() as $sidebar => $widgets ) {
+				if ( 'wp_inactive_widgets' === $sidebar || ! is_array( $widgets ) ) {
+					continue;
+				}
+				foreach ( $widgets as $widget ) {
+					$widget = (string) $widget;
+					if ( 0 === strpos( $widget, 'woocommerce_' ) ) {
+						return true;
+					}
+					if ( preg_match( '/^block-(\d+)$/', $widget, $m ) && isset( $blocks[ $m[1] ]['content'] )
+						&& preg_match( self::WOO_MARKUP, (string) $blocks[ $m[1] ]['content'] ) ) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * Dequeue WooCommerce's CSS and scripts on a page that shows nothing from
+		 * it (each with its own switch). The order attribution scripts are left to
+		 * their own switch (delay_order_attribution()).
+		 *
+		 * @return void
+		 */
+		private static function drop_woocommerce_assets() {
+			$css = self::opt( 'perf_woo_css' );
+			$js  = self::opt( 'perf_woo_js' );
+			if ( ( ! $css && ! $js ) || ! self::woo_assets_unused() ) {
+				return;
+			}
+
+			$base = function_exists( 'WC' ) ? (string) wp_parse_url( WC()->plugin_url(), PHP_URL_PATH ) : '/plugins/woocommerce';
+			$base = trailingslashit( $base ) . 'assets/';
+
+			if ( $css ) {
+				$styles = wp_styles();
+				foreach ( (array) $styles->queue as $handle ) {
+					$src = isset( $styles->registered[ $handle ] ) ? (string) $styles->registered[ $handle ]->src : '';
+					if ( false !== strpos( $src, $base . 'css/' ) || 'woocommerce-inline' === $handle ) {
+						wp_dequeue_style( $handle );
+					}
+				}
+			}
+
+			if ( $js ) {
+				$scripts = wp_scripts();
+				foreach ( (array) $scripts->queue as $handle ) {
+					if ( in_array( $handle, self::WOO_ATTRIBUTION, true ) ) {
+						continue;
+					}
+					$src = isset( $scripts->registered[ $handle ] ) ? (string) $scripts->registered[ $handle ]->src : '';
+					if ( false !== strpos( $src, $base . 'js/' ) ) {
+						wp_dequeue_script( $handle );
+					}
+				}
+			}
+		}
+
+		/**
+		 * Delay WooCommerce's order attribution scripts until the visitor's first
+		 * scroll, click, touch or key press, on a page that shows nothing from
+		 * WooCommerce. Every <script> of the handle (its data and its file) waits
+		 * as an inert tag; a small loader replays them in order.
+		 *
+		 * @param string $tag    Script markup.
+		 * @param string $handle Script handle.
+		 * @param string $src    Script URL.
+		 * @return string
+		 */
+		public static function delay_order_attribution( $tag, $handle, $src ) {
+			if ( ! in_array( $handle, self::WOO_ATTRIBUTION, true ) || is_admin() ) {
+				return $tag;
+			}
+			if ( ! self::is_enabled() || ! self::opt( 'perf_woo_order_attribution' ) || ! self::woo_assets_unused() ) {
+				return $tag;
+			}
+
+			$tag = preg_replace_callback(
+				'#<script\b([^>]*)>#i',
+				static function ( $m ) {
+					$attrs = preg_replace( '#\stype\s*=\s*([\'"])[^\'"]*\1#i', '', $m[1] );
+					$attrs = preg_replace( '#\ssrc\s*=#i', ' data-uich-src=', $attrs );
+					return '<script type="text/uich-delay"' . $attrs . '>';
+				},
+				(string) $tag
+			);
+
+			if ( ! self::$delay_loader_printed ) {
+				self::$delay_loader_printed = true;
+				$tag .= '<script id="uich-delay-loader">(function(){var d=document,w=window,done=0,ev=["scroll","pointerdown","keydown","touchstart"];'
+					. 'function go(){if(done)return;done=1;ev.forEach(function(e){w.removeEventListener(e,go,{passive:true});});'
+					. 'var list=[].slice.call(d.querySelectorAll(\'script[type="text/uich-delay"]\'));'
+					. '(function next(){var o=list.shift();if(!o)return;var s=d.createElement("script");'
+					. 'for(var i=0;i<o.attributes.length;i++){var a=o.attributes[i];if(a.name!=="type"&&a.name!=="data-uich-src")s.setAttribute(a.name,a.value);}'
+					. 'var src=o.getAttribute("data-uich-src");if(src){s.src=src;s.async=false;s.onload=s.onerror=next;o.parentNode.replaceChild(s,o);}'
+					. 'else{s.text=o.text;o.parentNode.replaceChild(s,o);next();}})();}'
+					. 'ev.forEach(function(e){w.addEventListener(e,go,{passive:true});});})();</script>';
+			}
+
+			return $tag;
 		}
 
 		/**
@@ -1434,6 +1774,8 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 		 *   - Fast Load on: a budget of 4 across the header and hero sections.
 		 *   - Fast Load off (or not an optimizable page): every image in the first two
 		 *     Composer sections, which are normally the header and hero.
+		 *   - A Composer Builder document (uid uich-cb-page - a page, header or footer
+		 *     template): the first images in render order, sharing that budget of 4.
 		 * An image that already has a loading or fetchpriority attribute is left alone,
 		 * so authors can opt a hero image out with loading="eager".
 		 *
@@ -1454,15 +1796,20 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			}
 
 			$index = $has_img ? self::$sections_seen++ : self::$sections_seen;
+			// A Composer Builder document (page, header or footer template) arrives
+			// whole, under one shared uid. It has no section role, so it gets the
+			// eager budget in document order instead: without this, a page whose
+			// header set roles had EVERY image made lazy, its hero included.
+			$cb_doc = 'uich-cb-page' === (string) $uid;
 			// Roles exist only when the critical CSS pass ran; without it (switched off
 			// or not an optimizable request) fall back to "first two sections stay eager".
-			$fast  = self::should_optimize() && ! empty( self::$roles );
+			$fast  = ! $cb_doc && self::should_optimize() && ! empty( self::$roles );
 			$role  = $fast ? ( self::$roles[ (string) $uid ] ?? '' ) : '';
 
 			$lazy_srcs = array();
 			$html      = preg_replace_callback(
 				'#<img\b[^>]*>#i',
-				static function ( $m ) use ( $fast, $role, $index, &$lazy_srcs ) {
+				static function ( $m ) use ( $fast, $role, $index, $cb_doc, &$lazy_srcs ) {
 					$tag = $m[0];
 					if ( preg_match( '#\s(?:loading|fetchpriority)\s*=#i', $tag ) ) {
 						// Already lazy in the authored markup: its preload must still go.
@@ -1475,7 +1822,12 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 						self::$eager_images++;
 						return $tag;
 					}
-					if ( ! $fast && $index < 2 ) {
+					if ( $cb_doc ) {
+						if ( self::$eager_images < 4 ) {
+							self::$eager_images++;
+							return $tag;
+						}
+					} elseif ( ! $fast && $index < 2 ) {
 						return $tag;
 					}
 					$tag = preg_replace( '#<img\b#i', '<img loading="lazy"', $tag, 1 );
@@ -1572,6 +1924,13 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			if ( ! class_exists( 'UiChemy_Builder_Registry' ) || ! $post_id ) {
 				return array();
 			}
+			// A Composer Builder document has no sections and prints its own CSS
+			// in <head> (Uich_CB_Render). A page converted from Elementor keeps its
+			// old Elementor data, which must not be read back as live sections:
+			// that printed deleted sections' CSS and lazy-loaded the hero.
+			if ( self::is_cb_document( $post_id ) ) {
+				return array();
+			}
 			$builder = UiChemy_Builder_Registry::detect_post_builder( $post_id );
 			$driver  = UiChemy_Builder_Registry::get( $builder );
 			if ( ! $driver ) {
@@ -1583,6 +1942,16 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			}
 			self::$sections_cache[ $post_id ] = $sections;
 			return $sections;
+		}
+
+		/**
+		 * Is this post a Composer Builder document (one html/css/js document)?
+		 *
+		 * @param int $post_id Post ID.
+		 * @return bool
+		 */
+		private static function is_cb_document( $post_id ) {
+			return class_exists( 'Uich_CB_Content' ) && Uich_CB_Content::is_enabled( (int) $post_id );
 		}
 
 		/**
@@ -1629,7 +1998,14 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 				return;
 			}
 
-			$ids = array( (int) get_queried_object_id() );
+			// A Composer Builder page's content is its builder document
+			// (_uichemy_content), which prints its own code (Uich_CB_Render). The
+			// sections left in its Elementor data are not on the page, so their
+			// code must not run either: an empty builder page still ran a removed
+			// section's full-screen preloader over the canvas and the live page.
+			// Header / footer / single templates are checked on their own below.
+			$page_id = (int) get_queried_object_id();
+			$ids     = ( $page_id && class_exists( 'Uich_CB_Content' ) && Uich_CB_Content::is_enabled( $page_id ) ) ? array() : array( $page_id );
 			if ( class_exists( 'UiChemy_Template_Resolver' ) ) {
 				foreach ( array( 'header', 'footer', 'single' ) as $loc ) {
 					$ids[] = (int) UiChemy_Template_Resolver::resolve( $loc );
@@ -1763,6 +2139,10 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 		 * @return bool
 		 */
 		private static function author_allows_raw_code( $post_id ) {
+			// Author and last editor (Uich_Dynamic::author_trusted()).
+			if ( (int) $post_id && class_exists( 'Uich_Dynamic' ) ) {
+				return Uich_Dynamic::author_trusted( (int) $post_id );
+			}
 			$author_id = (int) get_post_field( 'post_author', (int) $post_id );
 			return $author_id > 0 && user_can( $author_id, 'unfiltered_html' );
 		}

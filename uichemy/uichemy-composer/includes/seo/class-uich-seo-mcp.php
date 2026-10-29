@@ -60,7 +60,7 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 			$post_id   = array( 'type' => 'integer', 'description' => 'Post, page or product ID.' );
 			$tpl_props = array(
 				'name'       => array( 'type' => 'string', 'description' => 'A name people will recognise, e.g. "Recipes".' ),
-				'type'       => array( 'type' => 'string', 'description' => 'schema.org type of the WHOLE post: ' . implode( ', ', call_user_func_array( 'array_merge', array_values( Uich_SEO_Schema::CATALOGUE ) ) ) . '. Section-level types (' . implode( ', ', Uich_SEO_Schema::SECTION_TYPES ) . ') are refused: put them in that section\'s JSON-LD.' ),
+				'type'       => array( 'type' => 'string', 'description' => 'schema.org type of the WHOLE post: ' . implode( ', ', call_user_func_array( 'array_merge', array_values( Uich_SEO_Schema::CATALOGUE ) ) ) . '. Section-level types (' . implode( ', ', Uich_SEO_Schema::SECTION_TYPES ) . ') are refused: put them in JSON-LD next to that content - the section\'s JSON-LD, or on a Composer Builder page a <script type="application/ld+json"> in its head_code.' ),
 				'conditions' => array( 'type' => 'object', 'description' => 'Where it applies, the theme builder\'s rule shape: {rules: [{match: "include"|"exclude", type: "entire"|"all_singulars"|"front_page"|"blog"|"post_type"|"taxonomy"|"singular"|"author", value?, taxonomy?, term?}]}. E.g. {rules: [{match: "include", type: "post_type", value: "recipe"}]}.' ),
 				'template'   => array( 'type' => 'string', 'description' => 'JSON with Twig values from each post: {{ post.title }}, {{ post.url }}, {{ post.excerpt }}, {{ post.thumbnail.src }}, {{ post.meta(\'<key>\') }} (dot syntax post.meta.key renders empty), {{ post.date(\'c\') }} / {{ post.modified(\'c\') }} for ISO dates (plain {{ post.date }} is not ISO), {{ site.title }}, {{ site.url }}.' ),
 				'active'     => array( 'type' => 'boolean', 'description' => 'Publish it now. Google\'s required properties are checked first.' ),
@@ -87,7 +87,7 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 				),
 				array(
 					'name'                     => 'set-image-alt',
-					'description'              => 'Write image alt text into the section HTML (and optionally the media library), or mark an image decorative (alt=""). Never guess: describe what the image shows, or mark it decorative. Take section + path from audit-page-seo findings.',
+					'description'              => 'Write image alt text into the page markup (and optionally the media library), or mark an image decorative (alt=""). Never guess: describe what the image shows, or mark it decorative. Take section + path from audit-page-seo findings.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => array(
@@ -97,12 +97,12 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 								'items' => array(
 									'type'       => 'object',
 									'properties' => array(
-										'section'    => array( 'type' => 'string', 'description' => 'Section uid from the finding.' ),
+										'section'    => array( 'type' => 'string', 'description' => 'The "section" from the finding. Optional on a Composer Builder page, which is one document.' ),
 										'path'       => array( 'type' => 'string', 'description' => 'Node path from the finding, e.g. 0.1.3.' ),
 										'alt'        => array( 'type' => 'string', 'description' => 'What the image shows. Omit when decorative.' ),
 										'decorative' => array( 'type' => 'boolean' ),
 									),
-									'required'   => array( 'section', 'path' ),
+									'required'   => array( 'path' ),
 								),
 							),
 							'update_media' => array( 'type' => 'boolean', 'description' => 'Also save the alt text on the media library item. Default false.' ),
@@ -112,7 +112,7 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 				),
 				array(
 					'name'                     => 'preview-page-schema',
-					'description'              => 'The structured data (JSON-LD @graph) one page publishes, with where each entity comes from (automatic, markup, site head code, page head code, a schema template) and any entity left out because Google\'s required properties are missing. Section JSON-LD prints inside the section and is not part of this graph. Read-only.',
+					'description'              => 'The structured data (JSON-LD @graph) one page publishes, with where each entity comes from (automatic, markup, site head code, page head code, a schema template) and any entity left out because Google\'s required properties are missing. JSON-LD inside a section prints there and is not part of this graph; on a Composer Builder page, JSON-LD in head_code is. Read-only.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => array( 'post_id' => $post_id ),
@@ -166,7 +166,7 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 				),
 				array(
 					'name'                     => 'add-schema-template',
-					'description'              => 'Create a schema template for a type that describes a whole post. Not for site identity (Site Settings) or section-level types like FAQPage / HowTo / Review (those go in the section\'s JSON-LD).',
+					'description'              => 'Create a schema template for a type that describes a whole post. Not for site identity (Site Settings) or section-level types like FAQPage / HowTo / Review (those go in JSON-LD next to that content - the section\'s JSON-LD, or a Composer Builder page\'s head_code).',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => $tpl_props,
@@ -258,6 +258,15 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 			$names    = wp_list_pluck( $actions, 'name' );
 			$preamble = method_exists( 'UiChemy_Abilities', 'contract' ) ? UiChemy_Abilities::contract() : '';
 
+			// The text below names the section-mode page calls (update-page-code,
+			// page_before_head). In Composer Builder mode those do not exist, so
+			// rewrite them to the document actions, as every other ability does.
+			$schema_description = $preamble . ' Read the improve-seo skill (uichemy-composer/read-skill) before an SEO pass. ' . self::HOW_TO_EDIT . ' Fix markup problems (alt text, heading order, link rel) in the page markup with uichemy-composer/page. When another SEO plugin owns the head, UiChemy prints no SEO tags; the tags stay in the code and come back if it is removed. No keyword scoring and no sitemap of its own: WordPress serves /wp-sitemap.xml and UiChemy keeps it in step.';
+			if ( class_exists( 'UiChemy_Builder_Context' ) ) {
+				$actions            = UiChemy_Builder_Context::for_mode_deep( $actions );
+				$schema_description = UiChemy_Builder_Context::for_mode( $schema_description );
+			}
+
 			wp_register_ability(
 				self::SLUG,
 				array(
@@ -288,7 +297,7 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 							'idempotent'  => false,
 						),
 						'actions'            => $actions,
-						'schema_description' => $preamble . ' Read the improve-seo skill (uichemy-composer/read-skill) before an SEO pass. ' . self::HOW_TO_EDIT . ' Fix markup problems (alt text, heading order, link rel) in the section HTML with uichemy-composer/page. When another SEO plugin owns the head, UiChemy prints no SEO tags; the tags stay in the code and come back if it is removed. No keyword scoring and no sitemap of its own: WordPress serves /wp-sitemap.xml and UiChemy keeps it in step.',
+						'schema_description' => $schema_description,
 					),
 				)
 			);
@@ -311,7 +320,14 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 				}
 			}
 
-			return self::readable( self::route( str_replace( '_', '-', $action ), $action, $params ) );
+			$result = self::readable( self::route( str_replace( '_', '-', $action ), $action, $params ) );
+			// Fix hints name section-mode calls; in Composer Builder mode - or for
+			// a post that is itself a Composer Builder document - they are the
+			// document actions instead.
+			$cb_post = ! empty( $params['post_id'] ) && Uich_SEO_Head::is_cb_document( (int) $params['post_id'] );
+			return ( ! is_wp_error( $result ) && class_exists( 'UiChemy_Builder_Context' ) )
+				? UiChemy_Builder_Context::for_mode_deep( $result, $cb_post )
+				: $result;
 		}
 
 		/**
@@ -513,7 +529,7 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 			$d         = $record['derived'];
 
 			if ( ! $writable ) {
-				$start = 'This page has no UiChemy section, so it has no page head code yet. Its values are worked out from its content and the site head code. To set its own SEO tags, build it with UiChemy sections, then use uichemy-composer/page update-page-code.';
+				$start = 'This page is not built with UiChemy, so it has no page head code yet. Its values are worked out from its content and the site head code. To set its own SEO tags, build it with UiChemy, then use uichemy-composer/page update-page-code.';
 			} elseif ( '' === $page_tags ) {
 				$start = 'This page has no SEO tags of its own yet: every value below is worked out from its content or the site head code. To get started, add the tags this page needs (at least a <title> and <meta name="description"> written for search) to its before-</head> code with uichemy-composer/page update-page-code, and set the site-wide fallbacks (title template, default og:image) once with update-site-settings.';
 			} else {
@@ -712,7 +728,7 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 		public static function audit_site() {
 			$res  = Uich_SEO_Rest::overview();
 			$data = $res instanceof WP_REST_Response ? $res->get_data() : (array) $res;
-			$data['how_to_work_it'] = 'Fix blockers first, then warnings. For each page: audit-page-seo, then edit its head code or section HTML as each finding says. Duplicate titles/descriptions need a distinct <title> / <meta name="description"> in each page\'s head code.';
+			$data['how_to_work_it'] = 'Fix blockers first, then warnings. For each page: audit-page-seo, then edit its head code or its markup as each finding says. Duplicate titles/descriptions need a distinct <title> / <meta name="description"> in each page\'s head code.';
 			return $data;
 		}
 
@@ -804,7 +820,7 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 					},
 					Uich_SEO_Schema::presets()
 				),
-				'note'      => 'Templates marked "retired" are section-level types and no longer print; move them into the section\'s JSON-LD.',
+				'note'      => 'Templates marked "retired" are section-level types and no longer print; move them into JSON-LD next to that content (the section\'s JSON-LD, or a Composer Builder page\'s head_code).',
 			);
 		}
 
@@ -898,16 +914,31 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 			}
 			$images = isset( $p['images'] ) && is_array( $p['images'] ) ? $p['images'] : array();
 			if ( ! $images || ! class_exists( 'UiChemy_Builder_Registry' ) ) {
-				return new WP_Error( 'uich_seo_nothing', 'Pass images: [{section, path, alt | decorative}].' );
+				return new WP_Error( 'uich_seo_nothing', 'Pass images: [{section, path, alt | decorative}] from audit-page-seo findings.' );
 			}
-			$slug   = UiChemy_Builder_Registry::detect_post_builder( $post->ID );
-			$driver = $slug ? UiChemy_Builder_Registry::get( $slug ) : null;
-			if ( ! $driver || ! $driver->is_available() ) {
-				return new WP_Error( 'uich_seo_not_composer', 'This page is not built with Composer sections. Edit the image in the block editor instead.' );
-			}
-			$sections = $driver->load_sections( $post->ID, 'content' );
-			if ( is_wp_error( $sections ) ) {
-				return $sections;
+			// A Composer Builder document is one "section" (uid uich-cb-page, the
+			// same uid its findings carry) whose html is the document's own. It
+			// has no driver, so without this branch the write was refused with
+			// advice to use the block editor.
+			$cb_doc = Uich_SEO_Head::is_cb_document( $post->ID ) ? Uich_CB_Content::get_cb_content( $post->ID ) : null;
+			$driver = null;
+			if ( $cb_doc ) {
+				$sections = array(
+					array(
+						'uid'      => 'uich-cb-page',
+						'settings' => array( 'raw_html' => isset( $cb_doc['content']['html'] ) ? (string) $cb_doc['content']['html'] : '' ),
+					),
+				);
+			} else {
+				$slug   = UiChemy_Builder_Registry::detect_post_builder( $post->ID );
+				$driver = $slug ? UiChemy_Builder_Registry::get( $slug ) : null;
+				if ( ! $driver || ! $driver->is_available() ) {
+					return new WP_Error( 'uich_seo_not_composer', 'This page is not built with UiChemy (Composer sections or the Composer Builder). Edit the image in the block editor instead.' );
+				}
+				$sections = $driver->load_sections( $post->ID, 'content' );
+				if ( is_wp_error( $sections ) ) {
+					return $sections;
+				}
 			}
 			$record  = Uich_SEO_Record::get( $post->ID );
 			$derived = isset( $record['derived']['images'] ) ? (array) $record['derived']['images'] : array();
@@ -916,6 +947,9 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 
 			foreach ( $images as $req ) {
 				$uid  = isset( $req['section'] ) ? (string) $req['section'] : '';
+				if ( '' === $uid && $cb_doc ) {
+					$uid = 'uich-cb-page';
+				}
 				$path = isset( $req['path'] ) ? (string) $req['path'] : '';
 				$deco = ! empty( $req['decorative'] );
 				$alt  = $deco ? '' : sanitize_text_field( isset( $req['alt'] ) ? (string) $req['alt'] : '' );
@@ -979,7 +1013,14 @@ if ( ! class_exists( 'Uich_SEO_MCP' ) ) {
 				}
 				$done[] = array( 'section' => $uid, 'path' => $path, 'ok' => true, 'alt' => $alt, 'decorative' => $deco, 'media_updated' => $media );
 			}
-			if ( $changed ) {
+			if ( $changed && $cb_doc ) {
+				$cb_doc['content']['html'] = (string) $sections[0]['settings']['raw_html'];
+				$ok                        = Uich_CB_Content::save_cb_content( $post->ID, $cb_doc );
+				if ( ! $ok || is_wp_error( $ok ) ) {
+					return is_wp_error( $ok ) ? $ok : new WP_Error( 'uich_seo_save_failed', 'The page could not be saved.' );
+				}
+				Uich_SEO_Record::rebuild( $post->ID );
+			} elseif ( $changed ) {
 				$ok = $driver->save_sections( $post->ID, $sections, 'content' );
 				if ( is_wp_error( $ok ) ) {
 					return $ok;

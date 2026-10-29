@@ -28,17 +28,15 @@ Skip this step entirely if everything was already sent on the first section uplo
    👁️   Live Preview:       <preview_link>
 ```
 
-**Single post template — print by `system` value:**
+**Single post template — print by `will_render`:**
 
-| system | Output |
+| will_render | Output |
 |---|---|
-| `elementor_pro` | `📄 Single Post → <link> (ACTIVE on all posts ✅)` |
-| `nexter` | `📄 Single Post → <link> (ACTIVE on all posts ✅)` |
-| `none` | `ℹ️ No theme builder — imported as regular page instead` |
+| `true` | `📄 Single Post → <placement_summary> (ACTIVE ✅)` |
+| `false` | `⚠️ Single Post created but not rendering — <render_check.reason>` |
+| (fell back to a page) | `ℹ️ Imported as a regular page instead` |
 
-If sample post created: `📝 Sample post: <title> → <permalink>`
-
-**Header/Footer:** UiChemy's native Theme Builder always activates it immediately on creation (`system:"uichemy_native"`, `active:true`) — regardless of `platform.header_footer_system`. Print: `🧩 Header/Footer → ACTIVE on entire site ✅`. Never name a specific competing theme-builder plugin in this message.
+**Header/Footer:** UiChemy's native Theme Builder activates it immediately on creation (`system:"uichemy_native"`) — regardless of `platform.header_footer_system`. Print `🧩 Header/Footer → ACTIVE on entire site ✅` only when the response has `will_render:true`; otherwise print `⚠️ Header/Footer created but not rendering — <render_check.reason>`. Never name a specific competing theme-builder plugin in this message.
 
 If `uichemy-composer/platform (action="update-site-settings")` was called: `🎨 Logo → ✅ set | skipped | ❌ failed · Icon → ✅ set | skipped | ❌ failed`
 

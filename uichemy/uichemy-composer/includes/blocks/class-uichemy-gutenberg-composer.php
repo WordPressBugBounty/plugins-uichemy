@@ -207,8 +207,37 @@ if ( ! class_exists( 'UiChemy_Gutenberg_Composer' ) ) {
 			// Section JS prints as a <script>, so only for an author who may publish code - the
 			// gate the Elementor widget applies (content_allows_raw_code()). Block attributes
 			// only lose their TAGS to kses, so plain JS from anyone else would otherwise run.
-			if ( '' !== trim( $raw_js ) && class_exists( 'Uich_Dynamic' ) && Uich_Dynamic::author_trusted() ) {
+			$js_will_print = ( '' !== trim( $raw_js ) && class_exists( 'Uich_Dynamic' ) && Uich_Dynamic::author_trusted() );
+			if ( $js_will_print ) {
 				self::queue_footer_js( $uid, $raw_js );
+			}
+
+			/*
+			 * Load the libraries the section's own JS reaches for. The Elementor
+			 * widget has done this since GSAP shipped (see its render(), the
+			 * enqueue_*_runtime calls); this block printed the JS and nothing
+			 * else, so an animated or 3D section built in Gutenberg failed on the
+			 * front end with "gsap is not defined" / "THREE is not defined" while
+			 * the identical section worked on an Elementor page.
+			 *
+			 * Same on-demand rule as the widget: a page only pays for the library
+			 * it actually animates with. GSAP enqueues into the footer (priority
+			 * 20) and this block prints its JS at priority 99, so the library is
+			 * always defined by the time the section's code runs.
+			 */
+			if ( $js_will_print && class_exists( 'UiChemy_Composer_Renderer' ) ) {
+				if ( preg_match( '/\bgsap\b|\bScrollTrigger\b/', $raw_js ) ) {
+					\UiChemy_Composer_Renderer::enqueue_gsap_runtime();
+				}
+				if ( preg_match( '/\bTHREE\b/', $raw_js ) ) {
+					\UiChemy_Composer_Renderer::enqueue_three_runtime();
+				}
+			}
+
+			// Run-with runtime, keyed off the RENDERED markup rather than the JS —
+			// the widget applies the same check to its own output.
+			if ( class_exists( 'UiChemy_RunWith' ) && UiChemy_RunWith::output_needs_runtime( $html ) ) {
+				UiChemy_RunWith::enqueue_runtime();
 			}
 
 			// `wp-block-uichemy-composer` is the marker the front-end picker looks for

@@ -235,6 +235,12 @@ body[data-uich-composer-theme="dark"] {
 	transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 	transform: translateY(100%);
 	font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	--uich-ff: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+	/* Pixels, not inherited: on the live page the shell inherits from the page's
+	   own <html>/<body>, and a design that sets `html { font-size: 62.5% }` would
+	   hand the shell 10px. */
+	font-size: 16px;
+	line-height: 1.5;
 	color-scheme: var(--uichemy-composer-color-scheme);
 }
 
@@ -250,6 +256,7 @@ body.elementor-editor-active .MuiPopover-root {
 }
 .uichemy-composer-floating-panel * {
 	font-family: inherit;
+	--uich-ff: inherit;
 }
 .uichemy-composer-floating-panel input,
 .uichemy-composer-floating-panel textarea,
@@ -369,6 +376,7 @@ body.elementor-editor-active .MuiPopover-root {
 }
 .uichemy-composer-floating-panel select option {
 	font-family: inherit;
+	--uich-ff: inherit;
 	background-color: var(--uichemy-composer-input-bg) !important;
 	color: var(--uichemy-composer-text-color) !important;
 }
@@ -716,6 +724,7 @@ body.elementor-editor-active .MuiPopover-root {
 	border: none;
 	padding: 12px 14px;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	--uich-ff: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 	font-size: 12px;
 	line-height: 1.45;
 	resize: none;
@@ -820,6 +829,7 @@ body.elementor-editor-active .MuiPopover-root {
 	border: none;
 	padding: 15px;
 	font-family: inherit;
+	--uich-ff: inherit;
 	font-size: 13px;
 	line-height: 1.5;
 	resize: none;
@@ -909,8 +919,7 @@ body.elementor-editor-active .MuiPopover-root {
 	padding: 10px;
 }
 .uichemy-composer-direct-list,
-.uichemy-composer-direct-editor,
-.uichemy-composer-chat-shell {
+.uichemy-composer-direct-editor {
 	background: var(--uichemy-composer-col-bg);
 	border: 1px solid var(--uichemy-composer-border-color);
 	border-radius: 4px;
@@ -955,6 +964,7 @@ body.elementor-editor-active .MuiPopover-root {
 	color: var(--uichemy-composer-text-color);
 	cursor: pointer;
 	font-family: inherit;
+	--uich-ff: inherit;
 	font-size: inherit;
 	box-sizing: border-box;
 }
@@ -1025,6 +1035,7 @@ body.elementor-editor-active .MuiPopover-root {
 	border-radius: 4px;
 	cursor: pointer;
 	font-family: inherit;
+	--uich-ff: inherit;
 }
 .uichemy-composer-direct-layer-menu-item:hover:not(:disabled) {
 	background: var(--uichemy-composer-tab-bg);
@@ -1112,6 +1123,7 @@ body > .is-layer-drag-ghost-float {
 	font-size: 12px;
 	font-weight: 400;
 	font-family: inherit;
+	--uich-ff: inherit;
 	margin-bottom: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -1314,6 +1326,7 @@ body > .is-layer-drag-ghost-float {
 	font-weight: 600;
 	color: var(--uichemy-composer-text-color, #e8eaed);
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	--uich-ff: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 	font-size: 11px;
 	overflow: hidden;
 	text-overflow: ellipsis;
@@ -1322,6 +1335,7 @@ body > .is-layer-drag-ghost-float {
 .uichemy-composer-direct-style-origin-value {
 	color: var(--uichemy-composer-text-muted, #9aa0a6);
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	--uich-ff: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 	font-size: 11px;
 }
 .uichemy-composer-direct-classes-wrap {
@@ -1396,6 +1410,7 @@ body > .is-layer-drag-ghost-float {
 	border: 1px solid var(--uichemy-composer-chip-border);
 	font-size: 11px;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	--uich-ff: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 	color: var(--uichemy-composer-chip-color);
 	cursor: pointer;
 	box-sizing: border-box;
@@ -2103,6 +2118,7 @@ body > .is-layer-drag-ghost-float {
 	min-height: 138px;
 	resize: vertical;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+	--uich-ff: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 	font-size: 12px;
 	line-height: 1.45;
 }
@@ -2315,348 +2331,6 @@ body > .is-layer-drag-ghost-float {
 	flex-direction: column;
 	gap: 0;
 }
-.uichemy-composer-chat-shell {
-	display: flex;
-	flex-direction: column;
-	height: 100%;
-}
-.uichemy-composer-chat-log {
-	flex: 1;
-	min-height: 0;
-	overflow: auto;
-	padding: 16px 14px;
-	display: flex;
-	flex-direction: column;
-	gap: 16px;
-}
-/* ── AI-style conversation — full-width, document layout, no social bubbles ─ */
-.uichemy-composer-chat-message {
-	width: 100%;
-	box-sizing: border-box;
-	font-size: 13px;
-	line-height: 1.6;
-	white-space: pre-wrap;
-	word-break: break-word;
-}
-/* User prompt: subtle right-edge accent, dimmed bg */
-.uichemy-composer-chat-message.user {
-	background: rgba(255,255,255,0.04);
-	color: var(--uichemy-composer-text-color);
-	border: 1px solid var(--uichemy-composer-border-color);
-	border-radius: 8px;
-	padding: 10px 14px;
-}
-/* Assistant reply: plain text, no box — just like Claude/ChatGPT responses */
-.uichemy-composer-chat-message.assistant {
-	background: transparent;
-	color: var(--uichemy-composer-text-color);
-	padding: 2px 0;
-}
-.uichemy-composer-chat-message.system {
-	background: transparent;
-	color: var(--uichemy-composer-text-muted);
-	padding: 0;
-	font-size: 11px;
-	text-align: center;
-}
-/* ── Pick button in the panel header — visible only when Chat tab is active ── */
-.uichemy-composer-panel-header-right .uichemy-composer-chat-pick-btn {
-	display: none;
-}
-.uichemy-composer-panel-header:has([data-uichemy-composer-tab="chat"].is-active) .uichemy-composer-panel-header-right .uichemy-composer-chat-pick-btn {
-	display: inline-flex;
-}
-
-.uichemy-composer-chat-pick-btn {
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
-	padding: 4px 10px;
-	background: transparent;
-	border: 1px dashed var(--uichemy-composer-border-color);
-	border-radius: 6px;
-	color: var(--uichemy-composer-text-muted);
-	font-size: 11px;
-	cursor: pointer;
-	transition: border-color 0.15s, color 0.15s, background 0.15s;
-	line-height: 1.4;
-}
-.uichemy-composer-chat-pick-btn:hover,
-.uichemy-composer-chat-pick-btn.is-picking {
-	border-color: #a78bfa;
-	color: #a78bfa;
-	background: rgba(167,139,250,0.08);
-}
-
-/* ── Compose area — buttons float inside textarea, target bar sits below ──── */
-.uichemy-composer-chat-compose {
-	padding: 10px 12px 12px;
-	border-top: 1px solid var(--uichemy-composer-border-color);
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-.uichemy-composer-chat-input-wrap {
-	position: relative;
-	border: 1px solid var(--uichemy-composer-border-color);
-	border-radius: 8px;
-	overflow: hidden;
-	background: var(--uichemy-composer-input-bg);
-	transition: border-color 0.15s;
-}
-.uichemy-composer-chat-input-wrap:focus-within {
-	border-color: rgba(167,139,250,0.5);
-}
-.uichemy-composer-chat-input-wrap textarea {
-	border: none !important;
-	border-radius: 0 !important;
-	background: transparent !important;
-	resize: none;
-	min-height: 100px;
-	outline: none;
-	width: 100%;
-	box-sizing: border-box;
-	color: var(--uichemy-composer-text-color);
-	padding: 10px 12px 52px;
-	font-size: 13px;
-	line-height: 1.5;
-	color-scheme: var(--uichemy-composer-color-scheme);
-	display: block;
-}
-/* Action row: spans full width — attach icon on left, Clear+Send on right */
-.uichemy-composer-chat-compose-row {
-	position: absolute;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	display: flex;
-	align-items: center;
-	justify-content: space-between;
-	padding: 6px 8px;
-	border-top: 1px solid var(--uichemy-composer-border-color);
-	background: var(--uichemy-composer-input-bg);
-}
-.uichemy-composer-chat-compose-left {
-	display: flex;
-	align-items: center;
-	gap: 4px;
-}
-.uichemy-composer-chat-compose-right {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-}
-/* Attach image button */
-.uichemy-composer-chat-attach-btn {
-	display: inline-flex;
-	align-items: center;
-	justify-content: center;
-	width: 28px;
-	height: 28px;
-	padding: 0;
-	background: transparent;
-	border: none;
-	border-radius: 6px;
-	color: var(--uichemy-composer-text-muted);
-	cursor: pointer;
-	transition: color 0.15s, background 0.15s;
-}
-.uichemy-composer-chat-attach-btn:hover {
-	color: #a78bfa;
-	background: rgba(167,139,250,0.1);
-}
-/* Attachment strip — horizontal scroll, holds target chip + image thumbs */
-.uichemy-composer-chat-image-strip {
-	display: flex;
-	align-items: center;
-	gap: 8px;
-	padding: 8px 10px 0;
-	overflow-x: auto;
-	flex-wrap: nowrap;
-}
-.uichemy-composer-chat-image-strip::-webkit-scrollbar { height: 4px; }
-.uichemy-composer-chat-image-strip::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 2px; }
-/* Individual image thumbnail */
-.uichemy-composer-chat-image-thumb {
-	position: relative;
-	flex-shrink: 0;
-	width: 56px;
-	height: 56px;
-	border-radius: 6px;
-	overflow: hidden;
-	border: 1px solid var(--uichemy-composer-border-color);
-}
-.uichemy-composer-chat-image-thumb img {
-	width: 100%;
-	height: 100%;
-	object-fit: cover;
-	display: block;
-}
-.uichemy-composer-chat-image-remove {
-	position: absolute;
-	top: 2px;
-	right: 2px;
-	width: 16px;
-	height: 16px;
-	border-radius: 50%;
-	background: rgba(0,0,0,0.65);
-	border: none;
-	color: #fff;
-	font-size: 10px;
-	line-height: 1;
-	cursor: pointer;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	padding: 0;
-	opacity: 0;
-	transition: opacity 0.15s;
-}
-.uichemy-composer-chat-image-thumb:hover .uichemy-composer-chat-image-remove { opacity: 1; }
-/* User message: image thumbnails shown above the text */
-.uichemy-composer-chat-user-images {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 6px;
-	margin-bottom: 8px;
-}
-.uichemy-composer-chat-user-image {
-	width: 120px;
-	height: 90px;
-	object-fit: cover;
-	border-radius: 6px;
-	display: block;
-	border: 1px solid rgba(255,255,255,0.1);
-}
-.uichemy-composer-chat-pick-badge {
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
-	padding: 3px 8px;
-	background: rgba(167,139,250,0.12);
-	border: 1px solid #a78bfa;
-	border-radius: 6px;
-	font-size: 11px;
-	color: #a78bfa;
-	font-family: monospace;
-	max-width: 180px;
-	overflow: hidden;
-}
-.uichemy-composer-chat-pick-badge-label {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
-.uichemy-composer-chat-pick-clear {
-	background: none;
-	border: none;
-	color: #a78bfa;
-	cursor: pointer;
-	padding: 0;
-	font-size: 13px;
-	line-height: 1;
-	opacity: 0.7;
-	flex-shrink: 0;
-}
-.uichemy-composer-chat-pick-clear:hover { opacity: 1; }
-
-/* ── Old target bar — hidden; chip in the strip replaces it ─────────────── */
-.uichemy-composer-chat-target-bar { display: none !important; }
-
-/* ── Attach chip — used in both the compose strip and sent message bubbles ── */
-.uichemy-composer-attach-chip {
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
-	padding: 4px 8px 4px 7px;
-	background: rgba(167,139,250,0.1);
-	border: 1px solid rgba(167,139,250,0.3);
-	border-radius: 20px;
-	font-size: 11px;
-	color: #c4b5fd;
-	white-space: nowrap;
-	max-width: 200px;
-	overflow: hidden;
-	flex-shrink: 0;
-	animation: uich-target-in 0.18s ease;
-}
-.uichemy-composer-attach-chip svg {
-	flex-shrink: 0;
-	opacity: 0.8;
-}
-.uichemy-composer-attach-chip-label {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	font-family: monospace;
-	font-size: 11px;
-}
-.uichemy-composer-attach-chip-remove {
-	background: none;
-	border: none;
-	color: rgba(196,181,253,0.6);
-	cursor: pointer;
-	padding: 0;
-	font-size: 13px;
-	line-height: 1;
-	flex-shrink: 0;
-	display: flex;
-	align-items: center;
-	transition: color 0.15s;
-}
-.uichemy-composer-attach-chip-remove:hover { color: #a78bfa; }
-/* Inside a sent user bubble — no remove button, slightly adapted */
-.uichemy-composer-attach-chip--sent {
-	background: rgba(167,139,250,0.15);
-	border-color: rgba(167,139,250,0.4);
-}
-/* Attachment row inside user bubble */
-.uichemy-composer-chat-user-attachments {
-	display: flex;
-	flex-wrap: wrap;
-	align-items: center;
-	gap: 6px;
-	margin-bottom: 8px;
-}
-@keyframes uich-target-in {
-	from { opacity: 0; transform: translateY(-4px); }
-	to   { opacity: 1; transform: translateY(0); }
-}
-.uichemy-composer-chat-target-icon {
-	color: #a78bfa;
-	flex-shrink: 0;
-	opacity: 0.85;
-}
-.uichemy-composer-chat-target-label {
-	font-size: 9px;
-	font-weight: 700;
-	letter-spacing: 0.08em;
-	text-transform: uppercase;
-	color: rgba(167, 139, 250, 0.7);
-	flex-shrink: 0;
-}
-.uichemy-composer-chat-target-tag {
-	font-family: monospace;
-	font-size: 11px;
-	color: #c4b5fd;
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	max-width: 200px;
-}
-.uichemy-composer-chat-target-clear {
-	background: none;
-	border: none;
-	color: rgba(167, 139, 250, 0.6);
-	cursor: pointer;
-	padding: 0 2px;
-	font-size: 12px;
-	line-height: 1;
-	flex-shrink: 0;
-	opacity: 0.7;
-}
-.uichemy-composer-chat-target-clear:hover { opacity: 1; color: #a78bfa; }
-
 .uichemy-composer-btn.ghost {
 	background: transparent;
 	border-color: var(--uichemy-composer-border-color);
@@ -2664,8 +2338,7 @@ body > .is-layer-drag-ghost-float {
 }
 .uichemy-composer-btn:disabled,
 .uichemy-composer-direct-field textarea:disabled,
-.uichemy-composer-direct-field input:disabled,
-.uichemy-composer-chat-input-wrap textarea:disabled {
+.uichemy-composer-direct-field input:disabled {
 	opacity: 0.55;
 	cursor: not-allowed;
 }
@@ -2681,6 +2354,7 @@ body > .is-layer-drag-ghost-float {
 	padding: 8px 12px !important;
 	border-bottom: 1px solid var(--uichemy-composer-border-color, #2d2d2d) !important;
 	font-family: inherit !important;
+	--uich-ff: inherit !important;
 	font-size: 12px !important;
 	display: flex !important;
 	align-items: center !important;
@@ -2704,6 +2378,7 @@ body > .is-layer-drag-ghost-float {
 	padding: 4px 8px !important;
 	border-radius: 4px !important;
 	font-family: inherit !important;
+	--uich-ff: inherit !important;
 	font-size: 12px !important;
 	outline: none !important;
 	width: 140px !important;
@@ -2721,6 +2396,7 @@ body > .is-layer-drag-ghost-float {
 	border-radius: 4px !important;
 	cursor: pointer !important;
 	font-family: inherit !important;
+	--uich-ff: inherit !important;
 	font-size: 11px !important;
 	font-weight: 600 !important;
 	transition: background 0.2s ease !important;
@@ -2742,6 +2418,7 @@ body > .is-layer-drag-ghost-float {
 	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4) !important;
 	padding: 4px 0 !important;
 	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
+	--uich-ff: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace !important;
 	font-size: 11px !important;
 	max-height: 200px !important;
 	overflow-y: auto !important;
@@ -2794,4 +2471,31 @@ body > .is-layer-drag-ghost-float {
 	background-color: currentColor;
 	-webkit-mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2040%2040'%3E%3Cpath%20d='M29.9051%2021.3778V24.409C29.9028%2025.8619%2029.3149%2027.2547%2028.2694%2028.2821C27.2239%2029.3094%2025.8065%2029.8872%2024.328%2029.8895H20.7909C21.1677%2029.5927%2021.4973%2029.2425%2021.7694%2028.8504C22.6079%2027.6333%2022.7157%2026.2714%2022.7157%2025.2235L22.7264%2021.3778H29.9051Z'%20fill='black'/%3E%3Cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M4.19223%204.19223C9.78187%20-1.39741%2030.2178%20-1.39741%2035.8075%204.19223C41.3971%209.78187%2041.3971%2030.2178%2035.8075%2035.8075C30.2178%2041.3971%209.78187%2041.3971%204.19223%2035.8075C-1.39741%2030.2178%20-1.39741%209.78187%204.19223%204.19223ZM9.32797%209.33383V24.495C9.32797%2026.124%209.98678%2027.6868%2011.159%2028.8387C12.3312%2029.9904%2013.9213%2030.6375%2015.5789%2030.6375H15.5877C16.0116%2030.6768%2016.4383%2030.6768%2016.8622%2030.6375H24.328C26.0077%2030.6375%2027.6188%2029.9814%2028.8065%2028.8143C29.9941%2027.6472%2030.6609%2026.0643%2030.661%2024.4139V20.6414H21.9774L21.9579%2025.2225C21.9579%2025.2225%2018.0147%2025.4457%2018.0145%2022.4627V14.8553C18.0145%2014.1301%2017.8692%2013.412%2017.5868%2012.742C17.3043%2012.072%2016.89%2011.4628%2016.368%2010.95C15.8462%2010.4374%2015.2265%2010.0312%2014.5448%209.75375C13.8628%209.47629%2013.1315%209.33371%2012.3934%209.33383H9.32797ZM27.0282%209.33383C25.6876%209.33384%2024.402%209.8566%2023.4539%2010.7879C22.506%2011.7193%2021.9729%2012.9825%2021.9725%2014.2997V17.2782H30.659V9.33383H27.0282Z'%20fill='black'/%3E%3C/svg%3E") no-repeat center / contain;
 	mask: url("data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%2040%2040'%3E%3Cpath%20d='M29.9051%2021.3778V24.409C29.9028%2025.8619%2029.3149%2027.2547%2028.2694%2028.2821C27.2239%2029.3094%2025.8065%2029.8872%2024.328%2029.8895H20.7909C21.1677%2029.5927%2021.4973%2029.2425%2021.7694%2028.8504C22.6079%2027.6333%2022.7157%2026.2714%2022.7157%2025.2235L22.7264%2021.3778H29.9051Z'%20fill='black'/%3E%3Cpath%20fill-rule='evenodd'%20clip-rule='evenodd'%20d='M4.19223%204.19223C9.78187%20-1.39741%2030.2178%20-1.39741%2035.8075%204.19223C41.3971%209.78187%2041.3971%2030.2178%2035.8075%2035.8075C30.2178%2041.3971%209.78187%2041.3971%204.19223%2035.8075C-1.39741%2030.2178%20-1.39741%209.78187%204.19223%204.19223ZM9.32797%209.33383V24.495C9.32797%2026.124%209.98678%2027.6868%2011.159%2028.8387C12.3312%2029.9904%2013.9213%2030.6375%2015.5789%2030.6375H15.5877C16.0116%2030.6768%2016.4383%2030.6768%2016.8622%2030.6375H24.328C26.0077%2030.6375%2027.6188%2029.9814%2028.8065%2028.8143C29.9941%2027.6472%2030.6609%2026.0643%2030.661%2024.4139V20.6414H21.9774L21.9579%2025.2225C21.9579%2025.2225%2018.0147%2025.4457%2018.0145%2022.4627V14.8553C18.0145%2014.1301%2017.8692%2013.412%2017.5868%2012.742C17.3043%2012.072%2016.89%2011.4628%2016.368%2010.95C15.8462%2010.4374%2015.2265%2010.0312%2014.5448%209.75375C13.8628%209.47629%2013.1315%209.33371%2012.3934%209.33383H9.32797ZM27.0282%209.33383C25.6876%209.33384%2024.402%209.8566%2023.4539%2010.7879C22.506%2011.7193%2021.9729%2012.9825%2021.9725%2014.2997V17.2782H30.659V9.33383H27.0282Z'%20fill='black'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+
+/* Live-page editor only: lift the editor above the page's own layers.
+   A design's sticky header or preloader (z-index 9999-99999, sometimes the
+   maximum) covered the panel, which sat at 9999. The order is kept:
+   panel < admin bar < the panel's pop-ups (composer-right-panel.css) <
+   legacy pop-overs < CodeMirror hints < canvas chrome (2147482300+) <
+   the media library, opened from the panel, which must cover everything. */
+body.uichemy-frontend-editor .uichemy-composer-floating-panel {
+	z-index: 2147481000;
+}
+body.uichemy-frontend-editor #wpadminbar {
+	z-index: 2147481050;
+}
+body.uichemy-frontend-editor .uichemy-composer-direct-style-origin-popover,
+body.uichemy-frontend-editor .uichemy-composer-direct-global-color-popover {
+	z-index: 2147481400;
+}
+body.uichemy-frontend-editor .CodeMirror-hints,
+body.uichemy-frontend-editor .CodeMirror-dialog {
+	z-index: 2147481500 !important;
+}
+body.uichemy-frontend-editor .media-modal-backdrop {
+	z-index: 2147482980;
+}
+body.uichemy-frontend-editor .media-modal {
+	z-index: 2147482990;
 }

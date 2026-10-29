@@ -65,7 +65,12 @@ Work like an inbox: one list, worst first, clear it top to bottom.
    - `page_head_tags` — the SEO tags already in this page's head code.
    - `findings` — each with the exact call that fixes it.
    - `siblings` — other pages' titles and descriptions, so yours is distinct.
+<!-- mode:sections -->
 3. Write the page's tags into its head code with `uichemy-composer/page`, in `page_before_head` (there is no `page_css` parameter): `update-page-code {post_id, page_before_head}` appends, `set-page-code {post_id, page_before_head}` replaces the whole block:
+<!-- /mode -->
+<!-- mode:composer -->
+3. Write the page's tags into its `head_code` with `uichemy-composer/page`. First `get-code {post_id, fields: ["head_code"]}` - it returns the current block and a `hash`. Then either `patch-code {post_id, field: "head_code", expected_hash, edits: [{find, replace}]}` to change one tag (to add tags, anchor on a line you keep, or on the existing `<title>`), or `set-code {post_id, head_code, expected_hash}` to replace the whole block. There is no append:
+<!-- /mode -->
 
 ```html
 <title>Handmade Oak Dining Tables | Nordform</title>
@@ -73,7 +78,12 @@ Work like an inbox: one list, worst first, clear it top to bottom.
 <meta property="og:image" content="https://example.com/wp-content/uploads/oak-table-1200x630.jpg">
 ```
 
+<!-- mode:sections -->
 `set-page-code` replaces **everything** in the page's head code, including its `<style>`, font `<link>` and script lines, so read the current block first and send it back with your tags changed. Appending a second `<title>` with `update-page-code` works (the last tag of a kind wins and it prints once), but the old one stays in the code; replace instead of piling tags up.
+<!-- /mode -->
+<!-- mode:composer -->
+`set-code` with `head_code` replaces **everything** in the page's head code, including its font `<link>` and script lines, so send back the block `get-code` returned with your tags changed. A second `<title>` would work (the last tag of a kind wins and it prints once), but the old one stays in the code; replace the tag with `patch-code` instead of piling tags up.
+<!-- /mode -->
 
 Rules for the values:
 
@@ -117,10 +127,16 @@ Three places, chosen by what the data describes. Refer to schema.org for every t
 |---|---|---|
 | The organisation / person behind the site | Site Settings → identity | `update-site-settings` (`entity_*`) — never a template |
 | Every post of one kind (all recipes, all events, all job posts) | **Schema template** | `add-schema-template {name, type, conditions, template}` — JSON with Twig filled per post: `{{ post.title }}`, `{{ post.url }}`, `{{ post.thumbnail.src }}`, `{{ post.meta('<key>') }}` (any custom field - UiChemy Custom Fields, ACF or JetEngine - by its name from `dynamic` `list-fields`; dot syntax `post.meta.key` renders empty), `{{ site.title }}`. Dates must be ISO 8601: `{{ post.date('c') }}` / `{{ post.modified('c') }}`. Plain `{{ post.date }}` prints "October 12, 2026" and `{{ post.date|date('c') }}` drops the time to midnight; Google rejects or misreads both. Start from a preset in `list-schema-templates`. |
+<!-- mode:sections -->
 | One whole page (a single service, a single product landing page) | **Page head code** | a `<script type="application/ld+json">` in `page_before_head` via `update-page-code` |
 | One part of one page (the FAQ accordion, the steps, a review block) | **The section itself** | a `<script type="application/ld+json">` inside that section's HTML, next to the content it describes (the **Schema** panel in the UiChemy editor edits it) |
+<!-- /mode -->
+<!-- mode:composer -->
+| One whole page (a single service, a single product landing page) | **Page head code** | a `<script type="application/ld+json">` in the page's `head_code` (`get-code`, then `patch-code` with `field: "head_code"`, or `set-code`) |
+| One part of one page (the FAQ accordion, the steps, a review block) | **Page head code too** | its own `<script type="application/ld+json">` in the same `head_code`, beside the page's other JSON-LD - a Composer Builder page has no sections, and JSON-LD in `head_code` is part of the graph `preview-page-schema` checks |
+<!-- /mode -->
 
-- **Section-level types are never templates**: FAQPage, HowTo, Review, ClaimReview, QAPage, AggregateRating, BreadcrumbList describe one part of one page, so `add-schema-template` refuses them. Put them in the section.
+- **Section-level types are never templates**: FAQPage, HowTo, Review, ClaimReview, QAPage, AggregateRating, BreadcrumbList describe one part of one page, so `add-schema-template` refuses them. Put them on that page (see the table above).
 - Do not describe the same thing twice (a template Product and a page Product for the same page). `preview-page-schema {post_id}` shows the page's graph with each entity's source; Google's required properties are checked and an incomplete entity is left out and reported.
 - Values in schema must match what the page shows: FAQ answers word for word, real prices, real ratings. Never invent ratings or reviews.
 - Test with the `test_url` from `preview-page-schema` (Google Rich Results Test) once the page is live.

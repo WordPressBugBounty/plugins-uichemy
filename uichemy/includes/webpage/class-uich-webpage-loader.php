@@ -4,7 +4,7 @@
  *
  * Single entry point for the "AI Website Creator" flow — the import path that
  * pulls an AI-generated project from the user's AI Website Creator account and builds it
- * out on this site (Nexter theme + required plugins + globals + pages).
+ * out on this site (the UiChemy Zero theme + required plugins + globals + pages).
  *
  * It is reached from the dashboard's Import tab by picking the "AI Website
  * Creator" mode, and renders inside that tab's content area — there is no

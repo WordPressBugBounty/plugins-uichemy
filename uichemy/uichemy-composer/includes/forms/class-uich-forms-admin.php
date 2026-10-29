@@ -647,8 +647,6 @@ if ( ! class_exists( 'Uich_Forms_Admin' ) ) {
 									<p><strong><?php esc_html_e( 'User Name:', 'uichemy' ); ?></strong>
 										<?php echo $user ? esc_html( $user->display_name ) : esc_html__( 'Guest', 'uichemy' ); ?>
 									</p>
-									<p><strong><?php esc_html_e( 'User IP:', 'uichemy' ); ?></strong> <?php echo esc_html( (string) $s->user_ip ); ?></p>
-									<p><strong><?php esc_html_e( 'User Agent:', 'uichemy' ); ?></strong> <small><?php echo esc_html( (string) $s->user_agent ); ?></small></p>
 									<div class="uich-bottom-divider"></div>
 									<div class="uich-add-info-footer">
 										<?php

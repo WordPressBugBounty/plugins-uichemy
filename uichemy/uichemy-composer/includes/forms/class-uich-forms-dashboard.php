@@ -233,7 +233,6 @@ if ( ! class_exists( 'Uich_Forms_Dashboard' ) ) {
 			$row            = self::shape_row( $item );
 			$row['isRead']  = true; // just marked read
 			$row['fields']  = $fields;
-			$row['ip']      = (string) $item->user_ip;
 			$row['referer'] = (string) $item->referer;
 
 			wp_send_json_success( $row );

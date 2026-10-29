@@ -570,7 +570,7 @@ if ( ! class_exists( 'Uich_Field_Service' ) ) {
 				// engine coerced any numeric meta colliding with an attachment ID
 				// into that attachment. Storage was perfect and the page was
 				// wrong, and nothing in this response said so.
-				$row = array_merge( $row, self::render_check( $step['def'], $target ) );
+				$row = array_merge( $row, self::render_check( $step['def'], $target, $row['formatted'] ) );
 
 				if ( $shape_problems ) {
 					$row['shape_problems'] = $shape_problems;
@@ -624,7 +624,7 @@ if ( ! class_exists( 'Uich_Field_Service' ) ) {
 		 * @param array $target Resolved target.
 		 * @return array
 		 */
-		private static function render_check( $def, $target ) {
+		private static function render_check( $def, $target, $formatted = null ) {
 			$type = isset( $target['object_type'] ) ? $target['object_type'] : '';
 			$id   = isset( $target['object_id'] ) ? (int) $target['object_id'] : 0;
 			$name = isset( $def['name'] ) ? (string) $def['name'] : '';
@@ -673,11 +673,25 @@ if ( ! class_exists( 'Uich_Field_Service' ) ) {
 					'The token resolves to a %s object, not a scalar. It prints as the string above and chains further (see "print_hint").',
 					method_exists( $resolved, 'uich_kind' ) ? $resolved->uich_kind() : 'provider'
 				);
+			} elseif ( '' === $out['renders_as'] && self::empty_by_value( $formatted ) ) {
+				// A stored false / 0 / empty value prints as nothing by design (a
+				// boolean is for {% if %}), so there is nothing to warn about.
+				$out['render_note'] = 'Prints as nothing because the stored value is empty or false - expected. Use it in a condition rather than printing it.';
 			} elseif ( '' === $out['renders_as'] ) {
 				$out['render_note'] = 'The token resolves to NOTHING on the page even though the value is in storage. That is the signature of a wrong provider prefix, a Free-tier field, or a value the render layer reads through a different key - do not bind this until it prints.';
 			}
 
 			return $out;
+		}
+
+		/**
+		 * Is a field's formatted value one that legitimately prints as nothing?
+		 *
+		 * @param mixed $formatted Re-read formatted value.
+		 * @return bool
+		 */
+		private static function empty_by_value( $formatted ) {
+			return null === $formatted || false === $formatted || '' === $formatted || array() === $formatted;
 		}
 
 		/**

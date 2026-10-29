@@ -19,6 +19,12 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'Uich_Dynamic' ) ) {
 	class Uich_Dynamic {
 
+		/**
+		 * Post meta set when the post was last saved by a user without
+		 * `unfiltered_html` (see record_editor_trust()).
+		 */
+		const UNTRUSTED_EDIT_META = '_uich_untrusted_edit';
+
 		private static $loaded = false;
 
 		/**
@@ -105,9 +111,11 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		}
 
 		/**
-		 * May this document's templates use the full engine? Same rule as raw section JS
-		 * (UiChemy_Composer_Widget::content_allows_raw_code()): its author holds
-		 * `unfiltered_html`. With no document at all, the current user decides.
+		 * May this document's templates use the full engine? Its author holds
+		 * `unfiltered_html`, and so did whoever saved it last: an editor without it
+		 * can change an admin's post (core REST, the block editor), and that text
+		 * must not run with the admin's trust. With no document at all, the current
+		 * user decides.
 		 *
 		 * @param int $post_id Post id (0 = current document).
 		 * @return bool
@@ -118,7 +126,8 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 				$trusted = current_user_can( 'unfiltered_html' );
 			} else {
 				$author  = (int) get_post_field( 'post_author', $post_id );
-				$trusted = $author > 0 && user_can( $author, 'unfiltered_html' );
+				$trusted = $author > 0 && user_can( $author, 'unfiltered_html' )
+					&& ! get_post_meta( $post_id, self::UNTRUSTED_EDIT_META, true );
 			}
 			/**
 			 * Filter whether a document's templates run with the full engine.
@@ -157,9 +166,31 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 
 		/** Register the editor-preview + field-introspection REST routes. */
 		public static function init() {
+			add_action( 'wp_insert_post', array( __CLASS__, 'record_editor_trust' ) );
+			add_action( 'uich_cb/cb_content_saved', array( __CLASS__, 'record_editor_trust' ) );
 			add_action( 'rest_api_init', array( __CLASS__, 'register_preview_route' ) );
 			add_action( 'rest_api_init', array( __CLASS__, 'register_fields_route' ) );
 			add_action( 'rest_api_init', array( __CLASS__, 'register_entities_route' ) );
+		}
+
+		/**
+		 * Remember whether the user saving a post holds `unfiltered_html`, for
+		 * author_trusted(). A save with no user (cron, WP-CLI without --user)
+		 * leaves the mark as it was; a trusted user's save clears it.
+		 *
+		 * @param int $post_id Post id.
+		 * @return void
+		 */
+		public static function record_editor_trust( $post_id ) {
+			$post_id = (int) $post_id;
+			if ( ! $post_id || ! get_current_user_id() || wp_is_post_revision( $post_id ) ) {
+				return;
+			}
+			if ( current_user_can( 'unfiltered_html' ) ) {
+				delete_post_meta( $post_id, self::UNTRUSTED_EDIT_META );
+			} else {
+				update_post_meta( $post_id, self::UNTRUSTED_EDIT_META, 1 );
+			}
 		}
 
 		public static function register_preview_route() {
@@ -225,7 +256,7 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		/**
 		 * Resolve concrete records to real ids — the engine behind both the picker REST route and
 		 * describe_site( action="entities" ). Params: kind (posts|terms|users), search, include
-		 * (CSV of ids/slugs), taxonomy, post_type, limit.
+		 * (CSV of ids/slugs), taxonomy, post_type (one or a CSV), limit.
 		 *
 		 * @param array $params Lookup parameters.
 		 * @return array<int,array{id:int,label:string,slug:string}>
@@ -239,20 +270,28 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 			$out      = array();
 
 			if ( 'users' === $kind ) {
-				$args = array(
+				// The same line core's wp/v2/users draws: without list_users, only
+				// people with published posts, and never a search by email.
+				$list_users = current_user_can( 'list_users' );
+				$args       = array(
 					'number'  => $limit > 0 ? $limit : 30,
 					'orderby' => 'display_name',
 					'order'   => 'ASC',
 				);
 				if ( $search ) {
 					$args['search']         = '*' . $search . '*';
-					$args['search_columns'] = array( 'display_name', 'user_login', 'user_nicename', 'user_email' );
+					$args['search_columns'] = $list_users
+						? array( 'display_name', 'user_login', 'user_nicename', 'user_email' )
+						: array( 'display_name', 'user_nicename' );
 				}
 				if ( $include ) {
 					$args = array(
 						'include' => array_map( 'intval', array_filter( $include, 'is_numeric' ) ),
 						'number'  => 0,
 					);
+				}
+				if ( ! $list_users ) {
+					$args['has_published_posts'] = true;
 				}
 				foreach ( get_users( $args ) as $u ) {
 					$out[] = array(
@@ -304,9 +343,15 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 					}
 				}
 			} else {
-				$post_type = sanitize_key( isset( $params['post_type'] ) ? (string) $params['post_type'] : '' );
-				if ( ! $post_type || ! post_type_exists( $post_type ) ) {
-					$post_type = 'post';
+				// One type, or several comma separated (a loop over more than one).
+				$post_type = array_values(
+					array_filter(
+						array_map( 'sanitize_key', explode( ',', isset( $params['post_type'] ) ? (string) $params['post_type'] : '' ) ),
+						'post_type_exists'
+					)
+				);
+				if ( ! $post_type ) {
+					$post_type = array( 'post' );
 				}
 				$args = array(
 					'post_type'        => $post_type,
@@ -327,6 +372,16 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 				}
 				$q = new WP_Query( $args );
 				foreach ( $q->posts as $p ) {
+					// Unpublished titles only to someone who may read that post (an
+					// author their own drafts, an editor everyone's), and nothing
+					// Visibility hides from this user.
+					$public = 'publish' === $p->post_status && is_post_type_viewable( $p->post_type );
+					if ( ! $public && ! current_user_can( 'read_post', $p->ID ) ) {
+						continue;
+					}
+					if ( class_exists( 'Uich_CB_Visibility' ) && Uich_CB_Visibility::is_hidden( $p->ID ) ) {
+						continue;
+					}
 					$out[] = array(
 						'id'    => (int) $p->ID,
 						'label' => $p->post_title ? $p->post_title : '#' . $p->ID,
@@ -769,6 +824,30 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		}
 
 		/**
+		 * The Composer Builder (composer-builder/), as a model needs to know it
+		 * when it is the selected builder: what it can edit, and whether js will
+		 * be stored. Null in every other mode, where it is not offered.
+		 *
+		 * @return array|null
+		 */
+		private static function describe_composer_builder() {
+			if ( ! class_exists( 'Uich_CB_Content' ) || ! class_exists( 'UiChemy_Builder_Context' ) || ! UiChemy_Builder_Context::is_composer_mode() ) {
+				return null;
+			}
+
+			$policy = class_exists( 'Uich_CB_Code_Policy' );
+
+			return array(
+				'available'    => true,
+				'build_with'   => 'uichemy-composer/page and uichemy-composer/post: create, get-code, set-code, patch-code',
+				'post_types'   => Uich_CB_Content::supported_post_types(),
+				'can_store_js' => $policy && Uich_CB_Code_Policy::can_author_code() && Uich_CB_Code_Policy::custom_code_allowed(),
+				'raw_html'     => $policy && Uich_CB_Code_Policy::can_author_code(),
+				'note'         => 'One document per page - html, css, js, head_code, body_end_code - holding the whole page. When can_store_js is false, js is dropped on save; when raw_html is false, html is filtered.',
+			);
+		}
+
+		/**
 		 * The whole content model in one payload. See describe_site().
 		 *
 		 * @return array
@@ -776,7 +855,9 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		private static function describe_schema() {
 			$fields = self::fields_map();
 
-			return array(
+			$composer = self::describe_composer_builder();
+
+			$schema = array(
 				'action'          => 'schema',
 				'site'            => array(
 					'name'        => get_bloginfo( 'name' ),
@@ -797,7 +878,7 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 				'menus'           => self::describe_menus(),
 				'woocommerce'     => self::describe_woocommerce(),
 				'binding_hints'   => array(
-					'build'    => 'platform.builder names the page builder every write lands in (elementor | bricks | gutenberg). STOP if platform.ready is false and say what platform.builders gives as the reason. platform.header_footer_system and checks.elementor_active describe ELEMENTOR only - never gate a build on them.',
+					'build'    => 'platform.builder names the page builder every write lands in (elementor | bricks | gutenberg | composer - composer keeps each whole page in one document). STOP if platform.ready is false and say what platform.builders gives as the reason. platform.header_footer_system and checks.elementor_active describe ELEMENTOR only - never gate a build on them.',
 					'field'    => "{{ post.meta('metaKey') }} use the metaKey from fields.post / fields.product / fields.user / fields.term / fields.options, never a guessed name. An unknown name renders EMPTY rather than failing, so a guess yields a page that looks built and is blank.",
 					'tokens'   => 'For the BUILT-IN accessors (post.title, product.price, product.sale_percentage, …) call uichemy-composer/dynamic (action="list-fields"). This payload only carries the custom fields.',
 					'image'    => "{{ post.meta('metaKey').src('large') }} for an image field - but ONLY when the field stores an attachment ID or array. Check the entry's returnFormat: on an ACF image field set to \"Image URL\" this token renders EMPTY, because there is no id to derive a size from.",
@@ -808,6 +889,15 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 					'model'    => 'To CREATE a post type, taxonomy or field, call uichemy-composer/cpt. To read or write field VALUES, call uichemy-composer/custom-fields.',
 				),
 			);
+
+			// Composer Builder mode only: one document per page, so a model has
+			// to know that before it plans any section.
+			if ( null !== $composer ) {
+				$schema['composer_builder']          = $composer;
+				$schema['binding_hints']['composer'] = 'platform.builder is "composer": every page is ONE document (html, css, js, head_code, body_end_code) holding the whole page. Build with uichemy-composer/page / post - create with the whole code, then get-code before every patch-code / set-code. Bind dynamic tokens inside html as usual.';
+			}
+
+			return $schema;
 		}
 
 		/**

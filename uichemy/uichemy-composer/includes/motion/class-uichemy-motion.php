@@ -96,8 +96,10 @@ if ( ! class_exists( 'UiChemy_Motion' ) ) {
 			// Code that reads the variable with no declaration still needs the
 			// preamble: without it the name is undefined and the read throws a
 			// ReferenceError that kills the whole script. With an empty preamble the
-			// read is merely `undefined`, which GSAP treats as "not set".
-			return 1 === preg_match( self::READ_RE, $js );
+			// read is merely `undefined`, which GSAP treats as "not set". Any
+			// reference counts, not only `.name` — `const { rise } = …` and an
+			// alias throw just the same.
+			return 1 === preg_match( '#(?<![\\w$])' . self::VAR_NAME . '(?![\\w$])#', $js );
 		}
 
 		/**

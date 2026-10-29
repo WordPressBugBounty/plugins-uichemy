@@ -1336,11 +1336,14 @@ function uich_field_item_print_text( $item, $type ) {
 
 		case 'post_object':
 		case 'relationship':
-			if ( $item instanceof WP_Post ) {
-				return esc_html( get_the_title( $item ) );
+			$id   = $item instanceof WP_Post ? $item->ID : ( is_array( $item ) ? ( isset( $item['ID'] ) ? $item['ID'] : 0 ) : $item );
+			$post = is_numeric( $id ) ? get_post( (int) $id ) : null;
+			// A stored ID outlives the post's publication: an unpublished post is not printed
+			// for a visitor who could not read it.
+			if ( ! $post || ! ( is_post_publicly_viewable( $post ) || current_user_can( 'read_post', $post->ID ) ) ) {
+				return '';
 			}
-			$id = is_array( $item ) ? ( isset( $item['ID'] ) ? $item['ID'] : 0 ) : $item;
-			return ( is_numeric( $id ) && get_post( (int) $id ) ) ? esc_html( get_the_title( (int) $id ) ) : '';
+			return esc_html( get_the_title( $post ) );
 
 		case 'taxonomy':
 			if ( $item instanceof WP_Term ) {
@@ -1746,7 +1749,14 @@ function uich_save_field_value( $selector, $value, $object_id = false ) {
 	// update_post_meta() (and its user/term/option counterparts) return false both on a genuine write failure
 	// AND when the new value is identical to what's already stored (a no-op).
 	$current = uich_get_stored_value( $meta_key, $info['object_type'], $info['object_id'], null );
-	return $current === $value;
+	if ( $current === $value ) {
+		return true;
+	}
+	// Meta comes back as a string: a true_false field sanitised to false is stored
+	// as '0', so re-saving the same false compared '0' with false, called the no-op
+	// a failure, and an unchanged boolean "could not be written".
+	$as_stored = is_bool( $value ) ? ( $value ? '1' : '0' ) : $value;
+	return is_scalar( $current ) && is_scalar( $as_stored ) && (string) $current === (string) $as_stored;
 }
 
 /**
@@ -2930,6 +2940,8 @@ function uich_field_choice_keys( $field ) {
 	$choices = ( is_array( $field ) && isset( $field['choices'] ) ) ? $field['choices'] : array();
 
 	if ( is_string( $choices ) ) {
+		// Parsed to a { value, label } list: a value => label map with values "0".."3" gets integer
+		// keys and would then be read below as a plain list of labels.
 		$parsed = array();
 		foreach ( preg_split( '/\r\n|\r|\n/', $choices ) as $line ) {
 			$line = trim( $line );
@@ -2937,9 +2949,9 @@ function uich_field_choice_keys( $field ) {
 				continue;
 			}
 			if ( preg_match( '/^\s*(.+?)\s*:\s*(.+)\s*$/', $line, $m ) ) {
-				$parsed[ trim( $m[1] ) ] = trim( $m[2] );
+				$parsed[] = array( 'value' => trim( $m[1] ), 'label' => trim( $m[2] ) );
 			} else {
-				$parsed[ $line ] = $line;
+				$parsed[] = array( 'value' => $line, 'label' => $line );
 			}
 		}
 		$choices = $parsed;

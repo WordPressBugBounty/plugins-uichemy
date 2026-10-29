@@ -285,13 +285,6 @@
 			const widgetSettings = model.get('settings');
 			UichSHE.activeWidgetSettings = widgetSettings;
 
-			// Notify the chat UI that a (possibly different) widget is now active
-			// so it can reload the correct conversation history.
-			const newWidgetId = String( widgetSettings && ( widgetSettings.id || widgetSettings.cid ) || '' );
-			if ( window.uiChemyComposerWidget && typeof window.uiChemyComposerWidget.onWidgetChange === 'function' ) {
-				window.uiChemyComposerWidget.onWidgetChange( newWidgetId );
-			}
-
 			UichSHE.initializeSharedSiteCustomCodeFromLocalizedData();
 			UichSHE.applySharedSiteCustomCodeToSettings(widgetSettings, panel);
 			UichSHE.fetchSharedSiteCustomCode().then(() => {

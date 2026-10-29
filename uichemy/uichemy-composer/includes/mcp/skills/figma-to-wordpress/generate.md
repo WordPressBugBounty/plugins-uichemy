@@ -73,7 +73,7 @@ Rules:
 
 #### Images that aren't already a public HTTPS URL → `uichemy-composer/media (action="request-upload")`
 
-The upload abilities (`uichemy-composer/page (action="create")`, `uichemy-composer/page (action="append-section")`, `uichemy-composer/platform (action="update-site-settings")`) sideload `<img src="…">` by **downloading the URL over HTTP**. They can NOT read `data:` URIs, `blob:` URIs, local file paths, or any URL their server cannot reach. If you have an image that is none of (a) a Figma CDN URL from `designContext`, (b) an existing media-library URL, (c) a public HTTPS URL the WP server can fetch — you MUST upload it through `uichemy-composer/media (action="request-upload")` first.
+The upload abilities (`uichemy-composer/page (action="create")`, `uichemy-composer/page (action="append-section")` — on a Composer Builder site `create` / `patch-code` — and `uichemy-composer/platform (action="update-site-settings")`) sideload `<img src="…">` by **downloading the URL over HTTP**. They can NOT read `data:` URIs, `blob:` URIs, local file paths, or any URL their server cannot reach. If you have an image that is none of (a) a Figma CDN URL from `designContext`, (b) an existing media-library URL, (c) a public HTTPS URL the WP server can fetch — you MUST upload it through `uichemy-composer/media (action="request-upload")` first.
 
 Flow:
 1. Call `uichemy-composer/media (action="request-upload") { ttl_minutes }` **once for the whole build** → response contains `slot_url`, `request_header`, `usage_example`, `batch_usage_example`, `expiry`. One slot accepts every file until it expires.

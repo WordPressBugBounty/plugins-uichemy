@@ -320,7 +320,7 @@ if ( ! class_exists( 'Uich_Field_Provider_Uichemy' ) ) {
 				'value_shape'     => $shape,
 				'shape'           => Uich_Field_Value::structure_for( $type ),
 				'required'        => ! empty( $field['required'] ),
-				'choices'         => self::choices( isset( $field['choices'] ) ? $field['choices'] : null ),
+				'choices'         => class_exists( 'Uich_Model' ) ? Uich_Model::choices_for_output( self::choices( isset( $field['choices'] ) ? $field['choices'] : null ) ) : null,
 				'constraints'     => $constraints,
 				'default'         => isset( $field['default_value'] ) && '' !== $field['default_value'] ? $field['default_value'] : null,
 				'return_format'   => $return_format,
@@ -382,12 +382,14 @@ if ( ! class_exists( 'Uich_Field_Provider_Uichemy' ) ) {
 						continue;
 					}
 					if ( preg_match( '/^(.+?)\s*:\s*(.+)$/', $line, $m ) ) {
-						$parsed[ trim( $m[1] ) ] = trim( $m[2] );
+						$parsed[] = array( 'value' => trim( $m[1] ), 'label' => trim( $m[2] ) );
 					} else {
-						$parsed[ $line ] = $line;
+						$parsed[] = array( 'value' => $line, 'label' => $line );
 					}
 				}
-				return $parsed ? $parsed : null;
+				// A { value, label } list, not value => label: PHP turns "0".."3" keys into
+				// integers, and a 0-based integer map reads as a plain list of labels.
+				return class_exists( 'Uich_Model' ) ? Uich_Model::normalise_choices( $parsed ) : null;
 			}
 
 			return class_exists( 'Uich_Model' ) ? Uich_Model::normalise_choices( $choices ) : null;

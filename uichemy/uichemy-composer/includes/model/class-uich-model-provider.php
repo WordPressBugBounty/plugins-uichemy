@@ -142,7 +142,7 @@ if ( ! class_exists( 'Uich_Model_Provider' ) ) {
 			$plural   = isset( $args['label'] ) && '' !== $args['label'] ? (string) $args['label'] : ucwords( str_replace( '_', ' ', $slug ) ) . 's';
 			$singular = isset( $args['singular_label'] ) && '' !== $args['singular_label'] ? (string) $args['singular_label'] : ucwords( str_replace( '_', ' ', $slug ) );
 
-			$supports = isset( $args['supports'] ) ? (array) $args['supports'] : array( 'title', 'editor', 'thumbnail', 'excerpt' );
+			$supports = isset( $args['supports'] ) ? (array) $args['supports'] : array( 'title', 'editor', 'thumbnail', 'excerpt', 'revisions' );
 			$supports = array_values( array_filter( array_map( 'sanitize_key', $supports ) ) );
 
 			if ( ! $supports ) {
@@ -158,6 +158,13 @@ if ( ! class_exists( 'Uich_Model_Provider' ) ) {
 			if ( ! in_array( 'title', $supports, true ) ) {
 				$supports[] = 'title';
 				$notes[]    = 'Added "title" to supports: a type with no title has nothing for post.title to bind to, and every listing prints a blank heading.';
+			}
+
+			// Without revisions an overwritten item cannot be restored: the builder's
+			// history and the import of existing content both rely on them.
+			if ( in_array( 'editor', $supports, true ) && ! in_array( 'revisions', $supports, true ) ) {
+				$supports[] = 'revisions';
+				$notes[]    = 'Added "revisions" to supports: without them an item whose content is replaced cannot be restored from its history.';
 			}
 
 			$taxonomies = isset( $args['taxonomies'] ) ? array_map( 'sanitize_key', (array) $args['taxonomies'] ) : array();

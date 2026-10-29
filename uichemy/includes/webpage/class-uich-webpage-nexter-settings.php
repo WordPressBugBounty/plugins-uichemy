@@ -74,6 +74,21 @@ class Uich_Webpage_Nexter_Settings {
 	}
 
 	/**
+	 * Whether this site runs Nexter at all — the theme itself, a child of it, or
+	 * the paid Extension. Every setting this class writes is Nexter's; on any
+	 * other theme they are rows nothing reads.
+	 *
+	 * @return bool
+	 */
+	protected function is_nexter_theme_in_use() {
+		if ( $this->is_nexter_extension_active() ) {
+			return true;
+		}
+		$theme = wp_get_theme();
+		return ( 'nexter' === $theme->get_stylesheet() || 'nexter' === $theme->get_template() );
+	}
+
+	/**
 	 * Apply all confirmed-safe settings. Every write merges into whatever the site
 	 * already has on that option — nothing here wipes a setting the site owner
 	 * configured by hand outside of the specific keys listed below.
@@ -82,6 +97,18 @@ class Uich_Webpage_Nexter_Settings {
 	 */
 	public function apply_settings() {
 		$warnings = array();
+
+		/*
+		 * Every option written below belongs to Nexter — the theme or its paid
+		 * Extension. The importer installs UiChemy Zero now, so on a fresh import
+		 * none of them is ever read back. Writing them anyway would leave a
+		 * stranger's settings rows in wp_options and, worse, would reappear the
+		 * day the site owner switched to Nexter and quietly override choices they
+		 * made by hand. A site that already runs Nexter still gets them.
+		 */
+		if ( ! $this->is_nexter_theme_in_use() ) {
+			return array( 'warnings' => $warnings );
+		}
 
 		// nexter_site_performance / nexter_site_security are only ever read by the paid
 		// Nexter Extension add-on — the free Nexter theme doesn't look at either option.

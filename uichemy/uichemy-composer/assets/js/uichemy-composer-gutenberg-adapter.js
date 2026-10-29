@@ -22,7 +22,9 @@
 	/** Ensure the floating panel DOM exists (injected by panel.js / UichSHE). */
 	function ensurePanel() {
 		var UichSHE = she();
-		if ( ! document.getElementById( PANEL_ID ) && UichSHE && typeof UichSHE.injectFloatingPanel === 'function' ) {
+		// A panel moved into the editor's shadow root (uich-ui-host) is not in
+		// the document tree any more, but it still exists: do not add another.
+		if ( ! document.getElementById( PANEL_ID ) && ! document.querySelector( 'uich-ui-host' ) && UichSHE && typeof UichSHE.injectFloatingPanel === 'function' ) {
 			try { UichSHE.injectFloatingPanel(); } catch ( e ) { /* ignore */ }
 		}
 	}

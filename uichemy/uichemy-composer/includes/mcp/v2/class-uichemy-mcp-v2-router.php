@@ -118,6 +118,14 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 
 			switch ( $action ) {
 				case 'create':
+					// Caller-facing site-code names to the manager's internal ones, as
+					// the other creators do (see map_page_code_params()).
+					if ( isset( $params['site_before_head'] ) && ! isset( $params['site_css'] ) ) {
+						$params['site_css'] = (string) $params['site_before_head'];
+					}
+					if ( isset( $params['site_before_body'] ) && ! isset( $params['site_js'] ) ) {
+						$params['site_js'] = (string) $params['site_before_body'];
+					}
 					return UiChemy_Composer_Manager::create_theme_builder_template( $params );
 
 				case 'set_conditions':
@@ -190,8 +198,17 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 			foreach ( $slots as $slot ) {
 				$type       = isset( $slot['type'] ) ? (string) $slot['type'] : '';
 				$creatable  = empty( $allowed ) || in_array( $type, $allowed, true );
-				$filled     = ! empty( $slot['filled'] );
 				$list       = isset( $slot['templates'] ) && is_array( $slot['templates'] ) ? $slot['templates'] : array();
+				// Filled means an ACTIVE template holds the slot. A slot whose only
+				// templates are switched off falls through to the theme exactly like
+				// an empty one, and reporting it filled hid a site with no header.
+				$active_ids = array();
+				foreach ( $list as $t ) {
+					if ( isset( $t['status'] ) && 'active' === $t['status'] ) {
+						$active_ids[] = isset( $t['id'] ) ? (int) $t['id'] : 0;
+					}
+				}
+				$filled = ! empty( $slot['filled'] ) && ! empty( $active_ids );
 				$templates += count( $list );
 
 				$row = array(
@@ -247,13 +264,19 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 				// A gap is a slot that MATTERS and that this build could actually
 				// fill. A Pro-only slot in Free is not work the caller can do.
 				if ( ! $filled && ! empty( $slot['critical'] ) && $creatable ) {
-					$gaps[] = array(
+					$gap = array(
 						'key'   => $row['key'],
 						'label' => $row['label'],
 						'type'  => $type,
-						'fix'   => 'uichemy-composer/theme-builder (action="create", type="' . $type . '"'
-							. ( '' !== $row['target'] ? ', target="' . $row['target'] . '"' : '' ) . ')',
+						'fix'   => self::architecture_create_call( $type, $row['target'] ),
 					);
+					if ( $list ) {
+						// Inactive templates already sit in the slot: switching one on
+						// is cheaper than building another.
+						$gap['inactive'] = wp_list_pluck( $row['templates'], 'id' );
+						$gap['fix']      = 'uichemy-composer/theme-builder (action="toggle", post_id=' . (int) $gap['inactive'][0] . ', status="active"), or ' . $gap['fix'];
+					}
+					$gaps[] = $gap;
 				}
 
 				$out[] = $row;
@@ -281,6 +304,52 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 			}
 
 			return $shaped;
+		}
+
+		/**
+		 * The theme-builder create call that fills one architecture slot, written
+		 * with the parameters create really takes: a slot target becomes the
+		 * type's placement (there is no "target" parameter).
+		 *
+		 * @param string $type   Template type.
+		 * @param string $target Slot target ('' for whole-context types).
+		 * @return string
+		 */
+		private static function architecture_create_call( $type, $target ) {
+			$placement = '';
+			if ( 'single' === $type || 'search' === $type ) {
+				if ( 'front' === $target ) {
+					$placement = '{ post_type: "front" }';
+				} elseif ( 0 === strpos( (string) $target, 'pt:' ) ) {
+					$placement = '{ post_type: "' . substr( $target, 3 ) . '" }';
+				} elseif ( 'any' === $target ) {
+					$placement = '{ post_type: "all" }';
+				}
+			} elseif ( 'archive' === $type && '' !== (string) $target ) {
+				$placement = '{ archive: "' . ( 'any' === $target ? 'all' : $target ) . '" }';
+			}
+
+			return 'uichemy-composer/theme-builder (action="create", type="' . $type . '"'
+				. ( '' !== $placement ? ', placement=' . $placement : '' ) . ', title, html, css)';
+		}
+
+		/**
+		 * A dynamic-markup answer with its usage line in Composer Builder terms.
+		 * Only the hint strings change - "html" is markup and is left exactly as built.
+		 *
+		 * @param array|WP_Error $result Ability result.
+		 * @return array|WP_Error
+		 */
+		private static function mode_text( $result ) {
+			if ( ! is_array( $result ) || ! class_exists( 'UiChemy_Builder_Context' ) ) {
+				return $result;
+			}
+			foreach ( array( 'message', 'usage', 'note' ) as $key ) {
+				if ( isset( $result[ $key ] ) && is_string( $result[ $key ] ) ) {
+					$result[ $key ] = UiChemy_Builder_Context::for_mode( $result[ $key ] );
+				}
+			}
+			return $result;
 		}
 
 		/**
@@ -378,13 +447,13 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 
 			switch ( $action ) {
 				case 'create_loop':
-					return UiChemy_Composer_Manager::mcp_dynamic_create_loop( $params );
+					return self::mode_text( UiChemy_Composer_Manager::mcp_dynamic_create_loop( $params ) );
 
 				case 'bind_field':
 					return UiChemy_Composer_Manager::mcp_dynamic_bind_field( $params );
 
 				case 'add_tag':
-					return UiChemy_Composer_Manager::mcp_dynamic_add_tag( $params );
+					return self::mode_text( UiChemy_Composer_Manager::mcp_dynamic_add_tag( $params ) );
 
 				case 'list_fields':
 					// The one action here that reads the site rather than returning
@@ -717,6 +786,19 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 		 * @return array|WP_Error
 		 */
 		public static function execute_template( $arguments ) {
+			// Refuse what the catalogue does not offer (see
+			// UiChemy_Abilities::template_tool_available()): a client holding an
+			// old tool list must hear where templates live now, not half-work.
+			// The Composer Builder keeps its own, more specific refusal below.
+			if ( class_exists( 'UiChemy_Abilities' ) && method_exists( 'UiChemy_Abilities', 'template_tool_available' )
+				&& ! self::composer_mode() && ! UiChemy_Abilities::template_tool_available()
+			) {
+				return new WP_Error(
+					'uich_mcp_error',
+					'uichemy-composer/template only serves Elementor Pro and Nexter templates, and this site builds with neither. Create and manage every template - header, footer, single, archive and the rest - with uichemy-composer/theme-builder.'
+				);
+			}
+
 			return self::execute_content( $arguments, 'template' );
 		}
 
@@ -755,6 +837,18 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 			$params = self::apply_content_domain( $params, $domain, $action );
 			if ( is_wp_error( $params ) ) {
 				return $params;
+			}
+
+			// The surface follows the SELECTED builder, and the router enforces
+			// what the catalogue advertises: in Composer Builder mode a page is one
+			// document, so only the document actions run; in every other mode the
+			// document actions do not exist.
+			if ( self::composer_mode() ) {
+				return self::execute_document_content( $action, $params, $domain );
+			}
+
+			if ( in_array( $action, array( 'get_code', 'set_code', 'patch_code' ), true ) ) {
+				return self::unavailable_action_error( $action );
 			}
 
 			switch ( $action ) {
@@ -885,6 +979,96 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 				default:
 					return new WP_Error( 'uich_mcp_error', 'Unknown action "' . $action . '". ' . self::page_action_hint() );
 			}
+		}
+
+		/**
+		 * Is the Composer Builder the selected builder for this request?
+		 *
+		 * @return bool
+		 */
+		private static function composer_mode() {
+			return class_exists( 'UiChemy_Builder_Context' )
+				&& method_exists( 'UiChemy_Builder_Context', 'is_composer_mode' )
+				&& UiChemy_Builder_Context::is_composer_mode()
+				&& class_exists( 'UiChemy_Composer_Builder_Actions' )
+				&& UiChemy_Composer_Builder_Actions::available();
+		}
+
+		/**
+		 * page / post in Composer Builder mode: one document per page.
+		 *
+		 * @param string $action Normalised action name.
+		 * @param array  $params Action parameters, domain defaults applied.
+		 * @param string $domain 'page' | 'post' | 'template'.
+		 * @return array|WP_Error
+		 */
+		private static function execute_document_content( $action, $params, $domain ) {
+			$valid = 'Valid: list, grep, create, update, get-code, set-code, patch-code.';
+
+			if ( 'template' === $domain ) {
+				return new WP_Error( 'uich_mcp_error', 'uichemy-composer/template is not available with the Composer Builder. Create templates with uichemy-composer/theme-builder and edit them with uichemy-composer/post by post_id.' );
+			}
+
+			switch ( $action ) {
+				case 'list':
+					return UiChemy_Composer_MCP_Server::execute_list_pages( $params );
+
+				case 'grep':
+					return UiChemy_Composer_Manager::mcp_grep_sections( $params );
+
+				case 'create':
+					return UiChemy_Composer_Builder_Actions::create( $params, $domain );
+
+				case 'update':
+					return UiChemy_Composer_Manager::mcp_update_post_attributes( $params );
+
+				case 'get_code':
+					return UiChemy_Composer_Builder_Actions::get_code( $params );
+
+				case 'set_code':
+					return UiChemy_Composer_Builder_Actions::set_code( $params );
+
+				case 'patch_code':
+					return UiChemy_Composer_Builder_Actions::patch_code( $params );
+
+				case '':
+					return new WP_Error( 'uich_mcp_error', 'Missing "action". ' . $valid );
+
+				default:
+					return self::unavailable_action_error( $action );
+			}
+		}
+
+		/**
+		 * The refusal for a page / post action this mode does not offer.
+		 *
+		 * A model that learned the other mode's toolkit (sections, or the
+		 * Composer Builder's one document) needs to hear WHICH model this site
+		 * uses, not just "unknown action". Shared by the router and by
+		 * UiChemy_MCP_Server_V2::handle_execute(), which calls it before the
+		 * Abilities API's enum check would answer with a bare "not one of".
+		 *
+		 * @param string $action Action name as sent (hyphens or underscores).
+		 * @return WP_Error
+		 */
+		public static function unavailable_action_error( $action ) {
+			$shown = str_replace( '_', '-', sanitize_key( str_replace( '-', '_', (string) $action ) ) );
+
+			if ( self::composer_mode() ) {
+				return new WP_Error(
+					'uich_mcp_error',
+					'action="' . $shown . '" is not available: this site builds with the Composer Builder, where a page is ONE document with no sections. Put markup into html with patch-code or set-code. Valid: list, grep, create, update, get-code, set-code, patch-code.'
+				);
+			}
+
+			if ( in_array( $shown, array( 'get-code', 'set-code', 'patch-code' ), true ) ) {
+				return new WP_Error(
+					'uich_mcp_error',
+					'action="' . $shown . '" is not available here: this site builds with sections. Read and edit a section with get-section-code / set-section-code / patch-section-code.'
+				);
+			}
+
+			return new WP_Error( 'uich_mcp_error', 'action="' . $shown . '" is not available. ' . self::page_action_hint() );
 		}
 
 		/**

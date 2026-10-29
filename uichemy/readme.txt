@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.4.0
+Stable tag: 5.5.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -271,6 +271,13 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.5.0 = 29 October 2026
+- Added: Introducing the AI First UiChemy Composer Page Builder for WordPress.
+- Added: Ready-made sections and templates for headers, footers, posts, archives and 404 pages.
+- Improved: AI assistants connected through MCP now build full pages in the Composer Page Builder.
+- Improved: Faster pages, with new WooCommerce options in Performance settings.
+- Fixed: Various minor bugs and design improvements.
 
 = 5.4.0 = 19 October 2026
 - Added: Introducing Module Studio, build anything on top of your site with your own code or your AI assistant.

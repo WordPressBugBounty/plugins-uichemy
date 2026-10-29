@@ -6,6 +6,16 @@ There is exactly one extra contract, and it exists so a **designer can tune your
 
 Get this contract right and the Composer builds a live control panel from your JS by itself — a slider for each duration, an ease picker for each ease, only for the element the designer has selected. Get it wrong and your animation still runs, but it is a dead black box nobody can adjust.
 
+<!-- mode:composer -->
+**Composer Builder sites** (`platform.builder: "composer"`): there are no sections. Wherever this skill says "the section's `js`", read **the page's one `js`**, and apply these rules:
+
+- The page has **exactly one** `const uichemy_controller_bridge = { … };`, the first thing in its `js`, holding the variables of **every** region. Never one per region: a second `const` with the same name is a SyntaxError that stops all of the page's JS, and a second block inside an IIFE is not compiled, so its reads get the whole `{ "value": … }` object instead of the number.
+- Keep names unique across the page by prefixing the region: `hero_title_y`, `cards_stagger`, `cta_btn_dur`.
+- Point each variable's `target` at an element inside its own region. Each region's GSAP code can sit in its own IIFE below the declaration and read from the one bridge.
+
+GSAP loads itself and the page's `js` runs after it.
+<!-- /mode -->
+
 ---
 
 ## The contract in one screen
@@ -51,12 +61,21 @@ const uichemy_controller_bridge = {
 One entry per variable: the **name** is the key, and its object holds `value` plus any optional metadata.
 
 - The statement is `const uichemy_controller_bridge = { … };` holding **one JSON object**.
+<!-- mode:sections -->
 - **It only works in a section's own `js`.** The Composer parses the block out of the widget's
   stored JS to build the panel, so a declaration that lives anywhere else is never seen: not in a
   `uichemy-composer/code-file`, not in `page_before_body`, not in site-wide code. Move animation
   into a shared file and the controls silently disappear while the animation keeps running — so
   code that carries motion variables stays inline, even when it repeats across sections.
 - **One declaration per section.** Never two.
+<!-- /mode -->
+<!-- mode:composer -->
+- **It only works in the page's own `js`.** The Composer Builder parses the block out of the
+  page's stored JS to build the panel, so a declaration that lives anywhere else is never seen: not
+  in a `uichemy-composer/code-file`, not in `body_end_code`, not in site-wide code. Code that
+  carries motion variables stays in the page's `js`.
+- **One declaration per page.** Never two - not one per region.
+<!-- /mode -->
 - It must be **valid JSON** — double quotes, no trailing commas, no comments inside. It is parsed with a JSON parser, not by pattern-matching, and a malformed block means the section gets **no** controls.
 - Names are `snake_case`, `[a-z][a-z0-9_]*`. Make them read like what they do: `card_stagger`, not `v1`.
 
@@ -228,6 +247,13 @@ Note the third example: a pinned, scrubbed, multi-track timeline — nothing a f
 - ❌ Do not hand-roll `requestAnimationFrame` scroll maths when `ScrollTrigger` is loaded and does it better.
 - ❌ Do not add a GSAP `<script>` tag or a CDN dependency. GSAP core, ScrollTrigger, MotionPathPlugin and DrawSVGPlugin are enqueued automatically the moment your `js` mentions `gsap` or `ScrollTrigger`.
 - ❌ Do not restyle or restructure the markup to suit an animation the user did not ask for.
+- ❌ Do not defer setting up ScrollTriggers in an editor. Deferring a section's set-up until it nears the
+  viewport (an `IntersectionObserver`, `requestIdleCallback`) is fine on the live page, but the
+  Scroll Timeline can only show triggers that exist, so it opened empty. When the page runs in an
+  editor, set everything up straight away. Count all of these as the editor:
+  `/[?&]elementor-preview=/.test(location.search)`, Elementor's `elementorFrontend.isEditMode()`,
+  and the UiChemy Builder canvas, `/[?&]uipb_canvas=1/.test(location.search)` (its `<body>` also
+  carries the class `uipb-canvas`).
 
 **Accessibility** — the Composer honours `prefers-reduced-motion` for you. Do not add your own check, and do not build an animation that hides content permanently if it never runs: animate **from** a hidden state (`gsap.from`) rather than setting `opacity: 0` in CSS and animating to visible. If the script never executes, the content must still be readable.
 

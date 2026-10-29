@@ -26,7 +26,10 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		const OPT_MODE      = 'uich_nd_mode';
 		const OPT_ONBOARDED = 'uich_nd_onboarded';
 
-		const BUILDERS = array( 'elementor', 'bricks', 'gutenberg' );
+		// "composer" is UiChemy's own Composer Builder (composer-builder/). Picking
+		// it switches the MCP surface to one-document pages: see
+		// UiChemy_Builder_Context::is_composer_mode().
+		const BUILDERS = array( 'elementor', 'bricks', 'gutenberg', 'composer' );
 
 		/**
 		 * Import modes, matching `MODES` in new-dashboard/src/dashboard/modes.js.
@@ -54,6 +57,52 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 				return false;
 			}
 			return update_option( self::OPT_BUILDER, $v );
+		}
+
+		/**
+		 * The builder a picker starts on when none is saved - the PHP twin of
+		 * defaultBuilder() in new-dashboard/src/dashboard/default-builder.js:
+		 * the bundled Composer Builder first, else Elementor or Bricks when the
+		 * site runs one, else the block editor. A mode the Composer Builder cannot
+		 * serve (Figma Plugin, AI Website Creator) skips it, as modes.js does.
+		 *
+		 * @param string $mode Mode slug, or '' for "any".
+		 * @return string
+		 */
+		public static function default_builder( $mode = '' ) {
+			$limits = array(
+				'figma'   => array( 'elementor', 'bricks', 'gutenberg' ),
+				'scratch' => array( 'elementor', 'gutenberg' ),
+			);
+			$fits   = static function ( $id ) use ( $mode, $limits ) {
+				return '' === $mode || ! isset( $limits[ $mode ] ) || in_array( $id, $limits[ $mode ], true );
+			};
+			$found  = self::detect_builders();
+			foreach ( array( 'composer', 'elementor', 'bricks', 'gutenberg' ) as $id ) {
+				if ( ! empty( $found[ $id ]['active'] ) && $fits( $id ) ) {
+					return $id;
+				}
+			}
+			return 'elementor';
+		}
+
+		/**
+		 * Store the default builder when onboarding ends without one.
+		 *
+		 * The wizard persists a builder only from its builder step, so leaving
+		 * from the Welcome screen (or any path that skips that step) finished
+		 * onboarding with nothing stored - and the MCP server, which reads this
+		 * option, then had nothing but a guess to build with.
+		 *
+		 * @return string The builder now stored ('' when one already was).
+		 */
+		public static function ensure_builder() {
+			if ( '' !== self::get_builder() ) {
+				return '';
+			}
+			$builder = self::default_builder( self::get_mode() );
+			self::set_builder( $builder );
+			return $builder;
 		}
 
 		public static function get_mode() {
@@ -85,7 +134,7 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		/**
 		 * Detect which page builders are installed / active on this site.
 		 *
-		 * @return array { elementor:{installed,active}, bricks:..., gutenberg:... }
+		 * @return array { elementor:{installed,active}, bricks:..., gutenberg:..., composer:... }
 		 */
 		public static function detect_builders() {
 			if ( ! function_exists( 'get_plugins' ) ) {
@@ -109,6 +158,11 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 					// Core block editor always present on supported WP.
 					'installed' => true,
 					'active'    => true,
+				),
+				'composer'  => array(
+					// Bundled in this plugin, so present whenever it is loaded.
+					'installed' => class_exists( 'Uich_CB_Content' ),
+					'active'    => class_exists( 'Uich_CB_Content' ) && ( ! function_exists( 'uich_cb_builder_enabled' ) || uich_cb_builder_enabled() ),
 				),
 			);
 		}

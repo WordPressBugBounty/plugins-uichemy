@@ -38,6 +38,15 @@ if ( ! class_exists( 'UiChemy_Builder_Context' ) ) {
 		const HEADER    = 'X-UiChemy-Builder';
 
 		/**
+		 * The UiChemy Composer Builder (composer-builder/). Selectable like a
+		 * builder - in onboarding, or pinned with ?builder=composer - but it has
+		 * no driver in the registry: a Composer Builder page is one document with
+		 * no sections, so the MCP surface switches mode instead (see
+		 * is_composer_mode()).
+		 */
+		const COMPOSER = 'composer';
+
+		/**
 		 * The pin from the request URL/header, resolved once per request.
 		 *
 		 * Null means "not yet computed"; '' means "computed, nothing pinned".
@@ -51,13 +60,22 @@ if ( ! class_exists( 'UiChemy_Builder_Context' ) ) {
 		private static $pinned = null;
 
 		/**
+		 * The pin as the caller sent it, limited to known slugs PLUS "composer",
+		 * which normalize() drops because the registry has no driver for it.
+		 *
+		 * @var string|null
+		 */
+		private static $pinned_raw = null;
+
+		/**
 		 * Reset and re-read the pin from a REST request.
 		 *
 		 * @param WP_REST_Request|null $request Current request.
 		 * @return void
 		 */
 		public static function prime_from_request( $request = null ) {
-			self::$pinned = '';
+			self::$pinned     = '';
+			self::$pinned_raw = '';
 
 			if ( $request instanceof WP_REST_Request ) {
 				$from_header = (string) $request->get_header( self::HEADER );
@@ -65,11 +83,16 @@ if ( ! class_exists( 'UiChemy_Builder_Context' ) ) {
 
 				// Query arg first: it is the one the caller can see in the URL,
 				// so it is the one they expect to win when both are present.
-				self::$pinned = self::normalize( '' !== $from_query ? $from_query : $from_header );
+				$raw              = '' !== $from_query ? $from_query : $from_header;
+				self::$pinned     = self::normalize( $raw );
+				self::$pinned_raw = self::normalize_selectable( $raw );
 			}
 
 			if ( '' === self::$pinned ) {
 				self::$pinned = self::pin_from_superglobals();
+			}
+			if ( '' === self::$pinned_raw ) {
+				self::$pinned_raw = self::normalize_selectable( self::raw_from_superglobals() );
 			}
 		}
 
@@ -83,6 +106,15 @@ if ( ! class_exists( 'UiChemy_Builder_Context' ) ) {
 		 * @return string
 		 */
 		private static function pin_from_superglobals() {
+			return self::normalize( self::raw_from_superglobals() );
+		}
+
+		/**
+		 * The unvalidated ?builder= / X-UiChemy-Builder value of this request.
+		 *
+		 * @return string
+		 */
+		private static function raw_from_superglobals() {
 			// phpcs:disable WordPress.Security.NonceVerification.Recommended
 			$raw = '';
 			if ( isset( $_GET[ self::QUERY_ARG ] ) ) {
@@ -92,7 +124,102 @@ if ( ! class_exists( 'UiChemy_Builder_Context' ) ) {
 			}
 			// phpcs:enable WordPress.Security.NonceVerification.Recommended
 
-			return self::normalize( is_string( $raw ) ? $raw : '' );
+			return is_string( $raw ) ? $raw : '';
+		}
+
+		/**
+		 * A registry slug or "composer", else ''.
+		 *
+		 * @param string $slug Raw slug.
+		 * @return string
+		 */
+		private static function normalize_selectable( $slug ) {
+			$slug = sanitize_key( (string) $slug );
+
+			if ( self::COMPOSER === $slug ) {
+				return $slug;
+			}
+
+			return self::normalize( $slug );
+		}
+
+		/**
+		 * Is the Composer Builder loaded AND switched on (Settings > Features)?
+		 *
+		 * Switched off, its pages still render but cannot be opened, so it can
+		 * be neither the selected builder nor offered to an agent.
+		 *
+		 * @return bool
+		 */
+		public static function composer_available() {
+			if ( ! class_exists( 'Uich_CB_Content' ) ) {
+				return false;
+			}
+
+			return ! function_exists( 'uich_cb_builder_enabled' ) || uich_cb_builder_enabled();
+		}
+
+		/**
+		 * Is the Composer Builder this site's chosen builder, but switched off?
+		 *
+		 * Then nothing may build pages: falling back to another builder would
+		 * put that builder's section pages on a site that chose one-document
+		 * Composer pages. A request pinned to another builder is exempt.
+		 *
+		 * @return bool
+		 */
+		public static function composer_switched_off() {
+			if ( ! class_exists( 'Uich_CB_Content' ) || self::composer_available() ) {
+				return false;
+			}
+			if ( null === self::$pinned_raw ) {
+				self::$pinned_raw = self::normalize_selectable( self::raw_from_superglobals() );
+			}
+			if ( '' !== self::$pinned_raw && self::COMPOSER !== self::$pinned_raw ) {
+				return false;
+			}
+
+			return class_exists( 'Uich_ND_Settings' ) && self::COMPOSER === Uich_ND_Settings::get_builder();
+		}
+
+		/**
+		 * Is the Composer Builder the SELECTED builder for this request?
+		 *
+		 * A pin on the request (?builder= / X-UiChemy-Builder) wins; otherwise
+		 * the onboarding choice decides. The MCP surface shapes itself on this:
+		 * in Composer Builder mode page / post offer the document actions
+		 * (get-code / set-code / patch-code) and none of the section actions,
+		 * and in every other mode it is the other way round.
+		 *
+		 * @return bool
+		 */
+		public static function is_composer_mode() {
+			if ( ! self::composer_available() ) {
+				return false;
+			}
+
+			if ( null === self::$pinned_raw ) {
+				self::$pinned_raw = self::normalize_selectable( self::raw_from_superglobals() );
+			}
+
+			if ( '' !== self::$pinned_raw ) {
+				return self::COMPOSER === self::$pinned_raw;
+			}
+
+			if ( ! class_exists( 'Uich_ND_Settings' ) ) {
+				return false;
+			}
+			$saved = Uich_ND_Settings::get_builder();
+			if ( '' !== $saved ) {
+				return self::COMPOSER === $saved;
+			}
+			// No choice saved yet: the dashboard's own default
+			// (new-dashboard/src/dashboard/default-builder.js) — Elementor or
+			// Bricks when the site runs one, the Composer Builder otherwise. MCP
+			// built into Gutenberg while the dashboard showed Composer (E-02).
+			return class_exists( 'UiChemy_Builder_Registry' )
+				&& ! UiChemy_Builder_Registry::is_available( 'elementor' )
+				&& ! UiChemy_Builder_Registry::is_available( 'bricks' );
 		}
 
 		/**
@@ -132,6 +259,10 @@ if ( ! class_exists( 'UiChemy_Builder_Context' ) ) {
 		 * @return string
 		 */
 		public static function session_default() {
+			if ( self::composer_switched_off() ) {
+				return '';
+			}
+
 			if ( class_exists( 'Uich_ND_Settings' ) && method_exists( 'Uich_ND_Settings', 'get_builder' ) ) {
 				$chosen = self::normalize( Uich_ND_Settings::get_builder() );
 				if ( '' !== $chosen && UiChemy_Builder_Registry::is_available( $chosen ) ) {
@@ -293,6 +424,12 @@ if ( ! class_exists( 'UiChemy_Builder_Context' ) ) {
 		 */
 		public static function driver( $slug ) {
 			$slug = sanitize_key( (string) $slug );
+			if ( '' === $slug && self::composer_switched_off() ) {
+				return new WP_Error(
+					'uich_composer_switched_off',
+					'This site builds with the UiChemy Composer Builder, but it is switched off (UiChemy > Settings > Features). Nothing was written. Ask the site owner to switch it back on, or to choose another page builder in the UiChemy dashboard.'
+				);
+			}
 			if ( '' === $slug ) {
 				return new WP_Error(
 					'uich_no_builder',
@@ -326,12 +463,99 @@ if ( ! class_exists( 'UiChemy_Builder_Context' ) ) {
 		}
 
 		/**
+		 * Rewrite section-mode call names in text an agent will act on (a fix
+		 * hint, a usage line, a skill written for sections) into the Composer
+		 * Builder document actions, when Composer Builder mode is selected.
+		 *
+		 * In that mode page / post offer get-code / set-code / patch-code only,
+		 * so a hint naming update-page-code sent the agent into a refused call.
+		 * Outside Composer Builder mode the text is returned unchanged.
+		 *
+		 * @param string $text  Text naming section-mode actions.
+		 * @param bool   $force Rewrite whatever the mode - for text about one
+		 *                      post that is itself a Composer Builder document.
+		 * @return string
+		 */
+		public static function for_mode( $text, $force = false ) {
+			if ( ! is_string( $text ) || '' === $text || ( ! $force && ! self::is_composer_mode() ) ) {
+				return $text;
+			}
+
+			return strtr(
+				$text,
+				array(
+					'(action="update-page-code")'        => '(action="patch-code", field="head_code" or "body_end_code")',
+					'(action="set-page-code")'           => '(action="set-code" with head_code / body_end_code)',
+					'(action="get-page-code")'           => '(action="get-code")',
+					'update-page-code / set-page-code'   => 'patch-code / set-code on head_code',
+					'update-page-code (or set-page-code' => 'patch-code with field "head_code" (or set-code',
+					'update-page-code'                   => 'patch-code (field "head_code")',
+					'set-page-code'                      => 'set-code (head_code)',
+					'get-page-code'                      => 'get-code',
+					'patch-section-code'                 => 'patch-code',
+					'set-section-code'                   => 'set-code',
+					'get-section-code'                   => 'get-code',
+					'create-with-sections'               => 'create',
+					'append-section'                     => 'patch-code',
+					'insert-section'                     => 'patch-code',
+					'page_before_head'                   => 'head_code',
+					'page_before_body'                   => 'body_end_code',
+					'in the section HTML'                => 'in the page html',
+					'Edit the section HTML'              => 'Edit the page html',
+					// Descriptions and messages that taught one-widget-per-section.
+					'Pass this html as a section to'     => 'Put this html into the page html with',
+					'Insert this element into the section HTML you pass to' => 'Insert this element into the html you pass to',
+					'Section CSS and JS belong in the section, through' => 'A page\'s own CSS and JS belong in its document, through',
+					'Per-section CSS and JS still belong in the section itself via' => 'A page\'s own CSS and JS still belong in its document via',
+					'one animation or utility system several sections depend on' => 'one animation or utility system several pages depend on',
+					'the same block appearing in three or more sections' => 'the same block appearing on three or more pages',
+					'anything shared across sections or pages' => 'anything shared across pages',
+					'an animation system several sections use' => 'an animation system several pages use',
+					'instead of repeating it in every widget' => 'instead of repeating it in every page',
+					'before writing any section CSS'     => 'before writing any page CSS',
+					'before you write section CSS'       => 'before you write page CSS',
+					'from section CSS'                   => 'from page CSS',
+					'into a section instead of hardcoding it' => 'into a page instead of hardcoding it',
+					'when the section was generated'     => 'when the page was generated',
+					'to also check one page for missing sections' => 'to also check one page (an empty Composer Builder document is reported)',
+					'what the UiChemy widget is and what one section means' => 'what a Composer Builder page document is',
+					'(elementor | bricks | gutenberg)'   => '(elementor | bricks | gutenberg | composer)',
+					'Elementor (including free), Bricks or the block editor' => 'the Composer Builder, Elementor (including free), Bricks or the block editor',
+					'Which part of each section to search' => 'Which part of each document to search',
+					'Nothing to do with its sections'    => 'Nothing to do with its code',
+					'NOT the widget content'             => 'NOT the document content',
+					'in a Composer section'              => 'in a Composer Builder document',
+					'built from Composer widgets, section by section' => 'built as Composer Builder documents, region by region',
+				)
+			);
+		}
+
+		/**
+		 * for_mode() over every string in a nested result.
+		 *
+		 * @param mixed $value Result value.
+		 * @return mixed
+		 */
+		public static function for_mode_deep( $value, $force = false ) {
+			if ( is_string( $value ) ) {
+				return self::for_mode( $value, $force );
+			}
+			if ( is_array( $value ) ) {
+				foreach ( $value as $k => $v ) {
+					$value[ $k ] = self::for_mode_deep( $v, $force );
+				}
+			}
+			return $value;
+		}
+
+		/**
 		 * Test seam — forget the pin.
 		 *
 		 * @return void
 		 */
 		public static function reset() {
-			self::$pinned = null;
+			self::$pinned     = null;
+			self::$pinned_raw = null;
 		}
 	}
 }

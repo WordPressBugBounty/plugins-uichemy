@@ -33,7 +33,20 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 			return is_string( $v ) && 0 === strpos( $v, self::RAW_PREFIX );
 		}
 		public static function unmark_raw( $v ) {
-			return substr( $v, strlen( self::RAW_PREFIX ) );
+			return self::strip_marks( substr( $v, strlen( self::RAW_PREFIX ) ) );
+		}
+
+		/**
+		 * A value with every raw marker taken out. A filter that marks its
+		 * output raw starts from this, so `price_html|raw` or `|kses_post|raw`
+		 * never carries a second marker into the page, where its NUL bytes cut
+		 * the HTML off (E-R2-01).
+		 *
+		 * @param mixed $v Value.
+		 * @return string
+		 */
+		public static function strip_marks( $v ) {
+			return str_replace( self::RAW_PREFIX, '', (string) $v );
 		}
 
 		private static function registry() {
@@ -45,7 +58,7 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 
 			/* raw / escaping --------------------------------------------------- */
 			$f['raw']      = function ( $v ) {
-				return self::RAW_PREFIX . (string) $v;
+				return self::RAW_PREFIX . self::strip_marks( $v );
 			};
 			$f['e']        = function ( $v ) {
 				return esc_html( (string) $v );
@@ -74,7 +87,7 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 				return trim( (string) $v );
 			};
 			$f['nl2br']      = function ( $v ) {
-				return self::RAW_PREFIX . nl2br( esc_html( (string) $v ) );
+				return self::RAW_PREFIX . nl2br( esc_html( self::strip_marks( $v ) ) );
 			};
 			$f['striptags']  = function ( $v ) {
 				return wp_strip_all_tags( (string) $v );
@@ -244,7 +257,7 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 
 			/* WordPress -------------------------------------------------------- */
 			$f['wpautop']    = function ( $v ) {
-				return self::RAW_PREFIX . wpautop( (string) $v );
+				return self::RAW_PREFIX . wpautop( self::strip_marks( $v ) );
 			};
 			$f['shortcodes'] = function ( $v ) {
 				/**
@@ -257,12 +270,12 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 				 * @param bool $allow Default true.
 				 */
 				if ( ! apply_filters( 'uich_dynamic_allow_shortcodes', true ) ) {
-					return self::RAW_PREFIX . wp_kses_post( (string) $v );
+					return self::RAW_PREFIX . wp_kses_post( self::strip_marks( $v ) );
 				}
-				return self::RAW_PREFIX . do_shortcode( (string) $v );
+				return self::RAW_PREFIX . do_shortcode( self::strip_marks( $v ) );
 			};
 			$f['kses_post']  = function ( $v ) {
-				return self::RAW_PREFIX . wp_kses_post( (string) $v );
+				return self::RAW_PREFIX . wp_kses_post( self::strip_marks( $v ) );
 			};
 
 			/* WooCommerce ------------------------------------------------------ */

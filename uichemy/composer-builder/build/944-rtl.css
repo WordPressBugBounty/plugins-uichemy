@@ -1,0 +1,861 @@
+/* Globals Workspace (composer-globals-workspace.jsx) — one screen, two frames.
+   The layout comes from the width the workspace is GIVEN (container queries),
+   never from which product it sits in:
+     ≥760px    rail · list · editor. The editor is a real column that PUSHES
+               the list narrower when a row is picked and gives the width
+               back when it closes (Jay 2026-09-30: no slide-over panel).
+     <760      one pane; the rail folds into a collection menu and the
+               editor takes the whole width
+   Colours are the composer DS tokens (same as the right panel): #171717 base,
+   #202020 boxes, #242424 fields, #333 → #525252 borders, 1px focus line. */
+
+.gw {
+  --gw-bg: var(--uc-surface-base, #171717);
+  --gw-box: var(--uc-surface-raised, #202020);
+  --gw-field: var(--uc-surface-overlay, #242424);
+  --gw-line: var(--uc-border-subtle, #333);
+  --gw-line-strong: var(--uc-text-subtle, #525252);
+  --gw-hi: var(--uc-text-strong, #f5f5f5);
+  /* NOTE: this read `var(--uc-text-default, #d4d4d4)` — a token that does not
+     exist in tokens.css, so it ALWAYS fell back to the literal. That was
+     invisible while the workspace was dark-only, and became the bug that made
+     every label here look washed out on white. Kept as the literal so dark is
+     unchanged (--uc-text on this scope is #A3A3A3, dimmer than the workspace
+     was drawn against); the light value is set in the light block below. */
+  --gw-mid: #D4D4D4;
+  --gw-dim: var(--uc-text-muted, #737373);
+  --gw-sel: color-mix(in srgb, var(--gw-hi) 10%, transparent);
+  --gw-hover: color-mix(in srgb, var(--gw-hi) 5%, transparent);
+  --gw-ok: var(--uc-success-fg, #a7eaaa);
+  --gw-warn: var(--uc-warning-fg, #ffc680);
+  --gw-danger: var(--uc-danger-fg, #f65258);
+  container-type: inline-size;
+  container-name: gw;
+  height: 100%;
+  width: 100%;
+  min-height: 0;
+  color: var(--gw-mid);
+  font-family: var(--uc-font-sans, "Zalando Sans", ui-sans-serif, system-ui, sans-serif);
+  --uich-ff: var(--uc-font-sans, "Zalando Sans", ui-sans-serif, system-ui, sans-serif);
+  font-size: 13px;
+  line-height: 1.4;
+}
+.gw *, .gw *::before, .gw *::after { box-sizing: border-box; }
+.gw-shell {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--gw-bg);
+}
+
+/* ---- header ---- */
+.gw-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--gw-line);
+  flex: none;
+}
+.gw-head__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gw-hi);
+  white-space: nowrap;
+}
+.gw-head__spacer { flex: 1; }
+.gw-search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 0 1 300px;
+  min-width: 120px;
+  height: 28px;
+  padding: 0 8px;
+  margin-right: 8px;
+  border-radius: 6px;
+  background: var(--gw-field);
+  box-shadow: inset 0 0 0 1px var(--gw-line);
+  color: var(--gw-dim);
+}
+.gw-search:hover { box-shadow: inset 0 0 0 1px var(--gw-line-strong); }
+.gw-search:focus-within { box-shadow: inset 0 0 0 1px var(--uc-ring, rgba(245, 245, 245, 0.55)); }
+.gw-search input {
+  all: unset;
+  flex: 1;
+  min-width: 0;
+  color: var(--gw-hi);
+  font-size: 12px;
+}
+.gw-search input::-moz-placeholder { color: var(--gw-dim); }
+.gw-search input::placeholder { color: var(--gw-dim); }
+/* The whole box is the field (a <label>), so it shows the text cursor, not the
+   arrow the scoped preflight left on it. */
+.gw-search,
+.uich-tw .gw-search input { cursor: text; }
+
+/* ---- body grid ---- */
+.gw-body {
+  position: relative;
+  display: grid;
+  /* Always three tracks so the editor column can animate open and shut:
+     0 when closed, a real width when a row is picked. */
+  grid-template-columns: 188px minmax(0, 1fr) 0px;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  transition: grid-template-columns 0.2s cubic-bezier(0.2, 0, 0, 1);
+}
+.gw.has-inspector .gw-body { grid-template-columns: 188px minmax(0, 1fr) 300px; }
+.gw-rail { grid-column: 1; }
+.gw-list { grid-column: 2; grid-row: 1; }
+.gw-insp { grid-column: 3; grid-row: 1; min-width: 0; overflow: hidden; }
+@media (prefers-reduced-motion: reduce) { .gw-body { transition: none; } }
+
+/* rail */
+.gw-rail {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px;
+  border-left: 1px solid var(--gw-line);
+  overflow-y: auto;
+  min-height: 0;
+}
+.gw-rail__head {
+  padding: 10px 8px 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gw-dim);
+}
+/* The rail's first head (Variables, in the page builder) sits at the top. */
+.gw-rail__head.gw-rail__head--first { padding-top: 2px; }
+/* The page builder's add button under a list (the header's outline + Add,
+   moved there), lined up with the rows' left edge. */
+.gw-addbtn { display: flex; padding: 8px 8px 4px; }
+.gw-rail__item {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  color: var(--gw-mid);
+  cursor: pointer;
+}
+.gw-rail__item svg { flex: none; color: var(--gw-dim); }
+.gw-rail__item:hover { background: var(--gw-hover); color: var(--gw-hi); }
+.gw-rail__item.is-active { background: var(--gw-sel); color: var(--gw-hi); }
+.gw-rail__item.is-active svg { color: var(--gw-hi); }
+.gw-rail__item:focus-visible { outline: 1px solid var(--uc-ring, currentColor); }
+.gw-rail__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gw-rail__count { font-size: 11px; color: var(--gw-dim); font-variant-numeric: tabular-nums; }
+.gw-rail__add { color: var(--gw-dim); }
+.gw-railmenu { display: none; }
+
+/* list */
+.gw-list {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  min-height: 0;
+}
+.gw-list__head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px 8px;
+  flex: none;
+}
+.gw-list__title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--gw-hi);
+  flex: 1;
+  min-width: 0;
+}
+/* The collection title with its ⋯ menu right beside it, not at the far edge. */
+.gw-list__title.gw-list__title--tight { flex: 0 1 auto; }
+.gw-list__title.gw-name { font-family: inherit; --uich-ff: inherit; flex: 0 1 auto; }
+.gw-list__title .gw-name__input { font-size: 14px; font-weight: 600; font-family: inherit; --uich-ff: inherit; field-sizing: content; min-width: 4ch; }
+
+/* The shared ColorInput / text value field on the workspace's field fill. */
+.gw .swatch-input.color-input,
+.gw .gw-row__value input[data-uc='input'],
+.gw .gw-insp input[data-uc='input'] {
+  background: var(--gw-field);
+  box-shadow: inset 0 0 0 1px var(--gw-line);
+}
+.gw .swatch-input.color-input:hover,
+.gw .gw-row__value input[data-uc='input']:hover { box-shadow: inset 0 0 0 1px var(--gw-line-strong); }
+.gw .swatch-input.color-input:focus-within,
+.gw .gw-row__value input[data-uc='input']:focus,
+.gw .gw-insp input[data-uc='input']:focus { box-shadow: inset 0 0 0 1px var(--uc-ring, rgba(245, 245, 245, 0.55)); outline: none; }
+.gw-list__rows {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0 8px 16px;
+}
+.gw-group {
+  padding: 12px 8px 4px;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--gw-dim);
+}
+
+/* one row: glyph · name over a value preview · (collection) · hover actions */
+.gw-row {
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr) 56px;
+  align-items: center;
+  gap: 10px;
+  min-height: 48px;
+  padding: 4px 8px;
+  border-radius: 6px;
+  cursor: default;
+}
+.gw-row:has(.gw-row__col) { grid-template-columns: 24px minmax(0, 1fr) minmax(60px, auto) 56px; }
+.gw-row:hover { background: var(--gw-hover); }
+.gw-row.is-selected { background: var(--gw-sel); }
+.gw-row.is-changed { animation: gw-flash 1.6s ease-out; }
+@keyframes gw-flash { from { background: color-mix(in srgb, var(--gw-warn) 22%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .gw-row.is-changed { animation: none; box-shadow: inset -2px 0 0 var(--gw-warn); } }
+.gw-row__main {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+.gw-row__main .gw-name { height: 24px; margin-right: -6px; }
+.gw-row__preview {
+  font-size: 13px;
+  color: var(--gw-mid);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.3;
+}
+.gw-row__preview--mono { font-family: var(--uc-font-mono, ui-monospace, monospace); --uich-ff: var(--uc-font-mono, ui-monospace, monospace); font-size: 11px; color: var(--gw-dim); }
+.gw-row__preview--dim { font-size: 11px; color: var(--gw-dim); font-style: italic; }
+.gw-row__preview--alias { font-family: var(--uc-font-mono, ui-monospace, monospace); --uich-ff: var(--uc-font-mono, ui-monospace, monospace); font-size: 11px; color: #9ec5ff; display: inline-flex; align-items: center; gap: 4px; }
+.gw-row__col {
+  font-size: 11px;
+  color: var(--gw-dim);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.gw-row__acts {
+  display: flex;
+  justify-content: flex-end;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.12s;
+}
+.gw-row:hover .gw-row__acts, .gw-row:focus-within .gw-row__acts { opacity: 1; }
+
+.gw-swatch {
+  width: 20px;
+  height: 20px;
+  border-radius: 5px;
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gw-hi) 16%, transparent);
+}
+.gw-glyph {
+  width: 22px;
+  height: 22px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--gw-dim);
+}
+.gw-glyph--font { font-size: 12px; font-weight: 600; }
+
+/* Collection tools: the collection's name + its delete, one row above the list.
+   Neither class had ANY css — the container fell back to `display: block`, so
+   the DS IconButton (a flex box, i.e. block-level) dropped onto its own line
+   and read as a stray delete button floating under the name; and the input,
+   which the panel's reset strips to transparent/borderless, read as static
+   text with nothing to say it was editable. Not a light-mode bug: it looked
+   this way in dark too, the white surface just made it obvious.
+
+   Borderless until hover / focus, like .gw-name below — it is a title first
+   and a field second — with the same height, radius and ring. */
+.gw-collection-tools {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px 6px;
+}
+/* `.gw` prefix for SPECIFICITY: the panel's input reset beats a bare class, so
+   a plain `.gw-collection-name { color }` resolved to the inherited --gw-mid
+   instead of the title colour. */
+.gw .gw-collection-name {
+  flex: 1 1 auto;
+  min-width: 0;
+  height: 28px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  box-shadow: inset 0 0 0 1px transparent;
+  color: var(--gw-hi);
+  font-family: inherit;
+  --uich-ff: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+.gw .gw-collection-name:hover { box-shadow: inset 0 0 0 1px var(--gw-line); }
+.gw .gw-collection-name:focus,
+.gw .gw-collection-name:focus-visible {
+  outline: none;
+  background: var(--gw-field);
+  box-shadow: inset 0 0 0 1px var(--uc-ring, rgba(245, 245, 245, 0.55));
+}
+/* The collection title in the standalone builder: double-click renames it in
+   place, with the title's own type so nothing jumps. */
+.gw .gw-list__head input.gw-collection-name--title {
+  flex: 0 1 260px;
+  height: 24px;
+  margin-right: -6px;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+/* The delete sits at the end of the row, and stays quiet until the row is
+   hovered — it removes the collection AND its variables. */
+.gw-collection-tools > button { flex: 0 0 auto; opacity: 0.6; }
+.gw-collection-tools:hover > button,
+.gw-collection-tools > button:focus-visible { opacity: 1; }
+
+/* inline name field: borderless until hover / focus */
+.gw-name {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  height: 28px;
+  border-radius: 5px;
+  padding: 0 6px;
+  box-shadow: inset 0 0 0 1px transparent;
+  font-family: var(--uc-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  --uich-ff: var(--uc-font-mono, ui-monospace, SFMono-Regular, Menlo, monospace);
+  font-size: 12px;
+}
+.gw-name:hover { box-shadow: inset 0 0 0 1px var(--gw-line); }
+.gw-name:focus-within { background: var(--gw-field); box-shadow: inset 0 0 0 1px var(--uc-ring, rgba(245, 245, 245, 0.55)); }
+.gw-name.is-error, .gw-name.is-error:focus-within { box-shadow: inset 0 0 0 1px var(--gw-danger); }
+.gw-name__prefix { color: var(--gw-dim); -webkit-user-select: none; -moz-user-select: none; user-select: none; }
+.gw-name__input {
+  all: unset;
+  flex: 1;
+  min-width: 0;
+  color: var(--gw-hi);
+  font: inherit;
+  --uich-ff: inherit;
+}
+.gw-name__error {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 2px);
+  z-index: 2;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: var(--uc-font-sans, system-ui, sans-serif);
+  --uich-ff: var(--uc-font-sans, system-ui, sans-serif);
+  font-size: 11px;
+  white-space: nowrap;
+  background: var(--gw-danger);
+  color: #fff;
+}
+
+/* inspector: preview first, then ONE grey box of label-left fields (the right
+   panel's section box), then the copy chip. Actions live in the ⋯ menu. */
+.gw-insp {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--gw-bg);
+  border-right: 1px solid var(--gw-line);
+}
+.gw-insp__head {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 12px 6px 8px;
+}
+.gw-insp__title {
+  flex: 1;
+  min-width: 0;
+  font-family: var(--uc-font-mono, ui-monospace, monospace);
+  --uich-ff: var(--uc-font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  color: var(--gw-hi);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gw-insp__body {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px 12px 16px;
+  overflow-y: auto;
+  min-height: 0;
+}
+.gw-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: var(--uc-radius-md, 8px);
+  background: var(--gw-box);
+}
+.gw-field {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+.gw-field > span:first-child { color: var(--gw-dim); font-size: 12px; }
+/* A select that looks exactly like a field (not a black button). */
+.gw-select {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  height: 28px;
+  padding: 0 8px;
+  border-radius: 6px;
+  min-width: 0;
+  background: var(--gw-field);
+  box-shadow: inset 0 0 0 1px var(--gw-line);
+  color: var(--gw-hi);
+  font-size: 12px;
+  cursor: pointer;
+}
+.gw-select > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gw-select svg { flex: none; color: var(--gw-dim); }
+.gw-select:hover { box-shadow: inset 0 0 0 1px var(--gw-line-strong); }
+.gw-select:focus-visible, .gw-select[data-state='open'] { box-shadow: inset 0 0 0 1px var(--uc-ring, rgba(245, 245, 245, 0.55)); }
+.gw-copychip {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 6px;
+  background: var(--gw-box);
+  font-family: var(--uc-font-mono, ui-monospace, monospace);
+  --uich-ff: var(--uc-font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--gw-mid);
+  cursor: copy;
+}
+.gw-copychip > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gw-copychip svg { color: var(--gw-dim); }
+.gw-copychip:hover { color: var(--gw-hi); }
+.gw-copychip:hover svg { color: var(--gw-hi); }
+.gw-copychip:focus-visible { outline: 1px solid var(--uc-ring, currentColor); }
+
+/* big preview */
+.gw-bigprev {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px 14px;
+  border-radius: var(--uc-radius-md, 8px);
+  background: var(--gw-field);
+  min-width: 0;
+}
+.gw-bigprev__type {
+  color: var(--gw-hi);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.gw-bigprev__meta { font-size: 12px; color: var(--gw-dim); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gw-bigprev--color { flex-direction: row; align-items: center; gap: 12px; }
+.gw-bigprev__swatch {
+  width: 52px;
+  height: 52px;
+  flex: none;
+  border-radius: 10px;
+  background: var(--gw-c);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--gw-hi) 14%, transparent);
+}
+.gw-bigprev__text { color: var(--gw-c); font-size: 16px; font-weight: 600; }
+.gw-bigprev__bar {
+  display: block;
+  height: 10px;
+  min-width: 4px;
+  border-radius: 3px;
+  background: var(--gw-hi);
+  opacity: 0.85;
+}
+.gw-bigprev--empty { color: var(--gw-dim); font-size: 12px; }
+.gw-bigprev--other code { font-family: var(--uc-font-mono, ui-monospace, monospace); --uich-ff: var(--uc-font-mono, ui-monospace, monospace); font-size: 12px; color: var(--gw-hi); word-break: break-all; }
+/* The shared TypographyEditor brings its own frame; flatten it into the box. */
+.gw-box--typo { padding: 0; overflow: hidden; }
+.gw-box--typo > div { border-top: 0 !important; background: transparent !important; }
+.gw-css { font-family: var(--uc-font-mono, ui-monospace, monospace); --uich-ff: var(--uc-font-mono, ui-monospace, monospace); font-size: 12px; }
+
+/* empty */
+.gw-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 24px 8px;
+  color: var(--gw-dim);
+  max-width: 44ch;
+}
+.gw-empty p { margin: 0; }
+
+/* footer */
+.gw-foot {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 6px 12px;
+  border-top: 1px solid var(--gw-line);
+  font-size: 12px;
+  color: var(--gw-dim);
+  flex: none;
+}
+.gw-foot__dot { width: 6px; height: 6px; border-radius: 50%; background: var(--gw-dim); flex: none; }
+.gw-foot__dot.is-saving { background: var(--gw-warn); }
+.gw-foot__dot.is-saved { background: var(--gw-ok); }
+.gw-foot__dot.is-error { background: var(--gw-danger); }
+.gw-foot__undo {
+  all: unset;
+  color: var(--gw-hi);
+  text-decoration: underline;
+  cursor: pointer;
+}
+.gw-foot__undo:focus-visible { outline: 1px solid var(--uc-ring, currentColor); }
+.gw-foot__hint { font-variant-numeric: tabular-nums; }
+
+/* ---- layout by available width ---- */
+/* The editor's contents fade in as its column opens. */
+.gw-insp > * { animation: gw-fade 0.2s ease-out; }
+@keyframes gw-fade { from { opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .gw-insp > * { animation: none; } }
+/* Wide (Page Builder full screen): a little more room for rail and editor. */
+@container gw (min-width: 1180px) {
+  .gw-body { grid-template-columns: 200px minmax(0, 1fr) 0px; }
+  .gw.has-inspector .gw-body { grid-template-columns: 200px minmax(0, 1fr) 340px; }
+}
+/* <760: one pane; the rail becomes a menu and the editor takes over. */
+@container gw (max-width: 759px) {
+  .gw-body, .gw.has-inspector .gw-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); transition: none; }
+  .gw-rail { display: none; }
+  .gw-railmenu { display: block; padding: 8px 12px 0; grid-column: 1; grid-row: 1; }
+  .gw-list { grid-column: 1; grid-row: 2; }
+  .gw-insp { grid-column: 1; grid-row: 1 / span 2; z-index: 3; border-right: 0; }
+  .gw-row:has(.gw-row__col) { grid-template-columns: 24px minmax(0, 1fr) 56px; }
+  .gw-row__col { display: none; }
+}
+
+/* ---- frames ---- */
+.gw--popup { border-radius: inherit; overflow: hidden; }
+.gw-screen {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+}
+
+/* Every field in the editor box spans the same width (the ColorInput is a
+   fixed-width compact control elsewhere). */
+.gw-field > :last-child { min-width: 0; }
+.gw-field .swatch-input.color-input { width: 100%; max-width: none; }
+
+/* The editor column borrows the right panel's scope (`panel dock-right
+   uc-chrome`) so its fields are the panel's fields. Turn off what `.panel`
+   itself brings (bottom-dock height, grid-area, top border, shadow, forced
+   overflow) — the field CSS is what we want, not the panel frame. */
+.gw .gw-insp.panel {
+  grid-area: auto;
+  grid-column: 3;
+  grid-row: 1;
+  height: auto;
+  width: auto;
+  border-top: 0;
+  border-radius: 0;
+  box-shadow: none;
+  background: var(--gw-bg);
+  overflow: hidden !important;
+  /* the panel's own label column, sized for this narrower box */
+  --pf-label-w: 64px;
+  --rp-label-w: 64px;
+}
+@container gw (max-width: 759px) {
+  .gw .gw-insp.panel { grid-column: 1; grid-row: 1 / span 2; }
+}
+/* Panel field rows inside the grey box: no extra row chrome of our own. */
+.gw .gw-pfbox { gap: var(--uc-space-8, 8px); }
+.gw .gw-pfbox .field.pf { margin: 0; }
+/* `rp-insp` on the box pulls in the panel's inspector-scoped field sizes (28px
+   controls, 13px values). Keep this box's own card colour, padding and a
+   label column sized for the narrower editor. */
+.gw .gw-insp.panel .gw-pfbox.rp-insp {
+  --rp-label-w: 64px;
+  --pf-label-w: 64px;
+  /* the panel's own section-box colour, read inside its uc-chrome scope */
+  background: var(--uc-surface-raised, #202020);
+  padding: 12px;
+  margin: 0;
+  gap: 8px;
+  border-radius: var(--uc-radius-md, 8px);
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── Minimal workspace (Jay, 2026-09-30): by type, plain names ───────────────
+   Rows are one line: glyph · name · value on the right. Clicking selects;
+   renaming lives in the editor. Headings are sentence case, not caps. */
+.gw--min .gw-rail__head,
+.gw--min .gw-group {
+  text-transform: none;
+  letter-spacing: normal;
+  /* Same as the right panel's sub-group headers: 12px medium. */
+  font-size: 12px;
+  font-weight: 500;
+}
+.gw--min .gw-rail__head { margin-top: 10px; }
+.gw--min .gw-row {
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  min-height: 36px;
+  padding: 4px 8px 4px 10px;
+  cursor: pointer;
+  outline: none;
+}
+.gw--min .gw-row:focus-visible { box-shadow: inset 0 0 0 1px var(--uc-ring, rgba(245, 245, 245, 0.55)); }
+.gw--min .gw-row__name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13px;
+  color: var(--gw-hi);
+}
+.gw--min .gw-row__name--mono { font-family: var(--uc-font-mono, ui-monospace, monospace); --uich-ff: var(--uc-font-mono, ui-monospace, monospace); font-size: 12px; }
+.gw--min .gw-row > .gw-row__preview { justify-self: end; max-width: 160px; text-align: left; font-style: normal; }
+.gw--min .gw-row > .gw-row__preview--dim { font-style: italic; }
+.gw--min .gw-swatch { width: 18px; height: 18px; }
+
+/* "+ Add color" under each list: a quiet row, not a button. */
+.gw-addrow {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 34px;
+  padding: 0 13px 0 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  color: var(--gw-mid);
+  cursor: pointer;
+}
+.gw-addrow:hover { background: var(--gw-hover); color: var(--gw-hi); }
+/* In the rail it is one of the rail's rows: the same height and inset as
+   .gw-rail__item, so its + lines up with the icons above it. */
+.gw-addrow.gw-addrow--rail { min-height: 28px; height: 28px; padding: 0 8px; }
+.gw-addrow.gw-addrow--rail svg { flex: none; }
+.gw-addrow:focus-visible { box-shadow: inset 0 0 0 1px var(--uc-ring, rgba(245, 245, 245, 0.55)); }
+
+/* Add menu glyphs. */
+.gw-menu-sw {
+  width: 12px;
+  height: 12px;
+  border-radius: 3px;
+  background: conic-gradient(#6d28d9, #f97316, #10b981, #3b82f6, #6d28d9);
+  flex: 0 0 auto;
+}
+.gw-menu-aa { font-size: 11px; font-weight: 600; width: 12px; text-align: center; }
+.gw-menu-note { margin-right: auto; font-size: 11px; color: var(--uc-text-muted, #8a8a8a); }
+
+/* The Name field in the editor: a real field (same look as the panel's
+   inputs), in the sans face — it is a name, not code. */
+.gw .gw-name.gw-name--field {
+  width: 100%;
+  height: var(--uc-control-h-sm, 28px);
+  padding: 0 8px;
+  background: var(--rp-field-bg, var(--gw-field));
+  box-shadow: inset 0 0 0 1px var(--uc-border-subtle, var(--gw-line));
+  border-radius: var(--uc-radius-md, 8px);
+  font-family: inherit;
+  --uich-ff: inherit;
+  font-size: 13px;
+}
+.gw .gw-name.gw-name--field.gw-name--mono { font-family: var(--uc-font-mono, ui-monospace, monospace); --uich-ff: var(--uc-font-mono, ui-monospace, monospace); font-size: 12px; }
+.gw .gw-name.gw-name--field:focus-within { box-shadow: inset 0 0 0 1px var(--uc-ring, rgba(245, 245, 245, 0.55)); }
+.gw .gw-name.gw-name--field:has(input[readonly]) { opacity: 0.7; }
+
+/* Text-style editor labels: sentence case like the panel, not caps. */
+.gw .gw-box--typo label {
+  text-transform: none !important;
+  letter-spacing: normal !important;
+  font-weight: 400 !important;
+  font-size: 12px !important;
+}
+.gw--min .gw-insp__head { gap: 2px; }
+.gw--min .gw-insp__title { font-family: inherit; --uich-ff: inherit; font-size: 13px; font-weight: 500; }
+/* The field box borrows the panel's `.rp-insp` scope for its field CSS, which
+   also sets `height: 100%` — keep the box at its content height. */
+.gw .gw-insp.panel .gw-pfbox.rp-insp { height: auto; flex: 0 0 auto; }
+.gw .gw-insp__body > .gw-box { flex: 0 0 auto; }
+
+/* ── Import page (Jay: inside the window, no popup on a popup) ───────────────*/
+.gw-import { overflow-y: auto; }
+/* "Choose file" is a DS Button, whose side padding comes from one class; the
+   builder's scoped Tailwind preflight (`.uich-tw button:not(…)`, one element
+   heavier) zeroed it, so the label touched the border. The button is the
+   upload zone's only one with aria-describedby. */
+.uich-tw .gw-import__file button[aria-describedby],
+.gw-import__file button[aria-describedby] { padding: 0 var(--_px, 12px); }
+.gw-import__body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-width: 520px;
+  padding: 12px 16px 20px;
+}
+.gw-import__back {
+  all: unset;
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 2px 2px 6px;
+  border-radius: 5px;
+  font-size: 12px;
+  color: var(--gw-mid);
+  cursor: pointer;
+}
+.gw-import__back:hover { color: var(--gw-hi); background: var(--gw-hover); }
+.gw-import__back:focus-visible { box-shadow: inset 0 0 0 1px var(--uc-ring, rgba(245, 245, 245, 0.55)); }
+.gw-import__title { margin: 2px 0 0; font-size: 14px; font-weight: 600; color: var(--gw-hi); }
+.gw-import__lead, .gw-import__hint, .gw-import__tip { margin: 0; font-size: 12px; line-height: 1.5; color: var(--gw-mid); }
+.gw-import__lead b { color: var(--gw-hi); font-weight: 500; font-family: var(--uc-font-mono, ui-monospace, monospace); --uich-ff: var(--uc-font-mono, ui-monospace, monospace); font-size: 11px; }
+.gw-import__tip { color: var(--gw-dim); font-size: 11px; }
+.gw-import__link {
+  all: unset;
+  color: var(--gw-hi);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+.gw-import__mode { align-self: flex-start; min-width: 220px; }
+.gw-import__counts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+  gap: 6px;
+}
+.gw-import__count {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--gw-box);
+  font-size: 12px;
+  color: var(--gw-hi);
+}
+.gw-import__count > span:last-child { font-variant-numeric: tabular-nums; font-weight: 500; }
+.gw-import__count.is-muted { color: var(--gw-dim); }
+.gw-import__count.is-warn { color: var(--gw-warn, #EF9F27); }
+.gw-import__items {
+  display: flex;
+  flex-direction: column;
+  max-height: 240px;
+  overflow-y: auto;
+  border-radius: 8px;
+  background: var(--gw-box);
+  padding: 4px;
+}
+.gw-import__item {
+  display: grid;
+  grid-template-columns: 20px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 0 8px;
+  font-size: 12px;
+  color: var(--gw-hi);
+}
+.gw-import__name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gw-import__note {
+  font-family: var(--uc-font-mono, ui-monospace, monospace);
+  --uich-ff: var(--uc-font-mono, ui-monospace, monospace);
+  font-size: 11px;
+  color: var(--gw-dim);
+  white-space: nowrap;
+}
+/* Tokenised: the literal #5DCAA5 is a dark-surface green and fails on white. */
+.gw-import__item.is-new .gw-import__note { color: var(--gw-ok); font-family: inherit; --uich-ff: inherit; }
+.gw-import__item.is-del { color: var(--gw-dim); }
+.gw-import__item.is-del .gw-import__note { color: var(--gw-warn, #EF9F27); font-family: inherit; --uich-ff: inherit; }
+.gw-swatch--sm { width: 14px; height: 14px; border-radius: 4px; }
+.gw-import__warn { margin: 0; font-size: 12px; color: var(--gw-warn, #EF9F27); }
+.gw-import__error { margin: 0; font-size: 12px; color: var(--gw-danger, #E24B4A); }
+.gw-import__actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 4px; }
+
+/* Dragging a file over the window: a quiet outline says "drop here". */
+.gw.is-dragover .gw-shell { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--gw-hi) 40%, transparent); }
+
+/* ── Light theme ────────────────────────────────────────────────────────────
+   The workspace is built on six surface/text variables, and all but two of
+   them invert on their own because they point at DS tokens that have a light
+   value: --gw-bg, --gw-box, --gw-line, --gw-hi, --gw-dim, and the --gw-sel /
+   --gw-hover washes (color-mix of --gw-hi, so they flip from white-on-dark to
+   black-on-light by themselves). These two cannot:
+
+   --gw-mid   body text. See the note at the top: its token never existed, so
+              it was pinned to a dark-surface grey and stayed #D4D4D4 on white.
+   --gw-field inputs and the search box. --uc-surface-overlay is #242424 in
+              dark (a field LIFTED above the box) but a translucent white wash
+              in light, which over a white box is simply white — the fields
+              disappeared. Light inverts the relationship: the field SINKS
+              into the box instead of rising out of it. */
+[data-uich-composer-theme="light"] .gw,
+[data-theme="light"] .gw {
+  --gw-mid: var(--uc-text);
+  --gw-field: var(--uc-surface-base);
+}
+
+/* Theme style form (ThemeStyleForm). It sits in the list column, so it borrows
+   the inspector's field scope (`panel dock-right uc-chrome` + `rp-insp`) but
+   none of the panel's own frame. */
+.gw-ts { position: static; display: block; width: auto; height: auto; border: 0; box-shadow: none; background: transparent; padding: 4px 12px 16px; overflow: visible; }
+.gw-ts__intro { margin: 4px 0 12px; font-size: 12px; line-height: 1.5; color: var(--text-dim, hsl(var(--muted-foreground))); }
+.gw-ts__group + .gw-ts__group { margin-top: 12px; }
+.gw-ts__hint { margin: 0 0 6px; font-size: 11px; color: var(--text-dim, hsl(var(--muted-foreground))); }
+
+/* Disabled form controls keep navigation, previews and Copy available. */
+.gw-edit-fields { display: contents; }
+.gw-edit-fields :disabled { cursor: not-allowed; opacity: 0.55; }
+.gw-sync { display: flex; flex: 1; min-height: 0; flex-direction: column; gap: var(--uc-space-12, 12px); padding: var(--uc-space-16, 16px); overflow: auto; }
+.gw-sync h3 { margin: 0; font-size: inherit; font-weight: 600; }
+

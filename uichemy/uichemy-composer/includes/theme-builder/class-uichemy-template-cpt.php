@@ -46,6 +46,8 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 
 		/**
 		 * Meta key: which editor authors + renders the template (elementor|gutenberg).
+		 * A Composer Builder template stores 'gutenberg' here and is recognised
+		 * by the builder's own flag instead — see editor_for().
 		 */
 		const META_EDITOR = '_uichemy_tpl_editor';
 
@@ -156,7 +158,11 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 					'rewrite'             => false,
 					'query_var'           => false,
 					'can_export'          => true,
-					'capability_type'     => 'post',
+					// Its own capabilities, all the template capability: a template
+					// renders on every page it is assigned to, so core REST and the
+					// block editor must not open it to anyone with edit_others_posts.
+					'capability_type'     => array( 'uichemy_template', 'uichemy_templates' ),
+					'capabilities'        => self::capabilities(),
 					'map_meta_cap'        => true,
 					// 'elementor' is the ONLY support Elementor checks to allow
 					// editing a post type on its canvas (see Utils::is_post_type_support).
@@ -165,6 +171,36 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 			);
 
 			self::register_meta();
+		}
+
+		/**
+		 * Primitive capabilities for the template post type.
+		 *
+		 * Every write maps to the capability the Theme Builder and the Composer
+		 * Builder already ask for (Uich_CB_Policy::template_capability(), filter
+		 * `uich_cb/template_capability`), so core REST, the block editor and
+		 * Elementor agree with them about who may change a template.
+		 *
+		 * @return array
+		 */
+		private static function capabilities() {
+			/** This filter is documented in composer-builder/includes/security/class-uich-cb-policy.php */
+			$cap = (string) apply_filters( 'uich_cb/template_capability', 'manage_options' );
+
+			return array(
+				'read'                   => 'read',
+				'create_posts'           => $cap,
+				'edit_posts'             => $cap,
+				'edit_others_posts'      => $cap,
+				'edit_private_posts'     => $cap,
+				'edit_published_posts'   => $cap,
+				'publish_posts'          => $cap,
+				'read_private_posts'     => $cap,
+				'delete_posts'           => $cap,
+				'delete_private_posts'   => $cap,
+				'delete_published_posts' => $cap,
+				'delete_others_posts'    => $cap,
+			);
 		}
 
 		/**
@@ -255,7 +291,7 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 		 * flag and was authored in Elementor, so that is the back-compat default.
 		 *
 		 * @param int $post_id Template post ID.
-		 * @return string 'gutenberg' | 'elementor' | 'bricks'
+		 * @return string 'gutenberg' | 'elementor' | 'bricks' | 'composer'
 		 */
 		public static function editor_for( $post_id ) {
 			// Elementor builder data is authoritative when present. A template
@@ -283,9 +319,55 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 				}
 			}
 
+			// The Composer Builder. It keeps its templates in this CPT but does
+			// not own META_EDITOR — its own flag (set when a template is created
+			// for it, opened in it or saved from it) says whose template it is.
+			// Below the Elementor and Bricks checks for the same reason those
+			// beat META_EDITOR: real builder data wins. Only when the builder is
+			// loaded; without it the template falls back to its stored editor
+			// ('gutenberg'), whose post_content is the builder's rendered mirror.
+			if ( class_exists( 'Uich_CB_Content' ) && Uich_CB_Content::is_enabled( $post_id ) ) {
+				return 'composer';
+			}
+
 			$stored = (string) get_post_meta( $post_id, self::META_EDITOR, true );
 
 			return in_array( $stored, array( 'gutenberg', 'bricks' ), true ) ? $stored : 'elementor';
+		}
+
+		/**
+		 * The URL that opens a template in the editor it was actually built in.
+		 *
+		 * The one answer to "where does Edit go" for the admin bar, the dashboard
+		 * grid and the REST payload, which each used to spell it themselves.
+		 *
+		 * Follows editor_for(), so a Composer Builder template opens in the
+		 * builder rather than in Elementor (its back-compat default, which is
+		 * where every Edit link sent one before the builder was recognised).
+		 *
+		 * @param int $post_id Template post ID.
+		 * @return string
+		 */
+		public static function edit_url_for( $post_id ) {
+			$post_id = (int) $post_id;
+			$editor  = self::editor_for( $post_id );
+
+			// editor_for() only answers 'composer' while the builder is loaded.
+			if ( 'composer' === $editor ) {
+				// Builder turned off in Settings: no Edit link (the template still renders).
+				if ( function_exists( 'uich_cb_builder_enabled' ) && ! uich_cb_builder_enabled() ) {
+					return '';
+				}
+				return Uich_CB_Content::edit_url( $post_id );
+			}
+
+			return add_query_arg(
+				array(
+					'post'   => $post_id,
+					'action' => 'gutenberg' === $editor ? 'edit' : 'elementor',
+				),
+				admin_url( 'post.php' )
+			);
 		}
 
 		/**

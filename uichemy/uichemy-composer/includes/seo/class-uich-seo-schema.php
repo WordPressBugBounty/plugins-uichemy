@@ -1710,7 +1710,7 @@ if ( ! class_exists( 'Uich_SEO_Schema' ) ) {
 				$errors['type'] = __( 'Your organisation or person is set once in SEO → Site Settings, not as a template.', 'uichemy' );
 			} elseif ( in_array( $type, self::SECTION_TYPES, true ) ) {
 				/* translators: %s: schema type. */
-				$errors['type'] = sprintf( __( '%s describes one part of one page, so it is not a template. Add it as JSON-LD in that section (Schema, in the editor) instead.', 'uichemy' ), $type );
+				$errors['type'] = sprintf( __( '%s describes one part of one page, so it is not a template. Add it as JSON-LD on that page, next to the content it describes, instead.', 'uichemy' ), $type );
 			}
 			if ( ! array_filter( $cond['rules'], function ( $r ) {
 				return 'include' === $r['match'];

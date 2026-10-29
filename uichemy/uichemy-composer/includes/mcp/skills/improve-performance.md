@@ -1,6 +1,6 @@
 # UiChemy Improve Performance
 
-Three parts: **A** operates the Performance settings through their tools, **B** keeps generated sections fast, **C** optimises images and Google Fonts (UiChemy Pro).
+Three parts: **A** operates the Performance settings through their tools, **B** keeps generated pages fast, **C** optimises images and Google Fonts (UiChemy Pro).
 
 ## A. Performance operations (tools only)
 
@@ -14,23 +14,39 @@ Route by intent:
 |---|---|
 | See the performance settings and their state | `list-performance-settings` |
 | Change a performance setting | `set-performance-setting` (`setting`, plus `state`: `enable` / `disable` for a toggle, or `value` for any other type) |
+<!-- mode:sections -->
 | See where each section of a page prints its CSS and JS | `get-post-sections-code-placement` |
 | Change where one section prints its CSS or JS | `set-post-sections-code-placement` (`post_id`, `section_index`, `type`: `css` or `js`, `placement`) |
+<!-- /mode -->
 | Optimise images, or change how Google Fonts load | Part **C** below (UiChemy Pro) |
 
 Rules:
 - Call `list-performance-settings` to learn the setting names, their `type` (`toggle`, `choice`, `number`, `list`) and their state; a choice lists its `choices`. Map the user's words to one of them; if none fits, ask. Never invent a name, and never use `set-performance-setting` just to read a state.
 - Change a setting only when the user asks. If something the task depends on is off, say so and ask first. Report the state returned by the tool instead of guessing it.
+<!-- mode:sections -->
 - Call `get-post-sections-code-placement` before changing a placement, to get the `section_index`. Each row says whether a value is the default.
 - `placement` is `before-head-end`, `before-body-end`, or `default` to put it back to the default. Leave placement alone unless the user asks to move it.
 - If a requested placement works against part B (for example moving the CSS of one of the first three sections to `before-body-end`), do it when the user asks, then tell them the trade-off: that section's styles will load later than the rest of the first screen.
+<!-- /mode -->
+<!-- mode:composer -->
+- A Composer Builder page has no per-section code placement to read or set: its `css` always prints in `<head>` and its `js` before `</body>`. If the user wants some code to load at another point, move it with `uichemy-composer/page` - into `head_code` (just before `</head>`) or `body_end_code` (just before `</body>`).
+<!-- /mode -->
 - The master switch only turns the optimizations on or off as a whole; each setting keeps its own state. After switching it back on, report any setting that is still off instead of turning it on yourself, unless the user asked for every setting.
 
+<!-- mode:sections -->
 ## B. Building sections
 
 1. **First three sections.** They are picked by position only (labels do not matter). Their CSS is inlined in `<head>`, and the header and hero images load first. Keep them light, put heavy content below.
 2. **No image preloads.** Never write `<link rel="preload" as="image">` in section HTML. React/Next exports ship one per `<img>`; remove them, because a preload defeats `loading="lazy"`.
 3. **Visible at load.** The first three sections must not start hidden: no `opacity:0` entrance start (use `.01`), no `data-reveal`, no JS-toggled `.opacity-0`.
+<!-- /mode -->
+<!-- mode:composer -->
+## B. Building pages (Composer Builder)
+
+1. **The first screen.** The page's whole `css` is inlined in `<head>`, so there is no critical-CSS split to plan for - but keep the `css` lean, because all of it blocks the first paint. The first four images in render order (a Composer Builder header template's, then the page's) load straight away and the rest load lazily, so put the logo and the hero image first in the markup and heavy media lower down. Give every `<img>` its `width` and `height`.
+2. **No image preloads.** Never write `<link rel="preload" as="image">` in the page `html`. React/Next exports ship one per `<img>`; remove them, because a preload defeats `loading="lazy"`.
+3. **Visible at load.** Nothing in the first screen may start hidden: no `opacity:0` entrance start (use `.01`), no `data-reveal`, no JS-toggled `.opacity-0`.
+<!-- /mode -->
 4. **Stylesheet links use preload.** External stylesheets (Google Fonts, icon CSS, vendor CSS) use `rel="preload"`, never plain `rel="stylesheet"`. Keep `display=swap` and the two `preconnect` links:
    ```html
    <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -38,7 +54,12 @@ Rules:
    <link rel="preload" as="style" href="…&display=swap" onload="this.onload=null;this.rel='stylesheet'">
    <noscript><link rel="stylesheet" href="…&display=swap"></noscript>
    ```
+<!-- mode:sections -->
 5. **Avoid Elementor and jQuery dependencies where you can.** Prefer no jQuery, `elementorFrontend`, `.elementor-*` / `.e-con` classes or `--e-global-*` variables in section code, and only Composer widgets on the page. If section code does use jQuery, that is allowed: the page keeps jQuery loaded (Elementor's scripts are still dropped unless the code uses `elementorFrontend`). The same goes for a script added by URL that is not a known library, because it may need jQuery.
+<!-- /mode -->
+<!-- mode:composer -->
+5. **No Elementor or jQuery dependencies.** A Composer Builder page loads neither by itself, so never use jQuery, `elementorFrontend`, `.elementor-*` / `.e-con` classes or `--e-global-*` variables in its code. If a library truly needs jQuery, load it explicitly and say so to the user.
+<!-- /mode -->
 6. **Icons.** Inline SVG; no `eicon-*` classes.
 7. **Choose how each `<script src>` loads.** Use `defer`, `async` or no attribute, depending on what the script does and what depends on it:
    - `defer` for libraries and anything that uses the DOM or another script (GSAP and its plugins, Lenis, three.js, sliders). Deferred scripts run in document order after parsing, so a library and the code that uses it stay in order.
@@ -49,7 +70,7 @@ Rules:
      ```html
      <script type="uich/deferred" data-uich-run-with="#hero-3d" data-uich-kind="script" data-uich-src="https://…/three.min.js" data-uich-attrs=""></script>
      ```
-     Use it for heavy libraries that only a below-the-fold section needs (three.js, a slider, a map), never for the first three sections. Carriers bound to the same element load one after another in the order written, so a library and its plugins can share a selector. Put `module` in `data-uich-attrs` for a module script.
+     Use it for heavy libraries that only something below the fold needs (three.js, a slider, a map), never for the first screen. Carriers bound to the same element load one after another in the order written, so a library and its plugins can share a selector. Put `module` in `data-uich-attrs` for a module script.
 
 ## C. Images and fonts (UiChemy Pro)
 
@@ -103,9 +124,14 @@ The site's own font files (woff2, woff, ttf, otf) are `uichemy-composer/custom-f
 
 1. **Lighthouse, mobile and desktop** (DevTools, or `npx lighthouse <url> --only-categories=performance`, plus `--preset=desktop`). Run each twice. FCP, LCP, TBT and CLS must all show a number. `NO_LCP` means something above the fold starts at `opacity:0` (rule 3); `NO_FCP` or `Error!` means a hidden tab or an extension, so rerun in incognito. Report before and after.
 2. **Page source:** no image preloads except the first image, no render-blocking `<script src>` in `<head>` other than the must-run-first ones from rule 7, no unused Elementor CSS/JS or jQuery.
-3. **Network (Img):** reload, then scroll. Only the top sections' images load first.
+3. **Network (Img):** reload, then scroll. Only the first screen's images load first.
 4. **Functionality:** menus, animations, accordions, sliders and forms work on desktop and at 375px, with no console errors.
+<!-- mode:sections -->
 5. **Layout:** unchanged, except Elementor's gap between sections disappearing on Composer-only pages.
 6. After editing page data outside the Elementor editor, clear Elementor's cache (Elementor → Tools → Clear Files & Data).
+<!-- /mode -->
+<!-- mode:composer -->
+5. **Layout:** unchanged.
+<!-- /mode -->
 7. **Images (if optimised):** in Network (Img), the page's images come from `wp-content/uichemy-optimizer/` as `.webp` / `.avif`.
 8. **Google Fonts (if self-hosted):** the page source has no `fonts.googleapis.com` or `fonts.gstatic.com` links; the font CSS comes from `uploads/uichemy/fonts/google/`.

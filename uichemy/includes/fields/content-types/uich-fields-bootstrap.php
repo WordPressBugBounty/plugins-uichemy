@@ -134,15 +134,15 @@ $uich_fields_deferred = array(
 	'Uich_Fields_Import_REST'       => '/import/class-uich-fields-import-rest.php',
 );
 
+// PHP class names are case-insensitive; callers do not always match the declared case.
+// Lower-cased once here, not for every entry on every autoload miss (K-04).
+$uich_fields_deferred = array_change_key_case( $uich_fields_deferred, CASE_LOWER );
+
 spl_autoload_register(
 	function ( $class_name ) use ( $uich_fields_deferred, $content_types_dir ) {
-		// PHP class names are case-insensitive; callers do not always match the declared case.
 		$wanted = strtolower( $class_name );
-		foreach ( $uich_fields_deferred as $name => $file ) {
-			if ( strtolower( $name ) === $wanted ) {
-				require_once $content_types_dir . $file;
-				return;
-			}
+		if ( isset( $uich_fields_deferred[ $wanted ] ) ) {
+			require_once $content_types_dir . $uich_fields_deferred[ $wanted ];
 		}
 	}
 );

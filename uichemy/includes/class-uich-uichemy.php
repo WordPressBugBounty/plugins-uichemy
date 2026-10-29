@@ -160,7 +160,6 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 			require_once UICH_PATH . 'includes/admin/class-uich-atomic-imgs.php';
 			require_once UICH_PATH . 'includes/admin/class-uich-elementor.php';
 			require_once UICH_PATH . 'includes/admin/class-uich-copy-images.php';
-			require_once UICH_PATH . 'includes/mcp/class-uich-mcp-loader.php';
 
 			// New dashboard.
 			require_once UICH_PATH . 'includes/new-dashboard/class-uich-nd-loader.php';

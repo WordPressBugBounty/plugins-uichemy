@@ -102,6 +102,63 @@ if ( ! class_exists( 'UiChemy_Globals_CSS' ) ) {
 			return substr( $head, 0, $loc['start'] ) . $block . substr( $head, $loc['end'] );
 		}
 
+		/**
+		 * Filter appended to each theme-style target so an element carrying a
+		 * `.text-*` class is left to that class. Inside :where() it adds no
+		 * specificity: the rule stays 0,1,1 against the theme and a section's
+		 * own CSS, and simply stops matching text-classed elements.
+		 */
+		const SPARE_TEXT_CLASSES = ':where(:not([class^="text-"], [class*=" text-"]))';
+
+		/**
+		 * Give theme-style rules saved before SPARE_TEXT_CLASSES existed the filter.
+		 *
+		 * The Globals screen generates those rules (composer-theme-style.js) as
+		 * `:is(<section wrappers>) h1 { … }` - one class plus the element, which
+		 * outranked a `.text-*` typography class (one class) and turned every
+		 * text-classed heading into the theme-style font. Generated rules have a
+		 * fixed shape, so the rewrite matches exactly those selectors; anything
+		 * the user wrote by hand is left alone. Idempotent.
+		 *
+		 * @param string $css Inner CSS of the globals block.
+		 * @return string
+		 */
+		public static function spare_text_classes( $css ) {
+			$css = (string) $css;
+			if ( false === strpos( $css, '.uipb-sec' ) && false === strpos( $css, '#uich-pv-root' ) ) {
+				return $css;
+			}
+			$scope   = '(?::is\(\.elementor-widget-uichemy-composer[^)]*\)|:where\(#uich-pv-root\))';
+			$targets = '(?::is\(h1, h2, h3, h4, h5, h6\)|h[1-6]|a:hover|a|:is\(button, \.button, \.btn, input\[type="submit"\], input\[type="button"\]\))';
+			$filter  = self::SPARE_TEXT_CLASSES;
+
+			return (string) preg_replace_callback(
+				'/(' . $scope . ' ' . $targets . ')(?=\s*[,{])/',
+				static function ( $m ) use ( $filter ) {
+					return $m[1] . $filter;
+				},
+				$css
+			);
+		}
+
+		/**
+		 * spare_text_classes() applied to the globals block inside head markup.
+		 *
+		 * @param string $head Site head code.
+		 * @return string
+		 */
+		public static function spare_text_classes_in_head( $head ) {
+			$loc = self::locate_block( $head );
+			if ( null === $loc || false !== strpos( $loc['inner'], self::SPARE_TEXT_CLASSES ) ) {
+				return (string) $head;
+			}
+			$inner = self::spare_text_classes( $loc['inner'] );
+			if ( $inner === $loc['inner'] ) {
+				return (string) $head;
+			}
+			return substr( $head, 0, $loc['start'] ) . self::wrap( $inner ) . substr( $head, $loc['end'] );
+		}
+
 		// ── Value helpers ──────────────────────────────────────────────────────
 
 		/**

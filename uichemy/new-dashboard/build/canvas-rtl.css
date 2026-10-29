@@ -1,3 +1,20 @@
+/* Pointer use has no focus outline, even when a menu restores :focus-visible.
+ * Scope is UI chrome only, never visitor content or third-party WP controls.
+ * Preserve base inset borders, elevation, hover, checked and invalid states.
+ * Keyboard navigation removes this override and uses component focus styles.
+ */
+:root[data-uc-input-mode='pointer']
+  :is(.uipb-studio, #uichemy-composer-floating-panel, #smart-html-floating-panel,
+      .uich-composer-host, .uich-tw, .uich-rp, .uich-portal-root,
+      .uc-scope, .uc-content, .uc-chrome, .uc-portal, .uc-pop-dark)
+  :is(:focus, :focus-visible, :focus-within),
+:root[data-uc-input-mode='pointer']
+  :is(.uc-scope, .uc-content, .uc-chrome, .uc-portal, .uc-pop-dark):is(:focus, :focus-visible, :focus-within) {
+  outline: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+
 /*
  * Isolation — keep the host page's CSS out of the composer's UI.
  * ════════════════════════════════════════════════════════════════════════════
@@ -119,6 +136,13 @@
  * rule (1,1,0). The drawer shell is covered anyway — the panel it wraps carries
  * `.uich-composer-host` and `.uich-tw`.
  *
+ * A CHECKED radio / checkbox (Radix `data-state="checked"` / "indeterminate") is
+ * left out of the reset: its fill IS its state, and wiping it on :hover / :focus
+ * turned the control into an empty ring (the dot / tick is drawn in the inverse
+ * colour, so it vanished too) the moment it was clicked. Its own rule
+ * (`.root[data-state='checked']`, (0,2,0)) already outranks the theme's (0,1,1).
+ * The `:not()` sits inside `:where()`, so the block stays at (0,2,0).
+ *
  * Only the two properties the theme actually sets are reverted. `color` is left
  * alone for buttons (reverting it would hand them the UA's `buttontext` on a
  * dark panel) and taken back only on links, where a themed hover colour is the
@@ -131,7 +155,7 @@
   .uich-portal-root,
   .uich-rp
 )
-  :where(a, button, input, select, textarea, .button, .menu-toggle):is(:hover, :focus, :focus-visible, :focus-within, :active) {
+  :where(a, button:not([data-state='checked'], [data-state='indeterminate']), input, select, textarea, .button, .menu-toggle):is(:hover, :focus, :focus-visible, :focus-within, :active) {
   background: none;
   border-color: revert;
 }
@@ -148,6 +172,178 @@
   :where(a):is(:hover, :focus, :focus-visible, :active) {
   color: inherit;
   text-decoration: none;
+}
+
+/* ── 3 · Inherited text properties from the page's <body> ──────────────────
+ *
+ * Every UI root of ours is a child of the page's <body>, so whatever the design
+ * puts on body (letter-spacing, an uppercase transform, a light 300 weight,
+ * centred text, a text-shadow) is inherited by the whole panel and toolbar. Our
+ * components set font-size, line-height and colour explicitly but rely on
+ * inheritance for these, so they are reset to their initial values on the
+ * roots. Specificity (0,1,0) and this file is imported first, so any root
+ * class of ours that sets one of them (the canvas bar's weight) still wins.
+ */
+:is(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+) {
+  letter-spacing: normal;
+  word-spacing: normal;
+  text-transform: none;
+  text-indent: 0;
+  text-align: start;
+  text-shadow: none;
+  font-style: normal;
+  font-weight: 400;
+  font-variant: normal;
+  font-feature-settings: normal;
+}
+
+/* ── 4 · Styles a page FORCES on every element (`* { … !important }`) ──────
+ *
+ * No ordinary rule of ours can beat `* { font-family: X !important }` or
+ * `* { transition: all .6s !important }`. The editor guard
+ * (assets/js/uichemy-editor-guard.js) probes for them once the page has
+ * loaded and only then sets these classes on <html>, so a normal page is never
+ * touched. Fonts go back to each element's own family through `--uich-ff`, a
+ * copy of every font-family the build writes next to it (postcss.config.js).
+ * Transitions are switched off inside our UI: snappier than a 0.6s fade on
+ * every hover, and the page's own elements keep theirs.
+ */
+html.uich-guard-ff :is(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+),
+html.uich-guard-ff :is(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+) :where(*, *::before, *::after) {
+  font-family: var(--uich-ff, "Zalando Sans", ui-sans-serif, system-ui, sans-serif) !important;
+}
+html.uich-guard-tr :is(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+),
+html.uich-guard-tr :is(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+) :where(*, *::before, *::after) {
+  transition: none !important;
+}
+
+/* ── 5 · Page-wide resets of bare elements ─────────────────────────────────
+ *
+ * Rules a page writes against EVERY element or every <div> with no class at
+ * all: `* { scrollbar-width: none }`, `::-webkit-scrollbar { display: none }`.
+ * They reached our scroll areas, so the panel had no scrollbar (I12). Each
+ * rule below puts back the browser default, at a specificity just above a
+ * bare-element rule (0,0,1 / 0,0,2) and below any class of ours (0,1,0), so a
+ * scrollbar we hide on purpose (the scope lane, the tab strips) stays hidden.
+ */
+:where(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+) :is(div, textarea, ul, ol, pre, nav, section, aside):not(svg):not(math) {
+  scrollbar-width: auto;
+}
+:where(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+) :is(div, textarea, ul, ol, pre, nav, section, aside):not(svg):not(math)::-webkit-scrollbar {
+  display: block;
+}
+
+/* `* { user-select: none }` + `::selection { background: transparent }` (an
+ * anti-copy reset): text could not be selected in our fields, and what was
+ * selected did not show (I13). Fields only: labels and buttons stay as they
+ * are. All type selectors, so this stays below any class of ours. */
+:where(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+) :is(input, textarea):not(svg) {
+  -webkit-user-select: text;
+  -moz-user-select: text;
+       user-select: text;
+}
+:where(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+) :is(div, span, p, a, button, label, li, pre, code, input, textarea):not(svg)::-moz-selection {
+  background-color: Highlight;
+  color: HighlightText;
+}
+:where(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+) :is(div, span, p, a, button, label, li, pre, code, input, textarea):not(svg)::selection {
+  background-color: Highlight;
+  color: HighlightText;
+}
+
+/* `div { overflow: hidden }` clipped our menus, focus rings and anything
+ * positioned outside its box (I14). A div of ours that needs a different
+ * overflow says so with a class, which outranks this. */
+:where(
+  .uich-tw,
+  .uich-composer-host,
+  .uich-canvas-toolbar-host,
+  .uich-portal-root,
+  .uich-rp,
+  .uichemy-composer-floating-panel,
+  [id="uichemy-motion-timeline-root"]
+) div:not(svg) {
+  overflow: visible;
 }
 
 /*
@@ -433,26 +629,26 @@ body[data-theme="light"],
   bottom: 0px;
 }
 .uich-tw .inset-y-2 {
-  top: 0.5rem;
-  bottom: 0.5rem;
+  top: 8px;
+  bottom: 8px;
 }
 .uich-tw .-bottom-1 {
-  bottom: -0.25rem;
+  bottom: -4px;
 }
 .uich-tw .-right-6 {
-  left: -1.5rem;
+  left: -24px;
 }
 .uich-tw .-top-1 {
-  top: -0.25rem;
+  top: -4px;
 }
 .uich-tw .-top-8 {
-  top: -2rem;
+  top: -32px;
 }
 .uich-tw .bottom-3 {
-  bottom: 0.75rem;
+  bottom: 12px;
 }
 .uich-tw .bottom-6 {
-  bottom: 1.5rem;
+  bottom: 24px;
 }
 .uich-tw .left-0 {
   right: 0px;
@@ -461,10 +657,10 @@ body[data-theme="light"],
   right: 50%;
 }
 .uich-tw .left-2 {
-  right: 0.5rem;
+  right: 8px;
 }
 .uich-tw .left-3 {
-  right: 0.75rem;
+  right: 12px;
 }
 .uich-tw .left-\[50\%\] {
   right: 50%;
@@ -473,34 +669,34 @@ body[data-theme="light"],
   left: 0px;
 }
 .uich-tw .right-1 {
-  left: 0.25rem;
+  left: 4px;
 }
 .uich-tw .right-2 {
-  left: 0.5rem;
+  left: 8px;
 }
 .uich-tw .right-3 {
-  left: 0.75rem;
+  left: 12px;
 }
 .uich-tw .right-4 {
-  left: 1rem;
+  left: 16px;
 }
 .uich-tw .right-6 {
-  left: 1.5rem;
+  left: 24px;
 }
 .uich-tw .top-0 {
   top: 0px;
 }
 .uich-tw .top-1 {
-  top: 0.25rem;
+  top: 4px;
 }
 .uich-tw .top-3 {
-  top: 0.75rem;
+  top: 12px;
 }
 .uich-tw .top-4 {
-  top: 1rem;
+  top: 16px;
 }
 .uich-tw .top-6 {
-  top: 1.5rem;
+  top: 24px;
 }
 .uich-tw .top-\[50\%\] {
   top: 50%;
@@ -539,128 +735,128 @@ body[data-theme="light"],
   margin: 0px;
 }
 .uich-tw .m-3 {
-  margin: 0.75rem;
+  margin: 12px;
 }
 .uich-tw .m-4 {
-  margin: 1rem;
+  margin: 16px;
 }
 .uich-tw .m-auto {
   margin: auto;
 }
 .uich-tw .-mx-1 {
-  margin-right: -0.25rem;
-  margin-left: -0.25rem;
+  margin-right: -4px;
+  margin-left: -4px;
 }
 .uich-tw .-mx-2 {
-  margin-right: -0.5rem;
-  margin-left: -0.5rem;
+  margin-right: -8px;
+  margin-left: -8px;
 }
 .uich-tw .mx-auto {
   margin-right: auto;
   margin-left: auto;
 }
 .uich-tw .my-1 {
-  margin-top: 0.25rem;
-  margin-bottom: 0.25rem;
+  margin-top: 4px;
+  margin-bottom: 4px;
 }
 .uich-tw .my-3 {
-  margin-top: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-top: 12px;
+  margin-bottom: 12px;
 }
 .uich-tw .my-3\.5 {
-  margin-top: 0.875rem;
-  margin-bottom: 0.875rem;
+  margin-top: 14px;
+  margin-bottom: 14px;
 }
 .uich-tw .my-auto {
   margin-top: auto;
   margin-bottom: auto;
 }
 .uich-tw .-mb-2 {
-  margin-bottom: -0.5rem;
+  margin-bottom: -8px;
 }
 .uich-tw .-mb-px {
   margin-bottom: -1px;
 }
 .uich-tw .-ml-1 {
-  margin-right: -0.25rem;
+  margin-right: -4px;
 }
 .uich-tw .-mr-1 {
-  margin-left: -0.25rem;
+  margin-left: -4px;
 }
 .uich-tw .-mt-1 {
-  margin-top: -0.25rem;
+  margin-top: -4px;
 }
 .uich-tw .mb-1 {
-  margin-bottom: 0.25rem;
+  margin-bottom: 4px;
 }
 .uich-tw .mb-1\.5 {
-  margin-bottom: 0.375rem;
+  margin-bottom: 6px;
 }
 .uich-tw .mb-2 {
-  margin-bottom: 0.5rem;
+  margin-bottom: 8px;
 }
 .uich-tw .mb-2\.5 {
-  margin-bottom: 0.625rem;
+  margin-bottom: 10px;
 }
 .uich-tw .mb-3 {
-  margin-bottom: 0.75rem;
+  margin-bottom: 12px;
 }
 .uich-tw .mb-4 {
-  margin-bottom: 1rem;
+  margin-bottom: 16px;
 }
 .uich-tw .ml-1 {
-  margin-right: 0.25rem;
+  margin-right: 4px;
 }
 .uich-tw .ml-1\.5 {
-  margin-right: 0.375rem;
+  margin-right: 6px;
 }
 .uich-tw .ml-2 {
-  margin-right: 0.5rem;
+  margin-right: 8px;
 }
 .uich-tw .ml-auto {
   margin-right: auto;
 }
 .uich-tw .mr-1 {
-  margin-left: 0.25rem;
+  margin-left: 4px;
 }
 .uich-tw .mr-2 {
-  margin-left: 0.5rem;
-}
-.uich-tw .mr-3 {
-  margin-left: 0.75rem;
+  margin-left: 8px;
 }
 .uich-tw .mt-0\.5 {
-  margin-top: 0.125rem;
+  margin-top: 2px;
 }
 .uich-tw .mt-1 {
-  margin-top: 0.25rem;
+  margin-top: 4px;
 }
 .uich-tw .mt-1\.5 {
-  margin-top: 0.375rem;
+  margin-top: 6px;
 }
 .uich-tw .mt-2 {
-  margin-top: 0.5rem;
+  margin-top: 8px;
 }
 .uich-tw .mt-2\.5 {
-  margin-top: 0.625rem;
+  margin-top: 10px;
 }
 .uich-tw .mt-3 {
-  margin-top: 0.75rem;
+  margin-top: 12px;
 }
 .uich-tw .mt-3\.5 {
-  margin-top: 0.875rem;
+  margin-top: 14px;
 }
 .uich-tw .mt-4 {
-  margin-top: 1rem;
+  margin-top: 16px;
 }
 .uich-tw .mt-5 {
-  margin-top: 1.25rem;
+  margin-top: 20px;
 }
 .uich-tw .mt-6 {
-  margin-top: 1.5rem;
+  margin-top: 24px;
 }
 .uich-tw .mt-auto {
   margin-top: auto;
+}
+.uich-tw .mt-px {
+  margin-top: 1px;
 }
 .uich-tw .\!block {
   display: block !important;
@@ -707,6 +903,9 @@ body[data-theme="light"],
 .uich-tw .list-item {
   display: list-item;
 }
+.uich-tw .\!hidden {
+  display: none !important;
+}
 .uich-tw .hidden {
   display: none;
 }
@@ -714,111 +913,114 @@ body[data-theme="light"],
   aspect-ratio: 16/10;
 }
 .uich-tw .size-1\.5 {
-  width: 0.375rem;
-  height: 0.375rem;
+  width: 6px;
+  height: 6px;
 }
 .uich-tw .size-11 {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 44px;
+  height: 44px;
 }
 .uich-tw .size-12 {
-  width: 3rem;
-  height: 3rem;
+  width: 48px;
+  height: 48px;
 }
 .uich-tw .size-16 {
-  width: 4rem;
-  height: 4rem;
+  width: 64px;
+  height: 64px;
 }
 .uich-tw .size-2 {
-  width: 0.5rem;
-  height: 0.5rem;
+  width: 8px;
+  height: 8px;
 }
 .uich-tw .size-3 {
-  width: 0.75rem;
-  height: 0.75rem;
+  width: 12px;
+  height: 12px;
 }
 .uich-tw .size-3\.5 {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 14px;
+  height: 14px;
 }
 .uich-tw .size-4 {
-  width: 1rem;
-  height: 1rem;
+  width: 16px;
+  height: 16px;
 }
 .uich-tw .size-5 {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 20px;
+  height: 20px;
 }
 .uich-tw .size-6 {
-  width: 1.5rem;
-  height: 1.5rem;
+  width: 24px;
+  height: 24px;
 }
 .uich-tw .size-7 {
-  width: 1.75rem;
-  height: 1.75rem;
+  width: 28px;
+  height: 28px;
 }
 .uich-tw .size-8 {
-  width: 2rem;
-  height: 2rem;
+  width: 32px;
+  height: 32px;
 }
 .uich-tw .size-9 {
-  width: 2.25rem;
-  height: 2.25rem;
+  width: 36px;
+  height: 36px;
 }
 .uich-tw .size-\[18px\] {
   width: 18px;
   height: 18px;
 }
 .uich-tw .\!h-4 {
-  height: 1rem !important;
+  height: 16px !important;
 }
 .uich-tw .h-0 {
   height: 0px;
 }
 .uich-tw .h-1 {
-  height: 0.25rem;
+  height: 4px;
 }
 .uich-tw .h-1\.5 {
-  height: 0.375rem;
+  height: 6px;
 }
 .uich-tw .h-10 {
-  height: 2.5rem;
+  height: 40px;
 }
 .uich-tw .h-2 {
-  height: 0.5rem;
+  height: 8px;
 }
 .uich-tw .h-2\.5 {
-  height: 0.625rem;
+  height: 10px;
 }
 .uich-tw .h-3 {
-  height: 0.75rem;
+  height: 12px;
 }
 .uich-tw .h-3\.5 {
-  height: 0.875rem;
+  height: 14px;
 }
 .uich-tw .h-4 {
-  height: 1rem;
+  height: 16px;
 }
 .uich-tw .h-44 {
-  height: 11rem;
+  height: 176px;
 }
 .uich-tw .h-5 {
-  height: 1.25rem;
+  height: 20px;
 }
 .uich-tw .h-6 {
-  height: 1.5rem;
+  height: 24px;
 }
 .uich-tw .h-7 {
-  height: 1.75rem;
+  height: 28px;
 }
 .uich-tw .h-8 {
-  height: 2rem;
+  height: 32px;
 }
 .uich-tw .h-9 {
-  height: 2.25rem;
+  height: 36px;
 }
 .uich-tw .h-\[1px\] {
   height: 1px;
+}
+.uich-tw .h-\[320px\] {
+  height: 320px;
 }
 .uich-tw .h-\[70vh\] {
   height: 70vh;
@@ -836,10 +1038,10 @@ body[data-theme="light"],
   height: 1px;
 }
 .uich-tw .max-h-52 {
-  max-height: 13rem;
+  max-height: 208px;
 }
 .uich-tw .max-h-96 {
-  max-height: 24rem;
+  max-height: 384px;
 }
 .uich-tw .max-h-\[140px\] {
   max-height: 140px;
@@ -869,7 +1071,7 @@ body[data-theme="light"],
   min-height: 0px;
 }
 .uich-tw .min-h-8 {
-  min-height: 2rem;
+  min-height: 32px;
 }
 .uich-tw .min-h-\[420px\] {
   min-height: 420px;
@@ -884,82 +1086,82 @@ body[data-theme="light"],
   min-height: 90px;
 }
 .uich-tw .\!w-7 {
-  width: 1.75rem !important;
+  width: 28px !important;
 }
 .uich-tw .w-0 {
   width: 0px;
 }
 .uich-tw .w-0\.5 {
-  width: 0.125rem;
+  width: 2px;
 }
 .uich-tw .w-1 {
-  width: 0.25rem;
+  width: 4px;
 }
 .uich-tw .w-1\.5 {
-  width: 0.375rem;
+  width: 6px;
 }
 .uich-tw .w-10 {
-  width: 2.5rem;
+  width: 40px;
 }
 .uich-tw .w-2 {
-  width: 0.5rem;
+  width: 8px;
 }
 .uich-tw .w-2\.5 {
-  width: 0.625rem;
+  width: 10px;
 }
 .uich-tw .w-20 {
-  width: 5rem;
+  width: 80px;
 }
 .uich-tw .w-24 {
-  width: 6rem;
+  width: 96px;
 }
 .uich-tw .w-3\.5 {
-  width: 0.875rem;
+  width: 14px;
 }
 .uich-tw .w-32 {
-  width: 8rem;
+  width: 128px;
 }
 .uich-tw .w-36 {
-  width: 9rem;
+  width: 144px;
 }
 .uich-tw .w-4 {
-  width: 1rem;
+  width: 16px;
 }
 .uich-tw .w-44 {
-  width: 11rem;
+  width: 176px;
 }
 .uich-tw .w-48 {
-  width: 12rem;
+  width: 192px;
 }
 .uich-tw .w-5 {
-  width: 1.25rem;
+  width: 20px;
 }
 .uich-tw .w-52 {
-  width: 13rem;
+  width: 208px;
 }
 .uich-tw .w-56 {
-  width: 14rem;
+  width: 224px;
 }
 .uich-tw .w-6 {
-  width: 1.5rem;
+  width: 24px;
 }
 .uich-tw .w-60 {
-  width: 15rem;
+  width: 240px;
 }
 .uich-tw .w-64 {
-  width: 16rem;
+  width: 256px;
 }
 .uich-tw .w-7 {
-  width: 1.75rem;
+  width: 28px;
 }
 .uich-tw .w-72 {
-  width: 18rem;
+  width: 288px;
 }
 .uich-tw .w-8 {
-  width: 2rem;
+  width: 32px;
 }
 .uich-tw .w-9 {
-  width: 2.25rem;
+  width: 36px;
 }
 .uich-tw .w-\[104px\] {
   width: 104px;
@@ -1014,19 +1216,19 @@ body[data-theme="light"],
   min-width: 0px;
 }
 .uich-tw .min-w-10 {
-  min-width: 2.5rem;
+  min-width: 40px;
 }
 .uich-tw .min-w-4 {
-  min-width: 1rem;
+  min-width: 16px;
 }
 .uich-tw .min-w-8 {
-  min-width: 2rem;
+  min-width: 32px;
 }
 .uich-tw .min-w-9 {
-  min-width: 2.25rem;
+  min-width: 36px;
 }
 .uich-tw .min-w-\[10rem\] {
-  min-width: 10rem;
+  min-width: 160px;
 }
 .uich-tw .min-w-\[150px\] {
   min-width: 150px;
@@ -1053,7 +1255,7 @@ body[data-theme="light"],
   min-width: 84px;
 }
 .uich-tw .min-w-\[8rem\] {
-  min-width: 8rem;
+  min-width: 128px;
 }
 .uich-tw .min-w-\[var\(--radix-select-trigger-width\)\] {
   min-width: var(--radix-select-trigger-width);
@@ -1062,10 +1264,10 @@ body[data-theme="light"],
   min-width: 100%;
 }
 .uich-tw .max-w-2xl {
-  max-width: 42rem;
+  max-width: 672px;
 }
 .uich-tw .max-w-5xl {
-  max-width: 64rem;
+  max-width: 1024px;
 }
 .uich-tw .max-w-\[180px\] {
   max-width: 180px;
@@ -1075,9 +1277,6 @@ body[data-theme="light"],
 }
 .uich-tw .max-w-\[280px\] {
   max-width: 280px;
-}
-.uich-tw .max-w-\[320px\] {
-  max-width: 320px;
 }
 .uich-tw .max-w-\[640px\] {
   max-width: 640px;
@@ -1092,16 +1291,16 @@ body[data-theme="light"],
   max-width: 100%;
 }
 .uich-tw .max-w-lg {
-  max-width: 32rem;
+  max-width: 512px;
 }
 .uich-tw .max-w-md {
-  max-width: 28rem;
+  max-width: 448px;
 }
 .uich-tw .max-w-sm {
-  max-width: 24rem;
+  max-width: 384px;
 }
 .uich-tw .max-w-xs {
-  max-width: 20rem;
+  max-width: 320px;
 }
 .uich-tw .flex-1 {
   flex: 1 1 0%;
@@ -1136,11 +1335,11 @@ body[data-theme="light"],
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw .translate-x-3 {
-  --tw-translate-x: 0.75rem;
+  --tw-translate-x: 12px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw .translate-x-4 {
-  --tw-translate-x: 1rem;
+  --tw-translate-x: 16px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw .translate-x-\[-50\%\] {
@@ -1204,9 +1403,6 @@ body[data-theme="light"],
 .uich-tw .resize {
   resize: both;
 }
-.uich-tw .list-none {
-  list-style-type: none;
-}
 .uich-tw .grid-cols-1 {
   grid-template-columns: repeat(1, minmax(0, 1fr));
 }
@@ -1237,9 +1433,6 @@ body[data-theme="light"],
 .uich-tw .justify-start {
   justify-content: flex-start;
 }
-.uich-tw .justify-end {
-  justify-content: flex-end;
-}
 .uich-tw .justify-center {
   justify-content: center;
 }
@@ -1250,85 +1443,79 @@ body[data-theme="light"],
   gap: 0px;
 }
 .uich-tw .gap-0\.5 {
-  gap: 0.125rem;
+  gap: 2px;
 }
 .uich-tw .gap-1 {
-  gap: 0.25rem;
+  gap: 4px;
 }
 .uich-tw .gap-1\.5 {
-  gap: 0.375rem;
+  gap: 6px;
 }
 .uich-tw .gap-2 {
-  gap: 0.5rem;
+  gap: 8px;
 }
 .uich-tw .gap-2\.5 {
-  gap: 0.625rem;
+  gap: 10px;
 }
 .uich-tw .gap-3 {
-  gap: 0.75rem;
-}
-.uich-tw .gap-3\.5 {
-  gap: 0.875rem;
+  gap: 12px;
 }
 .uich-tw .gap-4 {
-  gap: 1rem;
+  gap: 16px;
 }
 .uich-tw .gap-6 {
-  gap: 1.5rem;
+  gap: 24px;
 }
 .uich-tw .gap-7 {
-  gap: 1.75rem;
-}
-.uich-tw .gap-px {
-  gap: 1px;
+  gap: 28px;
 }
 .uich-tw .gap-x-2\.5 {
-  -moz-column-gap: 0.625rem;
-       column-gap: 0.625rem;
+  -moz-column-gap: 10px;
+       column-gap: 10px;
 }
 .uich-tw .gap-x-4 {
-  -moz-column-gap: 1rem;
-       column-gap: 1rem;
+  -moz-column-gap: 16px;
+       column-gap: 16px;
 }
 .uich-tw .gap-x-5 {
-  -moz-column-gap: 1.25rem;
-       column-gap: 1.25rem;
+  -moz-column-gap: 20px;
+       column-gap: 20px;
 }
 .uich-tw .gap-x-6 {
-  -moz-column-gap: 1.5rem;
-       column-gap: 1.5rem;
+  -moz-column-gap: 24px;
+       column-gap: 24px;
 }
 .uich-tw .gap-y-1 {
-  row-gap: 0.25rem;
+  row-gap: 4px;
 }
 .uich-tw .gap-y-2 {
-  row-gap: 0.5rem;
+  row-gap: 8px;
 }
 .uich-tw .gap-y-2\.5 {
-  row-gap: 0.625rem;
+  row-gap: 10px;
 }
 .uich-tw .gap-y-3 {
-  row-gap: 0.75rem;
+  row-gap: 12px;
 }
 .uich-tw :is(.space-y-0\.5 > :not([hidden]) ~ :not([hidden])) {
   --tw-space-y-reverse: 0;
-  margin-top: calc(0.125rem * calc(1 - var(--tw-space-y-reverse)));
-  margin-bottom: calc(0.125rem * var(--tw-space-y-reverse));
+  margin-top: calc(2px * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(2px * var(--tw-space-y-reverse));
 }
 .uich-tw :is(.space-y-1\.5 > :not([hidden]) ~ :not([hidden])) {
   --tw-space-y-reverse: 0;
-  margin-top: calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));
-  margin-bottom: calc(0.375rem * var(--tw-space-y-reverse));
+  margin-top: calc(6px * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(6px * var(--tw-space-y-reverse));
 }
 .uich-tw :is(.space-y-2 > :not([hidden]) ~ :not([hidden])) {
   --tw-space-y-reverse: 0;
-  margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
-  margin-bottom: calc(0.5rem * var(--tw-space-y-reverse));
+  margin-top: calc(8px * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(8px * var(--tw-space-y-reverse));
 }
 .uich-tw :is(.space-y-5 > :not([hidden]) ~ :not([hidden])) {
   --tw-space-y-reverse: 0;
-  margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse)));
-  margin-bottom: calc(1.25rem * var(--tw-space-y-reverse));
+  margin-top: calc(20px * calc(1 - var(--tw-space-y-reverse)));
+  margin-bottom: calc(20px * var(--tw-space-y-reverse));
 }
 .uich-tw :is(.divide-y > :not([hidden]) ~ :not([hidden])) {
   --tw-divide-y-reverse: 0;
@@ -1380,10 +1567,10 @@ body[data-theme="light"],
   word-break: break-all;
 }
 .uich-tw .rounded {
-  border-radius: 0.25rem;
+  border-radius: 4px;
 }
 .uich-tw .rounded-2xl {
-  border-radius: 1rem;
+  border-radius: 16px;
 }
 .uich-tw .rounded-\[10px\] {
   border-radius: 10px;
@@ -1413,11 +1600,11 @@ body[data-theme="light"],
   border-radius: calc(var(--radius) - 4px);
 }
 .uich-tw .rounded-xl {
-  border-radius: 0.75rem;
+  border-radius: 12px;
 }
 .uich-tw .rounded-r {
-  border-top-left-radius: 0.25rem;
-  border-bottom-left-radius: 0.25rem;
+  border-top-left-radius: 4px;
+  border-bottom-left-radius: 4px;
 }
 .uich-tw .rounded-r-md {
   border-top-left-radius: calc(var(--radius) - 2px);
@@ -1665,31 +1852,31 @@ body[data-theme="light"],
   padding: 0px;
 }
 .uich-tw .p-1 {
-  padding: 0.25rem;
+  padding: 4px;
 }
 .uich-tw .p-1\.5 {
-  padding: 0.375rem;
+  padding: 6px;
 }
 .uich-tw .p-2 {
-  padding: 0.5rem;
+  padding: 8px;
 }
 .uich-tw .p-2\.5 {
-  padding: 0.625rem;
+  padding: 10px;
 }
 .uich-tw .p-3 {
-  padding: 0.75rem;
+  padding: 12px;
 }
 .uich-tw .p-3\.5 {
-  padding: 0.875rem;
+  padding: 14px;
 }
 .uich-tw .p-4 {
-  padding: 1rem;
+  padding: 16px;
 }
 .uich-tw .p-5 {
-  padding: 1.25rem;
+  padding: 20px;
 }
 .uich-tw .p-6 {
-  padding: 1.5rem;
+  padding: 24px;
 }
 .uich-tw .p-\[1px\] {
   padding: 1px;
@@ -1699,173 +1886,177 @@ body[data-theme="light"],
   padding-left: 0px;
 }
 .uich-tw .px-1 {
-  padding-right: 0.25rem;
-  padding-left: 0.25rem;
+  padding-right: 4px;
+  padding-left: 4px;
 }
 .uich-tw .px-1\.5 {
-  padding-right: 0.375rem;
-  padding-left: 0.375rem;
+  padding-right: 6px;
+  padding-left: 6px;
 }
 .uich-tw .px-2 {
-  padding-right: 0.5rem;
-  padding-left: 0.5rem;
+  padding-right: 8px;
+  padding-left: 8px;
 }
 .uich-tw .px-2\.5 {
-  padding-right: 0.625rem;
-  padding-left: 0.625rem;
+  padding-right: 10px;
+  padding-left: 10px;
 }
 .uich-tw .px-3 {
-  padding-right: 0.75rem;
-  padding-left: 0.75rem;
+  padding-right: 12px;
+  padding-left: 12px;
 }
 .uich-tw .px-4 {
-  padding-right: 1rem;
-  padding-left: 1rem;
+  padding-right: 16px;
+  padding-left: 16px;
 }
 .uich-tw .px-5 {
-  padding-right: 1.25rem;
-  padding-left: 1.25rem;
+  padding-right: 20px;
+  padding-left: 20px;
 }
 .uich-tw .px-6 {
-  padding-right: 1.5rem;
-  padding-left: 1.5rem;
+  padding-right: 24px;
+  padding-left: 24px;
 }
 .uich-tw .px-7 {
-  padding-right: 1.75rem;
-  padding-left: 1.75rem;
+  padding-right: 28px;
+  padding-left: 28px;
 }
 .uich-tw .px-8 {
-  padding-right: 2rem;
-  padding-left: 2rem;
+  padding-right: 32px;
+  padding-left: 32px;
 }
 .uich-tw .py-0\.5 {
-  padding-top: 0.125rem;
-  padding-bottom: 0.125rem;
+  padding-top: 2px;
+  padding-bottom: 2px;
 }
 .uich-tw .py-1 {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 .uich-tw .py-1\.5 {
-  padding-top: 0.375rem;
-  padding-bottom: 0.375rem;
+  padding-top: 6px;
+  padding-bottom: 6px;
+}
+.uich-tw .py-10 {
+  padding-top: 40px;
+  padding-bottom: 40px;
 }
 .uich-tw .py-16 {
-  padding-top: 4rem;
-  padding-bottom: 4rem;
+  padding-top: 64px;
+  padding-bottom: 64px;
 }
 .uich-tw .py-2 {
-  padding-top: 0.5rem;
-  padding-bottom: 0.5rem;
+  padding-top: 8px;
+  padding-bottom: 8px;
 }
 .uich-tw .py-2\.5 {
-  padding-top: 0.625rem;
-  padding-bottom: 0.625rem;
+  padding-top: 10px;
+  padding-bottom: 10px;
 }
 .uich-tw .py-3 {
-  padding-top: 0.75rem;
-  padding-bottom: 0.75rem;
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 .uich-tw .py-3\.5 {
-  padding-top: 0.875rem;
-  padding-bottom: 0.875rem;
+  padding-top: 14px;
+  padding-bottom: 14px;
 }
 .uich-tw .py-4 {
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+  padding-top: 16px;
+  padding-bottom: 16px;
 }
 .uich-tw .py-5 {
-  padding-top: 1.25rem;
-  padding-bottom: 1.25rem;
+  padding-top: 20px;
+  padding-bottom: 20px;
 }
 .uich-tw .py-6 {
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
+  padding-top: 24px;
+  padding-bottom: 24px;
 }
 .uich-tw .py-8 {
-  padding-top: 2rem;
-  padding-bottom: 2rem;
+  padding-top: 32px;
+  padding-bottom: 32px;
 }
 .uich-tw .pb-0\.5 {
-  padding-bottom: 0.125rem;
+  padding-bottom: 2px;
 }
 .uich-tw .pb-1 {
-  padding-bottom: 0.25rem;
+  padding-bottom: 4px;
 }
 .uich-tw .pb-1\.5 {
-  padding-bottom: 0.375rem;
+  padding-bottom: 6px;
 }
 .uich-tw .pb-2 {
-  padding-bottom: 0.5rem;
+  padding-bottom: 8px;
 }
 .uich-tw .pb-2\.5 {
-  padding-bottom: 0.625rem;
+  padding-bottom: 10px;
 }
 .uich-tw .pb-24 {
-  padding-bottom: 6rem;
+  padding-bottom: 96px;
 }
 .uich-tw .pb-4 {
-  padding-bottom: 1rem;
+  padding-bottom: 16px;
 }
 .uich-tw .pb-5 {
-  padding-bottom: 1.25rem;
+  padding-bottom: 20px;
 }
 .uich-tw .pb-8 {
-  padding-bottom: 2rem;
+  padding-bottom: 32px;
 }
 .uich-tw .pl-2 {
-  padding-right: 0.5rem;
+  padding-right: 8px;
 }
 .uich-tw .pl-2\.5 {
-  padding-right: 0.625rem;
+  padding-right: 10px;
 }
 .uich-tw .pl-4 {
-  padding-right: 1rem;
+  padding-right: 16px;
 }
 .uich-tw .pl-6 {
-  padding-right: 1.5rem;
+  padding-right: 24px;
 }
 .uich-tw .pl-8 {
-  padding-right: 2rem;
+  padding-right: 32px;
 }
 .uich-tw .pr-0\.5 {
-  padding-left: 0.125rem;
+  padding-left: 2px;
 }
 .uich-tw .pr-1 {
-  padding-left: 0.25rem;
+  padding-left: 4px;
 }
 .uich-tw .pr-2 {
-  padding-left: 0.5rem;
+  padding-left: 8px;
 }
 .uich-tw .pr-4 {
-  padding-left: 1rem;
+  padding-left: 16px;
 }
 .uich-tw .pr-7 {
-  padding-left: 1.75rem;
+  padding-left: 28px;
 }
 .uich-tw .pr-8 {
-  padding-left: 2rem;
+  padding-left: 32px;
 }
 .uich-tw .pr-9 {
-  padding-left: 2.25rem;
+  padding-left: 36px;
 }
 .uich-tw .pt-0 {
   padding-top: 0px;
 }
 .uich-tw .pt-0\.5 {
-  padding-top: 0.125rem;
+  padding-top: 2px;
 }
 .uich-tw .pt-1 {
-  padding-top: 0.25rem;
+  padding-top: 4px;
 }
 .uich-tw .pt-2 {
-  padding-top: 0.5rem;
+  padding-top: 8px;
 }
 .uich-tw .pt-3 {
-  padding-top: 0.75rem;
+  padding-top: 12px;
 }
 .uich-tw .pt-3\.5 {
-  padding-top: 0.875rem;
+  padding-top: 14px;
 }
 .uich-tw .text-left {
   text-align: right;
@@ -1881,17 +2072,19 @@ body[data-theme="light"],
 }
 .uich-tw .font-mono {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  --uich-ff: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
 }
 .uich-tw .font-sans {
   font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+  --uich-ff: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 .uich-tw .text-2xl {
-  font-size: 1.5rem;
-  line-height: 2rem;
+  font-size: 24px;
+  line-height: 32px;
 }
 .uich-tw .text-3xl {
-  font-size: 1.875rem;
-  line-height: 2.25rem;
+  font-size: 30px;
+  line-height: 36px;
 }
 .uich-tw .text-\[10px\] {
   font-size: 10px;
@@ -1920,28 +2113,25 @@ body[data-theme="light"],
 .uich-tw .text-\[9px\] {
   font-size: 9px;
 }
-.uich-tw .text-\[length\:var\(--uc-text-base\)\] {
-  font-size: var(--uc-text-base);
-}
 .uich-tw .text-base {
-  font-size: 1rem;
-  line-height: 1.5rem;
+  font-size: 16px;
+  line-height: 24px;
 }
 .uich-tw .text-lg {
-  font-size: 1.125rem;
-  line-height: 1.75rem;
+  font-size: 18px;
+  line-height: 28px;
 }
 .uich-tw .text-sm {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  font-size: 14px;
+  line-height: 20px;
 }
 .uich-tw .text-xl {
-  font-size: 1.25rem;
-  line-height: 1.75rem;
+  font-size: 20px;
+  line-height: 28px;
 }
 .uich-tw .text-xs {
-  font-size: 0.75rem;
-  line-height: 1rem;
+  font-size: 12px;
+  line-height: 16px;
 }
 .uich-tw .font-bold {
   font-weight: 700;
@@ -2027,6 +2217,9 @@ body[data-theme="light"],
 .uich-tw .text-\[var\(--uc-text\)\] {
   color: var(--uc-text);
 }
+.uich-tw .text-\[var\(--uc-text-muted\)\] {
+  color: var(--uc-text-muted);
+}
 .uich-tw .text-\[var\(--uc-text-subtle\)\] {
   color: var(--uc-text-subtle);
 }
@@ -2050,9 +2243,6 @@ body[data-theme="light"],
 }
 .uich-tw .text-foreground {
   color: hsl(var(--foreground));
-}
-.uich-tw .text-foreground\/60 {
-  color: hsl(var(--foreground) / 0.6);
 }
 .uich-tw .text-input {
   color: hsl(var(--input));
@@ -2096,9 +2286,6 @@ body[data-theme="light"],
 }
 .uich-tw .line-through {
   text-decoration-line: line-through;
-}
-.uich-tw .no-underline {
-  text-decoration-line: none;
 }
 .uich-tw .underline-offset-2 {
   text-underline-offset: 2px;
@@ -2306,7 +2493,7 @@ body[data-theme="light"],
   --tw-exit-scale: 0;
 }
 .uich-tw .slide-in-from-top-1 {
-  --tw-enter-translate-y: -0.25rem;
+  --tw-enter-translate-y: -4px;
 }
 .uich-tw .duration-150 {
   animation-duration: 150ms;
@@ -2419,8 +2606,8 @@ body[data-theme="light"],
   background-color: transparent;
 }
 .uich-tw .file\:text-sm::file-selector-button {
-  font-size: 0.875rem;
-  line-height: 1.25rem;
+  font-size: 14px;
+  line-height: 20px;
 }
 .uich-tw .file\:font-medium::file-selector-button {
   font-weight: 500;
@@ -2580,11 +2767,11 @@ body[data-theme="light"],
   opacity: 0.5;
 }
 .uich-tw :is(.group:hover .group-hover\:-translate-y-0\.5) {
-  --tw-translate-y: -0.125rem;
+  --tw-translate-y: -2px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw :is(.group:hover .group-hover\:translate-x-0\.5) {
-  --tw-translate-x: 0.125rem;
+  --tw-translate-x: 2px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw :is(.group:hover .group-hover\:bg-foreground\/20) {
@@ -2603,23 +2790,23 @@ body[data-theme="light"],
   pointer-events: none;
 }
 .uich-tw .data-\[side\=bottom\]\:translate-y-1[data-side="bottom"] {
-  --tw-translate-y: 0.25rem;
+  --tw-translate-y: 4px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw .data-\[side\=left\]\:-translate-x-1[data-side="left"] {
-  --tw-translate-x: -0.25rem;
+  --tw-translate-x: -4px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw .data-\[side\=right\]\:translate-x-1[data-side="right"] {
-  --tw-translate-x: 0.25rem;
+  --tw-translate-x: 4px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw .data-\[side\=top\]\:-translate-y-1[data-side="top"] {
-  --tw-translate-y: -0.25rem;
+  --tw-translate-y: -4px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw .data-\[state\=checked\]\:translate-x-4[data-state="checked"] {
-  --tw-translate-x: 1rem;
+  --tw-translate-x: 16px;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y));
 }
 .uich-tw .data-\[state\=unchecked\]\:translate-x-0[data-state="unchecked"] {
@@ -2715,16 +2902,16 @@ body[data-theme="light"],
   --tw-enter-scale: .95;
 }
 .uich-tw .data-\[side\=bottom\]\:slide-in-from-top-2[data-side="bottom"] {
-  --tw-enter-translate-y: -0.5rem;
+  --tw-enter-translate-y: -8px;
 }
 .uich-tw .data-\[side\=left\]\:slide-in-from-right-2[data-side="left"] {
-  --tw-enter-translate-x: 0.5rem;
+  --tw-enter-translate-x: 8px;
 }
 .uich-tw .data-\[side\=right\]\:slide-in-from-left-2[data-side="right"] {
-  --tw-enter-translate-x: -0.5rem;
+  --tw-enter-translate-x: -8px;
 }
 .uich-tw .data-\[side\=top\]\:slide-in-from-bottom-2[data-side="top"] {
-  --tw-enter-translate-y: 0.5rem;
+  --tw-enter-translate-y: 8px;
 }
 .uich-tw .data-\[state\=closed\]\:slide-out-to-left-1\/2[data-state="closed"] {
   --tw-exit-translate-x: -50%;
@@ -2740,13 +2927,13 @@ body[data-theme="light"],
 }
 @media (min-width: 640px) {
   .uich-tw .sm\:ml-12 {
-    margin-right: 3rem;
+    margin-right: 48px;
   }
   .uich-tw .sm\:max-w-2xl {
-    max-width: 42rem;
+    max-width: 672px;
   }
   .uich-tw .sm\:max-w-md {
-    max-width: 28rem;
+    max-width: 448px;
   }
   .uich-tw .sm\:shrink-0 {
     flex-shrink: 0;
@@ -2771,21 +2958,21 @@ body[data-theme="light"],
   }
   .uich-tw :is(.sm\:space-x-2 > :not([hidden]) ~ :not([hidden])) {
     --tw-space-x-reverse: 0;
-    margin-left: calc(0.5rem * var(--tw-space-x-reverse));
-    margin-right: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)));
+    margin-left: calc(8px * var(--tw-space-x-reverse));
+    margin-right: calc(8px * calc(1 - var(--tw-space-x-reverse)));
   }
   .uich-tw .sm\:rounded-lg {
     border-radius: var(--radius);
   }
   .uich-tw .sm\:p-6 {
-    padding: 1.5rem;
+    padding: 24px;
   }
   .uich-tw .sm\:p-8 {
-    padding: 2rem;
+    padding: 32px;
   }
   .uich-tw .sm\:px-6 {
-    padding-right: 1.5rem;
-    padding-left: 1.5rem;
+    padding-right: 24px;
+    padding-left: 24px;
   }
   .uich-tw .sm\:text-left {
     text-align: right;
@@ -2794,6 +2981,9 @@ body[data-theme="light"],
 @media (min-width: 768px) {
   .uich-tw .md\:col-span-2 {
     grid-column: span 2 / span 2;
+  }
+  .uich-tw .md\:grid {
+    display: grid;
   }
   .uich-tw .md\:grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2829,7 +3019,7 @@ body[data-theme="light"],
   display: none;
 }
 .uich-tw :is(.\[\&\>\[data-state\=checked\]\]\:\!translate-x-3>[data-state=checked]) {
-  --tw-translate-x: 0.75rem !important;
+  --tw-translate-x: 12px !important;
   transform: translate(var(--tw-translate-x), var(--tw-translate-y)) rotate(var(--tw-rotate)) skewX(var(--tw-skew-x)) skewY(var(--tw-skew-y)) scaleX(var(--tw-scale-x)) scaleY(var(--tw-scale-y)) !important;
 }
 .uich-tw :is(.\[\&\>\[data-state\=unchecked\]\]\:bg-muted-foreground>[data-state=unchecked]) {
@@ -2842,12 +3032,12 @@ body[data-theme="light"],
   -webkit-line-clamp: 1;
 }
 .uich-tw :is(.\[\&\>span\]\:\!size-3>span) {
-  width: 0.75rem !important;
-  height: 0.75rem !important;
+  width: 12px !important;
+  height: 12px !important;
 }
 .uich-tw :is(.\[\&\>svg\]\:size-4>svg) {
-  width: 1rem;
-  height: 1rem;
+  width: 16px;
+  height: 16px;
 }
 .uich-tw :is(.\[\&\>svg\]\:shrink-0>svg) {
   flex-shrink: 0;
@@ -2860,24 +3050,24 @@ body[data-theme="light"],
   pointer-events: none;
 }
 .uich-tw :is(.\[\&_svg\]\:size-3\.5 svg) {
-  width: 0.875rem;
-  height: 0.875rem;
+  width: 14px;
+  height: 14px;
 }
 .uich-tw :is(.\[\&_svg\]\:size-36 svg) {
-  width: 9rem;
-  height: 9rem;
+  width: 144px;
+  height: 144px;
 }
 .uich-tw :is(.\[\&_svg\]\:size-4 svg) {
-  width: 1rem;
-  height: 1rem;
+  width: 16px;
+  height: 16px;
 }
 .uich-tw :is(.\[\&_svg\]\:size-5 svg) {
-  width: 1.25rem;
-  height: 1.25rem;
+  width: 20px;
+  height: 20px;
 }
 .uich-tw :is(.\[\&_svg\]\:size-8 svg) {
-  width: 2rem;
-  height: 2rem;
+  width: 32px;
+  height: 32px;
 }
 .uich-tw :is(.\[\&_svg\]\:size-\[18px\] svg) {
   width: 18px;
@@ -2937,7 +3127,7 @@ body[data-theme="light"],
   /* Corner rounding for shadcn controls (buttons, inputs, popovers, cards,
      segmented tabs). Kept tight/modern, rounded-lg≈6px, md≈4px, sm≈2px –
      rather than the earlier airy 0.8rem which read as over-rounded. */
-  --radius: 0.4rem;
+  --radius: 6.4px;
   /* Semantic category colors (construct markers etc.), Tailwind palette
      hues at 600 for light backgrounds, per shadcn convention. */
   --status-data: 221 83% 53%;      /* blue-600 */
@@ -2998,6 +3188,7 @@ body[data-theme="light"],
      text looks the same across native and builder screens. The literal Zalando
      fallback keeps it correct even if the token isn't in scope. */
   font-family: var(--uc-font-sans, "Zalando Sans", ui-sans-serif, system-ui, sans-serif);
+  --uich-ff: var(--uc-font-sans, "Zalando Sans", ui-sans-serif, system-ui, sans-serif);
   font-size: 13px;
   line-height: 1.45;
   color: hsl(var(--foreground));
@@ -3033,6 +3224,7 @@ body[data-theme="light"],
    inherit` beat every DS class (0,1,0). */
 .uich-tw button:not(:where([data-uc])), .uich-tw input:not(:where([data-uc])), .uich-tw optgroup, .uich-tw select:not(:where([data-uc])), .uich-tw textarea:not(:where([data-uc])) {
   font: inherit;
+  --uich-ff: inherit;
   color: inherit;
   margin: 0;
   /* NOTE: intentionally NOT zeroing `padding` here. This reset is (0,1,1)
@@ -3168,12 +3360,12 @@ body[data-theme="light"],
   /* ---- Typography ------------------------------------------------------ */
   --uc-font-sans: "Zalando Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   --uc-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
-  --uc-text-3xs: 0.5rem;    --uc-text-2xs: 0.625rem;  --uc-text-xs: 0.75rem;
+  --uc-text-3xs: 8px;    --uc-text-2xs: 10px;  --uc-text-xs: 12px;
   /* 11px: compact meta / dense-panel text (list meta, inspector hints, code gutter). */
-  --uc-text-11: 0.6875rem;
-  --uc-text-sm: 0.8125rem;  --uc-text-base: 0.875rem; --uc-text-md: 1rem;
-  --uc-text-lg: 1.125rem;   --uc-text-xl: 1.25rem;    --uc-text-2xl: 1.5rem;
-  --uc-text-3xl: 1.875rem;
+  --uc-text-11: 11px;
+  --uc-text-sm: 13px;  --uc-text-base: 14px; --uc-text-md: 16px;
+  --uc-text-lg: 18px;   --uc-text-xl: 20px;    --uc-text-2xl: 24px;
+  --uc-text-3xl: 30px;
   /* --uc-weight-semibold is temporarily folded to Medium (500): no text renders
      at 600 for now. Flip back to 600 here to restore SemiBold everywhere it's
      used (Card / Alert / Dialog / Accordion titles, etc.). */
@@ -3215,7 +3407,7 @@ body[data-theme="light"],
   --uc-sheen: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.03));
 
   /* ---- Control sizing -------------------------------------------------- */
-  --uc-control-h-sm: 1.75rem; --uc-control-h-md: 2rem; --uc-control-h-lg: 2.5rem;
+  --uc-control-h-sm: 28px; --uc-control-h-md: 32px; --uc-control-h-lg: 40px;
 
   /* ---- Motion ---------------------------------------------------------- */
   --uc-dur-fast: 160ms; --uc-dur-base: 240ms; --uc-dur-slow: 340ms;
@@ -3245,6 +3437,8 @@ body[data-theme="light"],
   --uc-surface-raised:  #FFFFFF;
   --uc-surface-overlay: rgba(255, 255, 255, 0.10);
   --uc-surface-control: #FFFFFF;   /* secondary control fill (raised) */
+  --uc-button-soft-neutral-bg: var(--uc-surface-sunken);
+  --uc-button-soft-neutral-shadow: var(--uc-shadow-1);
   /* The hover / highlight wash (menu rows, the sliding pill in Select and
      Menu). SEPARATE from --uc-surface-control, which it used to borrow: that
      token is a RAISED FILL, and the two values only coincide on a dark surface
@@ -3275,7 +3469,7 @@ body[data-theme="light"],
      same colour) but on light is #A3A3A3: roughly 36% black against a 14%
      resting border, i.e. a hard outline snapping in instead of a step up. */
   --uc-border-hover:  rgba(0, 0, 0, 0.22);
-  --uc-ring:          rgba(23, 23, 23, 0.40);
+  --uc-ring:          #737373;
 
   /* per-family foreground (readable on light). brand/accent = dark ink. */
   --uc-brand-fg:   #171717;
@@ -3302,6 +3496,9 @@ body[data-theme="light"],
   --uc-surface-raised:  #242424;
   --uc-surface-overlay: #2A2A2A;
   --uc-surface-control: rgba(255, 255, 255, 0.05);  /* subtle lift, blends on dark */
+  /* Muted neutral buttons use the secondary control recipe on dark surfaces. */
+  --uc-button-soft-neutral-bg: var(--uc-surface-control);
+  --uc-button-soft-neutral-shadow: var(--uc-shadow-raised);
 
   --uc-text-strong: #F5F5F5;
   --uc-text:        #E5E5E5;
@@ -3317,7 +3514,7 @@ body[data-theme="light"],
   --uc-border-strong: #525252;
   /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
   --uc-border-hover:  #525252;
-  --uc-ring:          rgba(245, 245, 245, 0.55);
+  --uc-ring:          #A3A3A3;
 
   --uc-brand-fg:   #EDEDED;
   --uc-success-fg: #A7EAAA;
@@ -3342,6 +3539,8 @@ body[data-theme="light"],
   --uc-surface-raised:  #202020;
   --uc-surface-overlay: #242424;
   --uc-surface-control: rgba(255, 255, 255, 0.05);  /* subtle lift, blends on dark */
+  --uc-button-soft-neutral-bg: var(--uc-surface-control);
+  --uc-button-soft-neutral-shadow: var(--uc-shadow-raised);
   /* Same value --uc-surface-control had, so dark is unchanged by the split. */
   --uc-surface-hover: rgba(255, 255, 255, 0.05);
 
@@ -3359,7 +3558,7 @@ body[data-theme="light"],
   --uc-border-strong: #525252;
   /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
   --uc-border-hover:  #525252;
-  --uc-ring:          rgba(245, 245, 245, 0.55);
+  --uc-ring:          #A3A3A3;
 
   --uc-brand-fg:   #EDEDED;
   --uc-success-fg: #A7EAAA;
@@ -3390,6 +3589,8 @@ body[data-theme="light"],
      border give it a crisp, floating edge. [ui-ux blend fix] */
   --uc-surface-overlay: #2E2E2E;
   --uc-surface-control: rgba(255, 255, 255, 0.08);
+  --uc-button-soft-neutral-bg: var(--uc-surface-control);
+  --uc-button-soft-neutral-shadow: var(--uc-shadow-raised);
   /* Same value --uc-surface-control had here; a pop-up is already a layer up,
      so its wash is a touch stronger than the panel's. */
   --uc-surface-hover: rgba(255, 255, 255, 0.08);
@@ -3408,7 +3609,7 @@ body[data-theme="light"],
   --uc-border-strong: #525252;
   /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
   --uc-border-hover:  #525252;
-  --uc-ring:          rgba(245, 245, 245, 0.55);
+  --uc-ring:          #A3A3A3;
 
   --uc-brand-fg:   #EDEDED;  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
   --uc-success-fg: #A7EAAA;  --uc-success-soft: rgba(46, 163, 67, 0.20);
@@ -3426,6 +3627,7 @@ body[data-theme="light"],
 .uc-content,
 .uc-chrome {
   font-family: var(--uc-font-sans);
+  --uich-ff: var(--uc-font-sans);
   font-size: var(--uc-text-base);
   line-height: var(--uc-leading-normal);
   color: var(--uc-text);
@@ -3436,6 +3638,7 @@ body[data-theme="light"],
 /* Portalled content mounts in <body>; carry font/tokens but no background. */
 .uc-portal {
   font-family: var(--uc-font-sans);
+  --uich-ff: var(--uc-font-sans);
   font-size: var(--uc-text-base);
   line-height: var(--uc-leading-normal);
   color: var(--uc-text);
@@ -3497,7 +3700,11 @@ body[data-theme="light"],
   --uc-tab-px:           var(--uc-space-12);
 }
 
-/* FloatingToolbar is a fixed dark overlay and also works outside a DS scope. */
+/* FloatingToolbar shares the global palette in either theme. */
+.uc-scope,
+.uc-content,
+.uc-chrome,
+.uc-portal,
 .uc-pop-dark {
   --uc-toolbar-bg: var(--uc-surface-raised);
   --uc-toolbar-hover-bg: var(--uc-surface-overlay);
@@ -3508,6 +3715,13 @@ body[data-theme="light"],
   --uc-toolbar-dismiss-size: 44px;
   --uc-toolbar-radius: var(--uc-radius-lg);
   --uc-toolbar-action-radius: var(--uc-btn-radius);
+  --uc-toolbar-compact-height: var(--uc-space-40);
+  --uc-toolbar-compact-action-size: var(--uc-control-h-md);
+  --uc-toolbar-compact-radius: var(--uc-toolbar-radius);
+  --uc-toolbar-shadow: var(--uc-shadow-4);
+}
+
+.uc-pop-dark {
 
   /* Pill tabs inside a dark pop-up (e.g. the model picker's CLI | WP Connectors
      strip). `.uc-portal` above pins the track to the light #F2F2F2, which
@@ -3530,6 +3744,7 @@ body[data-theme="light"],
   height: var(--_h);
   padding: 0 var(--_px);
   font-family: var(--uc-font-sans);
+  --uich-ff: var(--uc-font-sans);
   font-size: var(--_fs);
   font-weight: var(--uc-btn-weight, var(--uc-weight-medium));
   line-height: 1;
@@ -3548,9 +3763,10 @@ body[data-theme="light"],
     transform var(--uc-dur-fast) var(--uc-ease-standard),
     color var(--uc-dur-fast) var(--uc-ease-standard);
 }
+.oDgO9tRe_mBUNaW0e6V8:focus:not(:focus-visible) { outline: none; }
 .oDgO9tRe_mBUNaW0e6V8:focus-visible {
   outline: 2px solid var(--uc-ring);
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
 .oDgO9tRe_mBUNaW0e6V8:active:not(:disabled) {
   transform: translateY(0.5px);
@@ -3566,7 +3782,8 @@ body[data-theme="light"],
 .NAPRKbEZKONQ8AdACBzs { --_h: var(--uc-btn-h, var(--uc-control-h-md)); --_px: var(--uc-btn-px, var(--uc-space-16)); --_fs: var(--uc-text-base); }
 .qeRuCFz3SPTfPQEz8Eur { --_h: var(--uc-control-h-lg); --_px: var(--uc-space-20); --_fs: var(--uc-text-md); }
 
-.GW0xiH4qJYyLFExAe7Cc { padding: 0; width: var(--_h); }
+.GW0xiH4qJYyLFExAe7Cc { padding: 0; width: var(--_h); flex-shrink: 0; }
+.GW0xiH4qJYyLFExAe7Cc > svg { display: block; flex-shrink: 0; }
 
 /* ---- Variant: solid ------------------------------------------------------- */
 .nx448XS4JGEoBYKJ_Xeh {
@@ -3575,6 +3792,12 @@ body[data-theme="light"],
   background-image: var(--uc-sheen);
   box-shadow: var(--_shadow, var(--uc-shadow-control-brand));
 }
+/* Keep the fill in every interactive state. The composer's host-theme reset
+   (composer-isolation.css, (0,2,0) `background: none` on :hover/:focus/:active)
+   outranks the lone `.solid` class, so a hovered or focused solid brand/danger
+   button lost its fill and showed as an empty square. Same (0,2,0), later
+   source order, so this wins. */
+.nx448XS4JGEoBYKJ_Xeh:is(:hover, :focus, :focus-visible, :active) { background-color: var(--_fill, var(--uc-brand)); }
 .nx448XS4JGEoBYKJ_Xeh:hover:not(:disabled) { background-image: linear-gradient(rgba(255, 255, 255, 0.12), rgba(255, 255, 255, 0.12)), var(--uc-sheen); }
 .nx448XS4JGEoBYKJ_Xeh:active:not(:disabled) {
   background-image: linear-gradient(rgba(0, 0, 0, 0.12), rgba(0, 0, 0, 0.12)), var(--uc-sheen);
@@ -3601,7 +3824,7 @@ body[data-theme="light"],
   color: var(--_fg, var(--uc-brand-fg));
   background: var(--_soft, var(--uc-brand-soft));
   background-image: var(--uc-sheen);
-  box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)), var(--uc-shadow-1);
+  box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)), var(--_soft-shadow, var(--uc-shadow-1));
 }
 .lSxxR32yQ7uBGKoReA0d:hover:not(:disabled) { background-image: var(--uc-sheen), linear-gradient(var(--_glow, var(--uc-brand-glow-hover)), var(--_glow, var(--uc-brand-glow-hover))); }
 
@@ -3621,7 +3844,21 @@ body[data-theme="light"],
   background: transparent;
 }
 .ZShdqkg6btw_9kcxTgYx.P6iUGKQ9CuUmhTY4IDx4 { color: var(--uc-text); }
-.ZShdqkg6btw_9kcxTgYx:hover:not(:disabled) { background: var(--_glow, var(--uc-brand-glow-hover)); color: var(--uc-text-strong); }
+/* The pointer target stays full size; only the wash is inset. This avoids a
+   tall grey tile swallowing small chevrons and adjacent split controls. */
+.ZShdqkg6btw_9kcxTgYx::before {
+  content: "";
+  position: absolute;
+  inset: 3px;
+  border-radius: max(2px, calc(var(--uc-btn-radius, var(--uc-radius-md)) - 2px));
+  background: var(--_glow, var(--uc-brand-glow-hover));
+  opacity: 0;
+  pointer-events: none;
+  z-index: -1;
+  transition: opacity var(--uc-dur-fast) var(--uc-ease-standard);
+}
+.ZShdqkg6btw_9kcxTgYx:hover:not(:disabled) { background: transparent; color: var(--uc-text-strong); }
+.ZShdqkg6btw_9kcxTgYx:is(:hover, [data-state="open"]):not(:disabled)::before { opacity: 1; }
 
 /* ---- Hold the fill through hover / focus / press ---------------------------
    The dashboard's theme-isolation reset (composer-isolation.css) clears
@@ -3640,9 +3877,10 @@ body[data-theme="light"],
 .qM62Gv6j4BSYSajMwnqk  { --_fill: var(--uc-danger);  --_fg: var(--uc-danger-fg);  --_soft: var(--uc-danger-soft);  --_border: var(--uc-danger-border);  --_glow: var(--uc-danger-glow-hover);  --_shadow: var(--uc-shadow-control-brand); }
 .P6iUGKQ9CuUmhTY4IDx4 {
   --_fg: var(--uc-text-strong);
-  --_soft: var(--uc-surface-sunken);
+  --_soft: var(--uc-button-soft-neutral-bg, var(--uc-surface-sunken));
+  --_soft-shadow: var(--uc-button-soft-neutral-shadow, var(--uc-shadow-1));
   --_border: var(--uc-border-strong);
-  --_glow: rgba(128, 128, 128, 0.12);
+  --_glow: rgba(128, 128, 128, 0.10);
 }
 
 /* ---- As a link (asChild <a>) --------------------------------------------- *
@@ -3659,7 +3897,7 @@ a.ZShdqkg6btw_9kcxTgYx:is(:focus, :active, :visited) { color: var(--_fg, var(--u
 a.ZShdqkg6btw_9kcxTgYx.P6iUGKQ9CuUmhTY4IDx4:is(:focus, :active, :visited) { color: var(--uc-text); }
 a.nx448XS4JGEoBYKJ_Xeh:focus { box-shadow: var(--_shadow, var(--uc-shadow-control-brand)); }
 a.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:focus { box-shadow: var(--uc-shadow-control); }
-a.lSxxR32yQ7uBGKoReA0d:focus { box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)), var(--uc-shadow-1); }
+a.lSxxR32yQ7uBGKoReA0d:focus { box-shadow: inset 0 0 0 1px var(--_border, var(--uc-brand-border)), var(--_soft-shadow, var(--uc-shadow-1)); }
 a.uEkFBKngy5ABC8BavrlF:focus { box-shadow: inset 0 0 0 1px var(--_border, var(--uc-border-subtle)), var(--uc-shadow-raised); }
 a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 
@@ -3690,6 +3928,8 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 .VnThCro2n02iRphzomVo {
   --uc-surface-sunken:  #101010;
   --uc-surface-control: rgba(255, 255, 255, 0.05);
+  --uc-button-soft-neutral-bg: var(--uc-surface-control);
+  --uc-button-soft-neutral-shadow: var(--uc-shadow-raised);
 
   --uc-text-strong: #FFFFFF;
   --uc-text:        #A3A3A3;
@@ -3702,7 +3942,7 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
   --uc-border:        #404040;
   --uc-border-strong: #525252;
   --uc-brand-border:  var(--uc-border);
-  --uc-ring:          rgba(245, 245, 245, 0.55);
+  --uc-ring:          #A3A3A3;
 
   /* per-family fg/soft readable on dark */
   --uc-brand-fg:   #EDEDED;  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
@@ -3727,8 +3967,11 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 }
 .cOkswkXgGqdwukDtzxre:focus-visible {
   outline: 2px solid var(--uc-ring, rgba(245, 245, 245, 0.55));
-  outline-offset: 2px;
+  outline-offset: -2px;
 }
+
+/* The standalone dark chip already owns its hover fill. */
+.cOkswkXgGqdwukDtzxre::before { content: none; }
 
 /* Tabs, Radix behavior, uc- token look. Two variants: pill and underline.
    The active marker is a single sliding indicator that animates between tabs. */
@@ -3812,7 +4055,7 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 }
 .NcCLOdesrW3h0feW8Cqd:hover { color: var(--uc-text-strong); }
 .NcCLOdesrW3h0feW8Cqd[data-state="active"] { color: var(--uc-text-strong); }
-.NcCLOdesrW3h0feW8Cqd:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.NcCLOdesrW3h0feW8Cqd:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: -2px; }
 .NcCLOdesrW3h0feW8Cqd:disabled { opacity: 0.5; cursor: not-allowed; }
 .sa8wAhUubaDeDz9m2lSy { height: 22px; padding: 0 var(--uc-space-8); font-size: var(--uc-text-sm); }
 .AXCzoGHV2zjSW04iuiPm { height: 32px; padding: 0 var(--uc-space-16); font-size: var(--uc-text-md); }
@@ -3820,6 +4063,17 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
    aspect-ratio), no side padding, glyph centered. Pairs with `iconOnly` on
    TabsTrigger for segmented icon toggles (e.g. a light/dark switch). */
 .e3ubPG9y4BJzwsrdHlEA { padding: 0; gap: 0; aspect-ratio: 1; justify-content: center; }
+
+/* `solidActiveIcon` on TabsList: the active glyph goes heavier. It targets the
+   shapes, not the <svg>, because Hugeicons writes stroke-width as an attribute
+   on every path, and that attribute beats a value inherited from the svg (any
+   CSS rule on the path itself still wins over it). */
+.yEf7HfGTA0UzmBrIB_77 svg :is(path, line, polyline, circle, ellipse, rect, polygon) {
+  transition: stroke-width var(--uc-dur-base) var(--uc-ease-standard);
+}
+.yEf7HfGTA0UzmBrIB_77 [data-state="active"] svg :is(path, line, polyline, circle, ellipse, rect, polygon) {
+  stroke-width: 2.25;
+}
 
 /* ---- underline ------------------------------------------------------------ */
 .yhi1vngR1p2YuJVNnaDE {
@@ -3863,12 +4117,12 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 }
 .cC9aL4ulO5rxAtpAr4A0:hover { color: var(--uc-text-strong); }
 .cC9aL4ulO5rxAtpAr4A0[data-state="active"] { color: var(--uc-brand-fg); }
-.cC9aL4ulO5rxAtpAr4A0:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: 2px; }
+.cC9aL4ulO5rxAtpAr4A0:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: -2px; }
 .cC9aL4ulO5rxAtpAr4A0:disabled { opacity: 0.5; cursor: not-allowed; }
 .rkiDdr7DnTZzxeE4XWn2 { height: 30px; font-size: var(--uc-text-sm); }
 .PlObOj8t3yHaJNy9nwoe { height: 40px; font-size: var(--uc-text-md); }
 
-.DR_2eHes4dZNHfA9fRnL:focus-visible { outline: none; }
+.DR_2eHes4dZNHfA9fRnL:focus-visible { outline: 2px solid var(--uc-ring); outline-offset: -2px; }
 
 /* ── Preflight-proofing: PADDING ONLY ────────────────────────────────────────
    Tailwind's stock preflight ships inside the app's Tailwind root:
@@ -3894,6 +4148,14 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 .AXCzoGHV2zjSW04iuiPm.AXCzoGHV2zjSW04iuiPm { padding: 0 var(--uc-space-16); }
 .e3ubPG9y4BJzwsrdHlEA.e3ubPG9y4BJzwsrdHlEA { padding: 0; }
 
+
+/* System-colour focus remains visible when shadows and fills are suppressed. */
+@media (forced-colors: active) {
+  .NcCLOdesrW3h0feW8Cqd:focus-visible,
+  .cC9aL4ulO5rxAtpAr4A0:focus-visible,
+  .DR_2eHes4dZNHfA9fRnL:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
+}
+
 /* Input, recessed field on uc- tokens.
 
    wp-admin hardening: WordPress's forms.css styles `input[type="text"]` (and
@@ -3915,6 +4177,7 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
   height: var(--uc-input-h, var(--uc-control-h-md));
   padding: 0 var(--uc-input-px, var(--uc-space-12));
   font-family: var(--uc-font-sans);
+  --uich-ff: var(--uc-font-sans);
   font-size: var(--uc-text-base);
   font-weight: var(--uc-weight-regular);
   color: var(--uc-text-strong);
@@ -3932,15 +4195,15 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 .jvLYLaG45SNM0t7oug2a[class]::-moz-placeholder { color: var(--uc-text-subtle); }
 .jvLYLaG45SNM0t7oug2a[class]::placeholder { color: var(--uc-text-subtle); }
 .jvLYLaG45SNM0t7oug2a[class]:hover:not(:disabled):not(:focus) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
-/* Focus = OFFSET brand ring: the field keeps its subtle inset border, then a
-   1px transparent gap (outline-offset shows the surface behind), then a thin 1px
-   brand outline sits OUTSIDE the field. Uses :focus so it shows on click +
-   keyboard. Kept thin (1px + 1px) so it reads as a single hairline ring, not a
-   thick double band. */
+/* A single stronger edge marks the caret, without a second brand halo.
+   :focus-visible retains a compact, neutral indicator for keyboard editing. */
 .jvLYLaG45SNM0t7oug2a[class]:focus {
-  box-shadow: inset 0 0 0 1px var(--uc-border-strong), var(--uc-shadow-input);
-  outline: 1px solid var(--uc-brand);
-  outline-offset: 1px;
+  box-shadow: inset 0 0 0 1px var(--uc-ring), var(--uc-shadow-input);
+  outline: none;
+}
+.jvLYLaG45SNM0t7oug2a[class]:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: -2px;
 }
 .jvLYLaG45SNM0t7oug2a[class]:disabled {
   color: var(--uc-text-subtle);
@@ -3957,8 +4220,8 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 }
 .ssewu8L6FxnF8mjD_c_D[class]:focus {
   box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input);
-  outline: 1px solid var(--uc-danger);
-  outline-offset: 1px;
+  outline: 2px solid var(--uc-danger);
+  outline-offset: -2px;
 }
 
 /* icon adornments */
@@ -3976,7 +4239,7 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 
 /* ── Addons (BoardUI Input adornments) ────────────────────────────────────
    The shell is the field: same fill, inset ring, radius and heights as .input,
-   with the focus ring on :focus-within. The inner input (.bare) is transparent.
+   with keyboard focus on the shell only while its bare input is focused. The inner input (.bare) is transparent.
    [class] keeps these above wp-admin's input[type=…] rules, as above. */
 .D0Xdmp8POlPPHSzhzm9g[class] {
   display: flex;
@@ -3986,6 +4249,7 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
   height: var(--uc-input-h, var(--uc-control-h-md));
   padding: 0 var(--uc-input-px, var(--uc-space-12));
   font-family: var(--uc-font-sans);
+  --uich-ff: var(--uc-font-sans);
   font-size: var(--uc-text-base);
   color: var(--uc-text-strong);
   background: var(--uc-surface-overlay);
@@ -3996,11 +4260,11 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
   cursor: text;
 }
 .D0Xdmp8POlPPHSzhzm9g[class]:hover:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-input); }
-.D0Xdmp8POlPPHSzhzm9g[class]:focus-within { outline: 1px solid var(--uc-brand); outline-offset: 1px; }
+.D0Xdmp8POlPPHSzhzm9g[class]:has(> .rqDSPev3xkBlb20ToTZX:focus-visible) { outline: 2px solid var(--uc-ring); outline-offset: -2px; }
 .Xg64tHf4Kp4Noa25JH0b[class] { height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: 0 var(--uc-space-8); gap: var(--uc-space-6); }
 .M5O1Ldpq66ff3nhO1rMQ[class] { height: var(--uc-control-h-lg); font-size: var(--uc-text-md); padding: 0 var(--uc-space-16); }
 .ekm8tp1ZbcU5q1z1wOWS[class] { box-shadow: inset 0 0 0 1px var(--uc-danger), var(--uc-shadow-input); }
-.ekm8tp1ZbcU5q1z1wOWS[class]:focus-within { outline-color: var(--uc-danger); }
+.ekm8tp1ZbcU5q1z1wOWS[class]:has(> .rqDSPev3xkBlb20ToTZX:focus-visible) { outline-color: var(--uc-danger); }
 .sXdm39Z0ZiRwORSaPpZv[class] { color: var(--uc-text-subtle); background: var(--uc-surface-sunken); box-shadow: inset 0 0 0 1px var(--uc-border); cursor: not-allowed; }
 
 .rqDSPev3xkBlb20ToTZX[class] {
@@ -4016,6 +4280,7 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
   box-shadow: none;
   outline: none;
   font: inherit;
+  --uich-ff: inherit;
   font-weight: var(--uc-weight-regular);
   line-height: normal;
   color: inherit;
@@ -4034,6 +4299,14 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 ._nx7MrQDNMenHelkZy99 { font-size: var(--uc-text-sm); font-weight: var(--uc-weight-medium); color: var(--uc-text-strong); }
 .tmMcxsM0Zke7mcbuxgiI { font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
 .C1A65qwuRNgkck1QS09Q { color: var(--uc-danger-fg); }
+
+
+@media (forced-colors: active) {
+  .jvLYLaG45SNM0t7oug2a[class]:focus-visible,
+  .ssewu8L6FxnF8mjD_c_D[class]:focus,
+  .D0Xdmp8POlPPHSzhzm9g[class]:has(> .rqDSPev3xkBlb20ToTZX:focus-visible),
+  .ekm8tp1ZbcU5q1z1wOWS[class]:has(> .rqDSPev3xkBlb20ToTZX:focus-visible) { outline: 2px solid Highlight; outline-offset: -2px; }
+}
 
 /* Menu, Radix dropdown-menu behavior, uc- token look. Always-dark popover
    with a sliding highlight that follows the active item. */
@@ -4091,7 +4364,7 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 .tPTLiYfuDUhQ80L7yDnk[data-disabled] { color: var(--uc-text-subtle); pointer-events: none; }
 .I3TPCu8NiLZDfkHiNUct { color: var(--uc-danger-fg); }
 .I3TPCu8NiLZDfkHiNUct[data-highlighted] { color: var(--uc-danger-fg); }
-.QBoqQMo13ZJMyLxqxRts { margin-right: auto; font-size: var(--uc-text-xs); color: var(--uc-text-subtle); font-family: var(--uc-font-mono); }
+.QBoqQMo13ZJMyLxqxRts { margin-right: auto; font-size: var(--uc-text-xs); color: var(--uc-text-subtle); font-family: var(--uc-font-mono); --uich-ff: var(--uc-font-mono); }
 .YEax7LE1yCq7o0eawNUV { padding: var(--uc-space-8) var(--uc-space-12) var(--uc-space-4); font-size: var(--uc-text-xs); font-weight: var(--uc-weight-medium); letter-spacing: var(--uc-tracking-wide); text-transform: uppercase; color: var(--uc-text-subtle); }
 .bcfw649Ew7czzqqkT_G8 { height: 1px; background: var(--uc-border-subtle); margin: var(--uc-space-4) 0; }
 
@@ -4118,13 +4391,15 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
   transition: box-shadow var(--uc-dur-fast) var(--uc-ease-standard);
 }
 .e7F3s8Cpe8pIMhvl2kjH:hover:not(:focus-visible):not([data-state="open"]) { box-shadow: inset 0 0 0 1px var(--uc-border-hover, var(--uc-text-subtle)), var(--uc-shadow-raised); }
-/* Focus / open = OFFSET brand ring (matches the Input): subtle border kept,
-   then a 2px transparent gap, then the brand outline outside the trigger. */
-.e7F3s8Cpe8pIMhvl2kjH:focus-visible,
+/* Open is a pressed state, not keyboard focus. Do not leave a halo around
+   a select merely because its list is open. Keyboard focus remains explicit. */
 .e7F3s8Cpe8pIMhvl2kjH[data-state="open"] {
-  box-shadow: inset 0 0 0 1px var(--uc-border-subtle), var(--uc-shadow-raised);
-  outline: 1px solid var(--uc-brand);
-  outline-offset: 1px;
+  box-shadow: inset 0 0 0 1px var(--uc-border-hover), var(--uc-shadow-raised);
+}
+.e7F3s8Cpe8pIMhvl2kjH:focus:not(:focus-visible) { outline: none; }
+.e7F3s8Cpe8pIMhvl2kjH:focus-visible {
+  outline: 2px solid var(--uc-ring);
+  outline-offset: -2px;
 }
 .e7F3s8Cpe8pIMhvl2kjH[data-placeholder] { color: var(--uc-text-subtle); }
 .e7F3s8Cpe8pIMhvl2kjH:disabled { opacity: 0.5; cursor: not-allowed; }
@@ -4276,6 +4551,378 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 .R8avrtTyuO0UDSY9TLVT[data-orientation="horizontal"] { height: 1px; width: 100%; }
 .R8avrtTyuO0UDSY9TLVT[data-orientation="vertical"] { width: 1px; height: 100%; align-self: stretch; }
 
+/* Compact grouping adapted from Hirael; global radii, MIT notice in FloatingToolbar.tsx. */
+.VDCgP2TXcbIH83qTz1iU {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-8, 8px);
+  font-family: var(--uc-font-sans, system-ui, sans-serif);
+  --uich-ff: var(--uc-font-sans, system-ui, sans-serif);
+  font-size: var(--uc-text-base, 14px);
+  color-scheme: inherit;
+  color: var(--uc-toolbar-fg, var(--uc-text, CanvasText));
+  pointer-events: none;
+}
+
+/* uc-content supplies light tokens, not an extra rectangular wrapper surface. */
+.VDCgP2TXcbIH83qTz1iU.VDCgP2TXcbIH83qTz1iU { background: transparent; }
+
+.VDCgP2TXcbIH83qTz1iU[data-theme="dark"] { color-scheme: dark; }
+.VDCgP2TXcbIH83qTz1iU[data-theme="light"] { color-scheme: light; }
+
+/* Rebind to the current surface, not a computed dark toolbar token inherited
+   from an ancestor. Light uses the DS content scope; inherit adds no scope. */
+.VDCgP2TXcbIH83qTz1iU:not([data-theme="dark"]) {
+  --uc-toolbar-bg: var(--uc-surface-raised, Canvas);
+  --uc-toolbar-fg: var(--uc-text, CanvasText);
+  --uc-toolbar-border: var(--uc-border, ButtonBorder);
+  --uc-toolbar-hover-bg: var(--uc-surface-hover, ButtonFace);
+}
+
+.VDCgP2TXcbIH83qTz1iU.IdW9qftPRIpxufX1u1zB {
+  --uc-toolbar-height: var(--uc-toolbar-compact-height, var(--uc-control-h-lg, 40px));
+  --uc-toolbar-action-size: var(--uc-toolbar-compact-action-size, var(--uc-control-h-md, 32px));
+  --uc-toolbar-dismiss-size: var(--uc-toolbar-compact-action-size, var(--uc-control-h-md, 32px));
+  /* Compact changes density only. Surface/action radii stay global. */
+}
+
+.wcjtBjSJwTWRpPftzjvQ,
+.Dki1FM4eHY9MKK_GAGym,
+.j4Axbcky5LgpsKgn4WAb {
+  background: var(--uc-toolbar-bg, var(--uc-surface-raised, Canvas));
+  border: 1px solid var(--uc-toolbar-border, var(--uc-border, ButtonBorder));
+  box-shadow: var(--uc-toolbar-shadow, 0 16px 44px -12px rgb(0 0 0 / 48%), 0 4px 12px -4px rgb(0 0 0 / 32%));
+}
+
+.wcjtBjSJwTWRpPftzjvQ {
+  pointer-events: auto;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--uc-space-4, 4px);
+  height: var(--uc-toolbar-height, 48px);
+  padding: 0 var(--uc-space-6, 6px);
+  /* Compact and dock geometry share the global surface radius. */
+  border-radius: var(--uc-toolbar-radius, var(--uc-radius-lg, 12px));
+  overflow: visible;
+}
+
+.IdW9qftPRIpxufX1u1zB .wcjtBjSJwTWRpPftzjvQ { padding-inline: var(--uc-space-6, 6px); gap: var(--uc-space-6, 6px); }
+
+.VDCgP2TXcbIH83qTz1iU.Ti6l0uHmIPYJMAFtJph6 { gap: 0; height: auto; padding: 0; border: 0; box-shadow: none; }
+.VDCgP2TXcbIH83qTz1iU.Ti6l0uHmIPYJMAFtJph6 .wcjtBjSJwTWRpPftzjvQ {
+  height: auto;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.Nt2ipeZvcBNJCdMb5cZ_,
+.Dki1FM4eHY9MKK_GAGym {
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font: inherit;
+  --uich-ff: inherit;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+}
+
+/* Actions share the global Button radius; the ✕ matches the bar beside it. */
+.Nt2ipeZvcBNJCdMb5cZ_ { border-radius: var(--uc-toolbar-action-radius, var(--uc-btn-radius, var(--uc-radius-md, 8px))); }
+.Dki1FM4eHY9MKK_GAGym { border-radius: var(--uc-toolbar-radius, var(--uc-radius-lg, 12px)); }
+
+.Nt2ipeZvcBNJCdMb5cZ_ {
+  position: relative;
+  flex: none;
+  /* Fixed size — the dock magnification was removed. */
+  width: var(--uc-toolbar-action-size, 34px);
+  height: var(--uc-toolbar-action-size, 34px);
+  border: 0;
+  background: transparent;
+  color: var(--uc-toolbar-fg, var(--uc-text, CanvasText));
+  /* The active pill slides between buttons on this transition. */
+  transition: background-color 160ms ease, box-shadow 160ms ease, color 160ms ease;
+  /* Selected look = the DS dark gradient button: a dark fill with the sheen
+     gradient on top and a hairline stroke + raised shadow. The gradient is a
+     background-IMAGE, so it also survives the composer's theme button-paint
+     guard (which only zeroes background-color). Defined once, reused by every
+     :active rule below so the host-reset guards stay in sync. */
+  --uc-tb-active-bg:
+    var(--uc-sheen, linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.03))),
+    var(--uc-surface-sunken, ButtonFace);
+  --uc-tb-active-ring:
+    inset 0 0 0 1px var(--uc-border-strong, ButtonBorder),
+    var(--uc-shadow-raised, 0 1px 2px rgba(0, 0, 0, 0.30));
+}
+
+.Nt2ipeZvcBNJCdMb5cZ_:hover,
+.Dki1FM4eHY9MKK_GAGym:hover {
+  background: var(--uc-toolbar-hover-bg, var(--uc-surface-hover, ButtonFace));
+  border-color: var(--uc-toolbar-border, var(--uc-border, ButtonBorder));
+  box-shadow: var(--uc-toolbar-shadow, 0 6px 16px -6px rgb(0 0 0 / 48%));
+  color: var(--uc-text-strong, CanvasText);
+}
+/* An action sits inside the bar, so its hover is the wash alone: the bar's
+   own float shadow on a 32px button read as a grey haze around it. The ✕
+   and the handle's pill float by themselves and keep it. */
+.Nt2ipeZvcBNJCdMb5cZ_:hover { box-shadow: none; }
+
+.Nt2ipeZvcBNJCdMb5cZ_:focus-visible,
+.Dki1FM4eHY9MKK_GAGym:focus-visible {
+  outline: 2px solid var(--uc-ring, Highlight);
+  outline-offset: -2px;
+}
+
+/* Selected = a dark, inset "stroked" button (the global dark icon button look),
+   not a light disc. The stroke is the visible part; the fill sits a touch below
+   the bar so it reads as pressed-in. */
+.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ {
+  background: var(--uc-tb-active-bg);
+  box-shadow: var(--uc-tb-active-ring);
+  color: var(--uc-text-strong, CanvasText);
+}
+.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:hover {
+  background: var(--uc-tb-active-bg);
+}
+
+/* A disabled action says so under the pointer. `default` read as "this button
+   simply does nothing" — the arrow never changes, so a press that was ignored
+   looked like a press that was missed. */
+.Nt2ipeZvcBNJCdMb5cZ_:disabled,
+.Nt2ipeZvcBNJCdMb5cZ_:disabled:hover {
+  opacity: 1;
+  color: var(--uc-text-muted, GrayText);
+  background: transparent;
+  cursor: not-allowed;
+}
+
+/* Active AND disabled is work in progress — Save during a flush is the case
+   this exists for. `progress` was the old choice and it is the wrong signal
+   here: it means "busy, but you may still interact", while the button is in
+   fact refusing the click. Saves are also short, so a cursor that only reads
+   as a brief flicker told the user nothing. */
+.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:disabled,
+.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:disabled:hover {
+  background: var(--uc-tb-active-bg);
+  box-shadow: var(--uc-tb-active-ring);
+  color: var(--uc-text-strong, CanvasText);
+  cursor: not-allowed;
+}
+
+.Nt2ipeZvcBNJCdMb5cZ_ svg,
+.Dki1FM4eHY9MKK_GAGym svg {
+  width: auto !important;
+  height: auto !important;
+  color: inherit !important;
+  stroke: currentColor !important;
+  fill: none !important;
+  opacity: 1 !important;
+  filter: none !important;
+  max-width: none !important;
+  max-height: none !important;
+  display: block;
+}
+
+.Ra_BBvLLe4yROxlrLqYt {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: var(--uc-space-6, 6px);
+}
+
+.vPZZP6vGHUVlSQhkRpOh {
+  flex: 0 0 auto;
+  width: 1px;
+  height: 20px;
+  margin: 0 var(--uc-space-4, 4px);
+  background: var(--uc-toolbar-border, var(--uc-border, ButtonBorder));
+}
+
+.jLW95_rgGsGmyK7hLMfr::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  inset-inline-end: 5px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--uc-toolbar-indicator, var(--uc-brand, #fd6a35));
+  box-shadow: 0 0 0 1.5px var(--uc-toolbar-bg, var(--uc-surface-raised, Canvas));
+  pointer-events: none;
+}
+
+.Dki1FM4eHY9MKK_GAGym {
+  pointer-events: auto;
+  flex: none;
+  width: var(--uc-toolbar-dismiss-size, 44px);
+  height: var(--uc-toolbar-dismiss-size, 44px);
+  color: var(--uc-toolbar-fg, var(--uc-text, CanvasText));
+  transition: background-color 150ms ease, color 150ms ease, transform 100ms ease;
+}
+.Dki1FM4eHY9MKK_GAGym:active { transform: scale(.94); }
+/* The ✕ is a <button> that paints its own surface, and hosts reset button
+   backgrounds above this module's weight (the composer's
+   `.uich-tw [type='button']` is 0,2,0, its hover reset 0,3,0), which left it
+   transparent: a white disc over a light canvas. Out-rank them so it stays the
+   same dark surface as the bar. */
+.VDCgP2TXcbIH83qTz1iU .Dki1FM4eHY9MKK_GAGym.Dki1FM4eHY9MKK_GAGym { background: var(--uc-toolbar-bg, var(--uc-surface-raised, Canvas)); }
+.VDCgP2TXcbIH83qTz1iU .Dki1FM4eHY9MKK_GAGym.Dki1FM4eHY9MKK_GAGym:hover {
+  background: var(--uc-toolbar-hover-bg, var(--uc-surface-hover, ButtonFace));
+  border-color: var(--uc-toolbar-border, var(--uc-border, ButtonBorder));
+  box-shadow: var(--uc-toolbar-shadow, 0 6px 16px -6px rgb(0 0 0 / 48%));
+  color: var(--uc-text-strong, CanvasText);
+}
+/* Same guard for the actions: the host's hover/focus reset (0,3,0) cleared
+   their hover wash and could clear the selected fill while focused. Disabled
+   actions stay out of the hover rule, as in `.action:disabled:hover` above;
+   `.active` comes last so a selected action keeps its fill under the pointer. */
+.VDCgP2TXcbIH83qTz1iU .Nt2ipeZvcBNJCdMb5cZ_.Nt2ipeZvcBNJCdMb5cZ_:not(:disabled):hover {
+  background: var(--uc-toolbar-hover-bg, var(--uc-surface-hover, ButtonFace));
+  box-shadow: none;
+  color: var(--uc-text-strong, CanvasText);
+}
+.VDCgP2TXcbIH83qTz1iU .Nt2ipeZvcBNJCdMb5cZ_.Nt2ipeZvcBNJCdMb5cZ_:disabled { color: var(--uc-text-muted, GrayText); }
+.VDCgP2TXcbIH83qTz1iU .Nt2ipeZvcBNJCdMb5cZ_.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ,
+.VDCgP2TXcbIH83qTz1iU .Nt2ipeZvcBNJCdMb5cZ_.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:disabled:hover {
+  background: var(--uc-tb-active-bg);
+  box-shadow: var(--uc-tb-active-ring);
+  color: var(--uc-text-strong, CanvasText);
+}
+.VDCgP2TXcbIH83qTz1iU .Nt2ipeZvcBNJCdMb5cZ_.Nt2ipeZvcBNJCdMb5cZ_.fMofPR_paz4U2oqfg0QQ:not(:disabled):hover {
+  background: var(--uc-tb-active-bg);
+  box-shadow: var(--uc-tb-active-ring);
+}
+.Dki1FM4eHY9MKK_GAGym svg { width: 16px !important; height: 16px !important; }
+
+.j4Axbcky5LgpsKgn4WAb {
+  pointer-events: none;
+  z-index: var(--uc-z-tooltip, 1300);
+  padding: 5px 9px;
+  border-radius: var(--uc-radius-sm, 6px);
+  color: var(--uc-text-strong, CanvasText);
+  font-size: 11.5px;
+  font-weight: var(--uc-weight-medium, 500);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .Nt2ipeZvcBNJCdMb5cZ_,
+  .Dki1FM4eHY9MKK_GAGym { transition: none; }
+}
+
+/* Key hint after a tooltip's label. */
+.MYnwy7zbVSSeUTU2rBFv {
+  margin-inline-start: var(--uc-space-8, 8px);
+  color: var(--uc-text-muted, GrayText);
+  font: inherit;
+  --uich-ff: inherit;
+  letter-spacing: 0.02em;
+}
+
+/* ---- FloatingToolbarHandle: what a hidden toolbar leaves behind -----------
+   The button is a wide, short hit area; the drawn part is the grip inside it, a
+   thin grey bar that grows into a chevron pill under the pointer or keyboard
+   focus. At rest it is flat grey, not toolbar paint: a white pill with a soft
+   shadow vanished on a white canvas. */
+.dAZ_Hyxb_av0gx8pYP0u {
+  display: inline-flex;
+  pointer-events: none;
+  color: var(--uc-toolbar-fg, var(--uc-text, CanvasText));
+}
+.dAZ_Hyxb_av0gx8pYP0u[data-theme="dark"] { color-scheme: dark; }
+.dAZ_Hyxb_av0gx8pYP0u:not([data-theme="dark"]) {
+  --uc-toolbar-bg: var(--uc-surface-raised, Canvas);
+  --uc-toolbar-fg: var(--uc-text, CanvasText);
+  --uc-toolbar-border: var(--uc-border, ButtonBorder);
+  --uc-toolbar-hover-bg: var(--uc-surface-hover, ButtonFace);
+}
+
+.iNCSxA1uCZCOsraS6Mxg {
+  pointer-events: auto;
+  -webkit-appearance: none;
+     -moz-appearance: none;
+          appearance: none;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 120px;
+  height: 24px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  --uich-ff: inherit;
+  cursor: pointer;
+}
+/* Hosts reset button paint above this module's weight (see .dismiss). */
+.dAZ_Hyxb_av0gx8pYP0u .iNCSxA1uCZCOsraS6Mxg.iNCSxA1uCZCOsraS6Mxg,
+.dAZ_Hyxb_av0gx8pYP0u .iNCSxA1uCZCOsraS6Mxg.iNCSxA1uCZCOsraS6Mxg:hover,
+.dAZ_Hyxb_av0gx8pYP0u .iNCSxA1uCZCOsraS6Mxg.iNCSxA1uCZCOsraS6Mxg:focus { background: transparent; box-shadow: none; outline: none; }
+
+.scu_7fKMexpFwEGrAuqU {
+  position: relative;
+  box-sizing: border-box;
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--uc-toolbar-grip, var(--uc-text-subtle, GrayText));
+  border: 1px solid transparent;
+  box-shadow: none;
+  transition: width 180ms cubic-bezier(0.22, 1, 0.36, 1), height 180ms cubic-bezier(0.22, 1, 0.36, 1), background-color 150ms ease, box-shadow 150ms ease;
+}
+.scu_7fKMexpFwEGrAuqU svg {
+  width: 12px !important;
+  height: 12px !important;
+  color: inherit !important;
+  stroke: currentColor !important;
+  fill: none !important;
+  max-width: none !important;
+  max-height: none !important;
+  display: block;
+  opacity: 0 !important;
+  transition: opacity 120ms ease;
+}
+.iNCSxA1uCZCOsraS6Mxg:hover .scu_7fKMexpFwEGrAuqU,
+.iNCSxA1uCZCOsraS6Mxg:focus-visible .scu_7fKMexpFwEGrAuqU {
+  width: 60px;
+  height: 18px;
+  background: var(--uc-toolbar-hover-bg, var(--uc-surface-hover, ButtonFace));
+  border-color: var(--uc-toolbar-border, var(--uc-border, ButtonBorder));
+  box-shadow: var(--uc-toolbar-shadow, 0 6px 16px -6px rgb(0 0 0 / 48%));
+  color: var(--uc-text-strong, CanvasText);
+}
+.iNCSxA1uCZCOsraS6Mxg:hover .scu_7fKMexpFwEGrAuqU svg,
+.iNCSxA1uCZCOsraS6Mxg:focus-visible .scu_7fKMexpFwEGrAuqU svg { opacity: 1 !important; }
+.iNCSxA1uCZCOsraS6Mxg:focus-visible .scu_7fKMexpFwEGrAuqU { outline: 2px solid var(--uc-ring, Highlight); outline-offset: 2px; }
+
+/* Same dot as an action's indicator, on the grip's corner. */
+.t_O5riQZzA_vbD0v03im .scu_7fKMexpFwEGrAuqU::after {
+  content: "";
+  position: absolute;
+  top: -4px;
+  inset-inline-end: -4px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--uc-toolbar-indicator, var(--uc-brand, #fd6a35));
+  box-shadow: 0 0 0 1.5px var(--uc-toolbar-bg, var(--uc-surface-raised, Canvas));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scu_7fKMexpFwEGrAuqU,
+  .scu_7fKMexpFwEGrAuqU svg { transition: none; }
+}
+
 /* Badge, compact status/label pill on uc- tokens. */
 .V_kpdXZsi07BrkW8mkNK {
   display: inline-flex;
@@ -4285,6 +4932,7 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
   padding: 0 var(--uc-space-8);
   border-radius: var(--uc-radius-pill);
   font-family: var(--uc-font-sans);
+  --uich-ff: var(--uc-font-sans);
   font-size: var(--uc-text-xs);
   font-weight: var(--uc-weight-medium);
   line-height: 1;
@@ -4310,7 +4958,11 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 .NGzt4PZr82HJx6zD5oeP  { --_fill: var(--uc-danger);  --_on: var(--uc-danger-on);  --_fg: var(--uc-danger-fg);  --_soft: var(--uc-danger-soft);  --_border: var(--uc-danger-border); }
 .VF30PpmNX8Fbve0UeM9T { --_fill: var(--uc-warning); --_on: var(--uc-warning-on); --_fg: var(--uc-warning-fg); --_soft: var(--uc-warning-soft); --_border: var(--uc-warning-border); }
 .o39yUK028V2zERFldgoO  { --_fill: var(--uc-accent);  --_on: var(--uc-accent-on);  --_fg: var(--uc-accent-fg);  --_soft: var(--uc-accent-soft);  --_border: var(--uc-accent-border); }
-.yP65shMRVToyLTvM480a { --_fill: var(--uc-text); --_on: var(--uc-text-inverse); --_fg: var(--uc-text-muted); --_soft: var(--uc-surface-sunken); --_border: var(--uc-border-strong); }
+/* Solid neutral uses the inverse pair, which every surface redefines. It was
+   --uc-text on --uc-text-inverse, and --uc-text-inverse is #FFF everywhere, so
+   on dark surfaces (where --uc-text is light) it drew white on near-white. In
+   light the inverse pair is the same #171717 / #FFF it rendered before. */
+.yP65shMRVToyLTvM480a { --_fill: var(--uc-inverse-bg); --_on: var(--uc-inverse-fg); --_fg: var(--uc-text-muted); --_soft: var(--uc-surface-sunken); --_border: var(--uc-border-strong); }
 
 /* Accordion, token-driven, chevron rotates, height animates via Radix var. */
 .DFGr5k2eRrJnxwR8wIDu {
@@ -4339,7 +4991,7 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
 
 .tvcRj9RnfQDkmcI1jqe4:focus-visible {
   outline: 2px solid var(--uc-ring);
-  outline-offset: 2px;
+  outline-offset: -2px;
   border-radius: var(--uc-radius-sm);
 }
 
@@ -4391,3 +5043,9 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
     height: 0;
   }
 }
+
+/* System-colour focus remains visible when shadows and fills are suppressed. */
+@media (forced-colors: active) {
+  .tvcRj9RnfQDkmcI1jqe4:focus-visible { outline: 2px solid Highlight; outline-offset: -2px; }
+}
+

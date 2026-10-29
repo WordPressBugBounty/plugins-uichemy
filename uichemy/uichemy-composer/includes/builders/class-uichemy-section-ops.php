@@ -41,9 +41,11 @@ if ( ! class_exists( 'UiChemy_Section_Ops' ) ) {
 		 * @param string $html          Section HTML.
 		 * @param string $css           Section CSS.
 		 * @param bool   $upload_images Whether to sideload images.
+		 * @param bool   $match_globals Whether to run the globals pass (false for
+		 *                              code a person edited by hand).
 		 * @return array { html, css, uploaded, failed, dynamic_globals }
 		 */
-		public static function prepare_code( $html, $css, $upload_images = true ) {
+		public static function prepare_code( $html, $css, $upload_images = true, $match_globals = true ) {
 			$html = (string) $html;
 			$css  = (string) $css;
 
@@ -61,7 +63,7 @@ if ( ! class_exists( 'UiChemy_Section_Ops' ) ) {
 			}
 
 			$globals = array();
-			if ( method_exists( 'UiChemy_Composer_Manager', 'mcp_prepare_import_html_css_with_globals' ) ) {
+			if ( $match_globals && method_exists( 'UiChemy_Composer_Manager', 'mcp_prepare_import_html_css_with_globals' ) ) {
 				$prepared = UiChemy_Composer_Manager::mcp_prepare_import_html_css_with_globals( $html, $css );
 				if ( is_array( $prepared ) ) {
 					$html    = isset( $prepared['html'] ) ? (string) $prepared['html'] : $html;

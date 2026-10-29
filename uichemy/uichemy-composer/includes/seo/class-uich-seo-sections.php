@@ -46,7 +46,10 @@ if ( ! class_exists( 'Uich_SEO_Sections' ) ) {
 			self::$reading[ $post_id ] = true;
 
 			try {
-				$sections = self::from_composer( $post, $kind );
+				$sections = self::from_cb_document( $post, $kind );
+				if ( empty( $sections ) ) {
+					$sections = self::from_composer( $post, $kind );
+				}
 				if ( empty( $sections ) ) {
 					$sections = self::from_elementor_render( $post );
 				}
@@ -59,6 +62,41 @@ if ( ! class_exists( 'Uich_SEO_Sections' ) ) {
 
 			unset( self::$reading[ $post_id ] );
 			return $sections;
+		}
+
+		/**
+		 * A Composer Builder document: its own html, as the page prints it.
+		 *
+		 * The document has no builder driver, so it used to be read from the
+		 * post_content mirror through wpautop() - which pushes <p> tags into an
+		 * inline <script>, and the script's text then became the page's meta
+		 * description.
+		 *
+		 * @param WP_Post $post Post.
+		 * @param string  $kind Kind.
+		 * @return array
+		 */
+		private static function from_cb_document( $post, $kind ) {
+			if ( ! class_exists( 'Uich_CB_Content' ) || ! Uich_CB_Content::is_enabled( $post->ID ) ) {
+				return array();
+			}
+			$fields = Uich_CB_Content::get_cb_content_fields( $post->ID );
+			$html   = isset( $fields['html'] ) ? (string) $fields['html'] : '';
+			if ( '' === trim( $html ) ) {
+				return array();
+			}
+			$uid = 'uich-cb-page';
+			if ( 'instance' === $kind ) {
+				$html = self::render_twig( $html, $post, $uid );
+			}
+			return array(
+				array(
+					'html'   => $html,
+					'uid'    => $uid,
+					'source' => 'composer:cb',
+					'order'  => 0,
+				),
+			);
 		}
 
 		/**

@@ -91,7 +91,9 @@ if ( ! class_exists( 'UiChemy_Template_Shortcode' ) ) {
 				// Elementor's own CSS is inlined by get_render_html_for(), but its
 				// base frontend styles (and the block library, for a
 				// Gutenberg-authored template) still have to be on the page.
-				UiChemy_Template_Render::enqueue_elementor_styles();
+				// The base styles of THIS template's builder - enqueue_elementor_styles()
+				// reads the template the current request resolved, not the one embedded.
+				UiChemy_Template_Render::enqueue_styles_for( array( $id ) );
 				return UiChemy_Template_Render::get_render_html_for( $id );
 			} finally {
 				unset( self::$rendering[ $id ] );

@@ -1,0 +1,593 @@
+/* =============================================================================
+   UiChemy Create, Design System Tokens (Phase 1, isolated)
+   -----------------------------------------------------------------------------
+   SURFACE MODEL, components are surface-agnostic. They read semantic tokens
+   (surfaces, text, borders, ring, per-family fg/soft) whose VALUES are set by
+   the surface scope a component lives in:
+
+     .uc-content            → light content   (current look, DEFAULT)
+     .uc-content[data-theme="dark"] → dark content (future, token change only)
+     .uc-chrome             → dark chrome     (fixed; sidebar/nav/rails)
+
+   `.uc-scope` and `.uc-portal` behave as light content, so existing usage is
+   unchanged and the light view is pixel-identical to before this restructure.
+
+   ISOLATION: all tokens are scoped under these classes (NOT :root). Nothing
+   here touches the existing globals/theme.
+   ========================================================================== */
+
+/* Brand typeface, bundled via webpack (relative paths resolve to
+   ../fonts/, emitted into build/ and URL-rewritten at build time so the
+   fonts load correctly from wp-content, not the server root). */
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:400; font-display:swap; src:url(fonts/ZalandoSans-Regular.bcfcc767.ttf) format("truetype"); }
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:500; font-display:swap; src:url(fonts/ZalandoSans-Medium.41051c31.ttf) format("truetype"); }
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:600; font-display:swap; src:url(fonts/ZalandoSans-SemiBold.d690e087.ttf) format("truetype"); }
+@font-face { font-family:"Zalando Sans"; font-style:normal; font-weight:700; font-display:swap; src:url(fonts/ZalandoSans-Bold.0ac5948b.ttf) format("truetype"); }
+
+/* =============================================================================
+   1. BASE, surface-INDEPENDENT tokens (identical on every surface).
+      Applies to every surface scope so the values are always present.
+   ========================================================================== */
+/* `:root` added (AI-creator port) so DS token VALUES resolve app-wide for
+   inline DS controls (buttons/inputs/triggers) WITHOUT importing the scope's
+   font/color/box-sizing reset, that stays under `.uc-*` only. Nothing in the
+   app references `--uc-*`, so these are inert for existing components. */
+:root,
+.uc-scope,
+.uc-content,
+.uc-chrome,
+.uc-portal {
+  /* ---- Brand + semantic SOLID fills + on-fill text (constant) ----------
+     ORANGE is back on the SOLID brand fill only, this paints the primary /
+     main-CTA buttons (tone="brand" solid). The brand -fg/-soft/-border/-glow
+     below stay NEUTRAL, so soft/outline/ghost brand controls, icon tints and
+     text remain monochrome. --uc-accent stays neutral (no purple). */
+  --uc-brand:   #FD6A35;  --uc-brand-on:   #FFFFFF;
+  --uc-success: #2EA343;  --uc-success-on: #FFFFFF;
+  --uc-danger:  #F65258;  --uc-danger-on:  #FFFFFF;
+  --uc-warning: #FFA940;  --uc-warning-on: #171717;
+  --uc-accent:  var(--uc-inverse-bg);  --uc-accent-on:  var(--uc-inverse-fg);
+
+  /* ---- Family hairline borders (translucent, work on any surface) ----- */
+  --uc-brand-border:   var(--uc-border);
+  --uc-success-border: rgba(46, 163, 67, 0.40);
+  --uc-danger-border:  rgba(246, 82, 88, 0.40);
+  --uc-warning-border: rgba(255, 169, 64, 0.42);
+  --uc-accent-border:  var(--uc-border);
+
+  /* ---- Hover / press glow washes (translucent, surface-agnostic) ------ */
+  --uc-brand-glow-hover:   rgba(128, 128, 128, 0.10); --uc-brand-glow-press:   rgba(128, 128, 128, 0.18);
+  --uc-success-glow-hover: rgba(46, 163, 67, 0.08);  --uc-success-glow-press: rgba(46, 163, 67, 0.16);
+  --uc-danger-glow-hover:  rgba(246, 82, 88, 0.08);  --uc-danger-glow-press:  rgba(246, 82, 88, 0.16);
+  --uc-warning-glow-hover: rgba(255, 169, 64, 0.10); --uc-warning-glow-press: rgba(255, 169, 64, 0.18);
+  --uc-accent-glow-hover:  rgba(128, 128, 128, 0.10); --uc-accent-glow-press:  rgba(128, 128, 128, 0.18);
+
+  /* ---- Inverse text (constant) ----------------------------------------- */
+  --uc-text-inverse: #FFFFFF;
+
+  /* ---- Semantic aliases (resolve per surface via the surface tokens) --- */
+  --uc-bg:        var(--uc-surface-base);
+  --uc-fg:        var(--uc-text-strong);
+  --uc-fg-muted:  var(--uc-text-muted);
+  --uc-card:      var(--uc-surface-raised);
+  --uc-card-fg:   var(--uc-text-strong);
+  --uc-muted:     var(--uc-surface-sunken);
+  --uc-elevated:  var(--uc-surface-overlay);
+
+  /* ---- Radius (UiChemy scale: name = pixel value; mirrors the styleguide
+         corner-radius set). Semantic aliases below keep components working. -- */
+  --uc-radius-0: 0;      --uc-radius-2: 2px;    --uc-radius-4: 4px;
+  --uc-radius-6: 6px;    --uc-radius-8: 8px;    --uc-radius-12: 12px;
+  --uc-radius-16: 16px;  --uc-radius-24: 24px;  --uc-radius-32: 32px;
+  --uc-radius-infinite: 9999px;
+  /* Semantic aliases → numeric scale (value-identical to before) */
+  --uc-radius-xs: var(--uc-radius-4);   --uc-radius-sm: var(--uc-radius-6);
+  --uc-radius-md: var(--uc-radius-8);   --uc-radius-lg: var(--uc-radius-12);
+  --uc-radius-xl: var(--uc-radius-16);  --uc-radius-pill: var(--uc-radius-infinite);
+
+  /* ---- Spacing (UiChemy scale: name = pixels) -------------------------- */
+  --uc-space-0: 0;     --uc-space-1: 1px;   --uc-space-2: 2px;   --uc-space-3: 3px;
+  --uc-space-4: 4px;   --uc-space-5: 5px;   --uc-space-6: 6px;   --uc-space-7: 7px;
+  --uc-space-8: 8px;   --uc-space-9: 9px;   --uc-space-10: 10px; --uc-space-11: 11px;
+  --uc-space-12: 12px; --uc-space-14: 14px; --uc-space-16: 16px; --uc-space-20: 20px;
+  --uc-space-24: 24px; --uc-space-28: 28px; --uc-space-32: 32px; --uc-space-36: 36px;
+  --uc-space-40: 40px; --uc-space-44: 44px; --uc-space-48: 48px;
+
+  /* ---- Typography ------------------------------------------------------ */
+  --uc-font-sans: "Zalando Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --uc-font-mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+  --uc-text-3xs: 8px;    --uc-text-2xs: 10px;  --uc-text-xs: 12px;
+  /* 11px: compact meta / dense-panel text (list meta, inspector hints, code gutter). */
+  --uc-text-11: 11px;
+  --uc-text-sm: 13px;  --uc-text-base: 14px; --uc-text-md: 16px;
+  --uc-text-lg: 18px;   --uc-text-xl: 20px;    --uc-text-2xl: 24px;
+  --uc-text-3xl: 30px;
+  /* --uc-weight-semibold is temporarily folded to Medium (500): no text renders
+     at 600 for now. Flip back to 600 here to restore SemiBold everywhere it's
+     used (Card / Alert / Dialog / Accordion titles, etc.). */
+  --uc-weight-regular: 400; --uc-weight-medium: 500;  --uc-weight-semibold: 500;
+  --uc-leading-tight: 1.2;  --uc-leading-snug: 1.35;  --uc-leading-normal: 1.5;
+  --uc-tracking-tight: -0.01em; --uc-tracking-normal: 0; --uc-tracking-wide: 0.02em;
+
+  /* ---- Elevation (neutral recipes; control-brand recolored to orange) --
+     Resting + hover surfaces are FLAT (ElevenLabs-style): definition comes
+     from the single hairline border, not a shadow. Only true overlays
+     (popovers/menus/modals = shadow-3/4/5) still float. */
+  --uc-shadow-1: none;
+  --uc-shadow-2: none;
+  --uc-shadow-3: 0 0 0 1px oklch(50% 0.01 285 / 0.06), 0 2px 4px -1px oklch(0% 0 0 / 0.05), 0 6px 14px -3px oklch(0% 0 0 / 0.08);
+  --uc-shadow-4: 0 0 0 1px oklch(50% 0.01 285 / 0.06), 0 6px 12px -4px oklch(0% 0 0 / 0.06), 0 14px 28px -6px oklch(0% 0 0 / 0.10);
+  --uc-shadow-5: 0 0 0 1px oklch(50% 0.01 285 / 0.06), 0 12px 24px -8px oklch(0% 0 0 / 0.08), 0 28px 56px -12px oklch(0% 0 0 / 0.14);
+  /* Filled controls (solid buttons): light top highlight + one soft drop.
+     Kept subtle, depth reads without heavy shadows. */
+  --uc-shadow-control:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.18),
+    0 1px 2px rgba(0, 0, 0, 0.07),
+    0 2px 3px -1px rgba(0, 0, 0, 0.05);
+  /* Colored solids (brand/success/danger): neutral dark inner edge so it suits
+     any hue, plus a light top highlight and soft drop. */
+  --uc-shadow-control-brand:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.24),
+    inset 0 0 0 1px rgba(0, 0, 0, 0.14),
+    0 1px 2px rgba(0, 0, 0, 0.09),
+    0 2px 3px -1px rgba(0, 0, 0, 0.06);
+  --uc-shadow-control-pressed: inset 0 1px 2px rgba(0, 0, 0, 0.14);
+  --uc-shadow-input: inset 0 1px 2px rgba(0, 0, 0, 0.05), inset 0 2px 4px -2px rgba(0, 0, 0, 0.04);
+  /* Raised secondary controls (outline buttons, select/menu triggers): a faint
+     top highlight and a whisper of drop. Edge comes from the component border. */
+  --uc-shadow-raised:
+    inset 0 1px 0 0 rgba(255, 255, 255, 0.10),
+    0 1px 2px rgba(0, 0, 0, 0.04),
+    0 1px 3px -1px rgba(0, 0, 0, 0.04);
+  /* Very subtle gloss: faint light top → faint dark bottom. */
+  --uc-sheen: linear-gradient(to bottom, rgba(255, 255, 255, 0.08), rgba(0, 0, 0, 0.03));
+
+  /* ---- Control sizing -------------------------------------------------- */
+  --uc-control-h-sm: 28px; --uc-control-h-md: 32px; --uc-control-h-lg: 40px;
+
+  /* ---- Motion ---------------------------------------------------------- */
+  --uc-dur-fast: 160ms; --uc-dur-base: 240ms; --uc-dur-slow: 340ms;
+  /* Appearance of popovers / overlays (tooltip, menu, select, dialog), a touch
+     slower than base so things ease in gracefully instead of flashing on. */
+  --uc-dur-enter: 300ms;
+  --uc-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --uc-ease-emphasized: cubic-bezier(0.3, 0, 0, 1);
+  --uc-ease-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* ---- Z-index --------------------------------------------------------- */
+  /* Dropdowns/selects/menus sit ABOVE dialogs (1250 > z-dialog 1200) so a Select
+     opened inside a modal renders on top instead of behind it. Tooltip stays highest. */
+  --uc-z-overlay: 1100; --uc-z-dialog: 1200; --uc-z-dropdown: 1250; --uc-z-tooltip: 1300;
+}
+
+/* =============================================================================
+   2. SURFACE, CONTENT (light). DEFAULT. Values identical to pre-restructure,
+      so the light view is unchanged. `.uc-scope` / `.uc-portal` map here too.
+   ========================================================================== */
+:root,
+.uc-scope,
+.uc-content,
+.uc-portal {
+  --uc-surface-sunken:  #EBEBEB;
+  --uc-surface-base:    #F4F4F4;
+  --uc-surface-raised:  #FFFFFF;
+  --uc-surface-overlay: rgba(255, 255, 255, 0.10);
+  --uc-surface-control: #FFFFFF;   /* secondary control fill (raised) */
+  --uc-button-soft-neutral-bg: var(--uc-surface-sunken);
+  --uc-button-soft-neutral-shadow: var(--uc-shadow-1);
+  /* The hover / highlight wash (menu rows, the sliding pill in Select and
+     Menu). SEPARATE from --uc-surface-control, which it used to borrow: that
+     token is a RAISED FILL, and the two values only coincide on a dark surface
+     where rgba(255,255,255,0.05) happens to read as both. On light, a raised
+     control is #FFFFFF — a white pill on a white menu, i.e. invisible — while
+     a hover wash has to be darker than what it sits on. Translucent so it
+     composites over whatever surface the menu uses. */
+  --uc-surface-hover: rgba(0, 0, 0, 0.04);
+
+  --uc-text-strong: #0A0A0A;
+  --uc-text:        #171717;
+  --uc-text-muted:  #737373;
+  --uc-text-subtle: #A3A3A3;
+
+  /* high-contrast inverse fill (B&W primary): dark on light content */
+  --uc-inverse-bg: #171717;
+  --uc-inverse-fg: #FFFFFF;
+
+  /* One soft, semi-transparent hairline (ElevenLabs uses rgba(0,0,0,0.1)).
+     Translucent so it composites correctly over white AND grey tiles. */
+  --uc-border-subtle: rgba(0, 0, 0, 0.055);
+  --uc-border:        rgba(0, 0, 0, 0.09);
+  --uc-border-strong: rgba(0, 0, 0, 0.14);
+  /* The HOVER border on controls — one step above --uc-border-strong, and a
+     BORDER value, not a text one. Every hover ring used --uc-text-subtle,
+     which on dark is ALSO #525252 (the two coincide there, so the mistake was
+     invisible — and the hover was in fact a no-op, resting and hover being the
+     same colour) but on light is #A3A3A3: roughly 36% black against a 14%
+     resting border, i.e. a hard outline snapping in instead of a step up. */
+  --uc-border-hover:  rgba(0, 0, 0, 0.22);
+  --uc-ring:          #737373;
+
+  /* per-family foreground (readable on light). brand/accent = dark ink. */
+  --uc-brand-fg:   #171717;
+  --uc-success-fg: #0A842A;
+  --uc-danger-fg:  #D12D37;
+  --uc-warning-fg: #AA712B;
+  --uc-accent-fg:  #171717;
+
+  /* per-family soft tint backgrounds (opaque light tints). brand/accent = grey. */
+  --uc-brand-soft:   #F0F0F0;
+  --uc-success-soft: #E7FFE7;
+  --uc-danger-soft:  #FFF2EF;
+  --uc-warning-soft: #FFEDD8;
+  --uc-accent-soft:  #F0F0F0;
+}
+
+/* =============================================================================
+   3. SURFACE, CONTENT DARK (future). Token change only; no component rebuild.
+      Slightly lighter than chrome so content sits "above" the fixed chrome.
+   ========================================================================== */
+.uc-content[data-theme="dark"] {
+  --uc-surface-sunken:  #151515;
+  --uc-surface-base:    #1C1C1C;
+  --uc-surface-raised:  #242424;
+  --uc-surface-overlay: #2A2A2A;
+  --uc-surface-control: rgba(255, 255, 255, 0.05);  /* subtle lift, blends on dark */
+  /* Muted neutral buttons use the secondary control recipe on dark surfaces. */
+  --uc-button-soft-neutral-bg: var(--uc-surface-control);
+  --uc-button-soft-neutral-shadow: var(--uc-shadow-raised);
+
+  --uc-text-strong: #F5F5F5;
+  --uc-text:        #E5E5E5;
+  --uc-text-muted:  #A3A3A3;
+  --uc-text-subtle: #737373;
+
+  /* inverse flips to light-on-dark so the B&W primary stays high-contrast */
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #1C1C1C;
+
+  --uc-border-subtle: #2E2E2E;
+  --uc-border:        #3D3D3D;
+  --uc-border-strong: #525252;
+  /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
+  --uc-border-hover:  #525252;
+  --uc-ring:          #A3A3A3;
+
+  --uc-brand-fg:   #EDEDED;
+  --uc-success-fg: #A7EAAA;
+  --uc-danger-fg:  #FDC9C6;
+  --uc-warning-fg: #FFC680;
+  --uc-accent-fg:  #EDEDED;
+
+  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+  --uc-warning-soft: rgba(255, 169, 64, 0.22);
+  --uc-accent-soft:  rgba(255, 255, 255, 0.12);
+}
+
+/* =============================================================================
+   4. SURFACE, CHROME (dark, fixed). Values from the existing app dark sidebar
+      (#171717 / #202020, text-white / text-weakest, border-dark-weakest/default).
+   ========================================================================== */
+.uc-chrome {
+  --uc-surface-sunken:  #101010;
+  --uc-surface-base:    #171717;
+  --uc-surface-raised:  #202020;
+  --uc-surface-overlay: #242424;
+  --uc-surface-control: rgba(255, 255, 255, 0.05);  /* subtle lift, blends on dark */
+  --uc-button-soft-neutral-bg: var(--uc-surface-control);
+  --uc-button-soft-neutral-shadow: var(--uc-shadow-raised);
+  /* Same value --uc-surface-control had, so dark is unchanged by the split. */
+  --uc-surface-hover: rgba(255, 255, 255, 0.05);
+
+  --uc-text-strong: #FFFFFF;
+  --uc-text:        #A3A3A3;
+  --uc-text-muted:  #737373;
+  --uc-text-subtle: #525252;
+
+  /* inverse flips to light-on-dark so the B&W primary stays high-contrast */
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #171717;
+
+  --uc-border-subtle: #333333;
+  --uc-border:        #404040;
+  --uc-border-strong: #525252;
+  /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
+  --uc-border-hover:  #525252;
+  --uc-ring:          #A3A3A3;
+
+  --uc-brand-fg:   #EDEDED;
+  --uc-success-fg: #A7EAAA;
+  --uc-danger-fg:  #FDC9C6;
+  --uc-warning-fg: #FFC680;
+  --uc-accent-fg:  #EDEDED;
+
+  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+  --uc-warning-soft: rgba(255, 169, 64, 0.22);
+  --uc-accent-soft:  rgba(255, 255, 255, 0.12);
+}
+
+/* =============================================================================
+   4b. POPOVER, fixed dark scope for dropdowns (Select / Menu). Always dark in
+       every mode. Applied alongside `uc-portal` (base tokens + box-sizing).
+   ========================================================================== */
+.uc-pop-dark {
+  --uc-surface-sunken:  #141414;
+  --uc-surface-base:    #1A1A1A;
+  --uc-surface-raised:  #242424;
+  /* A dropdown must read as a LAYER above the panel. The old #1C1C1C sat
+     between the panel chrome (#171717) and its field surfaces (#202020/#242424),
+     so a dark list melted into the dark panel. #2E2E2E is clearly lighter than
+     every panel surface, and the stronger shadow below (soft dark drops that
+     actually show on dark, reused from the canvas dock bar) plus the .content
+     border give it a crisp, floating edge. [ui-ux blend fix] */
+  --uc-surface-overlay: #2E2E2E;
+  --uc-surface-control: rgba(255, 255, 255, 0.08);
+  --uc-button-soft-neutral-bg: var(--uc-surface-control);
+  --uc-button-soft-neutral-shadow: var(--uc-shadow-raised);
+  /* Same value --uc-surface-control had here; a pop-up is already a layer up,
+     so its wash is a touch stronger than the panel's. */
+  --uc-surface-hover: rgba(255, 255, 255, 0.08);
+  --uc-shadow-4: 0 16px 44px -12px rgb(0 0 0 / 55%), 0 4px 12px -4px rgb(0 0 0 / 40%);
+
+  --uc-text-strong: #FFFFFF;
+  --uc-text:        #E5E5E5;
+  --uc-text-muted:  #A3A3A3;
+  --uc-text-subtle: #737373;
+
+  --uc-inverse-bg: #F5F5F5;
+  --uc-inverse-fg: #171717;
+
+  --uc-border-subtle: #2E2E2E;
+  --uc-border:        #3D3D3D;
+  --uc-border-strong: #525252;
+  /* Exactly what --uc-text-subtle resolves to here, so dark is unchanged. */
+  --uc-border-hover:  #525252;
+  --uc-ring:          #A3A3A3;
+
+  --uc-brand-fg:   #EDEDED;  --uc-brand-soft:   rgba(255, 255, 255, 0.12);
+  --uc-success-fg: #A7EAAA;  --uc-success-soft: rgba(46, 163, 67, 0.20);
+  --uc-danger-fg:  #FDC9C6;  --uc-danger-soft:  rgba(246, 82, 88, 0.20);
+  --uc-warning-fg: #FFC680;  --uc-warning-soft: rgba(255, 169, 64, 0.22);
+  --uc-accent-fg:  #EDEDED;  --uc-accent-soft:  rgba(255, 255, 255, 0.12);
+
+  color: var(--uc-text);
+}
+
+/* =============================================================================
+   5. BASELINES, each surface paints its own background + text.
+   ========================================================================== */
+.uc-scope,
+.uc-content,
+.uc-chrome {
+  font-family: var(--uc-font-sans);
+  --uich-ff: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  line-height: var(--uc-leading-normal);
+  color: var(--uc-text);
+  background: var(--uc-surface-base);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+/* Portalled content mounts in <body>; carry font/tokens but no background. */
+.uc-portal {
+  font-family: var(--uc-font-sans);
+  --uich-ff: var(--uc-font-sans);
+  font-size: var(--uc-text-base);
+  line-height: var(--uc-leading-normal);
+  color: var(--uc-text);
+  -webkit-font-smoothing: antialiased;
+}
+.uc-scope *, .uc-scope *::before, .uc-scope *::after,
+.uc-content *, .uc-content *::before, .uc-content *::after,
+.uc-chrome *, .uc-chrome *::before, .uc-chrome *::after,
+.uc-portal *, .uc-portal *::before, .uc-portal *::after {
+  box-sizing: border-box;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .uc-scope *, .uc-content *, .uc-chrome *, .uc-portal * {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* =============================================================================
+   UiChemy Create, COMPONENT tokens (per-component knobs)
+   -----------------------------------------------------------------------------
+   Per-component sizing/shape variables, editable from the internal DS editor
+   (tools/ds-editor). Each defaults to a GLOBAL token via var(), so out of the
+   box a component still follows the global scale, overriding one here changes
+   ONLY that component, not the whole system.
+
+   Loaded right after tokens.css (src/index.js), same surface scopes, so the
+   values resolve wherever the components render. The component CSS modules read
+   these with the original value as a var() fallback, so a missing/av value can
+   never break a component.
+   ========================================================================== */
+.uc-scope,
+.uc-content,
+.uc-chrome,
+.uc-portal {
+  /* ---- Button --------------------------------------------------------- */
+  --uc-btn-radius: var(--uc-radius-md);
+  --uc-btn-weight: var(--uc-weight-medium);
+  --uc-btn-h:      var(--uc-control-h-md);
+  --uc-btn-px:     var(--uc-space-16);
+
+  /* ---- Input ---------------------------------------------------------- */
+  --uc-input-radius: var(--uc-radius-md);
+  --uc-input-h:      var(--uc-control-h-md);
+  --uc-input-px:     var(--uc-space-12);
+
+  /* ---- Card ----------------------------------------------------------- */
+  --uc-card-radius: var(--uc-radius-lg);
+  --uc-card-pad:    var(--uc-space-20);
+
+  /* ---- Tabs (pill variant) -------------------------------------------- */
+  --uc-tab-track-bg:     #F2F2F2;   /* lighter track (was --uc-surface-sunken #EBEBEB) */
+  --uc-tab-track-stroke: none;      /* no hairline stroke around the track */
+  --uc-tab-track-radius: var(--uc-radius-md);
+  --uc-tab-track-pad:    3px;
+  --uc-tab-radius:       var(--uc-radius-sm);
+  --uc-tab-h:            26px;
+  --uc-tab-px:           var(--uc-space-12);
+}
+
+/* FloatingToolbar shares the global palette in either theme. */
+.uc-scope,
+.uc-content,
+.uc-chrome,
+.uc-portal,
+.uc-pop-dark {
+  --uc-toolbar-bg: var(--uc-surface-raised);
+  --uc-toolbar-hover-bg: var(--uc-surface-overlay);
+  --uc-toolbar-fg: var(--uc-text);
+  --uc-toolbar-border: var(--uc-border);
+  --uc-toolbar-height: 48px;
+  --uc-toolbar-action-size: 34px;
+  --uc-toolbar-dismiss-size: 44px;
+  --uc-toolbar-radius: var(--uc-radius-lg);
+  --uc-toolbar-action-radius: var(--uc-btn-radius);
+  --uc-toolbar-compact-height: var(--uc-space-40);
+  --uc-toolbar-compact-action-size: var(--uc-control-h-md);
+  --uc-toolbar-compact-radius: var(--uc-toolbar-radius);
+  --uc-toolbar-shadow: var(--uc-shadow-4);
+}
+
+.uc-pop-dark {
+
+  /* Pill tabs inside a dark pop-up (e.g. the model picker's CLI | WP Connectors
+     strip). `.uc-portal` above pins the track to the light #F2F2F2, which
+     beats anything inherited from a dark panel, so re-point it to the dark
+     sunken well + hairline here. */
+  --uc-tab-track-bg:     var(--uc-surface-sunken);
+  --uc-tab-track-stroke: inset 0 0 0 1px var(--uc-border-subtle);
+}
+
+/**
+ * UiChemy Composer Builder — block-editor button.
+ *
+ * The "Edit with UiChemy" control that assets/js/uich-cb-gutenberg.js inserts
+ * into the block editor header, plus the document-sidebar fallback panel.
+ *
+ * Every value is a design-system token, so this button is the dashboard's
+ * primary button (DS Button, variant="solid" tone="brand", size="md") wearing
+ * the same fill, radius, weight, typeface and control shadow. The recipe is
+ * mirrored rather than imported because Button.module.css is a CSS Module — its
+ * class names are hashed at build time, so plain DOM created in JavaScript has
+ * no way to reference them.
+ *
+ * Tokens resolve from :root (tokens.css defines them there as well as on the
+ * `.uc-*` scopes), so no wrapper element is needed around the button. Every
+ * var() still carries a literal fallback: this stylesheet loads into wp-admin,
+ * where a future change to the token file must never leave an unstyled control
+ * in WordPress's own header.
+ */
+
+.uich-cb-header-button {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: var( --uc-space-8, 8px );
+	height: var( --uc-control-h-md, 2rem );
+	margin-inline-end: var( --uc-space-8, 8px );
+	padding: 0 var( --uc-space-16, 16px );
+	border: none;
+	border-radius: var( --uc-btn-radius, var( --uc-radius-md, 8px ) );
+	background: var( --uc-brand, #fd6a35 );
+	background-image: var( --uc-sheen, linear-gradient( to bottom, rgba( 255, 255, 255, 0.08 ), rgba( 0, 0, 0, 0.03 ) ) );
+	box-shadow: var(
+		--uc-shadow-control-brand,
+		inset 0 1px 0 0 rgba( 255, 255, 255, 0.24 ),
+		inset 0 0 0 1px rgba( 0, 0, 0, 0.14 ),
+		0 1px 2px rgba( 0, 0, 0, 0.09 ),
+		0 2px 3px -1px rgba( 0, 0, 0, 0.06 )
+	);
+	color: var( --uc-brand-on, #fff );
+	font-family: var( --uc-font-sans, inherit );
+	font-size: var( --uc-text-base, 0.875rem );
+	font-weight: var( --uc-btn-weight, var( --uc-weight-medium, 500 ) );
+	line-height: 1;
+	white-space: nowrap;
+	cursor: pointer;
+	-webkit-user-select: none;
+	   -moz-user-select: none;
+	        user-select: none;
+	position: relative;
+	isolation: isolate;
+	transition:
+		background var( --uc-dur-fast, 160ms ) var( --uc-ease-standard, ease ),
+		box-shadow var( --uc-dur-fast, 160ms ) var( --uc-ease-standard, ease ),
+		transform var( --uc-dur-fast, 160ms ) var( --uc-ease-standard, ease );
+}
+
+.uich-cb-header-button:hover:not( :disabled ) {
+	background-image:
+		linear-gradient( rgba( 255, 255, 255, 0.12 ), rgba( 255, 255, 255, 0.12 ) ),
+		var( --uc-sheen, linear-gradient( to bottom, rgba( 255, 255, 255, 0.08 ), rgba( 0, 0, 0, 0.03 ) ) );
+}
+
+.uich-cb-header-button:active:not( :disabled ) {
+	transform: translateY( 0.5px );
+	background-image:
+		linear-gradient( rgba( 0, 0, 0, 0.12 ), rgba( 0, 0, 0, 0.12 ) ),
+		var( --uc-sheen, linear-gradient( to bottom, rgba( 255, 255, 255, 0.08 ), rgba( 0, 0, 0, 0.03 ) ) );
+	box-shadow: var( --uc-shadow-control-pressed, inset 0 1px 2px rgba( 0, 0, 0, 0.14 ) );
+}
+
+.uich-cb-header-button:focus-visible {
+	outline: 2px solid var( --uc-ring, rgba( 23, 23, 23, 0.4 ) );
+	outline-offset: 2px;
+}
+
+.uich-cb-header-button:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+.uich-cb-header-button__logo {
+	display: block;
+	width: 16px;
+	height: 16px;
+}
+
+/* Our own single-path mark, whited out to sit on the brand fill. Scoped to the
+   `--mono` modifier so a white-labelled logo — which may be full colour — is
+   never flattened along with it. See Uich_CB_Enqueue's `logoMono`. */
+.uich-cb-header-button__logo--mono {
+	filter: brightness( 0 ) invert( 1 );
+}
+
+/* In the left document tools, beside UiChemy's Paste button: the gap goes
+   before the button rather than after it, matching Paste's own 8px. */
+.editor-document-tools__left .uich-cb-header-button,
+.uich-paste-clipboard-wrap + .uich-cb-header-button {
+	margin-inline: var( --uc-space-8, 8px ) 0;
+}
+
+/* WordPress already crowds its header on small screens — drop to the mark. */
+@media screen and ( max-width: 782px ) {
+	.uich-cb-header-button {
+		padding: 0 var( --uc-space-10, 10px );
+	}
+
+	.uich-cb-header-button__label {
+		display: none;
+	}
+}
+
+/* ------------------------------------------------------------------ *
+ * Document sidebar fallback panel
+ * ------------------------------------------------------------------ */
+
+.uich-cb-panel__intro {
+	margin-block-start: 0;
+	color: var( --uc-text-muted, #737373 );
+	font-family: var( --uc-font-sans, inherit );
+	font-size: var( --uc-text-sm, 0.8125rem );
+}
+

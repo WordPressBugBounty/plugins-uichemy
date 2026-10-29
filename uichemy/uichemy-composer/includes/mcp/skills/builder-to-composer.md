@@ -205,10 +205,24 @@ For every page and every builder template, in this order:
 
 Use this instead of 3a–3d for every page/template routed **Copy**. Nothing is re-rendered or re-derived; the code is moved as stored.
 
+<!-- mode:sections -->
 1. **Read from the source:** the page's structure and each section's code (`page` `get-structure`, `get-section-code`, or `get-page-code` for page-level code), and for templates the theme-builder template list and each template's sections and conditions. Also read the shared site-level code and files the pages depend on (`platform` `get-site-code`, `code-file` assets, performance and site settings, the design-system block). Check each ability name with `get-ability-info` on that site before relying on it.
+<!-- /mode -->
+<!-- mode:composer -->
+1. **Read from the source** with the source site's own calls - check them with `get-ability-info` there, because the source may build with sections even though this target does not. A source that builds with sections: the page's structure and each section's code (`page` `get-structure`, `get-section-code`, or `get-page-code` for page-level code). A source that is itself a Composer Builder site: `page` `get-code`. For templates, the theme-builder template list and each template's code and conditions. Also read the shared site-level code and files the pages depend on (`platform` `get-site-code`, `code-file` assets, performance and site settings, the design-system block).
+<!-- /mode -->
 2. **Translate references** in the code before writing: media URLs and attachment IDs (through the ledger from Step 2.3), internal links, and any dynamic reference (post type, taxonomy, field, term names) which must already exist on the target from Step 2.2. Leave everything else untouched: markup, CSS, JS, animation controller blocks, loop and binding syntax.
+<!-- mode:sections -->
 3. **Write to the target:** create the page (`page` `create` / `create-with-sections`, then `append-section` or `set-section-code` / `set-page-code`) with the same title, slug, status and section order. Templates are recreated through `theme-builder` with the **same conditions**. Copy shared code files and site-level code before the sections that use them.
 4. **Per-section progress:** `📦 [target] "Home" section 4/9 copied`. Update the ledger.
+<!-- /mode -->
+<!-- mode:composer -->
+3. **Write to the target** - it builds with the Composer Builder, so each page is ONE document:
+   - **Same site** (the page already has its Composer sections here): `page` `create {post_id, confirm: true}` with no `html` converts it in place. Its sections are folded into the one document in order, and each keeps its own block of CSS and JS, so its animation controls keep working. The old builder data is kept. Ask the user before converting.
+   - **Another site:** one `page` `create {title, slug, status, html, css, js, head_code}` with the whole page. Put the sections' `html` in order inside one `<main>`, each as `<!-- region: <Label> -->` + its markup; join their `css` (each is already scoped to its own wrapper class); wrap each section's `js` in its own IIFE. Merge every section's `uichemy_controller_bridge` into ONE declaration at the top of `js`, renaming clashing names (prefix them by region) and the reads that use them - two declarations stop all of the page's JS. Page-level code from `get-page-code` goes into `head_code` / `body_end_code`.
+   - Templates are recreated through `theme-builder` with the **same conditions**. Copy shared code files and site-level code before the pages that use them.
+4. **Per-page progress:** `📦 [target] "Home" copied (9 regions)`. Update the ledger.
+<!-- /mode -->
 5. Then go to Step 4 (verify). A copy is still checked: a broken reference (missing field, media not mapped, template condition off) shows as a blank region, not an error.
 
 ---
@@ -234,22 +248,37 @@ How to tell: **compare against the data** (does it equal an entry's title/field/
 
 ### 3c. Clean code, then build through code-to-wordpress
 
-Write clean semantic HTML, one CSS block (desktop + media queries) and minimal JS for the content area (Appendix A). Rebuild interactive widgets in a few lines of vanilla JS or GSAP, matching their initial state exactly. Then follow `uichemy-composer/read-skill` `{ name: "code-to-wordpress" }` **from Step 1.5 (split into sections) onward**, with these overrides:
+Write clean semantic HTML, one CSS block (desktop + media queries) and minimal JS for the content area (Appendix A). Rebuild interactive widgets in a few lines of vanilla JS or GSAP, matching their initial state exactly. <!-- mode:sections -->
+Then follow `uichemy-composer/read-skill` `{ name: "code-to-wordpress" }` **from Step 1.5 (split into sections) onward**, with these overrides:
+<!-- /mode -->
+<!-- mode:composer -->
+Then follow `uichemy-composer/read-skill` `{ name: "code-to-wordpress" }` **from Step 1.5 onward, with its "Composer Builder sites" changes** (regions of one document, written with one `create`), plus these overrides:
+<!-- /mode -->
 
 - Pages → `uichemy-composer/page` (title/slug/status per Rule 4).
 - Builder templates (single, archive, header, footer, 404, search) → native UiChemy theme-builder templates (`uichemy-composer/theme-builder`) with the **same display conditions**, not pages. Use its `architecture` view to see which slots are empty.
 - Dynamic regions are loops/bindings (3b), not copied values.
 - A builder page's header/footer usually belongs to the theme or a template, so migrate it once as a site-wide template (ask: site-wide or page-only, as `code-to-wordpress` Step 2.5, "ask the user where Header & Footer go"), not once per page.
-- Per-item progress line: `🔧 [target] "About" 3/14 · 5 sections · 1 loop · 2 bindings`.
+- Per-item progress line: `🔧 [target] "About" 3/14 · 5 regions · 1 loop · 2 bindings`.
 - **Media:** `code-to-wordpress` Step 5 does not run on its own. Assets were already moved in Step 2a; use the ledger to point sections at the target's media, and only handle what the ledger does not have.
 - **Summary:** skip `code-to-wordpress` Step 7. This guide's **Final report** replaces it.
 
+<!-- mode:sections -->
 ### 3d. If the source rendered without the theme, use Elementor Canvas
+<!-- /mode -->
+<!-- mode:composer -->
+### 3d. If the source rendered without the theme, use UiChemy Canvas
+<!-- /mode -->
 
 Some builders can run with the active theme switched off (Oxygen's "Disable Theme" is one example), so the page shows no theme header, footer, title or wrapper. A Composer page on the target would inherit the target theme's template and show that chrome, so it would not match.
 
 - **Detect:** the source page you rendered shows **no theme header, footer, title or sidebar** and the body has no theme wrapper (`#page`, `#content`, `.site-header`, `.site-footer`, `.entry-header`), or the builder's own setting says so. If unclear, ask the user in one line. Do not guess.
+<!-- mode:sections -->
 - **If yes:** set the **new** page's template to `elementor_canvas` (stored in `_wp_page_template`). Order of options: a template field on `uichemy-composer/page` if `get-ability-info` shows one; else any tool you have that sets a page template (e.g. REST `POST /wp/v2/pages/<id>` with `{ "template": "elementor_canvas" }`); else tell the user: Elementor → Page Settings → Layout → Elementor Canvas.
+<!-- /mode -->
+<!-- mode:composer -->
+- **If yes:** set the **new** page's template with `uichemy-composer/page` `update {post_id, template: "uichemy-canvas"}` - UiChemy Canvas, a blank document with no theme header, footer or title. If it is refused, the refusal lists the templates this theme offers; pick the blank one, or tell the user.
+<!-- /mode -->
 - **Check** by opening the new page (draft preview is fine). If theme chrome is still there, report it.
 - Canvas removes theme chrome, so the page must carry whatever the original showed on its own.
 - If no: leave the template alone.

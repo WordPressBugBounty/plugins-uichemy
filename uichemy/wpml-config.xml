@@ -53,6 +53,12 @@
 		<custom-field action="ignore">_uichemy_original_url</custom-field>
 		<custom-field action="ignore">_uich_mcp_source_image_url</custom-field>
 		<custom-field action="ignore">_uich_mcp_source_image_hash</custom-field>
+
+		<!-- Composer Builder document (html / css / js / head and body code) and its
+		     on/off flag. Copy-once: a new translation starts from the original page and is
+		     edited in its own language afterwards, like the SEO fields above. -->
+		<custom-field action="copy-once">_uichemy_content</custom-field>
+		<custom-field action="copy-once">_uichemy_cb_enabled</custom-field>
 	</custom-fields>
 
 </wpml-config>

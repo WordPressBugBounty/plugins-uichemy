@@ -708,6 +708,10 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				'enable_elementor'       => 1,
 				'enable_gutenberg'       => 1,
 				'enable_bricks'          => 1,
+				// The UiChemy Builder itself. Off hides "Edit with UiChemy" and
+				// closes the editor; built pages keep rendering. See
+				// uich_cb_builder_enabled().
+				'enable_builder'         => 1,
 				'enable_mcp'             => 1,
 				'store_forms'            => 1,
 				'enable_frontend_editor' => 1,

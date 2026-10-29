@@ -1,13 +1,10 @@
 <?php
 /**
- * Composer pipeline tool definitions for UiChemy
+ * Shared MCP handlers for UiChemy
  *
- * Provides the Composer pipeline tool specs + handlers (Figma-to-HTML, Elementor
- * globals, full-site building). UiChemy no longer runs its own MCP server —
- * these tools are surfaced as WordPress abilities (see
- * class-uichemy-abilities.php) and served through the site-wide MCP gateway.
- * This class is now a spec/handler provider only, consumed via
- * get_tool_definitions().
+ * The execute_* handlers behind the v2 abilities (site readiness, design
+ * system, page / section writes, templates, media upload). The v2 router
+ * (class-uichemy-mcp-v2-router.php) dispatches here.
  *
  * @link       https://posimyth.com/
  * @since      1.0.0
@@ -22,8 +19,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
 
 	/**
-	 * Holds the Composer pipeline tool specs and their handler callables,
-	 * exposed to the abilities layer via get_tool_definitions().
+	 * Handler callables the v2 router dispatches to.
 	 */
 	class UiChemy_Composer_MCP_Server {
 
@@ -32,12 +28,7 @@ if ( ! class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
 		// ============================================================
 
 		const SERVER_ID          = 'uichemy-composer-mcp';
-		const SERVER_NAME        = 'Composer';
 		const SERVER_VERSION     = '1.0.0';
-		const SERVER_DESCRIPTION = 'Composer MCP convert Figma designs to HTML/CSS, manage Elementor globals, and build full WordPress sites using the Composer pipeline.';
-		const REST_NAMESPACE     = 'uichemy/v1';
-		const REST_ROUTE         = 'mcp';
-		const PIPELINE_DIR       = UICHEMY_PATH . 'includes/mcp/pipeline/';
 		// Enable flag read by UiChemy_Abilities (class-uichemy-abilities.php). The
 		// class referenced this constant without defining it, which fatals on every
 		// ability call; define it so the check works. Absent option → default '1'
@@ -45,164 +36,13 @@ if ( ! class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
 		const ENABLED_OPTION     = 'uichemy_composer_mcp_enabled';
 
 		// ============================================================
-		// TOOL SOURCE ONLY
+		// HANDLERS ONLY
 		//
-		// UiChemy no longer registers its own MCP server (retired during the
-		// gateway consolidation). The former init() / ensure_relay_session() /
-		// register_mcp_server() methods were removed. This class now exists only
-		// to supply tool specs + handlers to the abilities layer
-		// (class-uichemy-abilities.php) and the uichemy_mcp_tools bridge filter
-		// via get_tool_definitions().
+		// This class registers no MCP server and publishes no tool table. It
+		// holds the execute_* handlers the v2 router (UiChemy_MCP_V2_Router)
+		// dispatches to. The legacy /wp-json/uichemy/v1/mcp flat-tool endpoint
+		// was removed in 5.2.x; v2 (/wp-json/uichemy/v2/mcp) is the only surface.
 		// ============================================================
-
-		/**
-		 * Tool name → handler callable map. Consumed by get_tool_definitions(),
-		 * which feeds the abilities layer (class-uichemy-abilities.php) and the
-		 * `uichemy_mcp_tools` bridge filter.
-		 *
-		 * @return array<string, callable>
-		 */
-		/**
-		 * The v1 tool definitions, kept on this class so every existing caller —
-		 * the loader's uichemy_mcp_tools bridge and the abilities registrar — keeps
-		 * working unchanged. The table itself now lives in UiChemy_MCP_V1_Tools
-		 * (includes/mcp/v1/), so retiring v1 is a matter of deleting that file.
-		 *
-		 * @return array<int,array>
-		 */
-		public static function get_tool_definitions() {
-			if ( ! class_exists( 'UiChemy_MCP_V1_Tools' ) ) {
-				return array();
-			}
-
-			return UiChemy_MCP_V1_Tools::get_tool_definitions();
-		}
-
-		public static function execute_uichemy_composer_convert( $arguments ) {
-			$arguments   = is_array( $arguments ) ? $arguments : array();
-			$figma_url   = isset( $arguments['figma_url'] ) ? (string) $arguments['figma_url'] : '';
-			$phase       = isset( $arguments['phase'] ) ? (string) $arguments['phase'] : '1';
-
-			if ( '' === trim( $figma_url ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Missing required parameter: figma_url' );
-			}
-
-			// Phase 1b loads the sync/lookup doc (globals sync is ON). To disable
-			// globals again, remap '1b' => array() and restore the short-circuit
-			// below that returns a "skip" instruction (see git history).
-			$phase_files = array(
-				'1'  => array( '01-overview.md', '02-phase1-structure.md', '03-phase1-tokens.md' ),
-				'1b' => array( '04-phase1-sync-lookup.md' ),
-				'2'  => array( '05-phase2-generate.md', '06-phase2-upload.md' ),
-				'3'  => array( '07-phase3-appendix.md' ),
-			);
-
-			if ( ! isset( $phase_files[ $phase ] ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Invalid phase "' . $phase . '". Valid values: 1, 1b, 2, 3' );
-			}
-
-			$pipeline_dir = self::PIPELINE_DIR;
-			$file_names   = $phase_files[ $phase ];
-			$parts        = array();
-
-			foreach ( $file_names as $name ) {
-				$path = $pipeline_dir . $name;
-				if ( ! is_readable( $path ) ) {
-					continue;
-				}
-				$chunk = file_get_contents( $path );
-				if ( is_string( $chunk ) && '' !== trim( $chunk ) ) {
-					$parts[] = $chunk;
-				}
-			}
-
-			if ( empty( $parts ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Pipeline phase "' . $phase . '" files not found or empty. Expected: ' . implode( ', ', $file_names ) );
-			}
-
-			$pipeline = str_replace( '{{FIGMA_URL}}', $figma_url, implode( "\n\n", $parts ) );
-
-			return array(
-				'type'     => 'resource',
-				'uri'      => 'uichemy://composer/pipeline/phase-' . $phase,
-				'mimeType' => 'text/markdown',
-				'text'     => self::get_pipeline_enforce_block( $phase ) . $pipeline,
-			);
-		}
-
-		private static function get_pipeline_enforce_block( $phase ) {
-			if ( '1' === $phase ) {
-				return "## ⚠️ PHASE 1 — READ FIRST (server-injected)
-
-**⛔ TEMP FILE RULE — HARD STOP (read this first)**
-When ANY tool result (get_globals_css, get_variable_defs, get_design_context) is saved to a temp file path instead of returned inline — STOP. Do NOT touch the Bash tool. Note: Step 3 uses per-section parallel calls (not root) — each section with excludeScreenshot:true is typically small (~2,000 tokens) and fits inline.
-- ❌ FORBIDDEN: `bash head file.txt`, `bash grep \"#\" file.txt`, `bash wc -l`, `bash awk`, `bash sed`, `bash python` — any shell command on the file
-- ✅ ONLY ALLOWED: Read tool with `file_path`, `offset`, `limit`
-- Why: Each bash command = 3,000–5,000 wasted tokens. 14 bash commands (a common failure) = ~50,000 tokens — more than the entire pipeline. Use Read tool only.
-
-**Temp file extraction algorithm (follow exactly):**
-1. Read tool: `{ file_path: \"<temp path>\", offset: 0, limit: 300 }`
-2. From that chunk extract all hex colors, font-family+weight+size combos, image URLs, variable names
-3. If file has more lines: Read tool again with `offset: 300, limit: 300` — repeat until done
-4. Accumulate into `designTokenInventory`. Stop. Do not open a bash terminal.
-
-**A — Token inventory gate (Step 3)**
-Before Step 4: print one summary line → `✅ Inventory: N colors · M typography combos · X opacity values`. Stop at Step 3 if inventory not complete. Do NOT print raw JSON blocks or plain-text duplicates of tables — summary line only.
-
-**B — Globals routing**
-The design system lives in ONE CSS block (`#uichemy-globals`), not the Elementor kit. Ignore
-`atomic_enabled` for globals — it no longer affects this step.
-1. `get_globals_css` — read the current block so you extend it, not overwrite it.
-2. From your token inventory, build the FULL block: group vars under a `/* Name */` comment
-   (Colors / Spacing / Fonts / any name — that comment is the only classifier), reusable text
-   styles as `.text-*` classes, components as `.pr-*` classes. Stable names — never rename one
-   that already exists, renaming breaks every `var()` reference to it.
-3. `set_globals_css` with the complete block — BEFORE Step 4 / any section generation.
-4. Build `colorLookup` (hex → `var(--name)`) and `typoLookup` (font combo → `.text-*` class)
-   directly from the block you just wrote. Never call `get_globals_css` again after this —
-   use what you just built.
-
-**C — Phase gate (mandatory)**
-After Steps 1–3 complete and designTokenInventory is stored → call `uichemy_composer_convert(figma_url, phase=\"1b\")`. Do NOT call phase=\"2\" before phase=\"1b\" is processed and lookup tables are confirmed built.
-
----
-";
-			}
-
-			if ( '2' === $phase ) {
-				return "## ⚠️ PHASE 2 — READ FIRST (server-injected)
-
-**⛔ TEMP FILE RULE — HARD STOP (read this first)**
-When get_screenshot or get_design_context saves result to a temp file — STOP. Do NOT use Bash tool.
-- ❌ FORBIDDEN: bash head, grep, wc, awk, sed, python on the temp file — any shell command
-- ✅ ONLY ALLOWED: Read tool with `file_path`, `offset`, `limit`
-- Why: 14 bash commands (seen in real runs) = ~50,000 wasted tokens per section. With 5 sections that is 250,000 tokens wasted on file parsing alone.
-
-**Temp file extraction algorithm (follow exactly, one pass only):**
-1. Read tool: `{ file_path: \"<temp path>\", offset: 0, limit: 300 }`
-2. Extract from that chunk: layout mode, padding/gap, ALL text nodes (content+font+size+weight), ALL hex colors, ALL image URLs, ALL component refs
-3. More lines remaining? Read tool: `offset: 300, limit: 300` — continue until EOF
-4. Store everything extracted into `currentSectionMemory`. Stop reading. Never re-read for a different extraction.
-
-**Critical reminders from Phase 1 (still enforced):**
-- Steps 6→9 are atomic per section — never pre-fetch next section while current is unsent
-- Wipe `currentSectionMemory` after each successful Step 9
-- Globals sync is ON: colors that exist in `colorLookup` MUST use `var(--name)` from the `#uichemy-globals` block; typography that exists in `typoLookup` MUST use the matched `.text-*` class and OMIT the font shorthand from CSS. A boxed/constrained content wrapper → add the `.pr-boxed` class (it already reads `var(--content-width)` from the block) instead of writing `max-width` by hand. Unmatched tokens → raw hex / full font shorthand inline.
-- `site_before_head` / `site_css` → first upload only, never repeat
-
-**Section flow**
-After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn — generate → verify → upload before starting Step 6 of the next section.
-
-**WordPress upload**
-`create_uichemy_composer_page` / `add_uichemy_composer_section` run AI Data Sharing + globals matching server-side — the matcher maps any literal hex/typography left in your CSS to the synced `#uichemy-globals` block, so keep using `colorLookup` / `typoLookup` as you generate.
-
----
-";
-			}
-
-			// Other phases (1b, 3) have no extra phase-specific gates injected.
-			return '';
-		}
 
 		public static function execute_check_config( $arguments = array() ) {
 			$has_globals_class  = class_exists( 'UiChemy_Globals_CSS' ) && method_exists( 'UiChemy_Composer_Manager', 'get_globals_block_css' );
@@ -314,6 +154,72 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			}
 
 			$is_ready = $has_kit;
+
+			// The Composer Builder picked in onboarding (or pinned with
+			// ?builder=composer). It has no driver, so the loop above never saw it:
+			// report it as THE builder, ready whenever it is loaded - it needs no
+			// kit, since its pages are plain html/css/js documents.
+			if ( class_exists( 'UiChemy_Builder_Context' ) && UiChemy_Builder_Context::is_composer_mode() ) {
+				$saved_builder = class_exists( 'Uich_ND_Settings' ) ? (string) Uich_ND_Settings::get_builder() : '';
+
+				$builder = UiChemy_Builder_Context::COMPOSER;
+				if ( UiChemy_Builder_Context::COMPOSER === $saved_builder ) {
+					$builder_reason = 'Chosen page builder during onboarding.';
+				} elseif ( '' === $saved_builder ) {
+					$builder_reason = 'No page builder saved yet; neither Elementor nor Bricks is active, so the bundled Composer Builder is the default.';
+				} else {
+					$builder_reason = 'Pinned on this MCP endpoint (?builder=composer).';
+				}
+				$is_ready       = true;
+				$notes          = array();
+
+				$builders[ UiChemy_Builder_Context::COMPOSER ] = array(
+					'label'     => 'UiChemy Composer Builder',
+					'available' => true,
+					'enabled'   => true,
+					'ready'     => true,
+					'checks'    => array(),
+					'notes'     => array( 'One document per page - html, css, js, head_code, body_end_code - holding the whole page. Build with uichemy-composer/page and /post: create, get-code, set-code, patch-code.' ),
+				);
+			}
+
+			// Chosen, but switched off in Settings > Features: nothing may build.
+			// Falling back to another builder would mix its section pages into a
+			// site that chose one-document Composer Builder pages.
+			if ( class_exists( 'UiChemy_Builder_Context' ) && UiChemy_Builder_Context::composer_switched_off() ) {
+				$builder        = UiChemy_Builder_Context::COMPOSER;
+				$builder_reason = 'Chosen page builder during onboarding, but switched off in UiChemy > Settings > Features.';
+				$is_ready       = false;
+				$notes          = array( 'The UiChemy Composer Builder is switched off. Ask the site owner to switch it on (UiChemy > Settings > Features) or choose another page builder in the UiChemy dashboard; do not build until then.' );
+
+				$builders[ UiChemy_Builder_Context::COMPOSER ] = array(
+					'label'     => 'UiChemy Composer Builder',
+					'available' => true,
+					'enabled'   => false,
+					'ready'     => false,
+					'checks'    => array(),
+					'notes'     => $notes,
+				);
+			}
+
+			// The Composer Builder exists here but is not the selected builder:
+			// say so, and how to select it, or an agent asked to build "in the
+			// UiChemy Builder" has no way to know the page tools it sees are the
+			// section ones of another builder.
+			if ( class_exists( 'UiChemy_Builder_Context' )
+				&& UiChemy_Builder_Context::composer_available()
+				&& ! UiChemy_Builder_Context::is_composer_mode()
+			) {
+				$builders[ UiChemy_Builder_Context::COMPOSER ] = array(
+					'label'     => 'UiChemy Composer Builder',
+					'available' => true,
+					'enabled'   => true,
+					'ready'     => true,
+					'selected'  => false,
+					'checks'    => array(),
+					'notes'     => array( 'Installed but not the selected builder, so page / post offer ' . $builder . ' section tools. To build one-document Composer Builder pages, connect to /wp-json/uichemy/v2/mcp?builder=composer (or send the X-UiChemy-Builder: composer header), or have the site owner pick "UiChemy Builder" as the page builder in the UiChemy dashboard. Ask the user before switching.' ),
+				);
+			}
 
 			return array(
 				'ready'                => $is_ready,
@@ -439,46 +345,6 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			return $active;
 		}
 
-		public static function execute_ensure_nav_menu( $arguments ) {
-			if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Composer manager class not found.' );
-			}
-
-			$arguments = is_array( $arguments ) ? $arguments : array();
-			$payload   = array(
-				'menu_name' => isset( $arguments['menu_name'] ) ? sanitize_text_field( (string) $arguments['menu_name'] ) : 'Main Menu',
-			);
-
-			$result = UiChemy_Composer_Manager::mcp_ensure_nav_menu( $payload );
-			if ( is_wp_error( $result ) ) {
-				return $result;
-			}
-
-			return $result;
-		}
-
-		public static function execute_set_site_branding( $arguments ) {
-			if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Composer manager class not found.' );
-			}
-
-			$arguments = is_array( $arguments ) ? $arguments : array();
-			$payload   = array(
-				'logo_url'    => isset( $arguments['logo_url'] ) ? (string) $arguments['logo_url'] : '',
-				'logo_width'  => isset( $arguments['logo_width'] ) ? absint( $arguments['logo_width'] ) : 0,
-				'logo_height' => isset( $arguments['logo_height'] ) ? absint( $arguments['logo_height'] ) : 0,
-				'icon_url'    => isset( $arguments['icon_url'] ) ? (string) $arguments['icon_url'] : '',
-				'force'       => isset( $arguments['force'] ) ? (bool) $arguments['force'] : false,
-			);
-
-			$result = UiChemy_Composer_Manager::mcp_set_site_branding( $payload );
-			if ( is_wp_error( $result ) ) {
-				return $result;
-			}
-
-			return $result;
-		}
-
 		/**
 		 * Read the #uichemy-globals CSS block (the design-system source of truth).
 		 *
@@ -533,6 +399,33 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 					),
 				);
 			}
+			// A find that matches several places replaces every one of them, and an
+			// anchor that looked unique (":is(.elementor-widget-…") silently copied
+			// a block into two spots. Count first: more than one match is refused
+			// unless the edit says all:true, and a refusal writes nothing.
+			if ( method_exists( 'UiChemy_Composer_Manager', 'get_globals_block_css' ) ) {
+				$probe = UiChemy_Composer_Manager::get_globals_block_css();
+				$multi = array();
+				foreach ( $edits as $edit ) {
+					if ( ! is_array( $edit ) || ! isset( $edit['find'] ) || '' === (string) $edit['find'] ) {
+						continue;
+					}
+					$hits = substr_count( $probe, (string) $edit['find'] );
+					if ( $hits > 1 && empty( $edit['all'] ) ) {
+						$multi[] = array( 'find' => (string) $edit['find'], 'count' => $hits );
+					}
+					// Later edits see what earlier ones produced.
+					$probe = str_replace( (string) $edit['find'], isset( $edit['replace'] ) ? (string) $edit['replace'] : '', $probe );
+				}
+				if ( $multi ) {
+					return new WP_Error(
+						'uich_globals_find_not_unique',
+						'Nothing was saved: ' . count( $multi ) . ' edit(s) match more than one place, so every copy would change. Add surrounding text to make each find unique, or pass "all": true on an edit that really should change every match. ' . wp_json_encode( $multi ),
+						array( 'status' => 409, 'ambiguous' => $multi )
+					);
+				}
+			}
+
 			$result       = UiChemy_Composer_Manager::edit_globals_block( $edits );
 			$replacements = isset( $result['replacements'] ) ? $result['replacements'] : array();
 
@@ -756,15 +649,25 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			$post_type = isset( $arguments['post_type'] ) ? sanitize_key( (string) $arguments['post_type'] ) : 'page';
 			$status    = isset( $arguments['status'] ) ? sanitize_key( (string) $arguments['status'] ) : 'any';
 			$per_page  = isset( $arguments['per_page'] ) ? min( 100, max( 1, (int) $arguments['per_page'] ) ) : 20;
+			$cb_loaded = class_exists( 'Uich_CB_Content' );
+			$cb_only   = $cb_loaded && ! empty( $arguments['composer_builder'] );
 
-			$posts = get_posts( array(
+			$query = array(
 				'post_type'      => $post_type,
 				'post_status'    => $status,
 				'posts_per_page' => $per_page,
 				'orderby'        => 'modified',
 				'order'          => 'DESC',
 				'no_found_rows'  => true,
-			) );
+			);
+
+			// Only Composer Builder pages - the ones get-code / set-code / patch-code edit.
+			if ( $cb_only ) {
+				$query['meta_key']   = Uich_CB_Content::META_ENABLED; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- One indexed key, capped at 100 rows.
+				$query['meta_value'] = '1'; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value -- As above.
+			}
+
+			$posts = get_posts( $query );
 
 			$items = array();
 			foreach ( $posts as $post ) {
@@ -772,10 +675,24 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 				// not from a hardcoded ?action=elementor. Every row used to carry an
 				// Elementor edit link even on a site with no Elementor — a dead link
 				// an agent could follow. A post no builder claims simply gets none.
-				$row_builder = class_exists( 'UiChemy_Builder_Registry' )
-					? UiChemy_Builder_Registry::detect_post_builder( $post->ID )
-					: '';
-				$row_driver  = '' !== $row_builder ? UiChemy_Builder_Registry::get( $row_builder ) : null;
+				// The Composer Builder has no driver, so it is checked first: its
+				// pages are edited with get-code / set-code / patch-code.
+				$row_is_cb   = $cb_loaded && Uich_CB_Content::is_enabled( $post->ID );
+				$row_builder = $row_is_cb
+					? 'composer'
+					: ( class_exists( 'UiChemy_Builder_Registry' ) ? UiChemy_Builder_Registry::detect_post_builder( $post->ID ) : '' );
+				$row_driver  = ! $row_is_cb && '' !== $row_builder ? UiChemy_Builder_Registry::get( $row_builder ) : null;
+
+				if ( $row_is_cb ) {
+					$row_links = array(
+						'edit_link' => Uich_CB_Content::edit_url( $post->ID ),
+						'edit_with' => 'get-code / set-code / patch-code',
+					);
+				} else {
+					$row_links = $row_driver
+						? $row_driver->edit_links( $post->ID )
+						: array( 'edit_link' => (string) get_edit_post_link( $post->ID, 'internal' ) );
+				}
 
 				$items[] = array_merge(
 					array(
@@ -787,9 +704,7 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 						'modified' => $post->post_modified,
 						'url'      => get_permalink( $post->ID ),
 					),
-					$row_driver
-						? $row_driver->edit_links( $post->ID )
-						: array( 'edit_link' => (string) get_edit_post_link( $post->ID, 'internal' ) )
+					$row_links
 				);
 			}
 
@@ -983,6 +898,13 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 				return new WP_Error( 'uich_mcp_error', "Post ID {$post_id} not found." );
 			}
 
+			// A Composer Builder page is claimed by no driver, so without this it
+			// would read as the empty answer below - "nothing here" - when it has
+			// a whole document. The driver lookup refuses it and names the ability.
+			if ( UiChemy_Composer_Manager::is_composer_builder_post( $post_id ) ) {
+				return UiChemy_Composer_Manager::mcp_driver_for_post( $post_id, $builder, false );
+			}
+
 			// A post no builder claims is not an error — it is an empty answer, and
 			// the caller needs to be able to tell those apart.
 			if ( class_exists( 'UiChemy_Builder_Registry' )
@@ -1071,117 +993,6 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			return $set_result;
 		}
 
-		/**
-		 * Read the last-picked-element snapshot (see class-uichemy-frontend-rest.php's
-		 * selected-element storage, at the bottom of UiChemy_Frontend_REST).
-		 *
-		 * @param array $arguments { post_id?: int }.
-		 * @return array|WP_Error
-		 */
-		public static function execute_grab( $arguments ) {
-			if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Selected-element store not available.' );
-			}
-
-			$arguments = is_array( $arguments ) ? $arguments : array();
-			$post_id   = isset( $arguments['post_id'] ) ? absint( $arguments['post_id'] ) : 0;
-
-			$snapshot = UiChemy_Frontend_REST::read_selected_element( $post_id );
-			if ( ! $snapshot ) {
-				return array(
-					'found'   => false,
-					'message' => 'No element has been picked yet (or the pick is older than 30 minutes / was on a different page). Ask the user to click "Select / pick element" in the Composer\'s Editor tab and choose one, then call this again.',
-				);
-			}
-
-			return array_merge( array( 'found' => true ), $snapshot );
-		}
-
-		/**
-		 * Surgically replace the last-picked element's outerHTML inside its
-		 * widget, by literal string match against the snapshot's recorded
-		 * `html` (see class-uichemy-frontend-rest.php's selected-element
-		 * storage). Reuses the same whole-widget writer as
-		 * execute_find_and_update_section_code — this just computes the new full
-		 * widget HTML first and always passes the widget's OWN current css/js
-		 * through unchanged unless css is given.
-		 *
-		 * @param array $arguments { html: string, css?: string }.
-		 * @return array|WP_Error
-		 */
-		public static function execute_update_code( $arguments ) {
-			if ( ! class_exists( 'UiChemy_Frontend_REST' ) || ! class_exists( 'UiChemy_Composer_Manager' ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Selected-element store or Composer manager not available.' );
-			}
-
-			$arguments   = is_array( $arguments ) ? $arguments : array();
-			$new_element = isset( $arguments['html'] ) ? trim( (string) $arguments['html'] ) : '';
-			$builder      = isset( $arguments['builder'] ) ? sanitize_key( (string) $arguments['builder'] ) : '';
-			$extra_css   = isset( $arguments['css'] ) ? (string) $arguments['css'] : '';
-
-			if ( '' === $new_element ) {
-				return new WP_Error( 'uich_mcp_error', 'Missing required parameter: html' );
-			}
-
-			$snapshot = UiChemy_Frontend_REST::read_selected_element();
-			if ( ! $snapshot ) {
-				return new WP_Error(
-					'uich_mcp_no_selection',
-					'No element has been picked yet. Call grab first if it also returns nothing, ask the user to pick an element in the Composer\'s Editor tab.'
-				);
-			}
-
-			$post_id    = (int) $snapshot['post_id'];
-			$widget_id  = (string) $snapshot['widget_id'];
-			$old_element = (string) $snapshot['html'];
-
-			// This path only needs the widget's own html/css/js/label — never the
-			// site-wide code — so skip it to keep the internal read lean.
-			$current = UiChemy_Composer_Manager::mcp_get_section_code( $post_id, 0, $widget_id, false );
-			if ( is_wp_error( $current ) ) {
-				return $current;
-			}
-
-			$widget_html = (string) $current['html'];
-			$occurrences = ( '' !== $old_element ) ? substr_count( $widget_html, $old_element ) : 0;
-
-			if ( 1 !== $occurrences ) {
-				return new WP_Error(
-					'uich_mcp_stale_selection',
-					$occurrences > 1
-						? 'The picked element\'s HTML matches more than one spot in its widget, so a safe surgical replacement isn\'t possible. Call grab again after re-picking a more specific element, then retry.'
-						: 'The picked element\'s HTML no longer matches its widget\'s current code (something else changed it since it was picked). Ask the user to re-pick the element, call grab again, then retry.'
-				);
-			}
-
-			$new_widget_html = str_replace( $old_element, $new_element, $widget_html );
-			$new_widget_css  = '' !== trim( $extra_css ) ? trim( $current['css'] . "\n" . $extra_css ) : $current['css'];
-
-			$set_result = UiChemy_Composer_Manager::mcp_sync_generated_code_to_widget(
-				$post_id,
-				array(
-					'builder'       => $builder,
-					'mode'          => 'replace',
-					'widget_id'     => $widget_id,
-					'html'          => $new_widget_html,
-					'css'           => $new_widget_css,
-					'js'            => $current['js'], // never touched by this tool
-					'upload_images' => true,
-					'source'        => 'mcp',
-					'label'         => $current['label'],
-				)
-			);
-			if ( is_wp_error( $set_result ) ) {
-				return $set_result;
-			}
-
-			// Keep the snapshot in sync so a follow-up edit can chain without
-			// requiring the user to re-pick the same element.
-			UiChemy_Frontend_REST::update_selected_element_html( $new_element );
-
-			return $set_result;
-		}
-
 		public static function execute_insert_section_at_index( $arguments ) {
 			if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return new WP_Error( 'uich_mcp_error', 'Composer manager class not found.' );
@@ -1211,110 +1022,6 @@ After Step 6 (screenshot + design context): run Steps 7→8→9 in the same turn
 			}
 
 			return $result;
-		}
-
-		/**
-		 * Direct-prompt entry tool — returns the no-Figma site-build
-		 * pipeline as a resource so it lands in the AI context verbatim.
-		 *
-		 * Aggressively-triggered (see tool description) so casual prompts
-		 * like "make docker service design" land here BEFORE the AI
-		 * starts hand-writing HTML and skipping Header / Footer.
-		 */
-		public static function execute_start_site_build( $arguments ) {
-			$arguments = is_array( $arguments ) ? $arguments : array();
-			$brief     = isset( $arguments['brief'] ) ? trim( (string) $arguments['brief'] ) : '';
-
-			if ( '' === $brief ) {
-				return new WP_Error( 'uich_mcp_error', 'Missing required parameter: brief (the user\'s request, e.g. "make docker service design").' );
-			}
-
-			$path = self::PIPELINE_DIR . '08-direct-prompt.md';
-			if ( ! is_readable( $path ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Direct-prompt pipeline file is missing: 08-direct-prompt.md.' );
-			}
-
-			$body = file_get_contents( $path );
-			if ( ! is_string( $body ) || '' === trim( $body ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Direct-prompt pipeline file is empty.' );
-			}
-
-			$industry = isset( $arguments['industry'] ) ? trim( (string) $arguments['industry'] ) : '';
-			$brand    = isset( $arguments['brand'] ) ? trim( (string) $arguments['brand'] ) : '';
-
-			$header = "## User brief (received)\n\n> " . $brief . "\n\n";
-			if ( '' !== $industry ) {
-				$header .= "**Industry hint:** " . $industry . "  \n";
-			}
-			if ( '' !== $brand ) {
-				$header .= "**Brand hint:** " . $brand . "  \n";
-			}
-			$header .= "\n---\n\n";
-
-			return array(
-				'type'     => 'resource',
-				'uri'      => 'uichemy://composer/pipeline/direct-prompt',
-				'mimeType' => 'text/markdown',
-				'text'     => $header . $body,
-			);
-		}
-
-		public static function execute_uichemy_composer_convert_code( $arguments ) {
-			$arguments = is_array( $arguments ) ? $arguments : array();
-
-			$source_html  = isset( $arguments['source_html'] ) ? (string) $arguments['source_html'] : '';
-			$source_css   = isset( $arguments['source_css'] ) ? (string) $arguments['source_css'] : '';
-			$source_js    = isset( $arguments['source_js'] ) ? (string) $arguments['source_js'] : '';
-			$project_path = isset( $arguments['project_path'] ) ? trim( (string) $arguments['project_path'] ) : '';
-			$notes        = isset( $arguments['notes'] ) ? trim( (string) $arguments['notes'] ) : '';
-
-			if ( '' === trim( $source_html ) && '' === $project_path ) {
-				return new WP_Error( 'uich_mcp_error', 'Provide at least one source: source_html (pasted markup) or project_path (a local file/folder).' );
-			}
-
-			$path = self::PIPELINE_DIR . '09-code-input.md';
-			if ( ! is_readable( $path ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Code-input pipeline file is missing: 09-code-input.md.' );
-			}
-
-			$body = file_get_contents( $path );
-			if ( ! is_string( $body ) || '' === trim( $body ) ) {
-				return new WP_Error( 'uich_mcp_error', 'Code-input pipeline file is empty.' );
-			}
-
-			// Echo back a compact manifest of what the caller supplied so the AI
-			// knows where the design lives (inline args vs. files on disk). We do
-			// NOT inline the full source here — for pasted code it is already in
-			// the conversation, and for large blobs re-embedding would bloat the
-			// resource. The pipeline (Step 1) tells the AI how to load each case.
-			$manifest = array();
-			if ( '' !== trim( $source_html ) ) {
-				$manifest[] = '- `source_html` provided inline (' . number_format_i18n( strlen( $source_html ) ) . ' chars)'
-					. ( false !== stripos( $source_html, '<style' ) ? ' contains inline `<style>`' : '' )
-					. ( false !== stripos( $source_html, '<script' ) ? ' contains inline `<script>`' : '' );
-			}
-			if ( '' !== trim( $source_css ) ) {
-				$manifest[] = '- `source_css` provided inline (' . number_format_i18n( strlen( $source_css ) ) . ' chars)';
-			}
-			if ( '' !== trim( $source_js ) ) {
-				$manifest[] = '- `source_js` provided inline (' . number_format_i18n( strlen( $source_js ) ) . ' chars)';
-			}
-			if ( '' !== $project_path ) {
-				$manifest[] = '- `project_path`: `' . $project_path . '` load the entry HTML + its linked CSS/JS/images with the **Read tool** (Step 1).';
-			}
-
-			$header  = "## Source (received)\n\n" . implode( "\n", $manifest ) . "\n\n";
-			if ( '' !== $notes ) {
-				$header .= "**User notes:** " . $notes . "\n\n";
-			}
-			$header .= "---\n\n";
-
-			return array(
-				'type'     => 'resource',
-				'uri'      => 'uichemy://composer/pipeline/code-input',
-				'mimeType' => 'text/markdown',
-				'text'     => $header . $body,
-			);
 		}
 
 		/**

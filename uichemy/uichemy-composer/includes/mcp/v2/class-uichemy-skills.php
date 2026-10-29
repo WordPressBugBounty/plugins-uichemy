@@ -22,20 +22,9 @@
  * That navigation metadata travels beside the markdown, never inside it, so an
  * author edits exactly one copy of every document.
  *
- * The v2 documents live in includes/mcp/skills/, named for the skill they serve.
- * includes/mcp/pipeline/ is the SEPARATE, frozen v1 copy: the legacy endpoint
- * concatenates those files by phase number, which is why they carry numeric
- * prefixes, and it must keep receiving v1 tool names. The two were one shared
- * set until the surfaces diverged far enough that every v2 improvement had to be
- * phrased in v1 vocabulary to avoid breaking the older reader. Edit the copy for
- * the surface you mean; nothing merges them back.
- *
- * Nothing is rewritten on the way out any more. These documents are authored in
- * v2 vocabulary - ability names, action names, and the `platform.`-nested shape
- * that describe-site actually returns - and are served verbatim. The old
- * retired_map()/field translation pass was removed once the v1 copy moved to
- * includes/mcp/pipeline/, because a translator that fires on one surface and not
- * the other is a second thing to keep in sync with the first.
+ * The documents live in includes/mcp/skills/, named for the skill they serve,
+ * authored in v2 vocabulary - ability names, action names, and the
+ * `platform.`-nested shape that describe-site actually returns.
  *
  * The definitions stay a PHP array on purpose. Discovery has to list every
  * skill on every call, and an array costs nothing to read, whereas parsing
@@ -103,6 +92,7 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 			return array(
 				'figma-to-wordpress'      => array(
 					'description' => 'Convert a Figma design into WordPress pages built from Composer widgets, section by section. Read this when the user gives a Figma or design URL and wants it turned into a site, page or section.',
+					'description_composer' => 'Convert a Figma design into WordPress pages built with the Composer Builder: each page one document of HTML, CSS and JS, planned as regions. Read this when the user gives a Figma or design URL and wants it turned into a site or page.',
 					'keywords'    => array( 'figma', 'design', 'mockup', 'convert', 'design to code', 'redesign' ),
 					'files'       => array(
 						'skills/figma-to-wordpress/overview.md',
@@ -173,6 +163,7 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 				),
 				'brief-to-wordpress'      => array(
 					'description' => 'Invent and build a complete site or landing page from a one-line brief, with no design and no code supplied. Read this when the user asks for a website, homepage, landing page or section and gives nothing but a description.',
+					'description_composer' => 'Invent and build a complete site or landing page from a one-line brief, with no design and no code supplied. Read this when the user asks for a website, homepage or landing page and gives nothing but a description.',
 					'keywords'    => array( 'brief', 'landing page', 'website', 'homepage', 'build me', 'design a', 'from scratch' ),
 					'files'       => array( 'skills/brief-to-wordpress.md' ),
 					'additional_parts' => array(
@@ -196,6 +187,7 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 				),
 				'motion-and-animation'    => array(
 					'description' => 'Write a section\'s animation as GSAP whose values become editable controls in the Composer\'s Animation panel (the `uichemy_controller_bridge` block, in section-level js). Read this before writing ANY animation - on its own, or as the `animation` part of a build skill.',
+					'description_composer' => 'Write a page\'s animation as GSAP whose values become editable controls in the Animation panel (ONE `uichemy_controller_bridge` block at the top of the page\'s js). Read this before writing ANY animation - on its own, or as the `animation` part of a build skill.',
 					'keywords'    => array( 'animation', 'animate', 'gsap', 'scroll', 'scrolltrigger', 'motion', 'parallax', 'stagger', 'reveal', 'fade in', 'transition', 'ease',
 						'controller bridge', 'controllers bridge', 'uichemy_controller_bridge' ),
 					'files'       => array( 'skills/motion-and-animation.md' ),
@@ -203,6 +195,7 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 				),
 				'webgl-and-3d'            => array(
 					'description' => 'Build a section with WebGL / three.js: a shader background, a 3D object, a scroll-driven scene or a loaded model. three.js ships with UiChemy and loads on demand. Read this before writing ANY 3D or shader code - on its own, or as the `webgl` part of a build skill.',
+					'description_composer' => 'Build a WebGL / three.js scene in a page: a shader background, a 3D object, a scroll-driven scene or a loaded model. three.js ships with UiChemy and loads on demand. Read this before writing ANY 3D or shader code - on its own, or as the `webgl` part of a build skill.',
 					'keywords'    => array( 'webgl', 'three', 'threejs', 'three.js', '3d', 'shader', 'glsl', 'canvas', 'bloom', 'postprocessing', 'gltf', 'glb', 'mesh', 'particles' ),
 					'files'       => array( 'skills/webgl-and-3d.md' ),
 					'additional_parts' => array(
@@ -219,6 +212,7 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 					// it is hand-maintained — so it needs updating whenever the file
 					// gains or loses a section.
 					'description' => 'Build a section that is not static: print LIVE site data with Twig tokens and validated {% for %} listings, or collect input with a managed <form data-atom-form="key">. Read this when the user wants a post/product/term/user listing, a page bound to custom fields, or a working contact or signup form.',
+					'description_composer' => 'Build a page that is not static: print LIVE site data with Twig tokens and validated {% for %} listings, or collect input with a managed <form data-atom-form="key">. Read this when the user wants a post/product/term/user listing, a page bound to custom fields, or a working contact or signup form.',
 					'keywords'    => array( 'loop', 'query', 'posts', 'form', 'submission', 'dynamic' ),
 					'files'       => array( 'skills/dynamic-loops-and-forms.md' ),
 					'additional_parts' => array(
@@ -256,6 +250,7 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 				),
 				'improve-performance'              => array(
 					'description' => 'Make UiChemy pages fast: the Performance settings (Fast Load), image optimisation (WebP / AVIF) and how Google Fonts load (self-hosted, swap, off), the rules for building fast sections, and the Lighthouse tests to run. Read this when the user asks about performance, page speed, Lighthouse, optimising images or fonts, or when generating a page.',
+					'description_composer' => 'Make UiChemy pages fast: the Performance settings (Fast Load), image optimisation (WebP / AVIF) and how Google Fonts load (self-hosted, swap, off), the rules for building fast pages, and the Lighthouse tests to run. Read this when the user asks about performance, page speed, Lighthouse, optimising images or fonts, or when generating a page.',
 					'keywords'    => array( 'page speed', 'pagespeed', 'lighthouse', 'web-vitals', 'performance', 'fast load', 'speed', 'font', 'fonts', 'fcp', 'lcp', 'tbt', 'csp', 'image optimisation', 'image optimization', 'optimise images', 'compress images', 'webp', 'avif', 'google fonts', 'self-host fonts', 'self hosted fonts', 'display swap', 'gdpr fonts' ),
 					'files'       => array( 'skills/improve-performance.md' ),
 					'additional_parts' => array(
@@ -319,9 +314,16 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 			$index = array();
 
 			foreach ( self::all() as $name => $skill ) {
+				// A skill whose job reads differently on a Composer Builder site (no
+				// sections) carries a `description_composer` for that mode.
+				$description = isset( $skill['description'] ) ? (string) $skill['description'] : '';
+				if ( isset( $skill['description_composer'] ) && self::composer_mode() ) {
+					$description = (string) $skill['description_composer'];
+				}
+
 				$record = array(
 					'name'        => (string) $name,
-					'description' => isset( $skill['description'] ) ? (string) $skill['description'] : '',
+					'description' => $description,
 					'keywords'    => isset( $skill['keywords'] ) && is_array( $skill['keywords'] )
 						? array_values( $skill['keywords'] )
 						: array(),
@@ -495,6 +497,7 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 			if ( is_wp_error( $body ) ) {
 				return $body;
 			}
+			$body = self::for_builder_mode( $body );
 
 			// Nothing but the document, as an embedded text resource. Navigation
 			// metadata does not ride along; `additional_parts` lives in the
@@ -505,6 +508,85 @@ if ( ! class_exists( 'UiChemy_Skills' ) ) {
 				'mimeType' => 'text/markdown',
 				'text'     => $body,
 			);
+		}
+
+		/**
+		 * Is the Composer Builder the selected builder for this request?
+		 *
+		 * @return bool
+		 */
+		private static function composer_mode() {
+			return class_exists( 'UiChemy_Builder_Context' ) && UiChemy_Builder_Context::is_composer_mode();
+		}
+
+		/**
+		 * Fit a skill to the selected builder mode.
+		 *
+		 * 1. Mode blocks. A skill writes a step that differs between the two page
+		 *    models side by side, each version wrapped in a block:
+		 *
+		 *        <!-- mode:sections -->
+		 *        ...the step on Elementor / Bricks / block-editor sections...
+		 *        <!-- /mode -->
+		 *        <!-- mode:composer -->
+		 *        ...the step on a Composer Builder page (one document)...
+		 *        <!-- /mode -->
+		 *
+		 *    The block for the other mode is dropped, so each mode reads one
+		 *    native version and both are edited together in one file.
+		 *
+		 * 2. Composer Builder mode only: a skill with no "Composer Builder"
+		 *    part of its own (improve-seo, custom-fields-and-cpt, ...) names
+		 *    update-page-code, page_before_head and the section actions, every
+		 *    one of them refused in this mode, so its remaining section-mode text
+		 *    is rewritten to the document actions and a short note says why.
+		 *    Composer blocks are already native and are never rewritten.
+		 *
+		 * @param string $body Skill markdown.
+		 * @return string
+		 */
+		private static function for_builder_mode( $body ) {
+			$composer = self::composer_mode();
+
+			// Decide on the text OUTSIDE the mode blocks: a Composer block alone
+			// does not make the rest of a section-mode skill native.
+			$native = false !== strpos( self::strip_mode_blocks( $body ), 'Composer Builder' );
+
+			$kept = array();
+			$body = preg_replace_callback(
+				'/<!-- mode:(composer|sections) -->\R?(.*?)<!-- \/mode -->\R?/s',
+				static function ( $m ) use ( $composer, &$kept ) {
+					$wanted = $composer ? 'composer' : 'sections';
+					if ( $m[1] !== $wanted ) {
+						return '';
+					}
+					if ( ! $composer ) {
+						return $m[2];
+					}
+					// Shield native Composer text from the rewrite below.
+					$token          = '@@uich-mode-block-' . count( $kept ) . '@@';
+					$kept[ $token ] = $m[2];
+					return $token;
+				},
+				$body
+			);
+
+			if ( $composer && ! $native ) {
+				$note = "> **Composer Builder site.** Every page here is ONE document - `html`, `css`, `js`, `head_code` (before `</head>`), `body_end_code` (before `</body>`) - holding the whole page; where the text below says \"section\", read the page. `uichemy-composer/page` / `post` offer `get-code`, `set-code` and `patch-code`: a page's own head tags go in `head_code` (read it with `get-code`, change it with `patch-code` `field: \"head_code\"`). The calls below are already written that way.\n\n";
+				$body = $note . UiChemy_Builder_Context::for_mode( $body );
+			}
+
+			return $kept ? strtr( $body, $kept ) : $body;
+		}
+
+		/**
+		 * The body with every mode block removed.
+		 *
+		 * @param string $body Skill markdown.
+		 * @return string
+		 */
+		private static function strip_mode_blocks( $body ) {
+			return (string) preg_replace( '/<!-- mode:(composer|sections) -->.*?<!-- \/mode -->/s', '', $body );
 		}
 
 		/**

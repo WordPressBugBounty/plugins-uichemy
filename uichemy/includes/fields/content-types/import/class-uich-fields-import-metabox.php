@@ -72,23 +72,23 @@ class Uich_Fields_Import_MetaBox extends Uich_Fields_Import_Source {
 	 */
 	public static function skip_reasons() {
 		return array(
-			'password'        => 'Password fields store cleartext. UiChemy does not offer this type.',
-			'heading'         => 'Layout-only field, stores no value.',
-			'divider'         => 'Layout-only field, stores no value.',
-			'custom_html'     => 'Layout-only field, stores no value.',
-			'button'          => 'Layout-only field, stores no value.',
-			'key_value'       => 'No UiChemy equivalent.',
-			'text_list'       => 'No UiChemy equivalent.',
-			'fieldset_text'   => 'No UiChemy equivalent.',
-			'autocomplete'    => 'No UiChemy equivalent.',
-			'background'      => 'No UiChemy equivalent.',
-			'icon'            => 'No UiChemy equivalent.',
-			'sidebar'         => 'No UiChemy equivalent.',
-			'block_editor'    => 'No UiChemy equivalent.',
-			'select_tree'     => 'No UiChemy equivalent.',
-			'choice'          => 'No UiChemy equivalent.',
-			'object_choice'   => 'No UiChemy equivalent.',
-			'multiple_values' => 'No UiChemy equivalent.',
+			'password'        => __( 'Password fields store cleartext. UiChemy does not offer this type.', 'uichemy' ),
+			'heading'         => __( 'Layout-only field, stores no value.', 'uichemy' ),
+			'divider'         => __( 'Layout-only field, stores no value.', 'uichemy' ),
+			'custom_html'     => __( 'Layout-only field, stores no value.', 'uichemy' ),
+			'button'          => __( 'Layout-only field, stores no value.', 'uichemy' ),
+			'key_value'       => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'text_list'       => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'fieldset_text'   => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'autocomplete'    => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'background'      => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'icon'            => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'sidebar'         => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'block_editor'    => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'select_tree'     => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'choice'          => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'object_choice'   => __( 'No UiChemy equivalent.', 'uichemy' ),
+			'multiple_values' => __( 'No UiChemy equivalent.', 'uichemy' ),
 		);
 	}
 
@@ -451,7 +451,7 @@ class Uich_Fields_Import_MetaBox extends Uich_Fields_Import_Source {
 				$skipped[] = array(
 					'field'  => $label,
 					'type'   => $type,
-					'reason' => isset( $skips[ $type ] ) ? $skips[ $type ] : 'Field has no id, so it stores no value.',
+					'reason' => isset( $skips[ $type ] ) ? $skips[ $type ] : __( 'Field has no id, so it stores no value.', 'uichemy' ),
 				);
 				continue;
 			}
@@ -488,7 +488,7 @@ class Uich_Fields_Import_MetaBox extends Uich_Fields_Import_Source {
 				$skipped[] = array(
 					'field'  => $name,
 					'type'   => $type,
-					'reason' => 'No UiChemy equivalent for this Meta Box type.',
+					'reason' => __( 'No UiChemy equivalent for this Meta Box type.', 'uichemy' ),
 				);
 				continue;
 			}

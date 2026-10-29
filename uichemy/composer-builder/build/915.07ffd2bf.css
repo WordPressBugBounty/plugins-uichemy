@@ -1,0 +1,80 @@
+/* Theme Builder's portaled dialogs (preview, delete) and its Add New menu.
+   DS Dialog / Menu render at document.body, outside any mount, so these are
+   global and use --uc-* tokens. Imported by ThemeBuilder.jsx, so they travel
+   with it into the Composer Builder's workspace too. */
+.uc-portal:has(.tb-dlg--preview) { width: min(calc(100vw - 40px), 1040px); }
+
+/* ── Dialog cards ────────────────────────────────────────────────────────
+   The DS tray (.content) only pads 4px, DialogCard is what supplies the real
+   gutter, so every Theme Builder dialog wraps its header/body in one.
+
+   Every rule that RE-declares a Dialog.module.css property (padding, gap,
+   overflow, font-size) is written parent-scoped, e.g. `.tb-dlg .tb-dlg__card`.
+   A bare `.tb-dlg__card` ties on specificity with the module's own `.card`
+   and would then win or lose purely on stylesheet order. */
+.tb-dlg .tb-dlg__card { padding: 20px; gap: 12px; }
+
+/* ── Preview dialog ──────────────────────────────────────────────────────
+   One card holding a header bar (title + actions + the close button, which is
+   deliberately INSIDE the modal here) above the live frame. Title and frame
+   share the card's gutter, so nothing sits flush against the dialog edge. */
+.tb-dlg--preview .tb-preview { padding: 16px; gap: 14px; }
+.tb-preview__bar {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.tb-preview .tb-preview__head { min-width: 0; gap: 2px; }
+.tb-preview .tb-preview__title {
+  font-size: 15px;
+  line-height: 1.35;
+  /* A long template name must not push the actions off the bar. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.tb-preview__acts { flex: 0 0 auto; display: flex; align-items: center; gap: 6px; }
+
+.tb-preview-frame {
+  position: relative;
+  overflow: hidden;
+  border-radius: 10px;
+  border: 1px solid var(--uc-border);
+  background: var(--uc-surface-sunken);
+}
+.tb-preview-frame iframe { width: 100%; height: 68vh; border: 0; display: block; background: #fff; }
+/* The iframe still occupies its box while loading (so the dialog doesn't jump
+   when the skeleton is swapped out), it's just invisible underneath it. */
+.tb-preview-frame--loading iframe { opacity: 0; }
+
+/* Skeleton laid over the frame until the iframe fires `load`. Shaped like a
+   generic page, bar, hero, three tiles, so the wait previews the thing being
+   waited for instead of one flat grey rectangle. */
+.tb-preview__skel {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #fff;
+}
+.tb-preview__skel-bar { flex: 0 0 auto; display: flex; align-items: center; gap: 12px; }
+.tb-preview__skel-navs { margin-left: auto; display: flex; align-items: center; gap: 16px; }
+.tb-preview__skel-logo { width: 120px; height: 22px; border-radius: 6px; }
+.tb-preview__skel-nav  { width: 64px;  height: 12px; border-radius: 6px; }
+.tb-preview__skel-cta  { width: 96px;  height: 30px; border-radius: 999px; }
+.tb-preview__skel-hero { flex: 1 1 auto; min-height: 120px; border-radius: 10px; }
+.tb-preview__skel-grid {
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.tb-preview__skel-tile { height: 96px; border-radius: 10px; }
+.tb-menu__danger { color: var(--uc-danger); }
+.tb-menu__locked { color: var(--uc-text-muted); }
+.tb-menu__crown { margin-left: auto; }
+

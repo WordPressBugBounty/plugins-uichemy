@@ -16,7 +16,7 @@ Never confuse them: **Twig is output, forms are input.** Don't wrap form fields 
 1. Call `uichemy-composer/describe-site` **first**. Every post type, taxonomy, and term you reference must be one this site actually has — a guessed name renders **empty**, not an error, so the page looks built and is blank.
 2. Before writing ANY token binding, call `uichemy-composer/dynamic (action="list-fields")` — the catalog of every token this build resolves (`post`, `product` [WooCommerce], `user`, `term`, `image`, `site`, `request`) **plus the site's own custom fields** - from UiChemy Custom Fields (built in), ACF, JetEngine and registered meta, each tagged with its `provider`. Bind only tokens that appear there.
 
-The `dynamic` ability returns **markup and writes nothing** (except `list-fields`, which just reads). You take the returned HTML and pass it to `uichemy-composer/page`, `uichemy-composer/post`, or `uichemy-composer/template` to actually build.
+The `dynamic` ability returns **markup and writes nothing** (except `list-fields`, which just reads). You take the returned HTML and pass it to `uichemy-composer/page`, `uichemy-composer/post`, or `uichemy-composer/theme-builder` to actually build.
 
 ---
 
@@ -102,6 +102,8 @@ For whole-region content that only WordPress can produce, use `uichemy-composer/
 
 `{% %}` / `{{ }}` resolve **on the server** at render time. In the editor/preview the widget shows its current rendered markup until the save lands — never paint raw template tokens client-side, and never "fix" a token that looks unresolved in the panel; it resolves on the real request.
 
+On a **Composer Builder** site (`platform.builder: "composer"`) tokens, loops, placeholder tags and forms go into the page's one `html` — with `create`, or with `patch-code` into an existing page — and resolve the same way on the front end.
+
 ---
 
 ## Part B — Forms (input that submits to WordPress)
@@ -121,7 +123,7 @@ Rules:
 
 - **`data-atom-form="key"`** is the only requirement. The `key` names this form (used server-side to load its config and store entries).
 - **Each field's `name=""` is its submission key.** Give every field a clear, unique `name`. Fields without a `name` are ignored.
-- On render, the plugin auto-injects the REST endpoint, a nonce, a honeypot, a timestamp, and hidden metadata, and the front-end runtime handles the AJAX submit, validation (nonce / honeypot / timestamp / rate-limit), success + error messages, saving to the DB, and the email action. **You do not add any of that markup yourself** — no `action`, no `method`, no nonce field, no hidden inputs.
+- On render, the plugin auto-injects the REST endpoint, a nonce, a honeypot, and hidden metadata, and the front-end runtime handles the AJAX submit, validation (nonce / honeypot / rate-limit), success + error messages, saving to the DB, and the email action. **You do not add any of that markup yourself** — no `action`, no `method`, no nonce field, no hidden inputs.
 
 Optional per-form settings, as `data-atom-*` attributes on the `<form>`:
 

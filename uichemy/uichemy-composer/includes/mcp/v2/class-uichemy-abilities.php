@@ -9,8 +9,7 @@
  * The v2 surface is deliberately NOT one ability per legacy tool. Related tools
  * are folded into action-routed abilities (page, post, template, platform,
  * media, design-system, …) so a client learns one door per job instead of
- * twenty names and the ordering between them. The v1 endpoint keeps serving its
- * original flat tools unchanged — retired_map() records where each one went.
+ * twenty names and the ordering between them.
  *
  * @link       https://posimyth.com/
  * @since      5.1.0
@@ -25,7 +24,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 
 	/**
-	 * Maps Composer's tool definitions onto the WordPress Abilities API.
+	 * Registers UiChemy's abilities on the WordPress Abilities API.
 	 */
 	class UiChemy_Abilities {
 
@@ -33,93 +32,6 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		 * Ability namespace / category slug.
 		 */
 		const CATEGORY = 'uichemy-composer';
-
-		/**
-		 * Legacy-tool-name → uichemy ability-name map, for the tools still surfaced
-		 * one-to-one.
-		 *
-		 * Almost everything has been folded into an action-routed ability instead —
-		 * see retired_map(). What is left are the ingestion entry points, which
-		 * mostly returned pipeline documents and are excluded from v2 discovery in
-		 * favour of uichemy-composer/read-skill.
-		 *
-		 * @return array<string,string>
-		 */
-		private static function name_map() {
-			// Ability names must match ^[a-z0-9-]+\/[a-z0-9-]+$ (WP core) — slugs
-			// use hyphens, never underscores.
-			return array(
-				'uichemy_composer_convert'      => 'uichemy-composer/convert',
-				'uichemy_composer_convert_code' => 'uichemy-composer/convert-code',
-				'start_site_build'              => 'uichemy-composer/start-site-build',
-			);
-		}
-
-		/**
-		 * Retired v1 tool name → the v2 ability that absorbed its job.
-		 *
-		 * A row here means the tool is deliberately absent from name_map, so no
-		 * ability is registered for it, but v1 spec prose still mentions it by name.
-		 * rebrand() rewrites those mentions to the new home.
-		 *
-		 * Public because UiChemy_Skills consumes the same map to translate the
-		 * pipeline documents for the v2 surface. One table, so a fold can never be
-		 * reflected in an ability description but missed in the process document
-		 * that tells the model to call it.
-		 *
-		 * @return array<string,string>
-		 */
-		public static function retired_map() {
-			return array(
-				'check_config'                          => 'uichemy-composer/describe-site',
-				'create_uichemy_composer_page'          => 'uichemy-composer/page (action="create")',
-				'add_uichemy_composer_section'          => 'uichemy-composer/page (action="append-section")',
-				'insert_section_at_index'               => 'uichemy-composer/page (action="insert-section")',
-				'set_page_site_code'                    => 'uichemy-composer/page (action="set-page-code")',
-				'list_pages'                            => 'uichemy-composer/page (action="list")',
-				'get_post_structure'                    => 'uichemy-composer/page (action="get-structure")',
-				'find_and_update_section_code'          => 'uichemy-composer/page (action="get-section-code" / "set-section-code")',
-				// NOTE: "grab" is deliberately absent — it is an ordinary English word
-				// that appears in prose ("grab again before each update"), and rebrand()
-				// substitutes by substring, so a row here would rewrite sentences.
-				'update_code'                           => 'uichemy-composer/page (action="patch-section-code")',
-				'list_templates'                        => 'uichemy-composer/template (action="list")',
-				'create_uichemy_composer_header_footer' => 'uichemy-composer/template (action="create", type="header"|"footer")',
-				'create_single_post_widget'             => 'uichemy-composer/template (action="create", type="single")',
-				'create_theme_builder_template'         => 'uichemy-composer/theme-builder (action="create")',
-				'get_globals_css'                       => 'uichemy-composer/design-system (action="get")',
-				'set_globals_css'                       => 'uichemy-composer/design-system (action="set")',
-				'edit_globals_css'                      => 'uichemy-composer/design-system (action="patch")',
-				'request_media_upload'                  => 'uichemy-composer/media (action="request-upload")',
-				'ensure_nav_menu'                       => 'uichemy-composer/platform (action="update-menu")',
-				'set_site_branding'                     => 'uichemy-composer/platform (action="update-site-settings")',
-			);
-		}
-
-		/**
-		 * Short descriptions, and long-form prose relocated to the input schema.
-		 *
-		 * A tool description exists to help a model decide WHETHER to call the tool,
-		 * and is paid for on every discovery call whether or not the tool is used.
-		 * Almost every entry that used to live here belongs to an ability that has
-		 * since been folded, so the table is empty — the consolidated abilities write
-		 * their own short descriptions at registration instead. It stays as the hook
-		 * for any name_map tool that needs its spec text overridden.
-		 *
-		 * @return array<string,array{description?:string,schema_description?:string}>
-		 */
-		private static function overrides() {
-			return array();
-		}
-
-		/**
-		 * Tools that only read state — surfaced as readonly in the catalogue.
-		 *
-		 * @return array<int,string>
-		 */
-		private static function readonly_tools() {
-			return array();
-		}
 
 		/**
 		 * The call contract every action-routed ability repeats.
@@ -143,7 +55,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				: 'uichemy-composer/instructions';
 
 			return 'Call ' . $instructions . ' FIRST if you have not already - it carries the build order and the rules this one schema cannot. '
-				. 'TWO LEVELS OF NESTING: the execute-ability envelope is "name" plus "arguments"; this ability\'s "action" and "action_parameters" go INSIDE "arguments", never as envelope keys. '
+				. 'TWO LEVELS OF NESTING: the execute-ability envelope is "name" plus "arguments" on UiChemy\'s own endpoint (/wp-json/uichemy/v2/mcp), or "ability_name" plus "parameters" on a generic WordPress MCP adapter - use the pair your execute tool declares. This ability\'s "action" and "action_parameters" go INSIDE that arguments / parameters object, never as envelope keys. '
 				. 'Pick "action", then pass that action\'s own parameters as "action_parameters" - meta.actions carries the exact schema for each one.';
 		}
 
@@ -167,12 +79,48 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 
 			$preamble = self::contract();
 
-			return array(
+			// Composer Builder mode: every page is ONE document, so page / post
+			// describe that, and uichemy-composer/template - Elementor Pro and
+			// Nexter templates, sections only - is not offered at all. Templates
+			// are uichemy-composer/theme-builder in this mode.
+			if ( self::composer_mode() ) {
+				$document = ' ONE DOCUMENT PER PAGE, holding the whole page: html, css, js, head_code (printed before </head>) and body_end_code (printed before </body>). '
+					. 'FIND: "list", "grep". CREATE: "create" with the whole code in one call - or with post_id, to convert an existing one. '
+					. 'EDIT: "get-code" first (it returns the code and a "hash"), then "patch-code" for literal find/replace edits or "set-code" to replace whole parts; pass the hash back as expected_hash. To add a block, put its markup into html. '
+					. 'ATTRIBUTES: "update" - status (publish it, or nothing can be looked at), title, slug, excerpt, featured image, parent, page template. '
+					. 'Site-wide code is uichemy-composer/platform; global variables and classes are uichemy-composer/design-system; header, footer and single templates are uichemy-composer/theme-builder.';
+
+				return array(
+					'page' => array(
+						'slug'               => 'uichemy-composer/page',
+						'label'              => 'UiChemy Builder: Page',
+						'description'        => 'Everything about a WordPress page built as one document (html, css, js, head code, body-end code): find, create, read and edit its code, and change its attributes.',
+						'schema_description' => $preamble . $document . ' Fixed to the "page" post type - for posts and custom post types use uichemy-composer/post. Whole-page deletion is not here; use your WordPress tools.',
+						'handler'            => 'execute_page',
+					),
+					'post' => array(
+						'slug'               => 'uichemy-composer/post',
+						'label'              => 'UiChemy Builder: Post',
+						'description'        => 'The same document toolkit as uichemy-composer/page, pointed at posts, custom post types and theme-builder templates (by post_id). Pass post_type to create products, portfolio items or any other public type.',
+						'schema_description' => $preamble . $document . ' Defaults to the "post" type; "list" and "create" accept a post_type. A theme-builder template made with uichemy-composer/theme-builder is edited here by its post_id. Whole-post deletion is not here; use your WordPress tools.',
+						'handler'            => 'execute_post',
+					),
+				);
+			}
+
+			// uichemy-composer/template only where it has work of its own: Elementor
+			// with Elementor Pro or Nexter (see template_tool_available()).
+			$template_tool = self::template_tool_available();
+			$templates_at  = $template_tool
+				? 'for header, footer and other theme templates use uichemy-composer/theme-builder (native, the default) or uichemy-composer/template (Elementor Pro / Nexter\'s own templates)'
+				: 'for header, footer and other theme templates use uichemy-composer/theme-builder';
+
+			$domains = array(
 				'page'     => array(
 					'slug'               => 'uichemy-composer/page',
 					'label'              => 'UiChemy Builder: Page',
 					'description'        => 'Everything about a WordPress page and its Composer sections (one section = one editable widget): find, create, edit, reorder, delete, and page head-body code.',
-					'schema_description' => $preamble . $shared . ' Fixed to the "page" post type - for posts and custom post types use uichemy-composer/post, for theme-builder templates use uichemy-composer/template. Whole-page deletion is not here; use your WordPress tools.',
+					'schema_description' => $preamble . $shared . ' Fixed to the "page" post type - for posts and custom post types use uichemy-composer/post, ' . $templates_at . '. Whole-page deletion is not here; use your WordPress tools.',
 					'handler'            => 'execute_page',
 				),
 				'post'     => array(
@@ -182,14 +130,19 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'schema_description' => $preamble . $shared . ' Defaults to the "post" type; "list", "create" and "create-with-sections" accept a post_type, so one ability covers every public custom post type. Whole-post deletion is not here; use your WordPress tools.',
 					'handler'            => 'execute_post',
 				),
-				'template' => array(
+			);
+
+			if ( $template_tool ) {
+				$domains['template'] = array(
 					'slug'               => 'uichemy-composer/template',
 					'label'              => 'UiChemy Builder: Template',
-					'description'        => 'The same section toolkit as uichemy-composer/page, pointed at ELEMENTOR PRO and NEXTER theme-builder templates (header, footer, single). ELEMENTOR ONLY: these are those plugins\' own template post types and condition formats, which Bricks and the block editor have no counterpart for - on those builders use uichemy-composer/theme-builder instead, which is native to UiChemy and works everywhere. "list" shows type, active status and conditions; "create" takes a type.',
+					'description'        => 'The same section toolkit as uichemy-composer/page, pointed at ELEMENTOR PRO and NEXTER\'s own theme-builder templates (their template post types and condition formats). Only for a template the user wants inside one of those systems - for a new header, footer, single or any other template use uichemy-composer/theme-builder, UiChemy\'s native engine. "list" shows type, active status and conditions; "create" takes a type.',
 					'schema_description' => $preamble . $shared . ' "create" needs a type (header | footer | single) and an optional system (elementor_pro | nexter | auto). THEME BUILDER: "set-conditions" decides where a template renders (a template with no conditions renders nowhere), "toggle" turns one on or off without losing its conditions, "delete" removes one (DESTRUCTIVE, two-step confirm_token). Plain Elementor produces an INACTIVE template on create - set-conditions fixes that, or build the header/footer as page sections instead. There is no create-with-sections: make the template, then append-section for the rest.',
 					'handler'            => 'execute_template',
-				),
-			);
+				);
+			}
+
+			return $domains;
 		}
 
 		/**
@@ -202,10 +155,111 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		 * served under meta.actions, so a client reads the exact contract for the one
 		 * action it is about to run.
 		 *
+		 * The catalogue follows the SELECTED builder: in Composer Builder mode a
+		 * page is one document, so the section actions are replaced by
+		 * document_content_actions(); in every other mode the document actions
+		 * are not offered at all.
+		 *
 		 * @param string $domain page | post | template.
 		 * @return array<int,array{name:string,description:string,action_parameters_schema:array}>
 		 */
 		private static function content_actions( $domain ) {
+			if ( 'template' !== $domain && self::composer_mode() ) {
+				return self::document_content_actions( $domain );
+			}
+
+			return self::section_content_actions( $domain );
+		}
+
+		/**
+		 * Is the Composer Builder the selected builder for this request?
+		 *
+		 * @return bool
+		 */
+		private static function composer_mode() {
+			return class_exists( 'UiChemy_Builder_Context' )
+				&& method_exists( 'UiChemy_Builder_Context', 'is_composer_mode' )
+				&& UiChemy_Builder_Context::is_composer_mode()
+				&& class_exists( 'UiChemy_Composer_Builder_Actions' )
+				&& UiChemy_Composer_Builder_Actions::available();
+		}
+
+		/**
+		 * Is uichemy-composer/template offered on this request?
+		 *
+		 * Only where it has something of its own to do: the builder is Elementor
+		 * AND Elementor Pro or Nexter is installed. Its list / conditions /
+		 * toggle / delete and its single template work on those plugins' own
+		 * template types (elementor_library, nxt_builder), which nothing else
+		 * has. Everywhere else it was noise at best — the Composer Builder,
+		 * Bricks, the block editor and plain Elementor get every template they
+		 * can have, header and footer included, from the native
+		 * uichemy-composer/theme-builder.
+		 *
+		 * Public so the router refuses exactly what the catalogue leaves out.
+		 *
+		 * @return bool
+		 */
+		public static function template_tool_available() {
+			if ( self::composer_mode() ) {
+				return false;
+			}
+
+			$builder = class_exists( 'UiChemy_Builder_Context' ) ? UiChemy_Builder_Context::resolve() : '';
+			if ( 'elementor' !== $builder ) {
+				return false;
+			}
+
+			return class_exists( '\ElementorPro\Plugin' ) || defined( 'ELEMENTOR_PRO_VERSION' ) || post_type_exists( 'nxt_builder' );
+		}
+
+		/**
+		 * page / post in Composer Builder mode: one document per page.
+		 *
+		 * Keeps the actions that are not about sections - list, grep, update -
+		 * and adds create / get-code / set-code / patch-code. Nothing that
+		 * addresses a section is offered, because there is none to address.
+		 *
+		 * @param string $domain page | post.
+		 * @return array<int,array>
+		 */
+		private static function document_content_actions( $domain ) {
+			$noun = 'post' === $domain ? 'post' : 'page';
+			$kept = array();
+
+			foreach ( self::section_content_actions( $domain ) as $action ) {
+				switch ( $action['name'] ) {
+					case 'list':
+						$action['description'] = 'List ' . $noun . 's with their IDs, titles, statuses, links and "builder". Only builder "composer" ones are edited here (get-code / set-code / patch-code); convert any other with action="create" and its post_id.';
+						$action['action_parameters_schema']['properties']['composer_builder'] = array(
+							'type'        => 'boolean',
+							'description' => 'Only ' . $noun . 's that already hold a document (builder "composer").',
+						);
+						$kept[] = $action;
+						break;
+
+					case 'grep':
+						$action['description'] = 'Search the html, css and js of every ' . $noun . ' document, like grep -rn. Returns each matching line with the post_id and field to edit it with patch-code.';
+						$kept[] = $action;
+						break;
+
+					case 'update':
+						$kept[] = $action;
+						break;
+				}
+			}
+
+			return array_merge( $kept, UiChemy_Composer_Builder_Actions::schemas( $noun ) );
+		}
+
+		/**
+		 * The section catalogue: page / post / template on Elementor, Bricks and
+		 * the block editor.
+		 *
+		 * @param string $domain page | post | template.
+		 * @return array<int,array>
+		 */
+		private static function section_content_actions( $domain ) {
 			$is_template = ( 'template' === $domain );
 			$is_post     = ( 'post' === $domain );
 			// What one item is called, so a description reads naturally in whichever
@@ -225,7 +279,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 
 			$page_head = array( 'type' => 'string', 'description' => 'Code for <head> on this ' . $noun . ' only.' );
 			$page_body = array( 'type' => 'string', 'description' => 'Code for just before </body> on this ' . $noun . ' only. Bare JavaScript is wrapped in <script> for you; markup (a fixed background layer, a modal root, a <noscript> pixel) is stored exactly as written.' );
-			$site_head = array( 'type' => 'string', 'description' => 'Code for <head> on every page of the site.' );
+			$site_head = array( 'type' => 'string', 'description' => 'Code for <head> on every page of the site, new pages included. Only for what every page needs; a <link> or <script> for one page\'s own file belongs in that page\'s code.' );
 			$site_body = array( 'type' => 'string', 'description' => 'Code for just before </body> on every page of the site.' );
 
 			// Section targeting: element_id is exact, section_index is positional.
@@ -442,7 +496,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					? null
 					: array(
 						'name'                     => 'update',
-						'description'              => 'Change the ' . $noun . '\'s OWN attributes - status, date, title, slug, excerpt, featured image, parent, menu order. Nothing to do with its sections. PUBLISHING IS THE COMMON CASE and it is the step that makes a build visible at all: content left as a draft is skipped by get_posts() (which defaults to post_status=publish), so every loop, listing and archive returns zero rows and every URL 404s while the tool log shows nothing but successes. Also the only way to give a plain ' . $noun . ' a FEATURED IMAGE - _thumbnail_id is protected meta and the field layer refuses it by design.',
+						'description'              => 'Change the ' . $noun . '\'s OWN attributes - status, date, title, slug, excerpt, featured image, parent, menu order, page template. Nothing to do with its sections. PUBLISHING IS THE COMMON CASE and it is the step that makes a build visible at all: content left as a draft is skipped by get_posts() (which defaults to post_status=publish), so every loop, listing and archive returns zero rows and every URL 404s while the tool log shows nothing but successes. Also the only way to give a plain ' . $noun . ' a FEATURED IMAGE - _thumbnail_id is protected meta and the field layer refuses it by design.',
 						'action_parameters_schema' => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -468,6 +522,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 								),
 								'parent'         => array( 'type' => 'integer', 'description' => 'Parent post ID for a hierarchical type, or 0 for none.' ),
 								'menu_order'     => array( 'type' => 'integer', 'description' => 'Manual sort position, for types and queries ordered by menu_order.' ),
+								'template'       => array( 'type' => 'string', 'description' => 'Page template file the active theme offers (e.g. "templates/full-width.php"), or "default" for the theme\'s own. An unknown one is refused - the refusal lists what this theme offers.' ),
 							),
 							'required'   => array( 'post_id' ),
 						),
@@ -719,7 +774,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'description'              => 'Create a NATIVE UiChemy theme-builder template from HTML/CSS/JS. Works on ANY supported builder - Elementor (including free), Bricks or the block editor - and is seeded through whichever one describe-site resolved. No Elementor Pro and no Nexter. Templates are ACTIVE by default, and activating one deactivates any other active UiChemy template in the same slot. READ "will_render" IN THE RESPONSE, NOT "active": active means the flag was written, and a header or footer can be active and still never appear - on a classic theme with no Elementor location support there is no slot to inject into; on a theme that renders through elementor_theme_do_location() Elementor Pro owns that function and only serves its own templates; and where another builder already has an active template for the slot UiChemy stands down rather than render a second one. When will_render is false the response says which of those it is and what to do instead; do not report the slot as done until it is true, and look at a real page even then.',
 					'action_parameters_schema' => array(
 						'type'        => 'object',
-						'description' => 'Choose "type" strictly by the user\'s wording: "header" → header; "footer" → footer; "single post / blog post / article template" → single; "archive / blog listing / category / tag / author / date" → archive; "product page / single product" → single_product (WooCommerce); "shop / product listing" → product_archive (WooCommerce); "thank you / order confirmation / order received" → order_received (WooCommerce); "search results" → search; "404 / not found" → error_404. PLACEMENT is type-aware: header/footer → { scope: "entire" (default) | "specific", include: [ids], exclude: [ids] }; single → { post_type: "post" (default) | "page" | "{cpt}" | "all" | "front", include: [ids], exclude: [ids] }; archive → { archive: "blog" (default) | "author" | "date" | "tax:{taxonomy}" | "all" }; single_product / product_archive / order_received / search / error_404 → OMIT placement, they apply to their whole context automatically. An order_received body MUST include the woo-thankyou tag (uichemy-composer/dynamic, action="add-tag"): it is the only thing that fires WooCommerce\'s thankyou hook, which carries bank-transfer instructions, gateway confirmations and every conversion pixel the site has attached. Build the visible layout from order.* tokens and keep that tag on the page. A single/archive body should use dynamic bindings (uichemy-composer/dynamic) rather than hardcoded content.',
+						'description' => 'Choose "type" strictly by the user\'s wording: "header" → header; "footer" → footer; "single post / blog post / article template" → single; "archive / blog listing / category / tag / author / date" → archive; "product page / single product" → single_product (WooCommerce); "shop / product listing" → product_archive (WooCommerce); "thank you / order confirmation / order received" → order_received (WooCommerce); "search results" → search; "404 / not found" → error_404. PLACEMENT is type-aware: header/footer → { scope: "entire" (default) | "specific", include: [ids], exclude: [ids] }; single → { post_type: "post" (default) | "page" | "{cpt}" | "all" | "front", include: [ids], exclude: [ids] }; archive → { archive: "blog" (default) | "author" | "date" | "tax:{taxonomy}" | "pt:{post_type}" (a custom post type\'s own archive page) | "all" }; single_product / product_archive / order_received / search / error_404 → OMIT placement, they apply to their whole context automatically. An order_received body MUST include the woo-thankyou tag (uichemy-composer/dynamic, action="add-tag"): it is the only thing that fires WooCommerce\'s thankyou hook, which carries bank-transfer instructions, gateway confirmations and every conversion pixel the site has attached. Build the visible layout from order.* tokens and keep that tag on the page. A single/archive body should use dynamic bindings (uichemy-composer/dynamic) rather than hardcoded content.',
 						'properties'  => array(
 							'type'      => array(
 								'type'        => 'string',
@@ -727,12 +782,25 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 								'description' => 'Which template slot to build.',
 							),
 							'title'     => array( 'type' => 'string', 'description' => 'Template title.' ),
-							'label'     => array( 'type' => 'string', 'description' => 'Section label shown in the Elementor navigator.' ),
+							'label'     => array( 'type' => 'string', 'description' => 'Name of the template\'s content block in the editor (the Elementor navigator, or the Composer Builder layer list).' ),
 							'html'      => array( 'type' => 'string', 'description' => 'Template body HTML. For single/archive types, bind live data instead of hardcoding it.' ),
 							'css'       => array( 'type' => 'string', 'description' => 'Responsive CSS. Must include real tablet and mobile rules.' ),
 							'js'        => array( 'type' => 'string', 'description' => 'Optional JavaScript.' ),
 							'status'    => array( 'type' => 'string', 'enum' => array( 'active', 'inactive' ), 'description' => 'Defaults to active. Pass "inactive" for a draft that renders nowhere.' ),
-							'placement' => array( 'type' => 'object', 'description' => 'Where the template renders - shape depends on "type", see the description above.' ),
+							'placement' => array(
+								'type'        => 'object',
+								'description' => 'Where the template renders; which keys apply depends on "type". header/footer: scope + include/exclude. single: post_type + include/exclude. archive: archive. search: post_type. single_product / product_archive / order_received / error_404: omit. "rules" passes the full conditions matrix instead.',
+								'properties'  => array(
+									'scope'     => array( 'type' => 'string', 'enum' => array( 'entire', 'specific' ), 'description' => 'header/footer: the whole site (default) or only the posts in include.' ),
+									'include'   => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Post ids the template is limited to.' ),
+									'exclude'   => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Post ids the template skips.' ),
+									'post_type' => array( 'type' => 'string', 'description' => 'single: "post" (default), "page", any public post type, "all" or "front". search: the post type whose results it shows, or "all".' ),
+									'archive'   => array( 'type' => 'string', 'description' => 'archive: "blog" (default), "author", "date", "tax:{taxonomy}", "pt:{post_type}" or "all".' ),
+									'rules'     => array( 'type' => 'array', 'items' => array( 'type' => 'object' ), 'description' => 'Advanced: [{ match: "include"|"exclude", type: "entire"|"all_singulars"|"front_page"|"blog"|"post_type"|"taxonomy"|"singular"|"author", value?, taxonomy?, term? }].' ),
+								),
+							),
+							'site_before_head' => array( 'type' => 'string', 'description' => 'Optional code for <head> on EVERY page, appended to the site code (deduped) - e.g. the Google Fonts <link> of a build, on its first call only.' ),
+							'site_before_body' => array( 'type' => 'string', 'description' => 'Optional code for just before </body> on every page, appended to the site code (deduped).' ),
 						),
 						'required'    => array( 'type' ),
 					),
@@ -853,6 +921,20 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				),
 			);
 
+			// A Composer Builder page has no sections to place: its css prints
+			// in the head and its js before </body>, as one document. Offering
+			// the two placement actions in that mode only produced a refusal.
+			if ( self::composer_mode() ) {
+				$actions = array_values(
+					array_filter(
+						$actions,
+						static function ( $a ) {
+							return ! in_array( $a['name'], array( 'get-post-sections-code-placement', 'set-post-sections-code-placement' ), true );
+						}
+					)
+				);
+			}
+
 			return array_merge( $actions, self::performance_extra_actions() );
 		}
 
@@ -911,7 +993,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				'posts_page_id' => array( 'type' => 'integer', 'description' => 'Post ID to use as the blog posts page.' ),
 			);
 			$menu_id   = array( 'type' => 'integer', 'description' => 'Nav menu ID from action="get-menu".' );
-			$site_head = array( 'type' => 'string', 'description' => 'Code injected into <head> on EVERY page of the site - e.g. a Google Fonts <link>, an analytics snippet, a <style> block.' );
+			$site_head = array( 'type' => 'string', 'description' => 'Code injected into <head> on EVERY page of the site - e.g. a Google Fonts <link>, an analytics snippet, a <style> block. Not for a code file (wp-content/uichemy-composer/) only some pages use: reference that from those pages\' own code.' );
 			$site_body = array( 'type' => 'string', 'description' => 'Code injected just before </body> on EVERY page of the site. Bare JavaScript is wrapped in <script> for you; markup is stored exactly as written.' );
 
 			return array(
@@ -1156,12 +1238,13 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 						'properties' => array(
 							'edits' => array(
 								'type'        => 'array',
-								'description' => 'Applied in order. Every exact, case-sensitive occurrence of find is replaced, so include enough surrounding text to make find unique. Change a value: find "--brand: #FF9900;", replace "--brand: #4B22CC;". ADD one by anchoring on a line you keep: find ":root {", replace ":root {\n  --accent: #00AAFF;". Delete by replacing with "".',
+								'description' => 'Applied in order. find must match exactly ONE place (case-sensitive): an edit that matches several is refused and nothing is saved, unless that edit passes "all": true to change every match. Change a value: find "--brand: #FF9900;", replace "--brand: #4B22CC;". ADD one by anchoring on a line you keep: find ":root {", replace ":root {\n  --accent: #00AAFF;". Delete by replacing with "".',
 								'items'       => array(
 									'type'       => 'object',
 									'properties' => array(
 										'find'    => array( 'type' => 'string', 'description' => 'Exact text to find - copy it from action="get".' ),
 										'replace' => array( 'type' => 'string', 'description' => 'What to put in its place. Empty string deletes.' ),
+										'all'     => array( 'type' => 'boolean', 'description' => 'Replace every match. Default false: a find matching more than one place is refused.' ),
 									),
 									'required'   => array( 'find', 'replace' ),
 								),
@@ -1216,6 +1299,10 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 								'query'     => array(
 									'type'        => 'object',
 									'description' => 'Everything beyond the basics, validated the same way the composer\'s own Loop panel validates it. Keys: post_type, count, orderby, order, taxonomy, terms (slug or list), post_status, offset, include (ids), exclude (ids), exclude_current (bool - drops the post being viewed), author (ids), date_mode ("day"|"week"|"month"|"year"|"custom"), date_after / date_before (YYYY-MM-DD), meta_key, meta_compare, meta_value, avoid_duplicates, pagination. For terms: taxonomy, hide_empty, parent. Anything set here overrides the flat parameters above.',
+								),
+								'empty_html' => array(
+									'type'        => 'string',
+									'description' => 'Markup shown when the query returns nothing (the loop\'s {% else %} branch). Defaults to a short "Nothing to show yet." paragraph; pass "" for no empty state.',
 								),
 								'raw_query' => array(
 									'type'        => 'string',
@@ -1436,69 +1523,6 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		 * Register every Composer ability.
 		 */
 		public static function register_abilities() {
-			if ( ! class_exists( 'UiChemy_Composer_MCP_Server' )
-				|| ! method_exists( 'UiChemy_Composer_MCP_Server', 'get_tool_definitions' ) ) {
-				return;
-			}
-
-			$name_map       = self::name_map();
-			$readonly_tools = self::readonly_tools();
-			$overrides      = self::overrides();
-
-			foreach ( UiChemy_Composer_MCP_Server::get_tool_definitions() as $def ) {
-				$tool_name = isset( $def['name'] ) ? (string) $def['name'] : '';
-
-				// Only register tools we have an explicit uichemy name for.
-				if ( '' === $tool_name || ! isset( $name_map[ $tool_name ] ) ) {
-					continue;
-				}
-
-				$ability_name = $name_map[ $tool_name ];
-
-				// Don't double-register (idempotent across reloads).
-				if ( function_exists( 'wp_has_ability' ) && wp_has_ability( $ability_name ) ) {
-					continue;
-				}
-
-				$description = isset( $def['description'] ) ? (string) $def['description'] : '';
-				$description = self::rebrand( $description, $name_map );
-
-				$input_schema = isset( $def['inputSchema'] ) && is_array( $def['inputSchema'] )
-					? $def['inputSchema']
-					: array( 'type' => 'object' );
-
-				if ( isset( $overrides[ $ability_name ]['description'] ) ) {
-					$description = $overrides[ $ability_name ]['description'];
-				}
-				if ( isset( $overrides[ $ability_name ]['schema_description'] ) ) {
-					$input_schema['description'] = $overrides[ $ability_name ]['schema_description'];
-				}
-
-				$is_readonly = in_array( $tool_name, $readonly_tools, true );
-
-				wp_register_ability(
-					$ability_name,
-					array(
-						'label'               => self::label_for( $ability_name ),
-						'description'         => $description,
-						'category'            => self::CATEGORY,
-						'input_schema'        => $input_schema,
-						'execute_callback'    => $def['handler'],
-						'permission_callback' => array( __CLASS__, 'permission_check' ),
-						'meta'                => array(
-							'show_in_rest' => true,
-							'mcp'          => array( 'public' => self::is_mcp_public( $ability_name ) ),
-							'annotations'  => array(
-								'title'       => self::label_for( $ability_name ),
-								'readonly'    => $is_readonly,
-								'destructive' => false,
-								'idempotent'  => $is_readonly,
-							),
-						),
-					)
-				);
-			}
-
 			// describe-site — read-only introspection of what this site can do and
 			// what content it holds. Action-routed like the rest, so discovery lists
 			// its two actions rather than showing it as one opaque call; the
@@ -1633,10 +1657,16 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				self::register_standalone_ability(
 					'uichemy-composer/performance',
 					'UiChemy Builder: Performance Settings',
-					'Page-speed settings for UiChemy pages (the Performance screen in the dashboard) and where a section\'s CSS and JS are printed.',
+					self::composer_mode()
+						? 'Page-speed settings for UiChemy pages (the Performance screen in the dashboard).'
+						: 'Page-speed settings for UiChemy pages (the Performance screen in the dashboard) and where a section\'s CSS and JS are printed.',
 					array(
 						'type'        => 'object',
-						'description' => self::contract() . ' SETTINGS: "list-performance-settings" lists every setting with its state ("performance-optimization" is the master switch; the others are individual optimizations); "set-performance-setting" changes one, a toggle with state "enable" or "disable", anything else with "value". PLACEMENT: "get-post-sections-code-placement" shows where every section of a post prints its CSS and JS; "set-post-sections-code-placement" moves one section\'s CSS or JS to "before-head-end" (before </head>), "before-body-end" (before </body>) or "default". Defaults: the first three sections\' CSS and JS are before-head-end; later sections\' CSS and JS are before-body-end.' . self::performance_pro_note(),
+						'description' => self::contract() . ' SETTINGS: "list-performance-settings" lists every setting with its state ("performance-optimization" is the master switch; the others are individual optimizations); "set-performance-setting" changes one, a toggle with state "enable" or "disable", anything else with "value". '
+							. ( self::composer_mode()
+								? 'A Composer Builder page is one document: its css prints before </head> and its js before </body>, so there is no per-section placement to set.'
+								: 'PLACEMENT: "get-post-sections-code-placement" shows where every section of a post prints its CSS and JS; "set-post-sections-code-placement" moves one section\'s CSS or JS to "before-head-end" (before </head>), "before-body-end" (before </body>) or "default". Defaults: the first three sections\' CSS and JS are before-head-end; later sections\' CSS and JS are before-body-end.' )
+							. self::performance_pro_note(),
 						'properties'  => array(
 							'action'            => array(
 								'type'        => 'string',
@@ -1765,10 +1795,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		 * they showed exactly the three abilities we had decided to hide — the
 		 * surface was inverted on every host but ours.
 		 *
-		 * Deciding it here instead makes one list authoritative everywhere. The
-		 * abilities stay REGISTERED: v1 and the Figma relay reach them through
-		 * UiChemy_Composer_MCP_Server::get_tool_definitions() and the
-		 * `uichemy_mcp_tools` filter, neither of which looks at this flag.
+		 * Deciding it here instead makes one list authoritative everywhere.
 		 *
 		 * @param string $ability_name Full ability name.
 		 * @return bool
@@ -1787,8 +1814,8 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		}
 
 		/**
-		 * Register an ability that has no entry in name_map — i.e. one that is not
-		 * backed by a v1 Composer tool spec and so cannot ride the register loop.
+		 * Register one ability with UiChemy's category, permission check and MCP
+		 * visibility.
 		 *
 		 * @param string   $slug         Ability name, e.g. 'uichemy-composer/describe-site'.
 		 * @param string   $label        Human label, reused as the annotation title.
@@ -1815,6 +1842,16 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'idempotent'  => false,
 				)
 			);
+
+			// In Composer Builder mode, text written for sections names the
+			// document actions and talks about pages instead of widgets.
+			if ( class_exists( 'UiChemy_Builder_Context' ) && self::composer_mode() ) {
+				$description  = UiChemy_Builder_Context::for_mode( $description );
+				$input_schema = UiChemy_Builder_Context::for_mode_deep( $input_schema );
+				if ( isset( $extra_meta['actions'] ) ) {
+					$extra_meta['actions'] = UiChemy_Builder_Context::for_mode_deep( $extra_meta['actions'] );
+				}
+			}
 
 			wp_register_ability(
 				$slug,
@@ -1858,6 +1895,13 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 		 */
 		private static function with_builder_param( array $meta ) {
 			if ( empty( $meta['actions'] ) || ! is_array( $meta['actions'] ) ) {
+				return $meta;
+			}
+
+			// In Composer Builder mode every page is one document and no driver is
+			// picked, so a builder override would only offer a choice that does
+			// not exist.
+			if ( self::composer_mode() ) {
 				return $meta;
 			}
 
@@ -1910,36 +1954,6 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 			}
 
 			return true;
-		}
-
-		/**
-		 * Rewrite legacy tool-name cross-references (and the "composer" brand
-		 * word) inside a description to the new uichemy naming.
-		 *
-		 * strtr() replaces the longest keys first and never re-processes text it
-		 * has already substituted, so overlapping names are handled safely.
-		 *
-		 * @param string               $text     Raw description.
-		 * @param array<string,string> $name_map Tool → ability name map.
-		 * @return string
-		 */
-		private static function rebrand( $text, $name_map ) {
-			// 1) Swap every legacy tool identifier for its uichemy ability name.
-			//    retired_map() rides along so a v1 spec that still names a tool with
-			//    no v2 ability points at the ability that absorbed it, rather than
-			//    leaving a tool name a v2 caller cannot resolve.
-			$text = strtr( $text, array_merge( $name_map, self::retired_map() ) );
-
-			// 2) Rebrand any remaining standalone "Composer" brand word. Runs
-			//    AFTER step 1 so it never touches an identifier. "Composer" (the
-			//    widget) and "UiChemy" (the plugin) are intentionally untouched.
-			$text = str_replace(
-				array( 'UiChemy Composer', 'Uichemy Composer', 'Composer', 'composer' ),
-				array( 'UiChemy', 'UiChemy', 'UiChemy', 'uichemy' ),
-				$text
-			);
-
-			return $text;
 		}
 
 		/**

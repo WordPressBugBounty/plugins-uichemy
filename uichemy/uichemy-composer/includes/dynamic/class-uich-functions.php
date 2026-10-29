@@ -225,6 +225,19 @@ if ( ! class_exists( 'Uich_Functions' ) ) {
 				$sticky_ids = array_values( array_filter( array_map( 'intval', (array) get_option( 'sticky_posts' ) ) ) );
 			}
 
+			// `inherit` is ours too: list what the page itself is listing. On an archive
+			// (category, tag, author, date, post type) or a search, the main query's
+			// own request vars come in under the loop's, so an Archive template shows
+			// that archive's posts; anywhere else (a page, the builder canvas) it is a
+			// plain loop. The loop's own args win, so it still sets its page size.
+			if ( ! empty( $args['inherit'] ) && ( is_archive() || is_search() || is_home() ) ) {
+				global $wp_query;
+				if ( $wp_query instanceof WP_Query && is_array( $wp_query->query ) ) {
+					$args = array_merge( $wp_query->query, $args );
+				}
+			}
+			unset( $args['inherit'] );
+
 			$args = wp_parse_args( $args, $defaults );
 			if ( $force_type ) {
 				$args['post_type'] = $force_type;
@@ -273,6 +286,7 @@ if ( ! class_exists( 'Uich_Functions' ) ) {
 					return array();
 				}
 			}
+			$args = self::native_meta_keys( $args );
 			$args = apply_filters( 'uich_dynamic_get_posts_args', $args );
 
 			// Sticky handling. `only` and `exclude` are plain arg tweaks. `first` needs a
@@ -433,16 +447,74 @@ if ( ! class_exists( 'Uich_Functions' ) ) {
 		/**
 		 * May a single post be handed to this template? Always for a trusted template (an
 		 * admin may build what they like). For an untrusted one only a published post of a
-		 * public type: the author could not read anything else themselves.
+		 * public type: the author could not read anything else themselves. Never a post
+		 * whose Visibility rules hide it from this visitor (Uich_CB_Visibility), whoever
+		 * wrote the template.
 		 *
 		 * @param WP_Post $post Post.
 		 * @return bool
 		 */
 		public static function post_visible( $post ) {
+			if ( $post instanceof WP_Post && class_exists( 'Uich_CB_Visibility' ) && Uich_CB_Visibility::is_hidden( $post->ID ) ) {
+				return false;
+			}
 			if ( ! Uich_Dynamic::is_untrusted() ) {
 				return true;
 			}
 			return $post instanceof WP_Post && 'publish' === $post->post_status && is_post_type_viewable( $post->post_type );
+		}
+
+		/**
+		 * Let a loop filter and sort by a UiChemy Custom Field's NAME.
+		 *
+		 * Native fields are stored under an internal meta key
+		 * (uich_build_meta_key()), so `meta_key: 'price'` and a meta_query on
+		 * `price` matched nothing (E-05). A key that names a native field of the
+		 * queried post type is mapped to its stored key; anything else (plain
+		 * meta, an ACF field) is left as written.
+		 *
+		 * @param array $args WP_Query args.
+		 * @return array
+		 */
+		private static function native_meta_keys( array $args ) {
+			if ( ! function_exists( 'uich_build_context_for_object' ) || ! function_exists( 'uich_get_all_groups_for_context' ) ) {
+				return $args;
+			}
+			$types = array_values( array_filter( (array) ( isset( $args['post_type'] ) ? $args['post_type'] : 'post' ), 'is_string' ) );
+			$map   = static function ( $key ) use ( $types ) {
+				$key = (string) $key;
+				if ( '' === $key || '_' === $key[0] || ( function_exists( 'acf_maybe_get_field' ) && acf_maybe_get_field( $key ) ) ) {
+					return $key;
+				}
+				foreach ( $types as $type ) {
+					$groups = uich_get_all_groups_for_context( uich_build_context_for_object( 'post', 0, array( 'post_type' => $type ) ) );
+					$info   = _uich_find_field_in_groups( $key, $groups, 'post', 0, true );
+					if ( $info ) {
+						return uich_build_meta_key( 'post', $info['group_key'], $info['field']['name'] );
+					}
+				}
+				return $key;
+			};
+			if ( ! empty( $args['meta_key'] ) ) {
+				$args['meta_key'] = $map( $args['meta_key'] ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key -- Same key the caller asked for, as stored.
+			}
+			if ( ! empty( $args['meta_query'] ) && is_array( $args['meta_query'] ) ) {
+				$walk = static function ( $query ) use ( &$walk, $map ) {
+					foreach ( $query as $i => $clause ) {
+						if ( ! is_array( $clause ) ) {
+							continue;
+						}
+						if ( isset( $clause['key'] ) ) {
+							$query[ $i ]['key'] = $map( $clause['key'] );
+						} else {
+							$query[ $i ] = $walk( $clause );
+						}
+					}
+					return $query;
+				};
+				$args['meta_query'] = $walk( $args['meta_query'] ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Keys mapped, query unchanged.
+			}
+			return $args;
 		}
 
 		/** Current loop page from the ?loop_page= param (falls back to the main paged var). */

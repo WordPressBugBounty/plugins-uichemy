@@ -52,10 +52,10 @@ class Uich_Fields_Import_JetEngine extends Uich_Fields_Import_Source {
 	 */
 	public static function skip_reasons() {
 		return array(
-			'gallery' => 'No UiChemy gallery type yet. Interim: a repeater of image fields.',
-			'html'    => 'Layout-only field, stores no value.',
+			'gallery' => __( 'No UiChemy gallery type yet. Interim: a repeater of image fields.', 'uichemy' ),
+			'html'    => __( 'Layout-only field, stores no value.', 'uichemy' ),
 			// JetEngine's Relations module keeps its own tables and is not meta at all.
-			'posts'   => 'JetEngine Relations are stored in their own tables, not as meta. Out of scope for this importer.',
+			'posts'   => __( 'JetEngine Relations are stored in their own tables, not as meta. Out of scope for this importer.', 'uichemy' ),
 		);
 	}
 
@@ -696,7 +696,7 @@ class Uich_Fields_Import_JetEngine extends Uich_Fields_Import_Source {
 				$skipped[] = array(
 					'field'  => $label,
 					'type'   => $type,
-					'reason' => 'Field has no name, so it stores no value.',
+					'reason' => __( 'Field has no name, so it stores no value.', 'uichemy' ),
 				);
 				continue;
 			}
@@ -712,7 +712,7 @@ class Uich_Fields_Import_JetEngine extends Uich_Fields_Import_Source {
 				$skipped[] = array(
 					'field'  => $name,
 					'type'   => $type,
-					'reason' => 'No UiChemy equivalent for this JetEngine type.',
+					'reason' => __( 'No UiChemy equivalent for this JetEngine type.', 'uichemy' ),
 				);
 				continue;
 			}

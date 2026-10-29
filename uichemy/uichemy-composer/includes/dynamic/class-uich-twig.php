@@ -31,6 +31,18 @@ if ( ! class_exists( 'Uich_Twig' ) ) {
 	class Uich_Twig {
 
 		/**
+		 * Editor previews only: a loop over a site query (get_posts and the
+		 * like) that finds no items shows its body once, as designed, instead of
+		 * nothing. A value's own list (a field's languages) stays empty. A card just marked as a loop has no
+		 * post type chosen yet (it lists Posts, which a site may have none of),
+		 * and vanishing from the canvas read as the card being deleted. Never on
+		 * for a visitor's page; a loop with its own `{% else %}` keeps it.
+		 *
+		 * @var bool
+		 */
+		public static $preview_empty_loops = false;
+
+		/**
 		 * Render a template string against a context.
 		 *
 		 * @param string $template Template source (HTML with {{ }} / {% %}).
@@ -87,6 +99,13 @@ if ( ! class_exists( 'Uich_Twig' ) ) {
 						break;
 					}
 					$inner = substr( $template, $i + 2, $end - ( $i + 2 ) );
+					// Expressions are code, not text: a save path that encoded them
+					// as HTML (`=>` stored as `=&gt;`) must not break `map` /
+					// `filter` arrows or comparisons. Decoding here also repairs
+					// pages already stored that way (E-03).
+					if ( false !== strpos( $inner, '&' ) ) {
+						$inner = html_entity_decode( $inner, ENT_QUOTES | ENT_HTML5, 'UTF-8' );
+					}
 					if ( '{{' === $two ) {
 						$tokens[] = array(
 							'type'  => 'out',
@@ -229,14 +248,17 @@ if ( ! class_exists( 'Uich_Twig' ) ) {
 			$key_var  = null;
 			$val_var  = null;
 			$iter_ast = null;
+			$iter_src = '';
 
 			$src = trim( preg_replace( '/^\s*for\s+/i', '', $open_tag ) );
 			if ( preg_match( '/^([a-zA-Z_][\w]*)\s*,\s*([a-zA-Z_][\w]*)\s+in\s+(.+)$/s', $src, $m ) ) {
 				$key_var  = $m[1];
 				$val_var  = $m[2];
+				$iter_src = $m[3];
 				$iter_ast = Uich_Expr::parse_expression( $m[3] );
 			} elseif ( preg_match( '/^([a-zA-Z_][\w]*)\s+in\s+(.+)$/s', $src, $m ) ) {
 				$val_var  = $m[1];
+				$iter_src = $m[2];
 				$iter_ast = Uich_Expr::parse_expression( $m[2] );
 			}
 
@@ -258,6 +280,9 @@ if ( ! class_exists( 'Uich_Twig' ) ) {
 				'key_var' => $key_var,
 				'val_var' => $val_var,
 				'iter'    => $iter_ast,
+				// A loop over a site query (get_posts…), as opposed to a value's
+				// own list (post.meta('languages')): see $preview_empty_loops.
+				'query'   => (bool) preg_match( '/^\s*get_(posts|products|terms|users)\s*\(/', $iter_src ),
 				'body'    => $body,
 				'else'    => $else,
 			);
@@ -327,6 +352,9 @@ if ( ! class_exists( 'Uich_Twig_Runtime' ) ) {
 			$items    = $this->to_iterable( $iterable );
 
 			if ( empty( $items ) ) {
+				if ( Uich_Twig::$preview_empty_loops && ! empty( $node['query'] ) && empty( $node['else'] ) ) {
+					return $this->render_nodes( $node['body'], $scope );
+				}
 				return $this->render_nodes( $node['else'], $scope );
 			}
 
@@ -620,7 +648,9 @@ if ( ! class_exists( 'Uich_Twig_Runtime' ) ) {
 				}
 				return $html;
 			}
-			return esc_html( (string) $v );
+			// A marker inside a longer string ('Price: ' ~ price_html) is not raw
+			// output; its NUL bytes must still never reach the page.
+			return esc_html( class_exists( 'Uich_Filters' ) ? Uich_Filters::strip_marks( $v ) : (string) $v );
 		}
 	}
 }

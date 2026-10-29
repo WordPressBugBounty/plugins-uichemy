@@ -55,8 +55,13 @@ if ( ! class_exists( 'Uich_SEO_Record' ) ) {
 			'og_locale',
 		);
 
-		/** Meta keys whose write means "the page's HTML changed". */
-		const WATCHED_META = array( '_elementor_data' );
+		/**
+		 * Meta keys whose write means "the page's HTML changed". `_uichemy_content`
+		 * is the Composer Builder document (html + head code): without it a page
+		 * edited through the builder or MCP kept printing the record derived
+		 * before the edit, so a <title> added to its head code never showed.
+		 */
+		const WATCHED_META = array( '_elementor_data', '_uichemy_content' );
 
 		/**
 		 * Posts touched in this request.
@@ -531,7 +536,12 @@ if ( ! class_exists( 'Uich_SEO_Record' ) ) {
 					return (bool) rest_sanitize_boolean( $value );
 
 				case 'robots_advanced':
-					$v   = is_array( $value ) ? $value : array();
+					$v = is_array( $value ) ? $value : array();
+					// A list (`["noarchive"]`) means those flags on; it was silently
+					// dropped as a map with no keys (F-04).
+					if ( $v && array_values( $v ) === $v ) {
+						$v = array_fill_keys( array_map( 'strval', array_filter( $v, 'is_scalar' ) ), true );
+					}
 					$out = array();
 					foreach ( array( 'noarchive', 'nosnippet', 'noimageindex' ) as $flag ) {
 						if ( ! empty( $v[ $flag ] ) ) {

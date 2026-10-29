@@ -88,6 +88,9 @@ if ( ! class_exists( 'Uich_Model_Uichemy' ) ) {
 				'color'         => 'color',
 				'link'          => 'link',
 				'post_relation' => 'relationship',
+				'page_link'     => 'page_link',
+				'user'          => 'user',
+				'range'         => 'range',
 				'taxonomy'      => 'taxonomy',
 				'repeater'      => 'repeater',
 			);
@@ -424,9 +427,9 @@ if ( ! class_exists( 'Uich_Model_Uichemy' ) ) {
 						}
 
 						$old               = Uich_Field_Provider_Uichemy::choices( isset( $field['choices'] ) ? $field['choices'] : null );
-						$before['choices'] = $old;
+						$before['choices'] = Uich_Model::choices_for_output( $old );
 						$field['choices']  = self::choices_text( $choices );
-						$after['choices']  = $choices;
+						$after['choices']  = Uich_Model::choices_for_output( $choices );
 
 						$dropped = array_diff( array_keys( (array) $old ), array_keys( $choices ) );
 						if ( $dropped ) {

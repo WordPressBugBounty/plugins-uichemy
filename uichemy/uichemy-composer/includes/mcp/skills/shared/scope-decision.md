@@ -12,6 +12,8 @@ Whenever you're about to emit a `<link>`, `<style>`, `<script>`, or `<meta>` tag
 | `page_before_body` | Stored on the first widget (`page_custom_code_footer`) → printed before `</body>` of **that page only** | First upload of the page only |
 | `css` / `js` | Scoped to the widget instance | Every section |
 
+**Composer Builder sites** (`platform.builder: "composer"`): `site_before_head` / `site_before_body` are written with `uichemy-composer/platform (action="update-site-code")`, once; `page_before_head` / `page_before_body` are the page's `head_code` / `body_end_code` (on `create`, `set-code` or `patch-code`); `css` / `js` belong to the page's one document. The rubric below is the same.
+
 ## Decision rubric
 
 For each asset you'd otherwise drop into a `<link>`/`<style>`/`<script>` tag, ask in order:

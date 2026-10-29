@@ -78,8 +78,18 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 				// never evaluated.
 				//
 				// The remaining whole-context types (404, single_product,
-				// order_received) are not narrowed — newest active wins.
-				if ( in_array( $type, array( 'header', 'footer' ), true ) ) {
+				// product_archive, order_received, search) are not narrowed —
+				// newest active wins.
+				if ( in_array( $type, array( 'header', 'footer' ), true ) && self::viewing_header_footer_template() ) {
+					// A header or footer template's own URL — where the Composer
+					// Builder's canvas loads it — shows that template alone.
+					// Wrapping it in the site's header and footer would put a
+					// header being edited under the live one, or twice when it IS
+					// the live one. A single / archive / 404 template is a page
+					// body, so it keeps the site's header and footer around it,
+					// as it will have on the front end.
+					$id = 0;
+				} elseif ( in_array( $type, array( 'header', 'footer' ), true ) ) {
 					$id = self::best_match( $active );
 					// UiChemy WINS the slot. If another theme-builder system
 					// (Elementor Pro's elementor_library, Nexter's nxt_builder, or
@@ -133,6 +143,21 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 		}
 
 		/**
+		 * Is this request a header or footer template's own URL?
+		 *
+		 * @return bool
+		 */
+		private static function viewing_header_footer_template() {
+			if ( ! is_singular( UiChemy_Template_CPT::POST_TYPE ) ) {
+				return false;
+			}
+
+			$type = (string) get_post_meta( (int) get_queried_object_id(), UiChemy_Template_CPT::META_TYPE, true );
+
+			return in_array( $type, array( 'header', 'footer' ), true );
+		}
+
+		/**
 		 * From a newest-first list of active template IDs, return the one whose
 		 * display conditions best match the current request, or 0 if none match.
 		 *
@@ -175,7 +200,7 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 			foreach ( $priorities as $want ) {
 				$matches = array();
 				foreach ( $ids as $id ) {
-					if ( UiChemy_Template_CPT::target_for( $id ) === $want ) {
+					if ( self::effective_target( $id ) === $want ) {
 						$matches[] = (int) $id;
 					}
 				}
@@ -187,6 +212,48 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 				}
 			}
 			return 0;
+		}
+
+		/**
+		 * A template's target, as its display conditions state it.
+		 *
+		 * The stored target comes from the menu the template was made from —
+		 * "Single (Post / Page)" gives `pt:post`. A template then set to show on
+		 * "All of a post type › Doctor" kept `pt:post`, so a doctor page (which
+		 * looks for `pt:doctor`, then `any`) never reached it, and the rule the
+		 * user chose did nothing. When the include rules name exactly one post
+		 * type, that is the target; otherwise the stored one stands.
+		 *
+		 * @param int $id Template ID.
+		 * @return string
+		 */
+		private static function effective_target( $id ) {
+			$stored     = UiChemy_Template_CPT::target_for( $id );
+			$conditions = get_post_meta( $id, UiChemy_Template_CPT::META_CONDITIONS, true );
+			$rules      = ( is_array( $conditions ) && isset( $conditions['rules'] ) && is_array( $conditions['rules'] ) ) ? $conditions['rules'] : array();
+			$types      = array();
+			$any        = false;
+			foreach ( $rules as $rule ) {
+				if ( ! is_array( $rule ) || ( isset( $rule['match'] ) && 'exclude' === $rule['match'] ) || ! isset( $rule['type'] ) ) {
+					continue;
+				}
+				if ( 'post_type' === $rule['type'] && ! empty( $rule['value'] ) ) {
+					$types[ (string) $rule['value'] ] = true;
+				} elseif ( 'singular' === $rule['type'] && ! empty( $rule['value'] ) ) {
+					// One particular page or post: its own type (D-02).
+					$type = get_post_type( (int) $rule['value'] );
+					if ( $type ) {
+						$types[ $type ] = true;
+					}
+				} elseif ( in_array( $rule['type'], array( 'entire', 'all_singulars' ), true ) ) {
+					// Every single view: the `any` target, tried for every type.
+					$any = true;
+				}
+			}
+			if ( $any || count( $types ) > 1 ) {
+				return 'any';
+			}
+			return 1 === count( $types ) ? 'pt:' . key( $types ) : $stored;
 		}
 
 		/**
@@ -220,6 +287,13 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 				$priorities[] = 'author';
 			} elseif ( is_date() ) {
 				$priorities[] = 'date';
+			} elseif ( is_post_type_archive() ) {
+				// A custom post type's own archive (E-06).
+				$post_type = get_query_var( 'post_type' );
+				$post_type = is_array( $post_type ) ? reset( $post_type ) : $post_type;
+				if ( $post_type ) {
+					$priorities[] = 'pt:' . $post_type;
+				}
 			} elseif ( is_tax() || is_category() || is_tag() ) {
 				$obj = get_queried_object();
 				if ( $obj && ! empty( $obj->taxonomy ) ) {

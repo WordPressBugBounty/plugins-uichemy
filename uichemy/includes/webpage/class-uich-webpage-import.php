@@ -59,6 +59,29 @@ class Uich_Webpage_Import {
 	const OPTION_IMPORT_META = 'uich_webpage_replacement_import_meta';
 
 	/**
+	 * Option key: set by rest_reset_content(), cleared by rest_import_cleanup().
+	 *
+	 * While it is set, an imported page must NOT revive a post the reset just
+	 * drafted — see target_post_for_imported_page().
+	 */
+	const OPTION_CONTENT_RESET = 'uich_webpage_content_reset';
+
+	/**
+	 * The theme an import installs and activates.
+	 *
+	 * UiChemy Zero (wordpress.org/themes/uichemy-zero) replaces Nexter here. It is
+	 * UiChemy's own minimal theme: it ships no options screen of its own, so the
+	 * imported design is the only thing deciding how the site looks, and the
+	 * Composer header/footer hook straight into it.
+	 *
+	 * A site already running Nexter keeps it — nothing uninstalls or switches away
+	 * from a theme the user chose, and the Nexter-specific settings steps below
+	 * still apply on such a site. They simply have nothing to write on this one.
+	 */
+	const IMPORT_THEME_SLUG  = 'uichemy-zero';
+	const IMPORT_THEME_LABEL = 'UiChemy Zero';
+
+	/**
 	 * Option key for persisted old→new template ID map.
 	 * Built once during fetch phase when elementor_template files are imported.
 	 * Read by every import-single-page call to remap widget template references.
@@ -415,7 +438,7 @@ class Uich_Webpage_Import {
 			)
 		);
 
-		// Check status of required plugins (Elementor, Nexter Extension, The Plus Addons).
+		// Check status of required plugins (Elementor, plus UiChemy for the Elementor builder).
 		register_rest_route(
 			'uichemy/v2/webpage',
 			'/check-plugins',
@@ -427,7 +450,7 @@ class Uich_Webpage_Import {
 		);
 
 		// Check status of required theme and plugins:
-		// 3 fixed Nexter items + plugins from sitemaps project.requiredPlugins.
+		// the import theme (UiChemy Zero) + plugins from sitemaps project.requiredPlugins.
 		register_rest_route(
 			'uichemy/v2/webpage',
 			'/check-requirements',
@@ -449,7 +472,7 @@ class Uich_Webpage_Import {
 			)
 		);
 
-		// Install and activate Nexter theme.
+		// Install and activate the import theme (UiChemy Zero).
 		register_rest_route(
 			'uichemy/v2/webpage',
 			'/install-theme',
@@ -471,10 +494,8 @@ class Uich_Webpage_Import {
 			)
 		);
 
-		// Install all requirements (3 Nexter items):
-		// 1. Theme: Nexter.
-		// 2. Plugin: nexter-extension.
-		// 3. Plugin: the-plus-addons-for-block-editor.
+		// Install all requirements: the import theme, plus UiChemy itself for
+		// Elementor (it owns the Theme Builder).
 		register_rest_route(
 			'uichemy/v2/webpage',
 			'/install-requirements',
@@ -485,7 +506,7 @@ class Uich_Webpage_Import {
 			)
 		);
 
-		// Import a single page or Nexter template (navbar/footer) by name from stored JSON.
+		// Import a single page or Theme Builder template (navbar/footer) by name from stored JSON.
 		register_rest_route(
 			'uichemy/v2/webpage',
 			'/import-single-page',
@@ -521,7 +542,8 @@ class Uich_Webpage_Import {
 			)
 		);
 
-		// Apply Nexter theme settings (fluid container layout) after import.
+		// Apply theme settings after import. Nexter's own layout options are written
+		// only on a site that actually runs Nexter — see rest_apply_theme_settings().
 		register_rest_route(
 			'uichemy/v2/webpage',
 			'/apply-theme-settings',
@@ -648,11 +670,11 @@ class Uich_Webpage_Import {
 	}
 
 	/**
-	 * REST callback: return status of required theme and plugins for Nexter-based imports.
+	 * REST callback: return status of the required theme and plugins for an import.
 	 *
 	 * requiredPlugins source: sitemaps API (project.requiredPlugins), NOT globals.json.
 	 *
-	 * Checks 3 fixed Nexter items + plugins from sitemaps project.requiredPlugins.
+	 * Checks the import theme + plugins from sitemaps project.requiredPlugins.
 	 *
 	 * @param WP_REST_Request $request Full request with requiredPlugins array from sitemaps.
 	 * @return WP_REST_Response
@@ -676,8 +698,8 @@ class Uich_Webpage_Import {
 
 		$all_plugins = get_plugins();
 
-		// Check Nexter theme status.
-		$theme_result = $this->get_nexter_theme_status();
+		// Check the import theme's status.
+		$theme_result = $this->get_import_theme_status();
 
 		/*
 		 * Nexter Extension is no longer force-installed. Every Theme Builder
@@ -772,12 +794,12 @@ class Uich_Webpage_Import {
 	}
 
 	/**
-	 * Get Nexter theme installation status.
+	 * Get the import theme's installation status.
 	 *
 	 * @return array Theme status with name, label, slug, and status.
 	 */
-	protected function get_nexter_theme_status() {
-		$theme_slug = 'nexter';
+	protected function get_import_theme_status() {
+		$theme_slug = self::IMPORT_THEME_SLUG;
 		$theme      = wp_get_theme( $theme_slug );
 		$current    = wp_get_theme();
 
@@ -786,11 +808,11 @@ class Uich_Webpage_Import {
 		$status       = $is_active ? 'active' : ( $is_installed ? 'inactive' : 'not_installed' );
 
 		return array(
-			'name'          => 'nexter',
-			'label'         => 'Nexter',
+			'name'          => $theme_slug,
+			'label'         => self::IMPORT_THEME_LABEL,
 			'slug'          => $theme_slug,
-			'original_slug' => 'nexter',
-			'icon'          => 'nexter',
+			'original_slug' => $theme_slug,
+			'icon'          => $theme_slug,
 			'status'        => $status,
 		);
 	}
@@ -874,18 +896,18 @@ class Uich_Webpage_Import {
 	}
 
 	/**
-	 * REST callback: install and activate Nexter theme.
+	 * REST callback: install and activate the import theme.
 	 *
-	 * Body: { theme_slug: string } (optional, defaults to 'nexter')
+	 * Body: { theme_slug: string } (optional, defaults to IMPORT_THEME_SLUG)
 	 *
 	 * @param WP_REST_Request $request Full request.
 	 * @return WP_REST_Response|WP_Error
 	 */
 	public function rest_install_theme( $request ) {
 		$params     = $request->get_json_params();
-		$theme_slug = isset( $params['theme_slug'] ) ? sanitize_key( $params['theme_slug'] ) : 'nexter';
+		$theme_slug = isset( $params['theme_slug'] ) ? sanitize_key( $params['theme_slug'] ) : self::IMPORT_THEME_SLUG;
 
-		$success = $this->ensure_nexter_theme( $theme_slug );
+		$success = $this->ensure_import_theme( $theme_slug );
 
 		$theme     = wp_get_theme( $theme_slug );
 		$current   = wp_get_theme();
@@ -1468,13 +1490,13 @@ class Uich_Webpage_Import {
 	}
 
 	/**
-	 * Ensure Nexter theme is installed and activated.
+	 * Ensure the import theme is installed and activated.
 	 * Uses same approach as WDesignKit: download from WordPress.org API and extract to themes folder.
 	 *
-	 * @param string $theme_slug Theme slug (default 'nexter').
+	 * @param string $theme_slug Theme slug (defaults to IMPORT_THEME_SLUG).
 	 * @return bool True if theme is active (or was installed/activated), false otherwise.
 	 */
-	protected function ensure_nexter_theme( $theme_slug = 'nexter' ) {
+	protected function ensure_import_theme( $theme_slug = self::IMPORT_THEME_SLUG ) {
 		$theme   = wp_get_theme( $theme_slug );
 		$current = wp_get_theme();
 
@@ -1564,7 +1586,7 @@ class Uich_Webpage_Import {
 	 * REST callback: install all requirements (theme + plugins) at once.
 	 *
 	 * Installs and activates:
-	 * 1. Theme: Nexter
+	 * 1. Theme: IMPORT_THEME_SLUG (UiChemy Zero)
 	 * 2. Plugin: UiChemy (Elementor builder only — it owns the Theme Builder)
 	 *
 	 * Nexter Extension and The Plus Addons are no longer installed: every Theme
@@ -1576,7 +1598,7 @@ class Uich_Webpage_Import {
 	public function rest_install_requirements( $request ) {
 		$builder = is_object( $request ) && method_exists( $request, 'get_param' ) ? $request->get_param( 'builder' ) : '';
 		$builder = is_string( $builder ) && '' !== $builder ? sanitize_key( $builder ) : 'elementor';
-		$results = $this->ensure_all_nexter_requirements( $builder );
+		$results = $this->ensure_all_import_requirements( $builder );
 
 		// Check overall success.
 		$all_success = $results['theme']['success'];
@@ -4778,6 +4800,310 @@ class Uich_Webpage_Import {
 	}
 
 	/**
+	 * Split a navbar/footer export into the designs it actually contains.
+	 *
+	 * The Creator now ships a `navbars` array — one entry per design, each with
+	 * the pages it belongs to — alongside the legacy top-level `content`, which
+	 * still holds the DEFAULT design only. Reading `content` alone (what this
+	 * importer did) therefore imported the default navbar and silently dropped
+	 * every other one, so a kit with a separate shop header arrived with the
+	 * blog header on its shop pages.
+	 *
+	 * Falls back to a single unnamed variant for the legacy shape, so an older
+	 * export keeps importing exactly as before.
+	 *
+	 * @param mixed $data Decoded navbar.json / footer.json.
+	 * @return array<int,array{key:string,default:bool,pages:string[],content:array}>
+	 */
+	protected function theme_part_variants_from_data( $data ) {
+		$variants = array();
+
+		/*
+		 * The key has already been renamed once mid-development (`navbars` →
+		 * `composer-navbars`), and an export built before that rename is still a
+		 * valid file, so both spellings are accepted rather than pinning to
+		 * whichever one shipped last.
+		 */
+		$entries = array();
+		foreach ( array( 'composer-navbars', 'navbars', 'composer-footers', 'footers' ) as $list_key ) {
+			if ( is_array( $data ) && ! empty( $data[ $list_key ] ) && is_array( $data[ $list_key ] ) ) {
+				$entries = $data[ $list_key ];
+				break;
+			}
+		}
+
+		if ( ! empty( $entries ) ) {
+			foreach ( $entries as $entry ) {
+				if ( ! is_array( $entry ) ) {
+					continue;
+				}
+				$content = isset( $entry['content'] ) ? $entry['content'] : null;
+				if ( ! is_array( $content ) || empty( $content ) ) {
+					continue;
+				}
+				$variants[] = array(
+					'key'     => isset( $entry['key'] ) ? (string) $entry['key'] : '',
+					'default' => ! empty( $entry['default'] ),
+					'pages'   => ( isset( $entry['pages'] ) && is_array( $entry['pages'] ) ) ? $entry['pages'] : array(),
+					'content' => $content,
+				);
+			}
+		}
+
+		if ( empty( $variants ) ) {
+			$content = $this->extract_elementor_content( $data );
+			if ( is_array( $content ) && ! empty( $content ) ) {
+				$variants[] = array(
+					'key'     => '',
+					'default' => true,
+					'pages'   => array(),
+					'content' => $content,
+				);
+			}
+		}
+
+		return $variants;
+	}
+
+	/**
+	 * Turn a variant's `pages` list into UiChemy display-condition rules.
+	 *
+	 * The export names design surfaces ("Shop Page", "Blog Detail Page"), not
+	 * WordPress contexts, so each name maps to the rule that actually matches at
+	 * render time. A name that is a page this import created becomes a `singular`
+	 * rule for that post; the rest map to the context they describe.
+	 *
+	 * Returns an empty array when nothing could be mapped — the caller then falls
+	 * back to "entire site" rather than shipping a header that matches nowhere.
+	 *
+	 * @param string[] $page_names Names from the variant's `pages`.
+	 * @param array    $created    Pages created so far: { post_id, title }.
+	 * @return array<int,array<string,mixed>>
+	 */
+	protected function theme_part_rules_from_pages( array $page_names, array $created ) {
+		$rules = array();
+		$seen  = array();
+		$add   = function ( $rule ) use ( &$rules, &$seen ) {
+			$key = wp_json_encode( $rule );
+			if ( isset( $seen[ $key ] ) ) {
+				return;
+			}
+			$seen[ $key ] = true;
+			$rules[]      = $rule;
+		};
+
+		/*
+		 * Pages already on the site come first so they can be overwritten by the
+		 * rows this run produced. The live (page-by-page) import creates the
+		 * header AFTER every page job has finished, so its $created is empty and
+		 * the site's own pages are the only way to resolve a name like "Blog" to
+		 * the post the design meant.
+		 */
+		$by_title = array();
+		$existing = get_posts(
+			array(
+				'post_type'              => 'page',
+				'post_status'            => 'publish',
+				'posts_per_page'         => -1,
+				'no_found_rows'          => true,
+				'update_post_meta_cache' => false,
+				'update_post_term_cache' => false,
+			)
+		);
+		foreach ( $existing as $page ) {
+			if ( ! $page instanceof WP_Post ) {
+				continue;
+			}
+			$by_title[ $this->normalize_nav_menu_filterlabel( $page->post_title ) ] = (int) $page->ID;
+		}
+		foreach ( $created as $row ) {
+			if ( empty( $row['title'] ) || empty( $row['post_id'] ) ) {
+				continue;
+			}
+			$by_title[ $this->normalize_nav_menu_filterlabel( $row['title'] ) ] = (int) $row['post_id'];
+		}
+
+		foreach ( $page_names as $raw_name ) {
+			$name = $this->normalize_nav_menu_filterlabel( (string) $raw_name );
+			if ( '' === $name ) {
+				continue;
+			}
+
+			// A page this import created wins over any name-based guess: it is the
+			// exact post the design meant.
+			if ( isset( $by_title[ $name ] ) ) {
+				$add( array( 'match' => 'include', 'type' => 'singular', 'value' => $by_title[ $name ] ) );
+				continue;
+			}
+
+			switch ( $name ) {
+				case 'shop':
+				case 'shop page':
+				case 'shop home':
+					$add( array( 'match' => 'include', 'type' => 'woo_shop' ) );
+					break;
+
+				case 'product category':
+				case 'product categories':
+				case 'product listing':
+					foreach ( array( 'product_cat', 'product_tag', 'product_brand' ) as $tax ) {
+						if ( taxonomy_exists( $tax ) ) {
+							$add( array( 'match' => 'include', 'type' => 'taxonomy', 'taxonomy' => $tax, 'term' => 0 ) );
+						}
+					}
+					break;
+
+				case 'product single':
+				case 'product details':
+					if ( post_type_exists( 'product' ) ) {
+						$add( array( 'match' => 'include', 'type' => 'post_type', 'value' => 'product' ) );
+					}
+					break;
+
+				case 'blog detail':
+				case 'blog detail page':
+					$add( array( 'match' => 'include', 'type' => 'post_type', 'value' => 'post' ) );
+					break;
+
+				/*
+				 * Search rules are pinned to the post type the surface searches.
+				 * An unscoped `search` rule matches EVERY search, so a blog navbar
+				 * that claims "Search Results Page" also won /?s=x&post_type=product
+				 * away from the shop navbar — the same mix-up post-type search
+				 * templates exist to fix.
+				 *
+				 * A bare /?s=x names no post type and so matches neither; it keeps
+				 * whichever design is site-wide, which is also the surface no
+				 * search template in the kit targets.
+				 */
+				case 'search results page':
+				case 'search results':
+				case 'blog search':
+				case 'post search':
+					$add( array( 'match' => 'include', 'type' => 'search', 'value' => 'post' ) );
+					break;
+
+				case 'product search':
+				case 'product search results':
+				case 'shop search':
+					if ( post_type_exists( 'product' ) ) {
+						$add( array( 'match' => 'include', 'type' => 'search', 'value' => 'product' ) );
+					}
+					break;
+
+				/*
+				 * The author rule with value 0 is "any author archive". It used to
+				 * also return true on every singular view — every post has an
+				 * author — so mapping this surface handed the design the whole
+				 * site. UiChemy_Conditions now answers that rule on author
+				 * archives only (a NAMED author still claims that author's posts),
+				 * which is what the condition's own label always promised.
+				 */
+				case 'author page':
+				case 'author archive':
+					$add( array( 'match' => 'include', 'type' => 'author', 'value' => 0 ) );
+					break;
+
+				case 'category page':
+					$add( array( 'match' => 'include', 'type' => 'taxonomy', 'taxonomy' => 'category', 'term' => 0 ) );
+					break;
+
+				case 'tag featured page':
+				case 'tag page':
+					$add( array( 'match' => 'include', 'type' => 'taxonomy', 'taxonomy' => 'post_tag', 'term' => 0 ) );
+					break;
+			}
+		}
+
+		return $rules;
+	}
+
+	/**
+	 * Create one Theme Builder template per design inside navbar.json / footer.json.
+	 *
+	 * Both import paths need this: the batch importer (run_import) and the live
+	 * page-by-page importer (run_import_single_page_job). The live path used to
+	 * hand the whole file to create_or_update_theme_builder_template(), which
+	 * reads the legacy top-level `content` — the DEFAULT design only — so a kit
+	 * with a separate shop header and blog header arrived with one header and no
+	 * conditions, and every page got the default design.
+	 *
+	 * The default design is imported site-wide with no rules, so nothing is ever
+	 * left headerless; each other design gets the rules built from its own
+	 * `pages` list and wins on those surfaces through the resolver's specificity.
+	 *
+	 * @param mixed  $data         Decoded navbar.json / footer.json.
+	 * @param string $title        Base title ("Navbar" / "Footer").
+	 * @param string $section_type 'header' or 'footer'.
+	 * @param array  $created      Pages created so far: { post_id, title }.
+	 * @return array{created:array<int,array{post_id:int,title:string,default:bool}>,warnings:string[]}
+	 */
+	protected function import_theme_part_variants( $data, $title, $section_type, array $created = array() ) {
+		$out      = array(
+			'created'  => array(),
+			'warnings' => array(),
+		);
+		$variants = $this->theme_part_variants_from_data( $data );
+		if ( empty( $variants ) ) {
+			return $out;
+		}
+
+		$index = 0;
+		foreach ( $variants as $variant ) {
+			++$index;
+			$rules = $variant['default'] ? array() : $this->theme_part_rules_from_pages( $variant['pages'], $created );
+
+			// A non-default design whose pages mapped to nothing would match
+			// nowhere and render never. Site-wide is wrong for it too, so it is
+			// imported under its own name and reported rather than silently lost.
+			$variant_title = $title;
+			if ( count( $variants ) > 1 && ! $variant['default'] ) {
+				$variant_title = $title . ' ' . $index;
+				if ( '' !== $variant['key'] ) {
+					$slug = preg_replace( '/_.*$/', '', $variant['key'] );
+					$slug = trim( str_replace( array( '-', '_' ), ' ', (string) $slug ) );
+					// "Navbar (Navbar)" tells the user nothing, and the numbered
+					// fallback is already unique — so only a key that actually
+					// names something becomes the label.
+					if ( '' !== $slug && 0 !== strcasecmp( $slug, $title ) ) {
+						$variant_title = $title . ' (' . ucwords( $slug ) . ')';
+					}
+				}
+			}
+
+			$variant_data = array( 'content' => $variant['content'] );
+			if ( ! empty( $rules ) ) {
+				$variant_data['placement'] = array( 'rules' => $rules );
+			}
+
+			$post_id = $this->create_or_update_theme_builder_template( $variant_title, $variant_data, '', '', $section_type, $created );
+			if ( $post_id && ! is_wp_error( $post_id ) ) {
+				$out['created'][] = array(
+					'post_id' => (int) $post_id,
+					'title'   => $variant_title,
+					'default' => (bool) $variant['default'],
+				);
+				if ( ! $variant['default'] && empty( $rules ) ) {
+					$out['warnings'][] = sprintf(
+						/* translators: %s: template title */
+						__( '%s was imported without display conditions: none of the pages it lists could be matched on this site.', 'uichemy' ),
+						$variant_title
+					);
+				}
+			} elseif ( is_wp_error( $post_id ) ) {
+				$out['warnings'][] = sprintf(
+					/* translators: 1: template title, 2: error message */
+					__( '%1$s skipped: %2$s', 'uichemy' ),
+					$variant_title,
+					$post_id->get_error_message()
+				);
+			}
+		}
+
+		return $out;
+	}
+
+	/**
 	 * Build map filterlabel => permalink from pages just created in this import batch.
 	 * Skips navbar/footer JSON rows so template posts are not treated as nav targets.
 	 *
@@ -5726,20 +6052,24 @@ class Uich_Webpage_Import {
 			}
 			$title        = $config['title'];
 			$section_type = $config['section_type'];
-			$post_id      = $this->create_or_update_theme_builder_template( $title, $files[ $found ], '', '', $section_type, $created );
-			if ( $post_id && ! is_wp_error( $post_id ) ) {
+
+			/*
+			 * One template per design in the file. The default design takes the
+			 * whole site so no page is ever left without a header; every other
+			 * design gets the rules built from its own `pages` list, and the
+			 * resolver's specificity does the rest — a shop navbar scoped to the
+			 * store beats the site-wide one on /shop/.
+			 */
+			$part_result = $this->import_theme_part_variants( $files[ $found ], $title, $section_type, $created );
+			foreach ( $part_result['created'] as $row ) {
 				$created[] = array(
-					'post_id'  => $post_id,
-					'title'    => $title,
+					'post_id'  => $row['post_id'],
+					'title'    => $row['title'],
 					'filename' => $found,
 				);
-			} elseif ( is_wp_error( $post_id ) ) {
-				$warnings[] = sprintf(
-					/* translators: 1: template title, 2: error message */
-					__( '%1$s skipped: %2$s', 'uichemy' ),
-					$title,
-					$post_id->get_error_message()
-				);
+			}
+			if ( ! empty( $part_result['warnings'] ) ) {
+				$warnings = array_merge( $warnings, $part_result['warnings'] );
 			}
 		}
 
@@ -5891,8 +6221,18 @@ class Uich_Webpage_Import {
 	 * @return int|WP_Error Post ID to write the imported design into.
 	 */
 	protected function target_post_for_imported_page( $page_title, $post_type ) {
+		/*
+		 * "Reset my previous content before importing" moved every page to draft
+		 * on purpose, and the user was told it stays restorable from drafts.
+		 * Reusing one of those drafts here would publish it straight back, so a
+		 * page whose title the kit also ships looked as though the reset had
+		 * never run — which is exactly the "reset does nothing" report. With the
+		 * flag set the old post is left in draft and the import starts a new one.
+		 */
+		$after_reset = (bool) get_option( self::OPTION_CONTENT_RESET, false );
+
 		$existing = $this->get_published_post_by_exact_title( $page_title, $post_type );
-		if ( ! $existing ) {
+		if ( ! $existing && ! $after_reset ) {
 			// Nothing published, but an earlier run may have archived one. Reusing
 			// it keeps that page's ID and URL rather than minting a third copy.
 			$existing = $this->get_post_by_exact_title( $page_title, $post_type );
@@ -5912,6 +6252,15 @@ class Uich_Webpage_Import {
 			);
 			if ( is_wp_error( $updated ) ) {
 				return $updated;
+			}
+
+			// A page the Composer Builder owns renders its builder document and
+			// ignores the Elementor data / post_content written next, so the
+			// import looked like it did nothing. Hand the page back to the import;
+			// the document itself stays stored (and in the revision above), so
+			// re-enabling the builder brings it back.
+			if ( class_exists( 'Uich_CB_Content' ) && Uich_CB_Content::is_enabled( (int) $existing->ID ) ) {
+				Uich_CB_Content::set_enabled( (int) $existing->ID, false );
 			}
 
 			return (int) $existing->ID;
@@ -6611,6 +6960,19 @@ class Uich_Webpage_Import {
 		 * registered with exclude_from_search (uich_post_type_not_searchable),
 		 * so there is exactly one place that decides what a legal target is.
 		 */
+		/*
+		 * A header/footer variant carries the rules the caller built from the
+		 * export's own `pages` list (see theme_part_rules_from_pages). Passing
+		 * them through here is what lets two navbars coexist, each matching its
+		 * own part of the site, instead of the second one overwriting the first.
+		 */
+		if ( is_array( $data )
+			&& isset( $data['placement']['rules'] )
+			&& is_array( $data['placement']['rules'] )
+			&& ! empty( $data['placement']['rules'] ) ) {
+			$mapped['placement'] = array( 'rules' => $data['placement']['rules'] );
+		}
+
 		if ( 'search' === $mapped['type']
 			&& is_array( $data )
 			&& isset( $data['placement']['post_type'] )
@@ -7340,7 +7702,11 @@ class Uich_Webpage_Import {
 
 	/**
 	 * Ensure Nexter Extension plugin is installed and active.
-	 * Used by ensure_all_nexter_requirements() for /install-requirements endpoint.
+	 *
+	 * NOT CALLED. The import no longer installs Nexter Extension — every Theme
+	 * Builder template goes to UiChemy's own. Kept only so a project that lists
+	 * it in requiredPlugins can be wired back to one helper rather than a new
+	 * one; wiring it into the import flow again would be a decision, not a fix.
 	 *
 	 * @return bool True if Nexter Extension is active (or was installed/activated), false otherwise.
 	 */
@@ -7386,23 +7752,23 @@ class Uich_Webpage_Import {
 	}
 
 	/**
-	 * Ensure all required dependencies for Nexter-based imports are installed and active.
+	 * Ensure everything an import requires is installed and active.
 	 *
-	 * Checks and installs 3 fixed Nexter items:
-	 * 1. Theme: Nexter
-	 * 2. Plugin: nexter-extension
-	 * 3. Plugin: the-plus-addons-for-block-editor
+	 * 1. Theme: IMPORT_THEME_SLUG (UiChemy Zero)
+	 * 2. Plugin: UiChemy, for the Elementor builder — it owns the Theme Builder
+	 *
+	 * Nexter, Nexter Extension and The Plus Addons are no longer installed here.
 	 *
 	 * Note: Elementor and The Plus Addons for Elementor are installed automatically
 	 * during fetch phase via ensure_required_plugins_from_globals() based on globals.json.
 	 *
 	 * @return array Status of each requirement.
 	 */
-	public function ensure_all_nexter_requirements( $builder = 'elementor' ) {
+	public function ensure_all_import_requirements( $builder = 'elementor' ) {
 		$results = array(
 			'theme'   => array(
-				'name'    => 'nexter',
-				'success' => $this->ensure_nexter_theme(),
+				'name'    => self::IMPORT_THEME_SLUG,
+				'success' => $this->ensure_import_theme(),
 			),
 			'plugins' => array(
 				// Nexter Extension is no longer installed by the importer. Every
@@ -12710,24 +13076,72 @@ class Uich_Webpage_Import {
 				);
 			}
 			$section = ( 'navbar' === $type ) ? 'header' : 'footer';
-			$post_id = $this->create_or_update_theme_builder_template( $page_name, $files[ $found ], '', '', $section, array() );
-			if ( is_wp_error( $post_id ) ) {
-				return new WP_Error( 'IMPORT_NAVBAR_FOOTER_FAILED', $post_id->get_error_message(), array( 'status' => 500 ) );
+
+			/*
+			 * One template per design in the file, exactly as the batch importer
+			 * does. Handing the whole file to create_or_update_theme_builder_template()
+			 * imported only the legacy top-level `content` — the default design —
+			 * so a kit with two navbars arrived with one, site-wide, and the blog
+			 * header was never created.
+			 */
+			$part_result = $this->import_theme_part_variants( $files[ $found ], $page_name, $section, array() );
+			if ( empty( $part_result['created'] ) ) {
+				$message = ! empty( $part_result['warnings'] )
+					? implode( ' ', $part_result['warnings'] )
+					: sprintf(
+						/* translators: %s: file name */
+						__( '%s contained no usable design.', 'uichemy' ),
+						$fn
+					);
+				return new WP_Error( 'IMPORT_NAVBAR_FOOTER_FAILED', $message, array( 'status' => 500 ) );
 			}
+
 			$stored_id_map = $this->get_stored_template_id_map();
-			if ( ! empty( $stored_id_map ) ) {
-				$this->remap_template_ids_in_pages( array( array( 'post_id' => $post_id ) ), $stored_id_map );
+			$post_ids      = array();
+			$titles        = array();
+			$primary_id    = 0;
+			foreach ( $part_result['created'] as $row ) {
+				$post_ids[] = $row['post_id'];
+				$titles[]   = $row['title'];
+				// The default design is what the dashboard shows as "the" header.
+				if ( 0 === $primary_id || $row['default'] ) {
+					$primary_id = $row['post_id'];
+				}
 			}
-			// Enable widgets used in this template.
+			if ( ! empty( $stored_id_map ) ) {
+				$remap_rows = array();
+				foreach ( $post_ids as $pid ) {
+					$remap_rows[] = array( 'post_id' => $pid );
+				}
+				$this->remap_template_ids_in_pages( $remap_rows, $stored_id_map );
+			}
+			/*
+			 * Enable widgets used in this template. enable_widgets_for_single_file()
+			 * reads the top-level `content` only, so each non-default design is
+			 * passed separately — otherwise its widgets stay disabled and the
+			 * second navbar renders empty.
+			 */
 			$widgets_result = $this->enable_widgets_for_single_file( $files[ $found ] );
+			foreach ( $this->theme_part_variants_from_data( $files[ $found ] ) as $variant ) {
+				if ( $variant['default'] ) {
+					continue;
+				}
+				$this->enable_widgets_for_single_file( array( 'content' => $variant['content'] ) );
+			}
 			$this->clear_elementor_files_cache();
-			return array(
+			$response = array(
 				'success'        => true,
-				'post_id'        => $post_id,
-				'permalink'      => get_permalink( $post_id ),
+				'post_id'        => $primary_id,
+				'post_ids'       => $post_ids,
+				'permalink'      => get_permalink( $primary_id ),
 				'title'          => $page_name,
+				'titles'         => $titles,
 				'widgets_enable' => $widgets_result,
 			);
+			if ( ! empty( $part_result['warnings'] ) ) {
+				$response['warnings'] = $part_result['warnings'];
+			}
+			return $response;
 		}
 
 		// Handle 404 page — import as Nexter Theme Builder 404 template (nxt-hooks-layout-sections = 'page-404').
@@ -13446,6 +13860,10 @@ class Uich_Webpage_Import {
 		delete_option( self::OPTION_REPLACEMENT_DATA );
 		delete_option( self::OPTION_GLOBALS );
 		delete_option( self::OPTION_TEMPLATE_ID_MAP );
+		// The reset flag is scoped to the run that followed the reset. Leaving it
+		// set would make every LATER import mint new pages instead of updating the
+		// ones it created, quietly filling the site with duplicates.
+		delete_option( self::OPTION_CONTENT_RESET );
 	}
 
 	/**
@@ -13467,6 +13885,47 @@ class Uich_Webpage_Import {
 	 * @return WP_REST_Response
 	 */
 	public function rest_apply_theme_settings( WP_REST_Request $request ) {
+		/*
+		 * `nxt-theme-options` is Nexter's. The import installs UiChemy Zero, which
+		 * has no options screen of its own — the design decides the layout — so on
+		 * a fresh import this would write a row nothing ever reads, and would then
+		 * override the site owner's own choices the day they switched to Nexter.
+		 * A site already running Nexter still gets the fluid-container layout the
+		 * imported design was built against.
+		 *
+		 * The TPGB container CSS below is not Nexter's and is written either way.
+		 */
+		if ( $this->is_nexter_theme_in_use() ) {
+			$this->apply_nexter_theme_layout();
+		}
+
+		// Generate and persist TPGB global container CSS for tpgb-nxtcont-type blocks (replicates JS Yo() call).
+		$this->write_tpgb_global_container_css( 1240, 960 );
+
+		return rest_ensure_response( array( 'success' => true ) );
+	}
+
+	/**
+	 * Whether this site runs Nexter — the theme, a child of it, or the paid
+	 * Extension (which is the only thing that registers `nxt_builder`).
+	 *
+	 * @return bool
+	 */
+	protected function is_nexter_theme_in_use() {
+		if ( post_type_exists( 'nxt_builder' ) ) {
+			return true;
+		}
+		$theme = wp_get_theme();
+		return ( 'nexter' === $theme->get_stylesheet() || 'nexter' === $theme->get_template() );
+	}
+
+	/**
+	 * Write Nexter's fluid-container layout and body font. Only called on a site
+	 * that actually runs Nexter — see rest_apply_theme_settings().
+	 *
+	 * @return void
+	 */
+	protected function apply_nexter_theme_layout() {
 		$nexter_setting = get_option( 'nxt-theme-options', array() );
 		if ( ! is_array( $nexter_setting ) ) {
 			$nexter_setting = array();
@@ -13511,11 +13970,6 @@ class Uich_Webpage_Import {
 		}
 
 		update_option( 'nxt-theme-options', $nexter_setting );
-
-		// Generate and persist TPGB global container CSS for tpgb-nxtcont-type blocks (replicates JS Yo() call).
-		$this->write_tpgb_global_container_css( 1240, 960 );
-
-		return rest_ensure_response( array( 'success' => true ) );
 	}
 
 	/**
@@ -13649,6 +14103,13 @@ class Uich_Webpage_Import {
 		if ( $disabled_nxt || $disabled > 0 ) {
 			$this->bump_nexter_builder_cache();
 		}
+
+		/*
+		 * Tell the import that followed this reset not to republish what was just
+		 * drafted. Written even when nothing moved: the user asked for a clean
+		 * slate, and an empty site is still a clean slate.
+		 */
+		update_option( self::OPTION_CONTENT_RESET, time(), false );
 
 		return rest_ensure_response(
 			array(

@@ -1424,7 +1424,15 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 							$this->set_element_text_preserving_children( $node, $slot_val );
 						}
 					} else {
-						$node->nodeValue = $slot_val;
+						// Replace the children with a real text node. Assigning
+						// nodeValue on an ELEMENT parses the string as markup
+						// entities, so a raw "&" ("Fish & Chips") made the element
+						// render empty. Text nodes take the value literally and are
+						// escaped on saveHTML(), matching the text-node branch above.
+						while ( $node->firstChild ) {
+							$node->removeChild( $node->firstChild );
+						}
+						$node->appendChild( $node->ownerDocument->createTextNode( $slot_val ) );
 					}
 				}
 			}
@@ -3225,6 +3233,11 @@ JS;
 				return current_user_can( 'unfiltered_html' );
 			}
 
+			// Author and last editor (Uich_Dynamic::author_trusted()).
+			if ( class_exists( 'Uich_Dynamic' ) ) {
+				return Uich_Dynamic::author_trusted( $post_id );
+			}
+
 			$author_id = (int) get_post_field( 'post_author', $post_id );
 
 			return $author_id > 0 && user_can( $author_id, 'unfiltered_html' );
@@ -3375,17 +3388,11 @@ JS;
 		 * where the full GSAP API (timelines, plugins, custom eases) stays reachable.
 		 */
 		public static function enqueue_gsap_runtime() {
-			if ( ! defined( 'UICHEMY_URL' ) ) {
-				return;
+			// Lives on the renderer so the Gutenberg block can use it too; this
+			// wrapper keeps the long-standing public name working.
+			if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
+				\UiChemy_Composer_Renderer::enqueue_gsap_runtime();
 			}
-			// Versioned by the bundled GSAP release, not the plugin version: a GSAP
-			// update ships inside a plugin update that may keep the same number, and
-			// a browser or CDN still serving the old file mixes core and plugins.
-			$ver = '3.15.0';
-			wp_enqueue_script( 'uichemy-gsap-core', UICHEMY_URL . 'assets/js/vendor/gsap/gsap.min.js', array(), $ver, true );
-			wp_enqueue_script( 'uichemy-gsap-scrolltrigger', UICHEMY_URL . 'assets/js/vendor/gsap/ScrollTrigger.min.js', array( 'uichemy-gsap-core' ), $ver, true );
-			wp_enqueue_script( 'uichemy-gsap-motionpath', UICHEMY_URL . 'assets/js/vendor/gsap/MotionPathPlugin.min.js', array( 'uichemy-gsap-core' ), $ver, true );
-			wp_enqueue_script( 'uichemy-gsap-drawsvg', UICHEMY_URL . 'assets/js/vendor/gsap/DrawSVGPlugin.min.js', array( 'uichemy-gsap-core' ), $ver, true );
 		}
 
 		/**
@@ -3399,15 +3406,9 @@ JS;
 		 * editor-preview enqueue hook so the preview renders too.
 		 */
 		public static function enqueue_three_runtime() {
-			if ( ! defined( 'UICHEMY_BUILD_URL' ) ) {
-				return;
+			if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
+				\UiChemy_Composer_Renderer::enqueue_three_runtime();
 			}
-			$path = defined( 'UICHEMY_BUILD_PATH' ) ? UICHEMY_BUILD_PATH . 'three.js' : '';
-			$ver  = ( $path && file_exists( $path ) )
-				? filemtime( $path )
-				: ( defined( 'UICHEMY_VERSION' ) ? UICHEMY_VERSION : false );
-
-			wp_enqueue_script( 'uichemy-three', UICHEMY_BUILD_URL . 'three.js', array(), $ver, true );
 		}
 
 		protected function render() {
@@ -3520,6 +3521,12 @@ JS;
 			// Restore dynamic tags with their rendered content.
 			$output = $this->restore_dynamic_tags( $output, $dynamic_tag_map, $is_editor );
 
+			// Keep straight quotes in text from being curled by wptexturize when the
+			// page content runs through the_content (front end only).
+			if ( ! $is_editor && class_exists( 'UiChemy_Composer_Renderer' ) ) {
+				$output = UiChemy_Composer_Renderer::protect_text_quotes( $output );
+			}
+
 			// Adopt any <form data-atom-form> elements in the output as managed Atom
 			// forms: inject the REST endpoint, nonce, honeypot and hidden config
 			// fields, and register the front-end submit-handler runtime. Without this
@@ -3527,7 +3534,7 @@ JS;
 			// so nothing is ever captured / emailed / webhooked. Front end only — the
 			// editor preview never submits, and the runtime attaches on wp_footer,
 			// which the preview's per-widget re-render does not re-fire (process_output
-			// itself no-ops when the output contains no data-atom-form).
+			// itself no-ops when the output contains no form it adopts).
 			if ( ! $is_editor && class_exists( 'Uich_Forms' ) ) {
 				$output = Uich_Forms::process_output( $output, $this->get_id(), (int) get_the_ID() );
 			}

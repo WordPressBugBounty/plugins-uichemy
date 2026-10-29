@@ -106,6 +106,27 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 		}
 
 		/**
+		 * Tell page caches (WP Rocket, W3TC, LiteSpeed, most hosts) not to keep
+		 * this response, once per request.
+		 *
+		 * @return void
+		 */
+		private static function no_page_cache() {
+			static $done = false;
+			if ( $done || is_admin() ) {
+				return;
+			}
+			$done = true;
+			if ( ! defined( 'DONOTCACHEPAGE' ) ) {
+				define( 'DONOTCACHEPAGE', true );
+			}
+			if ( ! headers_sent() ) {
+				nocache_headers();
+				header( 'X-LiteSpeed-Cache-Control: no-cache' );
+			}
+		}
+
+		/**
 		 * Whether a single rule matches the current request.
 		 *
 		 * @param array $rule Sanitized rule.
@@ -113,6 +134,12 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 		 */
 		private static function rule_matches( array $rule ) {
 			$type = isset( $rule['type'] ) ? (string) $rule['type'] : '';
+
+			// The answer depends on the visitor or the day, not the URL, so this
+			// page must not be cached as one page for everyone (D-03).
+			if ( in_array( $type, array( 'login_status', 'user_role', 'day_of_week', 'os', 'browser' ), true ) ) {
+				self::no_page_cache();
+			}
 
 			switch ( $type ) {
 				case 'entire':
@@ -125,21 +152,56 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 					return get_post_type( self::object_id() ) === (string) $rule['value'];
 
 				case 'singular':
-					return self::norm_post( self::object_id() ) === self::norm_post( (int) $rule['value'] );
+					// `value` is one post id or a list of them; the rule matches
+					// the view if it names the post being viewed.
+					$current = self::norm_post( self::object_id() );
+					foreach ( (array) $rule['value'] as $wanted ) {
+						if ( $current === self::norm_post( (int) $wanted ) ) {
+							return true;
+						}
+					}
+					return false;
 
 				case 'author':
 					$author = (int) $rule['value'];
-					if ( is_singular() ) {
-						$post = get_post( self::object_id() );
-						return $post && ( 0 === $author || (int) $post->post_author === $author );
-					}
 					if ( is_author() ) {
 						return 0 === $author || (int) get_queried_object_id() === $author;
+					}
+					/*
+					 * A NAMED author also claims that author's own posts — "show
+					 * this header on everything by Priya" is a real placement.
+					 *
+					 * "Any author" (0) does not. Every post has an author, so on a
+					 * singular the old check returned true for all of them: a rule
+					 * the UI calls "Author Archive" quietly took over every post,
+					 * page and product on the site. That is why the importer could
+					 * not use this rule for an author design at all.
+					 */
+					if ( $author > 0 && is_singular() ) {
+						$post = get_post( self::object_id() );
+						return $post && (int) $post->post_author === $author;
 					}
 					return false;
 
 				case 'search':
-					return is_search();
+					/*
+					 * An optional post type narrows the rule to ONE search surface.
+					 * Without it a blog header scoped to "Search Results" also won
+					 * /?s=x&post_type=product, because every search looked alike —
+					 * which is the same mix-up post-type search templates exist to
+					 * fix, one layer up.
+					 */
+					if ( ! is_search() ) {
+						return false;
+					}
+					$searched = isset( $rule['value'] ) ? sanitize_key( (string) $rule['value'] ) : '';
+					if ( '' === $searched || 'any' === $searched ) {
+						return true;
+					}
+					if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
+						return true;
+					}
+					return UiChemy_Template_Resolver::searched_post_type() === $searched;
 
 				case 'taxonomy':
 					return self::taxonomy_matches(
@@ -318,6 +380,10 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 				case 'post_type':
 					return self::SPEC_POSTTYPE;
 				case 'search':
+					// A search pinned to one post type is as narrow as a post-type
+					// rule; an unscoped one is just "any listing page".
+					$searched = isset( $rule['value'] ) ? sanitize_key( (string) $rule['value'] ) : '';
+					return ( '' !== $searched && 'any' !== $searched ) ? self::SPEC_POSTTYPE : self::SPEC_ARCHIVE;
 				case 'all_archives':
 				case 'all_singulars':
 					return self::SPEC_ARCHIVE;

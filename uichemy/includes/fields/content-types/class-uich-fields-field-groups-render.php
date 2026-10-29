@@ -3650,9 +3650,9 @@ JS
 							continue;
 						}
 						if ( preg_match( '/^\s*(.+?)\s*:\s*(.+)\s*$/', $line, $m ) ) {
-							$choices[ trim( $m[1] ) ] = trim( $m[2] );
+							$choices[] = array( 'value' => trim( $m[1] ), 'label' => trim( $m[2] ) );
 						} else {
-							$choices[ $line ] = $line;
+							$choices[] = array( 'value' => $line, 'label' => $line );
 						}
 					}
 				}
@@ -3737,9 +3737,9 @@ JS
 							continue;
 						}
 						if ( preg_match( '/^\s*(.+?)\s*:\s*(.+)\s*$/', $line, $m ) ) {
-							$choices[ trim( $m[1] ) ] = trim( $m[2] );
+							$choices[] = array( 'value' => trim( $m[1] ), 'label' => trim( $m[2] ) );
 						} else {
-							$choices[ $line ] = $line;
+							$choices[] = array( 'value' => $line, 'label' => $line );
 						}
 					}
 				}
@@ -3806,9 +3806,9 @@ JS
 							continue;
 						}
 						if ( preg_match( '/^\s*(.+?)\s*:\s*(.+)\s*$/', $line, $m ) ) {
-							$choices[ trim( $m[1] ) ] = trim( $m[2] );
+							$choices[] = array( 'value' => trim( $m[1] ), 'label' => trim( $m[2] ) );
 						} else {
-							$choices[ $line ] = $line;
+							$choices[] = array( 'value' => $line, 'label' => $line );
 						}
 					}
 				}
@@ -5795,9 +5795,9 @@ JS
 					continue;
 				}
 				if ( preg_match( '/^\s*(.+?)\s*:\s*(.+)\s*$/', $line, $m ) ) {
-					$parsed[ trim( $m[1] ) ] = trim( $m[2] );
+					$parsed[] = array( 'value' => trim( $m[1] ), 'label' => trim( $m[2] ) );
 				} else {
-					$parsed[ $line ] = $line;
+					$parsed[] = array( 'value' => $line, 'label' => $line );
 				}
 			}
 			$choices = $parsed;

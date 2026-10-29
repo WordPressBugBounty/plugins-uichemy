@@ -93,6 +93,8 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 			return array(
 				'image/png'       => 'png',
 				'image/jpeg'      => 'jpg',
+				// A `file` custom field is usually a PDF (E-16); inert like an image.
+				'application/pdf' => 'pdf',
 				'image/webp'      => 'webp',
 				'image/gif'       => 'gif',
 				'image/svg+xml'   => 'svg',

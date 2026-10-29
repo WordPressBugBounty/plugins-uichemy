@@ -110,6 +110,9 @@ if ( ! class_exists( 'Uich_Model_ACF' ) ) {
 				'color'         => 'color_picker',
 				'link'          => 'link',
 				'post_relation' => 'post_object',
+				'page_link'     => 'page_link',
+				'user'          => 'user',
+				'range'         => 'range',
 				'taxonomy'      => 'taxonomy',
 				'repeater'      => 'repeater',
 			);
@@ -384,12 +387,15 @@ if ( ! class_exists( 'Uich_Model_ACF' ) ) {
 				$added = $this->write_fields( (int) $saved['ID'], $fields, 0 );
 
 				if ( is_wp_error( $added ) ) {
-					// The group exists and is reported, because leaving the caller
-					// thinking nothing happened is worse than a partial result it
-					// can finish with add-fields.
+					// Nothing is left behind: the ability promises fields are
+					// validated before anything is written, so the empty group a
+					// rejected field used to leave is removed (E-21).
+					if ( function_exists( 'acf_delete_field_group' ) ) {
+						acf_delete_field_group( (int) $saved['ID'] );
+					}
 					return new WP_Error(
 						$added->get_error_code(),
-						sprintf( 'The field group "%s" (key %s) WAS created, but a field was rejected and no fields were added: %s', $title, $saved['key'], $added->get_error_message() )
+						sprintf( 'The field group "%s" was not created: a field was rejected: %s', $title, $added->get_error_message() )
 					);
 				}
 			}

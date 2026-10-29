@@ -17,6 +17,8 @@ if ( ! class_exists( 'Uich_ND_Menu' ) ) {
 
 		public static function boot() {
 			add_action( 'admin_menu', array( __CLASS__, 'register_menu' ), 11 );
+			// Once every plugin has added its menu: sit right under Elementor's.
+			add_action( 'admin_menu', array( __CLASS__, 'place_under_elementor' ), PHP_INT_MAX );
 
 			// Send old bookmarks / external links from the legacy
 			// `uichemy-welcome` slug to the new `uichemy` page.
@@ -115,8 +117,70 @@ if ( ! class_exists( 'Uich_ND_Menu' ) ) {
 				'manage_options',
 				'uichemy',
 				array( __CLASS__, 'render_page' ),
-				$icon
+				$icon,
+				self::FALLBACK_POSITION
 			);
+		}
+
+		/**
+		 * Where the menu sits without Elementor: at the top, right under
+		 * Dashboard (2) and above Posts (5). Elementor's own top-level menu sits
+		 * in the same gap (2.4…), and place_under_elementor() then puts ours
+		 * directly beneath it.
+		 */
+		const FALLBACK_POSITION = '2.5';
+
+		/** Elementor's top-level menu slugs, newest first. */
+		const ELEMENTOR_SLUGS = array( 'elementor-home', 'elementor' );
+
+		/**
+		 * Move the UiChemy item to directly below Elementor's menu, wherever
+		 * Elementor puts it — but only when that is near the top, where ours
+		 * belongs (an older Elementor has only its 58.5 settings menu, down by
+		 * Appearance; then ours stays at the top, under Dashboard).
+		 *
+		 * @return void
+		 */
+		public static function place_under_elementor() {
+			global $menu;
+			if ( ! is_array( $menu ) ) {
+				return;
+			}
+
+			$ours = null;
+			$host = null;
+			foreach ( $menu as $position => $item ) {
+				$slug = isset( $item[2] ) ? $item[2] : '';
+				if ( 'uichemy' === $slug ) {
+					$ours = $position;
+				} elseif ( null === $host && in_array( $slug, self::ELEMENTOR_SLUGS, true ) && (float) $position < 5 ) {
+					$host = $position;
+				}
+			}
+			if ( null === $ours || null === $host ) {
+				return;
+			}
+
+			// The first free position just after Elementor's, still before the
+			// next item, so nothing else is displaced.
+			$next = null;
+			foreach ( array_keys( $menu ) as $position ) {
+				if ( (float) $position > (float) $host && ( null === $next || (float) $position < $next ) && $position !== $ours ) {
+					$next = (float) $position;
+				}
+			}
+			$target = (float) $host + 0.00001;
+			if ( null !== $next && $target >= $next ) {
+				return;
+			}
+			$key = (string) $target;
+			if ( isset( $menu[ $key ] ) ) {
+				return;
+			}
+
+			$item = $menu[ $ours ];
+			unset( $menu[ $ours ] );
+			$menu[ $key ] = $item; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- Reordering our own menu item.
 		}
 
 		public static function render_page() {

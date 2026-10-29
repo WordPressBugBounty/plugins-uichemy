@@ -17,21 +17,9 @@
 				aria-selected="true">Direct Editor</button>
 			<button class="uichemy-composer-tab-btn" type="button" data-uichemy-composer-tab="code" role="tab"
 				aria-selected="false">Code</button>
-			<button class="uichemy-composer-tab-btn" type="button" data-uichemy-composer-tab="chat" role="tab"
-				aria-selected="false">Chat</button>
 		</div>
 	</div>
 	<div class="uichemy-composer-panel-header-right">
-		<button class="uichemy-composer-chat-pick-btn uichemy-composer-chat-pick-header-btn" id="uichemy-composer-chat-pick-btn" type="button"
-			title="Pick element for AI targeting">
-			<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor"
-				stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-				<circle cx="12" cy="12" r="3" />
-				<path
-					d="M12 1v4M12 19v4M4.22 4.22l2.83 2.83M16.95 16.95l2.83 2.83M1 12h4M19 12h4M4.22 19.78l2.83-2.83M16.95 7.05l2.83-2.83" />
-			</svg>
-			<span id="uichemy-composer-chat-pick-label">Pick element</span>
-		</button>
 		<button class="uichemy-composer-panel-toggle" id="uichemy-composer-panel-toggle">
 			<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
 				stroke-linecap="round" stroke-linejoin="round">
@@ -900,47 +888,6 @@
 							</div>
 						</div>
 					</div>
-				</div>
-			</div>
-		</div>
-	</div>
-	<div class="uichemy-composer-panel-tab" data-uichemy-composer-panel="chat" role="tabpanel">
-		<div class="uichemy-composer-chat-shell">
-			<div class="uichemy-composer-chat-log" id="uichemy-composer-chat-log"></div>
-			<div id="uichemy-composer-agent-status" style="display:none;padding:0 12px 8px;font-size:11px;"></div>
-			<div class="uichemy-composer-chat-compose">
-				<div class="uichemy-composer-chat-input-wrap">
-					<!-- Image preview strip — visible when images are attached or pasted -->
-					<div class="uichemy-composer-chat-image-strip" id="uichemy-composer-chat-image-strip" style="display:none"></div>
-					<textarea id="uichemy-composer-chat-input" spellcheck="false" placeholder="Type a prompt..."></textarea>
-					<div class="uichemy-composer-chat-compose-row">
-						<div class="uichemy-composer-chat-compose-left">
-							<button class="uichemy-composer-chat-attach-btn" id="uichemy-composer-chat-attach-btn" type="button" title="Attach image">
-								<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-									<rect x="3" y="3" width="18" height="18" rx="2" ry="2"/>
-									<circle cx="8.5" cy="8.5" r="1.5"/>
-									<polyline points="21 15 16 10 5 21"/>
-								</svg>
-							</button>
-							<input type="file" id="uichemy-composer-chat-file-input" accept="image/*" multiple style="display:none" tabindex="-1">
-						</div>
-						<div class="uichemy-composer-chat-compose-right">
-							<button class="uichemy-composer-btn primary" type="button" id="uichemy-composer-chat-send">Send</button>
-						</div>
-					</div>
-				</div>
-				<!-- Target element indicator — below the input box -->
-				<div class="uichemy-composer-chat-target-bar" id="uichemy-composer-chat-target-bar" style="display:none">
-					<svg class="uichemy-composer-chat-target-icon" width="11" height="11" viewBox="0 0 24 24"
-						fill="none" stroke="currentColor" stroke-width="2.5"
-						stroke-linecap="round" stroke-linejoin="round">
-						<polyline points="4 17 10 11 4 5"></polyline>
-						<line x1="12" y1="19" x2="20" y2="19"></line>
-					</svg>
-					<span class="uichemy-composer-chat-target-label">Target</span>
-					<code class="uichemy-composer-chat-target-tag" id="uichemy-composer-chat-target-tag"></code>
-					<button class="uichemy-composer-chat-target-clear" id="uichemy-composer-chat-target-clear"
-						type="button" title="Clear element selection">✕</button>
 				</div>
 			</div>
 		</div>

@@ -72,15 +72,19 @@ if ( ! function_exists( 'uichemy_uninstall_cleanup_site' ) ) {
 		// create them, so they can't be safely attributed to this plugin vs. a
 		// sibling — deleting them could destroy another plugin's data.
 
-		// 3. Transients UiChemy sets (upload slots + dynamic-data API cache).
-		// They live as option rows; remove both the value and timeout rows.
+		// 3. Transients UiChemy sets (upload slots, dynamic-data API cache, and the
+		// Pro chat's site brief + photo-search cache). They live as option rows;
+		// remove both the value and timeout rows.
 		$wpdb->query( // phpcs:ignore WordPress.DB.DirectDatabaseQuery
 			"DELETE FROM {$wpdb->options} WHERE option_name LIKE '\_transient\_uich\_upl\_%'
 			 OR option_name LIKE '\_transient\_timeout\_uich\_upl\_%'
 			 OR option_name LIKE '\_transient\_uich\_api\_%'
 			 OR option_name LIKE '\_transient\_timeout\_uich\_api\_%'
 			 OR option_name LIKE '\_transient\_uichemy\_selected\_el\_%'
-			 OR option_name LIKE '\_transient\_timeout\_uichemy\_selected\_el\_%'"
+			 OR option_name LIKE '\_transient\_timeout\_uichemy\_selected\_el\_%'
+			 OR option_name LIKE '\_transient\_uich\_photo\_q\_%'
+			 OR option_name LIKE '\_transient\_timeout\_uich\_photo\_q\_%'
+			 OR option_name IN ( '_transient_uichemy_chat_site_brief', '_transient_timeout_uichemy_chat_site_brief' )"
 		);
 
 		// 4. SEO module: its tables, per-page SEO data, schema templates and queued
@@ -94,6 +98,9 @@ if ( ! function_exists( 'uichemy_uninstall_cleanup_site' ) ) {
 			 OR option_name LIKE '\_transient\_timeout\_uich\_seo\_%'"
 		);
 		wp_unschedule_hook( 'uich_seo_rebuild' );
+
+		// Per-page chat memory the Pro chat keeps beside each post.
+		delete_post_meta_by_key( '_uichemy_chat_memory' );
 
 		// 5. Chat upload directory (uploads/uichemy/chat), then the parent if empty.
 		$uploads = wp_upload_dir();

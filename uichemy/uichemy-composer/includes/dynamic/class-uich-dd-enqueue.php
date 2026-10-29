@@ -121,6 +121,8 @@ if ( ! class_exists( 'Uich_DD_Enqueue' ) ) {
 					// enforcement is uichemy_dynamic_field_allowed() at render time.
 					'isPro'        => uichemy_is_pro(),
 					'proUrl'       => uichemy_upgrade_url( 'dynamic-tags' ),
+					// The Loop tab's Post type dropdown, and its taxonomy rules'.
+					'postTypes'    => self::loop_post_types(),
 					'integrations' => array(
 						'woo' => class_exists( 'WooCommerce' ),
 						'acf' => function_exists( 'get_field' ) && function_exists( 'acf_get_field_groups' ),
@@ -138,6 +140,63 @@ if ( ! class_exists( 'Uich_DD_Enqueue' ) ) {
 					'nonce' => wp_create_nonce( 'wp_rest' ),
 				)
 			);
+		}
+
+		/**
+		 * The post types a loop can list, for the Loop tab's Post type dropdown:
+		 * every public type — Posts, Pages and each custom post type, whatever
+		 * registered it (UiChemy Custom Fields, ACF, CPT UI, a theme…) — with its
+		 * public taxonomies for the taxonomy rules. Page builders' template
+		 * types are left out; they are public only so their previews work.
+		 *
+		 * @return array<int,array{slug:string,label:string,builtin:bool,taxonomies:array}>
+		 */
+		private static function loop_post_types() {
+			$skip = array(
+				'attachment',
+				'uichemy_template',
+				'elementor_library',
+				'e-landing-page',
+				'e-floating-buttons',
+				'bricks_template',
+				'ct_template',
+				'fl-builder-template',
+				'et_pb_layout',
+				'wp_block',
+				'wp_navigation',
+			);
+
+			$out = array();
+			foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $slug => $object ) {
+				if ( in_array( $slug, $skip, true ) || ( class_exists( 'Uich_CB_Post_Types' ) && Uich_CB_Post_Types::is_builder_type( $slug ) ) ) {
+					continue;
+				}
+
+				$taxonomies = array();
+				foreach ( get_object_taxonomies( $slug, 'objects' ) as $tax_slug => $tax ) {
+					if ( ! $tax->public || 'post_format' === $tax_slug ) {
+						continue;
+					}
+					$taxonomies[] = array(
+						'slug'  => $tax_slug,
+						'label' => $tax->labels->singular_name ? $tax->labels->singular_name : $tax_slug,
+					);
+				}
+
+				$out[] = array(
+					'slug'       => $slug,
+					'label'      => $object->labels->name ? $object->labels->name : $slug,
+					'builtin'    => (bool) $object->_builtin,
+					'taxonomies' => $taxonomies,
+				);
+			}
+
+			/**
+			 * Filter the post types the Loop tab offers.
+			 *
+			 * @param array $out `[{ slug, label, builtin, taxonomies: [{ slug, label }] }]`.
+			 */
+			return (array) apply_filters( 'uich_dd/loop_post_types', $out );
 		}
 
 		public static function editor_assets() {

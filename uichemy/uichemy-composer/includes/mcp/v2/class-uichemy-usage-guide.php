@@ -86,7 +86,7 @@ if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
 					'label'               => 'UiChemy Builder: Instructions',
 					// Paid on every discovery call on every host, so it says only
 					// what a model needs to decide to call this FIRST.
-					'description'         => 'START HERE before any other uichemy-composer call. Returns this site\'s UiChemy briefing: what the UiChemy widget is and what one section means, which entry point matches the request (a Figma URL, code the user already has, or only a description), the exact two-level call envelope, the required order - read the matching skill, then uichemy-composer/describe-site, then uichemy-composer/dynamic "list-fields" before any dynamic binding, then uichemy-composer/audit before you call a build finished - and the design-system rules. The other uichemy-composer descriptions are deliberately short and do NOT teach that sequence, so a build that skips this one gets the order wrong.',
+					'description'         => self::mode_text( 'START HERE before any other uichemy-composer call. Returns this site\'s UiChemy briefing: what the UiChemy widget is and what one section means, which entry point matches the request (a Figma URL, code the user already has, or only a description), the exact two-level call envelope, the required order - read the matching skill, then uichemy-composer/describe-site, then uichemy-composer/dynamic "list-fields" before any dynamic binding, then uichemy-composer/audit before you call a build finished - and the design-system rules. The other uichemy-composer descriptions are deliberately short and do NOT teach that sequence, so a build that skips this one gets the order wrong.' ),
 					'category'            => self::NAMESPACE_SLUG,
 					'input_schema'        => array(
 						'type'        => 'object',
@@ -170,7 +170,7 @@ if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
 				}
 			);
 
-			$document = implode( "\n\n", $blocks );
+			$document = self::for_builder_mode( implode( "\n\n", $blocks ) );
 
 			// Appended here rather than inside guide() on purpose: a sibling plugin
 			// may serve its own briefing block in place of ours (see the Pro build),
@@ -261,13 +261,13 @@ if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
 				'',
 				'Generated from what is registered right now. Some MCP hosts show this in their own discovery and some do not - several copy only an ability\'s name, label and description - so it travels with the briefing and is correct either way.',
 				'',
-				'Each line is one ability and the actions it accepts. Pass one of those as "action" inside "arguments", following the envelope rules above. What this list deliberately leaves out is the parameter schema for each action: call `get-ability-info` on the ability once you have picked an action, and read the schema for that action rather than guessing parameter names.',
+				'Each line is one ability and the actions it accepts. Pass one of those as "action" inside the envelope\'s arguments object ("arguments" or "parameters", see the envelope rules above). What this list deliberately leaves out is the parameter schema for each action: call `get-ability-info` on the ability once you have picked an action, and read the schema for that action rather than guessing parameter names.',
 				'',
 			);
 
 			foreach ( $rows as $name => $actions ) {
 				$lines[] = empty( $actions )
-					? sprintf( '- `%s` - NOT action routed: its parameters go straight into "arguments", with no "action" and no "action_parameters".', $name )
+					? sprintf( '- `%s` - NOT action routed: its parameters go straight into the arguments object, with no "action" and no "action_parameters".', $name )
 					: sprintf( '- `%s` - %s', $name, implode( ', ', $actions ) );
 			}
 
@@ -320,22 +320,17 @@ if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
 		/**
 		 * Retired from MCP on EVERY host.
 		 *
-		 * convert / convert-code / start-site-build are served as skills through
-		 * uichemy-composer/read-skill now. They remain registered abilities so the
-		 * v1 endpoint and the Figma relay keep working unchanged — both reach them
-		 * through UiChemy_Composer_MCP_Server::get_tool_definitions(), which does
-		 * not consult meta.mcp.public.
+		 * Empty today: convert / convert-code / start-site-build, the last
+		 * entries, were removed with the legacy v1 endpoint - their jobs are
+		 * skills served through uichemy-composer/read-skill. Kept as the hook for
+		 * the next ability that must stay registered but off MCP.
 		 *
 		 * Read by UiChemy_Abilities::is_mcp_public().
 		 *
 		 * @return array<int,string>
 		 */
 		public static function hidden_everywhere() {
-			return array(
-				'uichemy-composer/convert',
-				'uichemy-composer/convert-code',
-				'uichemy-composer/start-site-build',
-			);
+			return array();
 		}
 
 		/**
@@ -452,7 +447,7 @@ Apart from widget scoped code:
 ## Do these two things before you build anything
 
 1. **Read the matching skill**: call `uichemy-composer/read-skill` with `name: "<skill-name>"` - for example `{ "name": "code-to-wordpress" }`. The skill is the build process - section planning, naming, ordering, the media flow, the verification steps. Nothing below teaches you that, and a build that skips it gets the sequence wrong. Match on the user's intent using the Skills list at the end of this briefing.
-2. **Call `uichemy-composer/describe-site`.** Its `platform` block decides how you build (`builder` names the page builder every write lands in - elementor, bricks or gutenberg; stop if `ready` is false and read `builders` for the reason), and the rest is the real content model - post types, taxonomies, and the field `metaKey`s any dynamic binding must use. Never guess a field name.
+2. **Call `uichemy-composer/describe-site`.** Its `platform` block decides how you build (`builder` names the page builder every write lands in - elementor, bricks, gutenberg or composer; stop if `ready` is false and read `builders` for the reason), and the rest is the real content model - post types, taxonomies, and the field `metaKey`s any dynamic binding must use. Never guess a field name.
 
 Then, the moment you are about to write a dynamic binding, call **`uichemy-composer/dynamic` with `action: "list-fields"`**. `describe-site` carries the site's CUSTOM fields; that carries the BUILT-IN tokens - `post.*`, `product.*` (WooCommerce), `user.*`, `term.*`, `image.*`, `site.*`, `request.*`. An unknown token renders EMPTY rather than failing, so a guessed accessor produces a page that looks built and is blank, with nothing in the output to tell you.
 
@@ -462,7 +457,7 @@ When the ask is "what is this site missing", call **`uichemy-composer/theme-buil
 
 ## How to call an ability - there are TWO levels of nesting
 
-The `execute-ability` envelope is always `name` and `arguments`. Those two key names are fixed and are the only ones it accepts - not `ability_name`, not `parameters`, not `action_parameters`.
+The `execute-ability` envelope has two fixed keys, and which two depends on the endpoint you are connected through: `name` and `arguments` on UiChemy's own endpoint (`/wp-json/uichemy/v2/mcp`), `ability_name` and `parameters` on a generic WordPress MCP adapter (an `mcp-adapter-execute-ability` tool). Use the pair your execute tool's schema declares - never `ability` or `action_parameters` at that level. The examples below use `name` / `arguments`.
 
 Most abilities are then **action routed** *inside* `arguments`: they take an `action` plus that action's own `action_parameters`. So a page call is:
 
@@ -499,6 +494,90 @@ Replace the whole block with `action: "set"` (send the complete merged file) or 
 GUIDE;
 
 			return $guide . "\n\n" . self::skills_section();
+		}
+
+		/**
+		 * Shape the assembled briefing to the SELECTED builder.
+		 *
+		 * Applied to the whole document, not inside guide(): a sibling plugin may
+		 * serve its own briefing block in place of ours (see the Pro build), and
+		 * Composer Builder mode has to reach the model whichever text is served.
+		 *
+		 * In Composer Builder mode a page is one document, so the section-first
+		 * intro would teach the wrong model: it is swapped for a document one, and
+		 * the Composer Builder rules go in before the design-system section. In
+		 * every other mode nothing changes - none of those actions are offered.
+		 *
+		 * @param string $document The assembled briefing.
+		 * @return string
+		 */
+		private static function for_builder_mode( $document ) {
+			$composer = class_exists( 'UiChemy_Builder_Context' )
+				&& method_exists( 'UiChemy_Builder_Context', 'is_composer_mode' )
+				&& UiChemy_Builder_Context::is_composer_mode();
+
+			if ( ! $composer || '' === $document ) {
+				return $document;
+			}
+
+			// Call names written for sections (update-page-code, page_before_head)
+			// become the document actions before the mode notes go in - those
+			// notes name both vocabularies on purpose.
+			$document = UiChemy_Builder_Context::for_mode( $document );
+
+			$intro = "On this site UiChemy builds with the **UiChemy Composer Builder**: each page is ONE document of HTML, CSS and JS that the user edits in the Composer Builder editor. Read \"Composer Builder mode\" below before anything else - where another part of this briefing describes building a page in pieces, that section wins.";
+
+			// The stock intro describes one Composer widget per section.
+			$intro_start = strpos( $document, 'UiChemy is powered by' );
+			$intro_end   = strpos( $document, 'Apart from widget scoped code:' );
+			if ( false !== $intro_start && false !== $intro_end && $intro_end > $intro_start ) {
+				$document = substr( $document, 0, $intro_start ) . $intro . "\n\n" . str_replace( 'Apart from widget scoped code:', 'Apart from the page document:', substr( $document, $intro_end ) );
+			} else {
+				// Some other briefing: put the note straight under its title.
+				$eol      = strpos( $document, "\n" );
+				$document = false === $eol
+					? $intro . "\n\n" . $document
+					: substr( $document, 0, $eol + 1 ) . "\n" . $intro . "\n" . substr( $document, $eol + 1 );
+			}
+
+			$section = self::composer_mode_section();
+			$at      = strpos( $document, "## Design system\n" );
+
+			return false === $at
+				? $document . "\n\n" . $section
+				: substr( $document, 0, $at ) . $section . "\n\n" . substr( $document, $at );
+		}
+
+		/**
+		 * Text in Composer Builder terms when that mode is selected.
+		 *
+		 * @param string $text Text written for sections.
+		 * @return string
+		 */
+		private static function mode_text( $text ) {
+			return class_exists( 'UiChemy_Builder_Context' ) ? UiChemy_Builder_Context::for_mode( $text ) : $text;
+		}
+
+		/**
+		 * The Composer Builder rules, served in Composer Builder mode only.
+		 *
+		 * @return string Markdown.
+		 */
+		private static function composer_mode_section() {
+			return <<<'SECTION'
+## Composer Builder mode
+
+**This site builds with the UiChemy Composer Builder** (`describe-site` reports `platform.builder: "composer"`). Every page is **one document** - `html`, `css`, `js`, `head_code` (before `</head>`), `body_end_code` (before `</body>`) - and the whole page lives in it: its markup, its styles, its scripts, page-wide effects and scroll timelines.
+- `uichemy-composer/page` / `post` offer: `list`, `grep`, `create`, `update`, `get-code`, `set-code`, `patch-code`.
+- `create` takes the WHOLE page's code in one call: plan the regions, generate them all, then send the page once. Only a page too large for one call is finished with `patch-code` - one call per field, several regions at a time, anchored on code that stays (in `html`, `</main>`). With `post_id`, `create` converts an existing page (a page another builder owns needs `confirm: true` - ask the user first).
+- `get-code` before every edit - it returns the code and a `hash`; pass that back as `expected_hash` on `set-code` / `patch-code`.
+- `patch-code` for small find/replace edits; `set-code` to replace whole parts. To add a block, put its markup into `html`.
+- Publish, rename or set the page template with `action: "update"`.
+- Header, footer and single templates: `uichemy-composer/theme-builder` `action: "create"` - it builds them as documents too - then edit them with `uichemy-composer/post` by `post_id`.
+- Read the matching skill as usual: where a step differs here, the skill gives its Composer Builder version - the build skills plan the page as regions of the ONE document.
+- Animation: the page has ONE `uichemy_controller_bridge` declaration, first in its `js`, shared by every region - never one per region.
+- Without `unfiltered_html`, `js` is not stored and `html` is filtered - every write reports this under `stripped`.
+SECTION;
 		}
 
 		/**

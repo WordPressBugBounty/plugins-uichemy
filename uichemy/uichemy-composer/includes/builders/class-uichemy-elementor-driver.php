@@ -266,14 +266,16 @@ if ( ! class_exists( 'UiChemy_Elementor_Driver' ) ) {
 		}
 
 		/**
-		 * Update-or-drop each existing Composer widget, depth first.
+		 * Update-or-drop each existing Composer widget, depth first, and drop
+		 * any container that dropping them left empty.
 		 *
-		 * @param array $elements Element tree.
-		 * @param array $keep     uid => settings.
-		 * @param array $seen     uids found (by reference).
+		 * @param array  $elements    Element tree.
+		 * @param array  $keep        uid => settings.
+		 * @param array  $seen        uids found (by reference).
+		 * @param string $parent_type elType of the element holding $elements.
 		 * @return array
 		 */
-		private function reconcile( array $elements, array $keep, array &$seen ) {
+		private function reconcile( array $elements, array $keep, array &$seen, $parent_type = '' ) {
 			$out = array();
 
 			foreach ( $elements as $element ) {
@@ -294,7 +296,18 @@ if ( ! class_exists( 'UiChemy_Elementor_Driver' ) ) {
 				}
 
 				if ( ! empty( $element['elements'] ) && is_array( $element['elements'] ) ) {
-					$element['elements'] = $this->reconcile( $element['elements'], $keep, $seen );
+					$type                = isset( $element['elType'] ) ? (string) $element['elType'] : '';
+					$element['elements'] = $this->reconcile( $element['elements'], $keep, $seen, $type );
+
+					// A container emptied by dropping Composer widgets is the wrapper
+					// they lived in; leaving it renders a blank box where the section
+					// was. Never a legacy section or column (the grid would lose a
+					// cell), never a panel of a nested widget such as Tabs or
+					// Accordion (its titles would no longer line up with its panels),
+					// and never a container that was already empty.
+					if ( empty( $element['elements'] ) && 'container' === $type && 'widget' !== $parent_type ) {
+						continue;
+					}
 				}
 
 				$out[] = $element;

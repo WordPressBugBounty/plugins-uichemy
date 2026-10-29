@@ -2,6 +2,21 @@
 
 You were called because the user asked for a website / landing page / template / section without sharing a Figma URL. Their brief may be as short as **"make docker service design"** or **"build me a saas landing"** — that is normal. Your job is to turn that brief into a complete site (Header → body → Footer), using the Composer MCP tools, with NO follow-up questions to the user unless something is truly ambiguous.
 
+## Composer Builder sites — read this first if `platform.builder` is `"composer"`
+
+When `uichemy-composer/describe-site` reports `platform.builder: "composer"`, this site builds with the **UiChemy Composer Builder**: each page is ONE document — `html`, `css`, `js`, `head_code`, `body_end_code` — with **no sections**. Follow every step below as written, with these changes:
+
+- **Plan regions, not sections** (same split, same order). Each region is `<!-- region: <Label> -->` followed by `<section class="uichemy-{slug}-{index}">…</section>` inside the page's one `html`, wrapped in one `<main>`. Scope its CSS under that class exactly as a section's; its behaviour is one IIFE in `js` that finds its own region root. Animation variables are the exception: the page has ONE `uichemy_controller_bridge` declaration, first in `js`, shared by every region (motion-and-animation, "Composer Builder sites"). A site-wide header/footer template's root is still a `<div>`.
+- **Build order:**
+  1. Google Fonts `<link>`s → `uichemy-composer/platform (action="update-site-code") { site_before_head }`, once, before anything else.
+  2. Site-wide Header / Footer → `uichemy-composer/theme-builder (action="create") { type:"header"|"footer", title, html, css, js }`. It builds them as documents; edit them later with `uichemy-composer/post (action="get-code" / "patch-code")` by `post_id`.
+  3. The page → generate EVERY region first, then ONE `uichemy-composer/page (action="create") { title, status:"draft", html, css, js, head_code }` with the whole page.
+  4. Only if the page is too large for one call: `create` with the first regions, then add the rest in as few calls as possible - `uichemy-composer/page (action="patch-code") { post_id, field:"html"|"css"|"js", expected_hash, edits:[{ find, replace }] }`, one call per field, each adding SEVERAL regions. In `html` find `</main>` and replace it with `<new regions></main>`; in `css` and `js` anchor on the last lines you wrote. Carry each response's `hash` into the next `expected_hash`. Never leave marker comments in the code.
+  5. Page-only header/footer (only on explicit request) → the first and last regions of the page instead of step 2.
+- **Section tools do not exist here.** `append-section` / `insert-section` / `create-with-sections` → `patch-code`; `get-section-code` / `set-section-code` / `get-structure` → `get-code` / `set-code`; `page_before_head` / `page_before_body` → `head_code` / `body_end_code`; `uichemy-composer/template` → `uichemy-composer/theme-builder`; `label` → the `<!-- region: … -->` comment. The outer Elementor container and `elementor_link` do not exist.
+- **Page-wide effects stay whole** (an ambient background, a cursor, a canvas, one scroll-reveal, a timeline across regions): markup once in `html` (or `body_end_code`), CSS once in `css`, script once in `js`. Never copy them into every region.
+- **Unchanged:** the design system, the lookups, media (`create` / `set-code` / `patch-code` take `upload_images` and return `image_failures`), dynamic tags (`<uichemy-nav-menu>`, `<uichemy-site-logo>`), responsive rules, verification (read back with `get-code` after the first write) and the audit. GSAP and three.js load themselves when `js` mentions them. Without `unfiltered_html`, `js` is not stored — writes report it under `stripped`.
+
 ---
 
 ## Step 0 — Read this first
@@ -10,7 +25,7 @@ You are NOT generating loose HTML to chat. Every section ends up as a real Eleme
 
 - `uichemy-composer/describe-site` — site readiness (call once, first)
 - `uichemy-composer/design-system (action="get")` / `uichemy-composer/design-system (action="set")` — read/write your palette + type scale as the site's design-system CSS block (`#uichemy-globals`)
-- `uichemy-composer/template (action="create") { type:"header"|"footer", ... }` — Header / Footer via UiChemy's native Theme Builder (works on ANY Elementor, Pro/Nexter NOT required); see Build order
+- `uichemy-composer/theme-builder (action="create") { type:"header"|"footer", ... }` — Header / Footer via UiChemy's native Theme Builder (works on every builder (Elementor incl. free, Bricks, block editor, Composer Builder)); see Build order
 - `uichemy-composer/page (action="create") { ... }` — first body section, creates the page
 - `uichemy-composer/page (action="append-section") { post_id, ... }` — every subsequent body section
 - `uichemy-composer/media (action="request-upload") { filename, mime }` — upload AI-generated images, SVG, or mp4/webm/ogg/mov video so `<img src>` / `<video src>` is a real URL
@@ -239,23 +254,23 @@ For each section in your plan, do generate → upload in one shot. Don't pre-wri
 
 ### Build order — Header and Footer via UiChemy's native Theme Builder
 
-`uichemy-composer/template (action="create", type="header"|"footer")` is UiChemy's native Theme Builder engine — it works on ANY Elementor (Pro/Nexter NOT required) and activates site-wide immediately on creation. `platform.header_footer_system` from Step 2 is informational only; do not branch on it, and do not silently fall back to inlining the header/footer into the page unless the user has explicitly asked for page-only placement.
+`uichemy-composer/theme-builder (action="create", type="header"|"footer")` is UiChemy's native Theme Builder engine — it works on every builder (Elementor incl. free, Bricks, block editor, Composer Builder) and activates site-wide immediately on creation. `platform.header_footer_system` from Step 2 is informational only; do not branch on it, and do not silently fall back to inlining the header/footer into the page unless the user has explicitly asked for page-only placement.
 
 ```
-1. uichemy-composer/template (action="create") { type:"header", title:"<Brand> Header", html, css, js,
-                                           site_before_head:"<Google Fonts links — only on this first call>",
-                                           upload_images:true }
+1. uichemy-composer/theme-builder (action="create") { type:"header", title:"<Brand> Header", html, css, js,
+                                                site_before_head:"<Google Fonts links — only on this first call>",
+                                                upload_images:true }
 2. uichemy-composer/page (action="create") { title:"<Brand> — <Page kind>", status:"draft", label:"<first body label>",
                                   html, css, js, upload_images:true }       ← FIRST body section only
 3. uichemy-composer/page (action="append-section") { post_id, label, html, css, js, upload_images:true }
                                                                               ← repeat once per remaining body section
-4. uichemy-composer/template (action="create") { type:"footer", title:"<Brand> Footer", html, css, js,
-                                           upload_images:true }
+4. uichemy-composer/theme-builder (action="create") { type:"footer", title:"<Brand> Footer", html, css, js,
+                                                upload_images:true }
 ```
 
-Header/Footer NEVER go through `uichemy-composer/page (action="create")` — that creates a body section, not a theme-builder template, and the live site keeps its old header/footer. Confirm each header_footer response has `active:true` and `system:"uichemy_native"`.
+Header/Footer NEVER go through `uichemy-composer/page (action="create")` — that creates a body section, not a theme-builder template, and the live site keeps its old header/footer. Confirm each response has `will_render:true` - `active` only means the flag was written; when `will_render` is false, `render_check` says why and what to do.
 
-**Page-only exception** — only if the user explicitly asked for page-only placement, embed the Header and Footer as the first and last sections inside the page itself instead, and skip `uichemy-composer/template (action="create", type="header"|"footer")` entirely:
+**Page-only exception** — only if the user explicitly asked for page-only placement, embed the Header and Footer as the first and last sections inside the page itself instead, and skip `uichemy-composer/theme-builder (action="create", type="header"|"footer")` entirely:
 
 ```
 1. uichemy-composer/page (action="create") { title:"<Brand> — <Page kind>", status:"draft", label:"Header",
@@ -337,7 +352,7 @@ When the loop ends, print one summary block to the user:
 ## Anti-patterns — do not do these
 
 - Skipping Header or Footer because the user didn't say "header".
-- Putting nav/logo/footer HTML inside `uichemy-composer/page (action="create")` instead of `uichemy-composer/template (action="create", type="header"|"footer")` — UiChemy's native Theme Builder handles it site-wide regardless of `platform.header_footer_system`.
+- Putting nav/logo/footer HTML inside `uichemy-composer/page (action="create")` instead of `uichemy-composer/theme-builder (action="create", type="header"|"footer")` — UiChemy's native Theme Builder handles it site-wide regardless of `platform.header_footer_system`.
 - Naming the specific competing theme-builder plugin (Elementor Pro / Nexter) to the user — coexistence should be mentioned generically only.
 - Default-naming pages `"UiChemy AI Landing Page"` or templates `"Header — UiChemy"`.
 - Lorem ipsum text. Use real brand-appropriate copy.

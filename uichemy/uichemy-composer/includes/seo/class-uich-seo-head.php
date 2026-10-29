@@ -743,6 +743,16 @@ if ( ! class_exists( 'Uich_SEO_Head' ) ) {
 		 */
 		public static function page_raw( $post_id ) {
 			$post_id = absint( $post_id );
+			// A Composer Builder page keeps its head code in its own document, which
+			// no builder driver reads; without this its SEO tags printed raw next to
+			// the module's own (F-01).
+			if ( class_exists( 'Uich_CB_Content' ) && Uich_CB_Content::is_enabled( $post_id ) ) {
+				$document = Uich_CB_Content::get_cb_content( $post_id );
+				$head     = isset( $document['content']['before_head_end_html'] ) ? (string) $document['content']['before_head_end_html'] : '';
+				if ( '' !== trim( $head ) ) {
+					return $head;
+				}
+			}
 			$driver  = self::driver( $post_id );
 			$sections = $driver ? $driver->load_sections( $post_id, 'content' ) : array();
 			if ( ! is_wp_error( $sections ) ) {
@@ -766,6 +776,11 @@ if ( ! class_exists( 'Uich_SEO_Head' ) ) {
 		 * @return bool
 		 */
 		public static function has_sections( $post_id ) {
+			// A Composer Builder document has no sections, but its head code is
+			// the page's own before-</head> code all the same.
+			if ( self::is_cb_document( $post_id ) ) {
+				return true;
+			}
 			$driver = self::driver( $post_id );
 			if ( ! $driver ) {
 				return false;
@@ -814,6 +829,10 @@ if ( ! class_exists( 'Uich_SEO_Head' ) ) {
 		 * @return bool
 		 */
 		public static function author_trusted( $post_id ) {
+			// Author and last editor (Uich_Dynamic::author_trusted()).
+			if ( absint( $post_id ) && class_exists( 'Uich_Dynamic' ) ) {
+				return Uich_Dynamic::author_trusted( absint( $post_id ) );
+			}
 			$author_id = (int) get_post_field( 'post_author', absint( $post_id ) );
 			return $author_id > 0 && user_can( $author_id, 'unfiltered_html' );
 		}
@@ -864,6 +883,9 @@ if ( ! class_exists( 'Uich_SEO_Head' ) ) {
 		 */
 		public static function write_page( $post_id, array $parsed ) {
 			$post_id = absint( $post_id );
+			if ( self::is_cb_document( $post_id ) ) {
+				return self::write_cb_page( $post_id, $parsed );
+			}
 			$driver   = self::driver( $post_id );
 			$sections = ( $driver && class_exists( 'UiChemy_Section_Ops' ) ) ? $driver->load_sections( $post_id, 'content' ) : array();
 			if ( is_wp_error( $sections ) ) {
@@ -923,6 +945,56 @@ if ( ! class_exists( 'Uich_SEO_Head' ) ) {
 				$driver->after_write( $post_id );
 			}
 			if ( '' !== $stored ) {
+				delete_post_meta( $post_id, self::PAGE_META );
+			}
+			unset( self::$pages[ $post_id ], self::$trusted[ $post_id ] );
+			return true;
+		}
+
+		/**
+		 * Is the post a Composer Builder document (its head code lives in the
+		 * document, not in sections or post meta)?
+		 *
+		 * @param int $post_id Post id.
+		 * @return bool
+		 */
+		public static function is_cb_document( $post_id ) {
+			return class_exists( 'Uich_CB_Content' ) && Uich_CB_Content::is_enabled( absint( $post_id ) );
+		}
+
+		/**
+		 * write_page() for a Composer Builder document: the tags go into the
+		 * document's head code, which is what page_raw() reads back. Tags stored
+		 * in post meta before the page became a document are carried across.
+		 *
+		 * @param int   $post_id Post id.
+		 * @param array $parsed  New parse.
+		 * @return true|WP_Error
+		 */
+		private static function write_cb_page( $post_id, array $parsed ) {
+			$document = Uich_CB_Content::get_cb_content( $post_id );
+			$current  = isset( $document['content']['before_head_end_html'] ) ? (string) $document['content']['before_head_end_html'] : '';
+			$stored   = (string) get_post_meta( $post_id, self::PAGE_META, true );
+			if ( '' !== trim( $stored ) ) {
+				$current = '' === trim( $current ) ? $stored : $current . "\n" . $stored;
+			}
+			$next = self::compose( $current, $parsed );
+			if ( $next !== $current || '' !== $stored ) {
+				$document['content']['before_head_end_html'] = $next;
+				// Same reasoning as the section path below: compose() only adds
+				// escaped tags, so the save must not kses away an Author's <meta>.
+				$lift = static function ( $caps, $cap ) {
+					return 'unfiltered_html' === $cap ? array( 'exist' ) : $caps;
+				};
+				add_filter( 'map_meta_cap', $lift, PHP_INT_MAX, 2 );
+				try {
+					$saved = Uich_CB_Content::save_cb_content( $post_id, $document );
+				} finally {
+					remove_filter( 'map_meta_cap', $lift, PHP_INT_MAX );
+				}
+				if ( ! $saved || is_wp_error( $saved ) ) {
+					return is_wp_error( $saved ) ? $saved : new WP_Error( 'uich_seo_save_failed', 'The page head code could not be saved.' );
+				}
 				delete_post_meta( $post_id, self::PAGE_META );
 			}
 			unset( self::$pages[ $post_id ], self::$trusted[ $post_id ] );

@@ -4,6 +4,8 @@ Convert Figma → WordPress Composer — section-by-section.
 
 **Input:** the Figma URL the user gave you.
 
+**Composer Builder sites** (`describe-site` → `platform.builder: "composer"`): each page is ONE document — `html`, `css`, `js`, `head_code`, `body_end_code` — with no sections. Run this pipeline unchanged, reading "section" as a **region** of that document (`<!-- region: <Label> -->` + `<section class="uichemy-{slug}-{index}">`). Step 1b does not apply (every design is one document), and Step 9 writes the whole page with one `create` instead of the section tools — see "Composer Builder sites" in the `upload` part. Animation variables live in ONE `uichemy_controller_bridge` declaration for the whole page (motion-and-animation, "Composer Builder sites").
+
 **Key invariants:**
 
 | Rule | Why |

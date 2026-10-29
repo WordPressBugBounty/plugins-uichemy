@@ -30,6 +30,115 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 		public static function init() {
 			add_action( 'wp_ajax_uichemy_theme_builder', array( __CLASS__, 'ajax' ) );
 			add_action( 'enqueue_block_editor_assets', array( __CLASS__, 'enqueue_block_editor' ) );
+
+			// The Composer Builder's screen, when the post it opens is a template:
+			// its Publish button asks for display conditions and activates the
+			// template, through this class's own ajax route.
+			add_filter( 'uich_cb/boot_payload', array( __CLASS__, 'composer_boot_payload' ), 10, 2 );
+			add_action( 'uich_cb/editor/head', array( __CLASS__, 'composer_editor_head' ) );
+
+			// Elementor offers itself on every post of a type that supports it,
+			// and this CPT does. A Composer Builder template is not an
+			// Elementor document, so its "Edit with Elementor" entry points
+			// (block-editor button, admin bar, row action) stay off it.
+			add_filter( 'elementor/utils/is_post_support', array( __CLASS__, 'elementor_post_support' ), 10, 3 );
+		}
+
+		/**
+		 * Keep Elementor off templates built with the Composer Builder.
+		 *
+		 * Only for those: every other template keeps Elementor exactly as its
+		 * post type allows. Switching one back to Elementor from the dashboard
+		 * clears the builder's claim first (handle_set_editor), which lifts this.
+		 *
+		 * @param bool   $supported Whether Elementor may edit the post.
+		 * @param int    $post_id   Post ID.
+		 * @param string $post_type Post type.
+		 * @return bool
+		 */
+		public static function elementor_post_support( $supported, $post_id, $post_type ) {
+			if ( ! $supported || UiChemy_Template_CPT::POST_TYPE !== $post_type || ! $post_id ) {
+				return $supported;
+			}
+
+			return 'composer' !== UiChemy_Template_CPT::editor_for( (int) $post_id );
+		}
+
+		/**
+		 * May the current user publish this template from the Composer Builder?
+		 *
+		 * The same gate as the ajax route the builder's Publish calls — offering
+		 * a conditions dialog that then answers 403 is worse than not offering it.
+		 *
+		 * @param int $post_id Post the builder is opening.
+		 * @return bool
+		 */
+		private static function is_publishable_template( $post_id ) {
+			return class_exists( 'UiChemy_Template_Store' )
+				&& UiChemy_Template_Store::is_template( $post_id )
+				&& current_user_can( 'manage_options' )
+				&& UiChemy_Template_CPT::is_valid_type( (string) get_post_meta( $post_id, UiChemy_Template_CPT::META_TYPE, true ) );
+		}
+
+		/**
+		 * Hand the Composer Builder the template it is editing.
+		 *
+		 * `themeTemplate` is the dashboard's own template payload — the exact
+		 * shape the conditions dialog reads — so the builder opens that dialog
+		 * without a round-trip first.
+		 *
+		 * @param array $payload Builder boot payload.
+		 * @param int   $post_id Post being edited.
+		 * @return array
+		 */
+		public static function composer_boot_payload( $payload, $post_id ) {
+			// A template has no header / footer of its own to offer, so Layers'
+			// "Add header" / "Add footer" rows stay off it.
+			if ( is_array( $payload ) ) {
+				$payload['isThemeTemplate'] = class_exists( 'UiChemy_Template_Store' ) && UiChemy_Template_Store::is_template( (int) $post_id );
+				// header, footer, single… — the builder's section shelf offers
+				// only that kind's sections while one is open (LibraryTab).
+				$payload['themeTemplateType'] = $payload['isThemeTemplate']
+					? (string) get_post_meta( (int) $post_id, UiChemy_Template_CPT::META_TYPE, true )
+					: '';
+			}
+			if ( is_array( $payload ) && self::is_publishable_template( (int) $post_id ) ) {
+				$payload['themeTemplate'] = self::template_payload( (int) $post_id );
+			}
+			return $payload;
+		}
+
+		/**
+		 * The ajax endpoint, nonce and Pro flags the dashboard's Theme Builder
+		 * code reads, for the builder: the conditions dialog its Publish opens on
+		 * a template, and the Theme Builder workspace on its left rail (which
+		 * shows only when `themeBuilder` is set).
+		 *
+		 * Printed in the <head> because the builder bundle loads in the footer and
+		 * the screens' ajax helper reads `window.uichemyDashboard` as it loads —
+		 * the same global the dashboard localizes for them. Only for a user the
+		 * ajax route lets in (`manage_options`).
+		 *
+		 * @param int $post_id Post being edited.
+		 * @return void
+		 */
+		public static function composer_editor_head( $post_id ) {
+			if ( ! class_exists( 'UiChemy_Template_CPT' ) || ! current_user_can( 'manage_options' ) ) {
+				return;
+			}
+
+			wp_print_inline_script_tag(
+				'window.uichemyDashboard = window.uichemyDashboard || ' . wp_json_encode(
+					array(
+						'ajaxUrl'      => admin_url( 'admin-ajax.php' ),
+						'nonce'        => wp_create_nonce( 'uichemy_dashboard' ),
+						'themeBuilder' => true,
+						'isPro'        => function_exists( 'uichemy_is_pro' ) && uichemy_is_pro(),
+						'upgradeUrl'   => function_exists( 'uichemy_upgrade_url' ) ? uichemy_upgrade_url( 'builder' ) : '',
+						'proTypes'     => array_values( array_diff( UiChemy_Template_CPT::TYPES, UiChemy_Template_CPT::FREE_TYPES ) ),
+					)
+				) . ';'
+			);
 		}
 
 		/**
@@ -246,6 +355,15 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 				/* translators: %s: taxonomy singular name. */
 				$slots[] = self::arch_slot( 'archive', sprintf( __( '%s Archive', 'uichemy' ), $tx->labels->singular_name ), 'archive', 'tax:' . $tx->name, false, $tx->labels->name );
 			}
+			// A custom post type's own archive (/listings/): `pt:` like a single,
+			// since the archive is the post type's (E-06 / D-04).
+			foreach ( get_post_types( array( 'public' => true, '_builtin' => false ), 'objects' ) as $pt ) {
+				if ( in_array( $pt->name, $exclude_pt, true ) || empty( $pt->has_archive ) ) {
+					continue;
+				}
+				/* translators: %s: post type plural name. */
+				$slots[] = self::arch_slot( 'archive', sprintf( __( '%s Archive', 'uichemy' ), $pt->labels->name ), 'archive', 'pt:' . $pt->name, false, $pt->labels->name );
+			}
 			$slots[] = self::arch_slot( 'archive', __( 'Author Archive', 'uichemy' ), 'archive', 'author', false );
 			$slots[] = self::arch_slot( 'archive', __( 'Date Archive', 'uichemy' ), 'archive', 'date', false );
 			$slots[] = self::arch_slot( 'archive', __( 'Any Archive (fallback)', 'uichemy' ), 'archive', 'any', false );
@@ -272,6 +390,12 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 			// the endpoint does not exist and the template could never render —
 			// the same gate the other Woo types use.
 			if ( class_exists( 'WooCommerce' ) ) {
+				// The shop's own template types. A product page is not a
+				// `single|pt:product` slot - single_product is its own type with
+				// its own resolver path - so without these an active Single
+				// Product template was invisible here.
+				$slots[] = self::arch_slot( 'single_product', __( 'Single Product', 'uichemy' ), 'special', '', false );
+				$slots[] = self::arch_slot( 'product_archive', __( 'Shop / Product Archive', 'uichemy' ), 'special', '', false );
 				$slots[] = self::arch_slot( 'order_received', __( 'Order Received / Thank You', 'uichemy' ), 'special', '', false );
 			}
 			$slots[] = self::arch_slot( 'error_404', __( '404 Page', 'uichemy' ), 'special', '', true );
@@ -330,7 +454,10 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 			$title = isset( $_POST['title'] ) ? sanitize_text_field( wp_unslash( $_POST['title'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce (check_ajax_referer) and capability verified at handler entry.
 			// New templates default to the Gutenberg block editor; Elementor is
 			// opt-in (via the card's "Edit with Elementor").
-			$editor = ( isset( $_POST['editor'] ) && 'elementor' === $_POST['editor'] ) ? 'elementor' : 'gutenberg';  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce (check_ajax_referer) and capability verified at handler entry.
+			// `composer` when the Composer Builder creates it, so the template opens
+			// back in the builder instead of offering "Edit with Gutenberg" (C-02).
+			$editor = isset( $_POST['editor'] ) ? sanitize_key( wp_unslash( $_POST['editor'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce (check_ajax_referer) and capability verified at handler entry.
+			$editor = in_array( $editor, array( 'elementor', 'composer' ), true ) ? $editor : 'gutenberg';
 			// Optional target for canvas "create in slot" (e.g. pt:page, tax:category).
 			// When none is supplied — the Grid's "Add New → Single" — a single
 			// template defaults to Single Post (pt:post) rather than the greedy
@@ -415,9 +542,18 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 		 */
 		private static function handle_set_editor() {
 			$id     = self::require_manageable_template();
-			$editor = ( isset( $_POST['editor'] ) && 'elementor' === $_POST['editor'] ) ? 'elementor' : 'gutenberg';  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce (check_ajax_referer) and capability verified at handler entry.
+			// `composer` when the Composer Builder creates it, so the template opens
+			// back in the builder instead of offering "Edit with Gutenberg" (C-02).
+			$editor = isset( $_POST['editor'] ) ? sanitize_key( wp_unslash( $_POST['editor'] ) ) : '';  // phpcs:ignore WordPress.Security.NonceVerification.Missing -- Nonce (check_ajax_referer) and capability verified at handler entry.
+			$editor = in_array( $editor, array( 'elementor', 'composer' ), true ) ? $editor : 'gutenberg';
 
 			update_post_meta( $id, UiChemy_Template_CPT::META_EDITOR, $editor );
+
+			// Leaving the Composer Builder: its flag outranks META_EDITOR in
+			// editor_for(), so it has to go or the switch would not take.
+			if ( class_exists( 'Uich_CB_Content' ) ) {
+				Uich_CB_Content::set_enabled( $id, false );
+			}
 
 			if ( 'elementor' === $editor ) {
 				$data = get_post_meta( $id, '_elementor_data', true );
@@ -657,6 +793,38 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 					'taxonomy' => isset( $rule['taxonomy'] ) ? $rule['taxonomy'] : null,
 					'term'     => isset( $rule['term'] ) ? (int) $rule['term'] : null,
 					'label'    => self::rule_label( $rule ),
+					// Per-id titles, so the editor can show one removable chip per
+					// page instead of one joined string it cannot take apart.
+					'valueLabels' => self::rule_value_labels( $rule ),
+				);
+			}
+			return $out;
+		}
+
+		/**
+		 * Per-value labels for a rule that names several objects.
+		 *
+		 * Only `singular` carries a list today; everything else returns an empty
+		 * array and the editor falls back to the rule's own label.
+		 *
+		 * @param array $rule Rule.
+		 * @return array<int,array{id:int,title:string}>
+		 */
+		private static function rule_value_labels( $rule ) {
+			$type = isset( $rule['type'] ) ? $rule['type'] : '';
+			if ( 'singular' !== $type || ! isset( $rule['value'] ) ) {
+				return array();
+			}
+			$out = array();
+			foreach ( (array) $rule['value'] as $pid ) {
+				$pid = (int) $pid;
+				if ( $pid <= 0 ) {
+					continue;
+				}
+				$title = get_the_title( $pid );
+				$out[] = array(
+					'id'    => $pid,
+					'title' => ( '' !== $title ) ? html_entity_decode( $title, ENT_QUOTES, 'UTF-8' ) : sprintf( '#%d', $pid ),
 				);
 			}
 			return $out;
@@ -674,7 +842,13 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 				case 'entire':
 					return __( 'Entire site', 'uichemy' );
 				case 'search':
-					return __( 'Search results', 'uichemy' );
+					$spt = isset( $rule['value'] ) ? sanitize_key( (string) $rule['value'] ) : '';
+					if ( '' === $spt || 'any' === $spt ) {
+						return __( 'Search results', 'uichemy' );
+					}
+					$spo = get_post_type_object( $spt );
+					/* translators: %s: post type plural name. */
+					return sprintf( __( 'Search results: %s', 'uichemy' ), $spo ? $spo->labels->name : $spt );
 				case 'post_type':
 					$o = get_post_type_object( (string) $rule['value'] );
 					/* translators: %s: post type plural name. */
@@ -687,8 +861,13 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 					$u = get_userdata( $aid );
 					return $u ? $u->display_name : sprintf( '#%d', $aid );
 				case 'singular':
-					$t = get_the_title( (int) $rule['value'] );
-					return '' !== $t ? html_entity_decode( $t, ENT_QUOTES, 'UTF-8' ) : sprintf( '#%d', (int) $rule['value'] );
+					$titles = array();
+					foreach ( (array) $rule['value'] as $pid ) {
+						$pid = (int) $pid;
+						$t   = get_the_title( $pid );
+						$titles[] = ( '' !== $t ) ? html_entity_decode( $t, ENT_QUOTES, 'UTF-8' ) : sprintf( '#%d', $pid );
+					}
+					return implode( ', ', $titles );
 				case 'taxonomy':
 					$txo  = get_taxonomy( (string) $rule['taxonomy'] );
 					$txl  = $txo ? $txo->labels->singular_name : (string) $rule['taxonomy'];
@@ -828,8 +1007,9 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 				'shortcode'     => class_exists( 'UiChemy_Template_Shortcode' )
 					? UiChemy_Template_Shortcode::for_id( $id )
 					: '',
-				// editUrl opens the template's current editor.
-				'editUrl'       => ( 'gutenberg' === $editor ) ? $gutenberg_url : $elementor_url,
+				// editUrl opens the template's current editor — the Composer
+				// Builder included, see UiChemy_Template_CPT::edit_url_for().
+				'editUrl'       => UiChemy_Template_CPT::edit_url_for( $id ),
 				'elementorUrl'  => $elementor_url,
 				'gutenbergUrl'  => $gutenberg_url,
 				'previewUrl'    => add_query_arg(
