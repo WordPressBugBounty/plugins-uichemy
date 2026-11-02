@@ -248,6 +248,9 @@ if ( ! class_exists( 'Uich_CB_Enqueue' ) ) {
 			}
 
 			wp_set_script_translations( self::HANDLE_APP_JS, 'uichemy' );
+			if ( function_exists( 'uichemy_add_chunk_translations' ) ) {
+				uichemy_add_chunk_translations( self::HANDLE_APP_JS, 'uichemy' );
+			}
 		}
 
 		/**

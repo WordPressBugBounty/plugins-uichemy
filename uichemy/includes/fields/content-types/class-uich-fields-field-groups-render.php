@@ -355,6 +355,9 @@ class Uich_Fields_Field_Groups_Render {
 			wp_enqueue_media();
 			wp_enqueue_script( 'uich-gf-ds', UICH_URL . 'new-dashboard/build/fields-editor.js', array_merge( $ds_deps, array( 'jquery', 'uich-gf-conditional' ) ), $ds_ver, true );
 			wp_set_script_translations( 'uich-gf-ds', 'uichemy' );
+			if ( function_exists( 'uichemy_add_chunk_translations' ) ) {
+				uichemy_add_chunk_translations( 'uich-gf-ds', 'uichemy' );
+			}
 			if ( file_exists( UICH_PATH . 'new-dashboard/build/fields-editor.css' ) ) {
 				wp_enqueue_style( 'uich-gf-ds', UICH_URL . 'new-dashboard/build/fields-editor.css', array( 'uich-gf-render' ), $ds_ver );
 			}

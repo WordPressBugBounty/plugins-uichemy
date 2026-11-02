@@ -1685,6 +1685,9 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			// dependency by the build's DependencyExtractionPlugin once any composer
 			// module imports @wordpress/i18n, so the handle can carry translations.
 			wp_set_script_translations( 'uichemy-composer-composer', 'uichemy' );
+			if ( function_exists( 'uichemy_add_chunk_translations' ) ) {
+				uichemy_add_chunk_translations( 'uichemy-composer-composer', 'uichemy' );
+			}
 
 			wp_localize_script(
 				'uichemy-composer-composer',

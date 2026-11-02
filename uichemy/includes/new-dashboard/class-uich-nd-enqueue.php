@@ -95,6 +95,9 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 				);
 				wp_localize_script( self::HANDLE_JS, 'uich_nd_boot', self::boot_payload() );
 				wp_set_script_translations( self::HANDLE_JS, 'uichemy' );
+				if ( function_exists( 'uichemy_add_chunk_translations' ) ) {
+					uichemy_add_chunk_translations( self::HANDLE_JS, 'uichemy' );
+				}
 
 				self::enqueue_builder_screen_deps( $with_page_chrome );
 			} else {

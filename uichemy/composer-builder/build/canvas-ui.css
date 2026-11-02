@@ -3870,6 +3870,13 @@ body[data-theme="light"],
 .nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :focus-visible, :focus-within, :active):not(:disabled) { background-color: var(--uc-inverse-bg); }
 .lSxxR32yQ7uBGKoReA0d:is(:hover, :focus, :focus-visible, :focus-within, :active):not(:disabled) { background-color: var(--_soft, var(--uc-brand-soft)); }
 .uEkFBKngy5ABC8BavrlF:is(:hover, :focus, :focus-visible, :focus-within, :active):not(:disabled) { background-color: var(--uc-surface-control); }
+/* The same for a disabled button: its fill stays, dimmed by .button:disabled.
+   Without these the reset left a disabled solid button (the chat's Send with
+   nothing typed) transparent on hover, its white icon on the white panel. */
+.nx448XS4JGEoBYKJ_Xeh:is(:hover, :focus, :focus-visible, :focus-within, :active):disabled { background-color: var(--_fill, var(--uc-brand)); }
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :focus-visible, :focus-within, :active):disabled { background-color: var(--uc-inverse-bg); }
+.lSxxR32yQ7uBGKoReA0d:is(:hover, :focus, :focus-visible, :focus-within, :active):disabled { background-color: var(--_soft, var(--uc-brand-soft)); }
+.uEkFBKngy5ABC8BavrlF:is(:hover, :focus, :focus-visible, :focus-within, :active):disabled { background-color: var(--uc-surface-control); }
 
 /* ---- Tones (feed the --_* channels the variants read) --------------------- */
 .BDHV_0n6wKsmpw3p3s1i   { --_fill: var(--uc-brand);   --_fg: var(--uc-brand-fg);   --_soft: var(--uc-brand-soft);   --_border: var(--uc-brand-border);   --_glow: var(--uc-brand-glow-hover);   --_shadow: var(--uc-shadow-control-brand); }

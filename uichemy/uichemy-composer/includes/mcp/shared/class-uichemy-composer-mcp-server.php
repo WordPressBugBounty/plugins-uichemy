@@ -29,11 +29,27 @@ if ( ! class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
 
 		const SERVER_ID          = 'uichemy-composer-mcp';
 		const SERVER_VERSION     = '1.0.0';
-		// Enable flag read by UiChemy_Abilities (class-uichemy-abilities.php). The
-		// class referenced this constant without defining it, which fatals on every
-		// ability call; define it so the check works. Absent option → default '1'
-		// (enabled), matching uichemy_settings['enable_mcp'] = 1.
+		// Legacy enable flag, carried over from Protuno by the composer migration.
+		// The dashboard's "MCP server" switch (uichemy_settings['enable_mcp']) is
+		// the live one; this is only read until that switch has been saved once.
+		// Always go through is_enabled() rather than reading either directly.
 		const ENABLED_OPTION     = 'uichemy_composer_mcp_enabled';
+
+		/**
+		 * Whether AI clients may use the MCP endpoint at all.
+		 *
+		 * The dashboard switch wins once saved; before that, the migrated legacy
+		 * option decides, so a site that had MCP off under Protuno stays off.
+		 *
+		 * @return bool
+		 */
+		public static function is_enabled() {
+			$settings = get_option( 'uichemy_settings', array() );
+			if ( is_array( $settings ) && isset( $settings['enable_mcp'] ) ) {
+				return 1 === (int) $settings['enable_mcp'];
+			}
+			return '1' === (string) get_option( self::ENABLED_OPTION, '1' );
+		}
 
 		// ============================================================
 		// HANDLERS ONLY

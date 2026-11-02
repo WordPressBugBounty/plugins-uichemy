@@ -393,3 +393,132 @@ if ( ! function_exists( 'uichemy_field_writes_allowed' ) ) {
 		return uichemy_is_pro();
 	}
 }
+
+if ( ! function_exists( 'uichemy_shell_quote' ) ) {
+	/**
+	 * Quote one argument for a POSIX shell, as escapeshellarg() does on Linux and
+	 * macOS, for the example `curl` commands handed to AI clients. Nothing here is
+	 * executed; it only has to read right. escapeshellarg() itself is in
+	 * disable_functions on many shared and sandbox hosts (TasteWP among them),
+	 * and calling it there was a fatal that took down media and font uploads and
+	 * Module Studio's list with it.
+	 *
+	 * @param string $arg Argument.
+	 * @return string The argument in single quotes.
+	 */
+	function uichemy_shell_quote( $arg ) {
+		return "'" . str_replace( "'", "'\\''", str_replace( "\0", '', (string) $arg ) ) . "'";
+	}
+}
+
+if ( ! function_exists( 'uichemy_add_chunk_translations' ) ) {
+	/**
+	 * Translate the strings in a script's code-split chunks too.
+	 *
+	 * wp_set_script_translations() loads ONE JSON file per handle, named after
+	 * the handle's own file (md5 of e.g. "new-dashboard/build/index.js"). The
+	 * build splits each bundle into numbered chunks (523.6b06d4be.js, 107.js)
+	 * that load on demand and are never registered handles, and language packs
+	 * ship a JSON per chunk that WordPress never opens. Every string living in a
+	 * chunk stayed in English (wordpress.org support: "Strings from these .js
+	 * files are not displayed translated").
+	 *
+	 * So: find the chunk files beside the handle's file, load each chunk's JSON
+	 * from the same places WordPress looks (the given $path, the domain's
+	 * registered path, WP_LANG_DIR/plugins), and hand their strings to the
+	 * page before the bundle runs. wp.i18n.setLocaleData() merges them into the
+	 * same domain. Call it right after wp_set_script_translations().
+	 *
+	 * @param string $handle Registered script handle.
+	 * @param string $domain Text domain.
+	 * @param string $path   Optional folder holding the JSON files, as passed to wp_set_script_translations().
+	 * @return int Number of chunk files whose translations were added.
+	 */
+	function uichemy_add_chunk_translations( $handle, $domain = 'uichemy', $path = '' ) {
+		$locale = function_exists( 'determine_locale' ) ? determine_locale() : get_locale();
+		if ( 'en_US' === $locale ) {
+			return 0;
+		}
+		$scripts = wp_scripts();
+		if ( ! isset( $scripts->registered[ $handle ] ) ) {
+			return 0;
+		}
+
+		// The handle's file, relative to its plugin folder, as WordPress names
+		// translation files: "new-dashboard/build/index.js".
+		$src_path     = (string) wp_parse_url( (string) $scripts->registered[ $handle ]->src, PHP_URL_PATH );
+		$plugins_path = (string) wp_parse_url( plugins_url(), PHP_URL_PATH );
+		if ( '' === $plugins_path || 0 !== strpos( $src_path, trailingslashit( $plugins_path ) ) ) {
+			return 0;
+		}
+		$parts = explode( '/', trim( substr( $src_path, strlen( $plugins_path ) ), '/' ) );
+		if ( count( $parts ) < 2 ) {
+			return 0;
+		}
+		$plugin_dir = array_shift( $parts );
+		array_pop( $parts ); // the handle's own file; WordPress already loads its JSON.
+		$rel_dir = implode( '/', $parts );
+		$abs_dir = trailingslashit( WP_PLUGIN_DIR ) . $plugin_dir . ( '' !== $rel_dir ? '/' . $rel_dir : '' );
+
+		$chunks = glob( $abs_dir . '/*.js' );
+		if ( empty( $chunks ) ) {
+			return 0;
+		}
+
+		$folders = array();
+		if ( $path ) {
+			$folders[] = untrailingslashit( $path );
+		}
+		global $wp_textdomain_registry;
+		if ( isset( $wp_textdomain_registry ) && method_exists( $wp_textdomain_registry, 'get' ) ) {
+			$registered = $wp_textdomain_registry->get( $domain, $locale );
+			if ( $registered ) {
+				$folders[] = untrailingslashit( $registered );
+			}
+		}
+		$folders[] = WP_LANG_DIR . '/plugins';
+		$folders   = array_unique( $folders );
+
+		$messages = array();
+		$found    = 0;
+		foreach ( $chunks as $chunk ) {
+			$name = basename( $chunk );
+			// Chunks are numbered ("523.6b06d4be.js", "107.js"); entry files are named.
+			if ( ! preg_match( '/^\d+(\.[0-9a-f]+)?\.js$/', $name ) ) {
+				continue;
+			}
+			$md5 = md5( ( '' !== $rel_dir ? $rel_dir . '/' : '' ) . $name );
+			foreach ( $folders as $folder ) {
+				$file = $folder . '/' . $domain . '-' . $locale . '-' . $md5 . '.json';
+				if ( ! is_readable( $file ) ) {
+					continue;
+				}
+				$json = json_decode( (string) file_get_contents( $file ), true ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- Local language file.
+				$data = isset( $json['locale_data'] ) && is_array( $json['locale_data'] ) ? reset( $json['locale_data'] ) : null;
+				if ( is_array( $data ) ) {
+					$messages = array_merge( $messages, $data );
+					++$found;
+				}
+				break;
+			}
+		}
+		if ( ! $messages ) {
+			return 0;
+		}
+		if ( ! isset( $messages[''] ) ) {
+			$messages[''] = array( 'domain' => $domain, 'lang' => $locale );
+		}
+
+		wp_add_inline_script(
+			$handle,
+			sprintf(
+				'( function( domain, data ) { var i18n = window.wp && window.wp.i18n; if ( i18n && i18n.setLocaleData ) { i18n.setLocaleData( data, domain ); } } )( %s, %s );',
+				wp_json_encode( $domain ),
+				wp_json_encode( $messages )
+			),
+			'before'
+		);
+		return $found;
+	}
+}
+

@@ -98,6 +98,11 @@ if ( ! class_exists( 'Uich_SEO_Admin' ) ) {
 			}
 
 			wp_enqueue_script( self::EDITOR_HANDLE, UICHEMY_BUILD_URL . 'seo-editor.js', $deps, $ver, true );
+			// The SEO panel's own strings were never loaded: no translations call at all.
+			wp_set_script_translations( self::EDITOR_HANDLE, 'uichemy' );
+			if ( function_exists( 'uichemy_add_chunk_translations' ) ) {
+				uichemy_add_chunk_translations( self::EDITOR_HANDLE, 'uichemy' );
+			}
 			if ( file_exists( UICHEMY_BUILD_PATH . 'seo-editor.css' ) ) {
 				wp_enqueue_style( self::EDITOR_HANDLE, UICHEMY_BUILD_URL . 'seo-editor.css', array(), $ver );
 			}

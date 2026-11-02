@@ -568,7 +568,11 @@ if ( ! class_exists( 'Uich_CB_Rest_Page' ) ) {
 		 *
 		 * @return WP_REST_Response
 		 */
-		public static function library() {
+		public static function library( $request ) {
+			$post_id = absint( $request->get_param( 'post_id' ) );
+			if ( $post_id && ! Uich_CB_Policy::can_edit( $post_id ) ) {
+				return Uich_CB_Rest::error( 'uich_cb_forbidden', __( 'You are not allowed to edit this document.', 'uichemy' ), 403 );
+			}
 			/**
 			 * Filter the starter sections offered in the Add Section dialog.
 			 *
@@ -578,7 +582,7 @@ if ( ! class_exists( 'Uich_CB_Rest_Page' ) ) {
 			 *
 			 * @param array $sections Library sections.
 			 */
-			$sections = (array) apply_filters( 'uich_cb/library_sections', array() );
+			$sections = (array) apply_filters( 'uich_cb/library_sections', array(), $post_id );
 
 			return rest_ensure_response( array( 'sections' => array_values( $sections ) ) );
 		}

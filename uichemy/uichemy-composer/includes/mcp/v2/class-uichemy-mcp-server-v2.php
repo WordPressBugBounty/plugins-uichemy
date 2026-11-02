@@ -679,15 +679,26 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		 * @return bool|\WP_Error
 		 */
 		public static function check_permission( WP_REST_Request $request ) {
+			if ( class_exists( 'UiChemy_Composer_MCP_Server' ) && ! UiChemy_Composer_MCP_Server::is_enabled() ) {
+				return new WP_Error(
+					'uichemy_mcp_disabled',
+					__( 'The UiChemy MCP server is switched off. Turn on "MCP server" in UiChemy > Settings to connect.', 'uichemy' ),
+					array( 'status' => 403 )
+				);
+			}
 			return UiChemy_Rest_Permissions::check_admin( $request );
 		}
 
 		/**
-		 * Per-tool permission for the gateway triad itself.
+		 * Per-tool permission for the gateway triad itself. Follows the dashboard
+		 * switch too, so "off" closes discovery as well as execution.
 		 *
 		 * @return bool
 		 */
 		public static function default_tool_permission() {
+			if ( class_exists( 'UiChemy_Composer_MCP_Server' ) && ! UiChemy_Composer_MCP_Server::is_enabled() ) {
+				return false;
+			}
 			return current_user_can( 'manage_options' );
 		}
 	}

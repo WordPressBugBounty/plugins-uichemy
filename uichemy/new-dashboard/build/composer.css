@@ -20800,6 +20800,34 @@ body.uichemy-frontend-editor .uich-rp.uc-chrome :is(.uc-portal, .uc-pop-dark, [d
 }
 .panel.dock-right.uc-chrome .rp-pill:disabled { cursor: default; color: var(--uc-text-muted); }
 .panel.dock-right.uc-chrome .rp-pill--scope { flex: 1 1 auto; }
+.panel.dock-right.uc-chrome .rp-scope-control {
+  position: relative;
+  display: flex;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.panel.dock-right.uc-chrome .rp-scope-control[data-has-highlight='true'] > .rp-pill--scope {
+  padding-right: 54px;
+}
+.panel.dock-right.uc-chrome .rp-scope-control[data-has-highlight='true'] > .rp-pill--scope > svg:last-child {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.panel.dock-right.uc-chrome .rp-class-highlight {
+  position: absolute;
+  right: 24px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  height: 24px;
+}
+.panel.dock-right.uc-chrome .rp-class-highlight[aria-pressed='true'] {
+  color: var(--uc-warning);
+  background: var(--uc-surface-hover);
+  box-shadow: inset 0 0 0 1px var(--uc-warning);
+}
 .panel.dock-right.uc-chrome .rp-pill--scope > svg:first-child { flex: 0 0 auto; color: var(--uc-text-muted); }
 .panel.dock-right.uc-chrome .rp-pill--state { flex: 0 0 auto; position: relative; }
 .panel.dock-right.uc-chrome .rp-pill--state.is-on { box-shadow: inset 0 0 0 1px var(--uc-border-strong); }
@@ -20816,8 +20844,7 @@ body.uichemy-frontend-editor .uich-rp.uc-chrome :is(.uc-portal, .uc-pop-dark, [d
   font-size: var(--uc-text-2xs, 11px);
 }
 .panel.dock-right.uc-chrome .rp-pill--scope.is-global .rp-pill__label { color: var(--uc-global, #a78bfa); }
-/* How many elements on the page use the class: a small count right after the
-   name (the caret keeps the far end). It never shrinks — the name gives way. */
+/* Usage follows the class name and never shrinks; the name gives way. */
 .panel.dock-right.uc-chrome .rp-pill__count {
   flex: 0 0 auto;
   min-width: 18px;
@@ -20953,6 +20980,11 @@ body.uichemy-frontend-editor .uich-rp.uc-chrome :is(.uc-portal, .uc-pop-dark, [d
 .rp-entrance-sec { padding-top: 0; }
 .rp-entrance__ms { position: relative; }
 .rp-entrance__ms input { padding-right: 28px; }
+/* No browser spin arrows: they drew over the "ms" unit at the right edge (QA).
+   Up / Down on the keyboard still step the value by 50. */
+.rp-entrance__ms input[type='number'] { -moz-appearance: textfield; -webkit-appearance: textfield; appearance: textfield; }
+.rp-entrance__ms input[type='number']::-webkit-inner-spin-button,
+.rp-entrance__ms input[type='number']::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
 .rp-entrance__unit {
   position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
   font-size: 11px; color: var(--text-dim, hsl(var(--muted-foreground))); pointer-events: none;
@@ -22471,6 +22503,13 @@ body.uichemy-frontend-editor .uich-rp.uc-chrome :is(.uc-portal, .uc-pop-dark, [d
 .nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :focus-visible, :focus-within, :active):not(:disabled) { background-color: var(--uc-inverse-bg); }
 .lSxxR32yQ7uBGKoReA0d:is(:hover, :focus, :focus-visible, :focus-within, :active):not(:disabled) { background-color: var(--_soft, var(--uc-brand-soft)); }
 .uEkFBKngy5ABC8BavrlF:is(:hover, :focus, :focus-visible, :focus-within, :active):not(:disabled) { background-color: var(--uc-surface-control); }
+/* The same for a disabled button: its fill stays, dimmed by .button:disabled.
+   Without these the reset left a disabled solid button (the chat's Send with
+   nothing typed) transparent on hover, its white icon on the white panel. */
+.nx448XS4JGEoBYKJ_Xeh:is(:hover, :focus, :focus-visible, :focus-within, :active):disabled { background-color: var(--_fill, var(--uc-brand)); }
+.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :focus-visible, :focus-within, :active):disabled { background-color: var(--uc-inverse-bg); }
+.lSxxR32yQ7uBGKoReA0d:is(:hover, :focus, :focus-visible, :focus-within, :active):disabled { background-color: var(--_soft, var(--uc-brand-soft)); }
+.uEkFBKngy5ABC8BavrlF:is(:hover, :focus, :focus-visible, :focus-within, :active):disabled { background-color: var(--uc-surface-control); }
 
 /* ---- Tones (feed the --_* channels the variants read) --------------------- */
 .BDHV_0n6wKsmpw3p3s1i   { --_fill: var(--uc-brand);   --_fg: var(--uc-brand-fg);   --_soft: var(--uc-brand-soft);   --_border: var(--uc-brand-border);   --_glow: var(--uc-brand-glow-hover);   --_shadow: var(--uc-shadow-control-brand); }

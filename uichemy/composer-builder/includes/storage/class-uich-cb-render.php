@@ -711,20 +711,17 @@ if ( ! class_exists( 'Uich_CB_Render' ) ) {
 			// mirror runs with neither, so it keeps the tokens instead of freezing
 			// an empty value into the post.
 			if ( self::$resolve_dynamic && isset( $settings['raw_html'] ) && class_exists( 'Uich_Dynamic' ) && Uich_Dynamic::has_dynamic( (string) $settings['raw_html'] ) ) {
-				// The editor shows an empty loop's card as designed (Uich_Twig::$preview_empty_loops).
-				$preview_loops = class_exists( 'Uich_Twig' ) && $markers && ( $is_canvas || $is_editor );
-				if ( $preview_loops ) {
-					Uich_Twig::$preview_empty_loops = true;
-				}
+				Uich_Dynamic::boot();
+				$previous_preview = Uich_Twig::$preview_missing_values;
+				// A query flag by itself must never enable sample content for a visitor.
+				Uich_Twig::$preview_missing_values = $markers && ( $is_editor || ( $is_canvas && $post_id && current_user_can( 'edit_post', $post_id ) ) );
 				try {
 					// Same trust rule as the block, Bricks and the Elementor widget:
 					// the full engine only when the document's author holds
 					// unfiltered_html, otherwise the untrusted render.
 					$settings['raw_html'] = Uich_Dynamic::render_authored( (string) $settings['raw_html'], array( 'widget_id' => $uid ), (int) $post_id );
 				} finally {
-					if ( $preview_loops ) {
-						Uich_Twig::$preview_empty_loops = false;
-					}
+					Uich_Twig::$preview_missing_values = $previous_preview;
 				}
 
 				// Position-indexed slots only line up with static HTML; a loop or

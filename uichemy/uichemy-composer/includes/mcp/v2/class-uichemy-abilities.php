@@ -1944,13 +1944,10 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				return false;
 			}
 
-			// Honour the existing Composer MCP enable toggle: a disabled dashboard
-			// state blocks ability execution just as it blocked the MCP server.
-			if ( class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
-				$enabled = get_option( UiChemy_Composer_MCP_Server::ENABLED_OPTION, '1' );
-				if ( '1' !== $enabled ) {
-					return false;
-				}
+			// Honour the dashboard's "MCP server" switch: off blocks ability
+			// execution, on any endpoint that serves these abilities.
+			if ( class_exists( 'UiChemy_Composer_MCP_Server' ) && ! UiChemy_Composer_MCP_Server::is_enabled() ) {
+				return false;
 			}
 
 			return true;

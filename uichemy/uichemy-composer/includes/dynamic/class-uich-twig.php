@@ -42,6 +42,9 @@ if ( ! class_exists( 'Uich_Twig' ) ) {
 		 */
 		public static $preview_empty_loops = false;
 
+		/** Editor only: fill missing display values and empty queries with sample data. */
+		public static $preview_missing_values = false;
+
 		/**
 		 * Render a template string against a context.
 		 *
@@ -327,6 +330,10 @@ if ( ! class_exists( 'Uich_Twig_Runtime' ) ) {
 
 				case 'out':
 					$val = $this->eval_ast( $node['expr'], $scope );
+					$empty_raw = is_string( $val ) && class_exists( 'Uich_Filters' ) && Uich_Filters::is_marked_raw( $val ) && '' === Uich_Filters::unmark_raw( $val );
+					if ( Uich_Twig::$preview_missing_values && ( null === $val || '' === $val || $empty_raw ) ) {
+						$val = $this->preview_output( $node['expr'] );
+					}
 					return $this->stringify_output( $val );
 
 				case 'set':
@@ -350,6 +357,11 @@ if ( ! class_exists( 'Uich_Twig_Runtime' ) ) {
 		private function render_for( $node, array $scope ) {
 			$iterable = $this->eval_ast( $node['iter'], $scope );
 			$items    = $this->to_iterable( $iterable );
+			if ( empty( $items ) && Uich_Twig::$preview_missing_values && ! empty( $node['query'] ) ) {
+				// Use the normal loop renderer so the item and loop metadata exist.
+				// An authored else block still renders on the visitor's page.
+				$items = array( $this->preview_item() );
+			}
 
 			if ( empty( $items ) ) {
 				if ( Uich_Twig::$preview_empty_loops && ! empty( $node['query'] ) && empty( $node['else'] ) ) {
@@ -380,6 +392,55 @@ if ( ! class_exists( 'Uich_Twig_Runtime' ) ) {
 				++$index0;
 			}
 			return $out;
+		}
+
+		/** Sample display values, never used by queries or persisted in the document. */
+		private function preview_item() {
+			$image = array(
+				'src' => 'data:image/svg+xml,' . rawurlencode( '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="500" viewBox="0 0 800 500"><rect width="800" height="500" fill="#e4e4e7"/><path d="M140 380 310 180l120 140 85-90 145 150Z" fill="#a1a1aa"/><circle cx="570" cy="130" r="42" fill="#a1a1aa"/></svg>' ),
+				'alt' => __( 'Sample image', 'uichemy' ),
+			);
+			return array(
+				'id' => 0,
+				'title' => __( 'Sample title', 'uichemy' ),
+				'name' => __( 'Sample name', 'uichemy' ),
+				'excerpt' => __( 'A short sample description. Your content will appear here when it is available.', 'uichemy' ),
+				'description' => __( 'A short sample description. Your content will appear here when it is available.', 'uichemy' ),
+				'content' => __( 'This is sample content for the editor preview. Your published content will appear here when it is available.', 'uichemy' ),
+				'url' => '#',
+				'link' => '#',
+				'date' => 'Oct 24, 2026',
+				'thumbnail' => $image,
+				'image' => $image,
+				'avatar' => $image,
+				'categories' => array( array( 'name' => __( 'Sample category', 'uichemy' ), 'url' => '#', 'link' => '#' ) ),
+				'author' => array( 'name' => __( 'Sample author', 'uichemy' ), 'url' => '#', 'avatar' => $image ),
+			);
+		}
+
+		/** Infer a missing output's display type without changing conditions or literals. */
+		private function preview_output( $ast ) {
+			if ( ! is_array( $ast ) ) {
+				return null;
+			}
+			if ( 'filter' === $ast['t'] ) {
+				return $this->preview_output( $ast['value'] );
+			}
+			if ( ! in_array( $ast['t'], array( 'member', 'subscript' ), true ) ) {
+				return null;
+			}
+			$name = 'member' === $ast['t'] ? $ast['name'] : ( isset( $ast['index']['v'] ) ? $ast['index']['v'] : '' );
+			$item = $this->preview_item();
+			if ( 'src' === $name ) {
+				return $item['thumbnail']['src'];
+			}
+			if ( 'alt' === $name ) {
+				return $item['thumbnail']['alt'];
+			}
+			if ( isset( $item[ $name ] ) && is_scalar( $item[ $name ] ) ) {
+				return $item[ $name ];
+			}
+			return __( 'Sample content', 'uichemy' );
 		}
 
 		/*
@@ -447,7 +508,15 @@ if ( ! class_exists( 'Uich_Twig_Runtime' ) ) {
 					if ( isset( $ast['args'] ) ) {
 						$args = $this->eval_args( $ast['args'], $scope );
 					}
-					return $this->access( $obj, $ast['name'], $args );
+					$value = $this->access( $obj, $ast['name'], $args );
+					// Image conditions need a typed value, otherwise an empty image
+					// provider hides the entire media area before output is reached.
+					if ( Uich_Twig::$preview_missing_values && in_array( $ast['name'], array( 'thumbnail', 'image', 'avatar' ), true )
+						&& ( null === $value || '' === $value || ( $value instanceof Uich_Provider && ! $value->uich_read( 'src' ) ) ) ) {
+						$item = $this->preview_item();
+						return $item[ $ast['name'] ];
+					}
+					return $value;
 
 				case 'subscript':
 					$obj = $this->eval_ast( $ast['obj'], $scope );

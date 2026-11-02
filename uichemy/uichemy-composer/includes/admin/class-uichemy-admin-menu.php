@@ -457,6 +457,11 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 			}
 			// Feature switches likewise show wherever each feature keeps its own.
 			$opts = array_merge( $opts, self::feature_settings() );
+			// The MCP switch shows the state the endpoint actually enforces, which
+			// before its first save is the migrated legacy option.
+			if ( class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
+				$opts['enable_mcp'] = UiChemy_Composer_MCP_Server::is_enabled() ? 1 : 0;
+			}
 
 			return array(
 				'version'     => UICHEMY_VERSION,

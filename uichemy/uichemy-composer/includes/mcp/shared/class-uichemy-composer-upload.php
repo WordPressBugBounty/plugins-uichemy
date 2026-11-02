@@ -690,8 +690,8 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 		private static function usage_example( $header, $slot_url ) {
 			return sprintf(
 				"curl -s -X PUT -H %s --data-binary @'hero.png' \\\n  %s",
-				escapeshellarg( $header ),
-				escapeshellarg( $slot_url . '&filename=hero.png&alt=Team+collaborating+at+a+whiteboard' )
+				uichemy_shell_quote( $header ),
+				uichemy_shell_quote( $slot_url . '&filename=hero.png&alt=Team+collaborating+at+a+whiteboard' )
 			);
 		}
 
@@ -705,8 +705,8 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 		 */
 		private static function batch_usage_example( $header, $slot_url ) {
 			return "for f in hero.png team.jpg logo.svg; do\n"
-				. '  curl -s -X PUT -H ' . escapeshellarg( $header ) . " --data-binary @\"\$f\" \\\n"
-				. '    ' . escapeshellarg( $slot_url ) . "\"&filename=\$f&alt=short+description\"\ndone";
+				. '  curl -s -X PUT -H ' . uichemy_shell_quote( $header ) . " --data-binary @\"\$f\" \\\n"
+				. '    ' . uichemy_shell_quote( $slot_url ) . "\"&filename=\$f&alt=short+description\"\ndone";
 		}
 
 		/**

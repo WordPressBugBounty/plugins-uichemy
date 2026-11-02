@@ -46,6 +46,8 @@ if ( ! class_exists( 'Uich_CB_Library' ) ) {
 		 * its own slot's sections (LibraryTab). `preview_html`, when set, is
 		 * shown on the shelf instead of `html` — the Single sections print the
 		 * post's own values ({{ post.title }}…), which the shelf cannot resolve.
+		 * It is also inserted as static HTML when that section's source has no
+		 * content, so the saved section keeps the design shown in the library.
 		 * The Single sections are grouped (Post, Post lists, Categories) so the
 		 * shelf can filter them on a single template.
 		 * `also_page` on a slot section offers a copy of it to pages as well,
@@ -6628,29 +6630,106 @@ if ( ! class_exists( 'Uich_CB_Library' ) ) {
 		public static function boot() {
 			// Early priority: ours come first, and a later filter can still
 			// reorder, extend or drop them.
-			add_filter( 'uich_cb/library_sections', array( __CLASS__, 'sections' ), 5 );
+			add_filter( 'uich_cb/library_sections', array( __CLASS__, 'sections' ), 5, 2 );
+		}
+
+		/**
+		 * Does a built-in section have content for its post/term source?
+		 * Check published content only; drafts must not make an empty public
+		 * blog look populated. Site-only bindings do not require blog posts.
+		 *
+		 * @param string $html        Original dynamic source.
+		 * @param int    $document_id Authorized document being edited, or 0.
+		 * @param array  $cache       Query results shared by this library request.
+		 * @return bool
+		 */
+		private static function has_source_content( $html, $document_id, array &$cache ) {
+			$preview_id = $document_id && class_exists( 'Uich_CB_Render' ) ? Uich_CB_Render::preview_post_id( $document_id ) : $document_id;
+			$post       = $preview_id ? get_post( $preview_id ) : null;
+			$is_content = $post instanceof WP_Post && ( ! class_exists( 'UiChemy_Template_CPT' ) || UiChemy_Template_CPT::POST_TYPE !== $post->post_type );
+			if ( $is_content && preg_match( '/\bpost\s*\.\s*content\b/', $html ) && '' === trim( (string) $post->post_content ) ) {
+				return false;
+			}
+
+			if ( preg_match( '/\bget_posts\s*\(|\barchive\s*\./', $html ) ) {
+				$type = preg_match( '/\bpost_type\s*:\s*[\'"]([a-z0-9_-]+)[\'"]/i', $html, $match ) ? $match[1] : 'post';
+				$args = array(
+					'post_type'      => $type,
+					'post_status'    => 'publish',
+					'posts_per_page' => 1,
+					'fields'         => 'ids',
+					'no_found_rows'  => true,
+					'has_password'   => false,
+				);
+				if ( $is_content && false !== strpos( $html, 'post__not_in' ) ) {
+					$args['post__not_in'] = array( $preview_id );
+				}
+				$key = 'posts:' . wp_json_encode( $args );
+				if ( ! array_key_exists( $key, $cache ) ) {
+					$cache[ $key ] = ! empty( get_posts( $args ) );
+				}
+				if ( ! $cache[ $key ] ) {
+					return false;
+				}
+			}
+
+			if ( preg_match( '/\bget_terms\s*\(/', $html ) ) {
+				$taxonomy = preg_match( '/\btaxonomy\s*:\s*[\'"]([a-z0-9_-]+)[\'"]/i', $html, $match ) ? $match[1] : 'category';
+				$args = array( 'taxonomy' => $taxonomy, 'hide_empty' => true, 'number' => 1, 'fields' => 'ids' );
+				// The built-in topic sections deliberately omit Uncategorized.
+				if ( preg_match( '/\bexclude\s*:\s*\[\s*1\s*\]/', $html ) ) {
+					$args['exclude'] = array( 1 );
+				}
+				$key = 'terms:' . wp_json_encode( $args );
+				if ( ! array_key_exists( $key, $cache ) ) {
+					$terms = get_terms( $args );
+					$cache[ $key ] = ! is_wp_error( $terms ) && ! empty( $terms );
+				}
+				if ( ! $cache[ $key ] ) {
+					return false;
+				}
+			}
+
+			// A single-post section needs a real post in context. A template's
+			// own title/content must never count as the post it is meant to show.
+			if ( ! preg_match( '/\bget_posts\s*\(/', $html ) && preg_match( '/\bpost\s*\./', $html ) && ! $is_content ) {
+				if ( $document_id ) {
+					return false;
+				}
+				if ( ! array_key_exists( 'single:post', $cache ) ) {
+					$cache['single:post'] = ! empty( get_posts( array( 'post_type' => 'post', 'post_status' => 'publish', 'posts_per_page' => 1, 'fields' => 'ids', 'has_password' => false ) ) );
+				}
+				return $cache['single:post'];
+			}
+			return true;
 		}
 
 		/**
 		 * Append the built-in sections to the library.
 		 *
-		 * @param array $sections Sections already offered.
+		 * @param array $sections    Sections already offered.
+		 * @param int   $document_id Authorized document being edited, or 0.
 		 * @return array
 		 */
-		public static function sections( $sections ) {
+		public static function sections( $sections, $document_id = 0 ) {
 			$sections = is_array( $sections ) ? $sections : array();
+			$availability = array();
 
 			foreach ( self::manifest() as $slug => $meta ) {
 				$html = $meta['html'];
 				$css  = $meta['css'];
 				$js   = $meta['js'];
+				$dynamic = (bool) preg_match( '/\{\{|\{%|<uichemy-/i', $html );
+				$use_static = $dynamic && isset( $meta['preview_html'] ) && ! self::has_source_content( $html, (int) $document_id, $availability );
 
 				$entry = array(
 					'id'       => 'uich-' . $slug,
 					'name'     => $meta['name'],
 					'category' => $meta['category'],
+					// Keep the library badge even when this site inserts the static design.
+					'dynamic'  => $dynamic,
 					'settings' => array(
-						'raw_html' => $html,
+						'raw_html' => $use_static ? $meta['preview_html'] : $html,
 						'raw_css'  => $css,
 						'raw_js'   => $js,
 					),

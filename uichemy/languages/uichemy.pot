@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: UiChemy - Convert Figma, Prompts and AI Builds to Elementor, Gutenberg and Bricks 5.5.0\n"
+"Project-Id-Version: UiChemy - Convert Figma, Prompts and AI Builds to Elementor, Gutenberg and Bricks 5.5.1\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/uichemy\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-10-29T07:59:53+00:00\n"
+"POT-Creation-Date: 2026-11-02T10:54:30+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: uichemy\n"
@@ -86,7 +86,7 @@ msgstr ""
 #: composer-builder/build/editor.js:46
 #: composer-builder/build/editor.js:59
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/cms/parts.jsx:115
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:572
 #: new-dashboard/build/944.c367c9b9.js:3
@@ -220,7 +220,7 @@ msgid "View revisions"
 msgstr ""
 
 #: composer-builder/includes/class-uich-cb-editor.php:293
-#: composer-builder/includes/rest/class-uich-cb-rest-page.php:638
+#: composer-builder/includes/rest/class-uich-cb-rest-page.php:642
 #: includes/fields/content-types/class-uich-fields-admin-logic.php:145
 #: includes/fields/content-types/class-uich-fields-admin-logic.php:192
 #: includes/fields/content-types/class-uich-fields-admin-logic.php:412
@@ -256,7 +256,7 @@ msgstr ""
 
 #. translators: %s: product name, e.g. "UiChemy".
 #. translators: %s: editor name, e.g. "UiChemy", "Elementor", "Gutenberg".
-#: composer-builder/includes/class-uich-cb-enqueue.php:428
+#: composer-builder/includes/class-uich-cb-enqueue.php:431
 #: composer-builder/includes/class-uich-cb-gutenberg.php:79
 #: composer-builder/includes/class-uich-cb-gutenberg.php:179
 #: composer-builder/includes/class-uich-cb-gutenberg.php:221
@@ -267,13 +267,13 @@ msgstr ""
 msgid "Edit with %s"
 msgstr ""
 
-#: composer-builder/includes/class-uich-cb-enqueue.php:429
+#: composer-builder/includes/class-uich-cb-enqueue.php:432
 #: new-dashboard/build/index.js:9
 #: new-dashboard/src/components/DashShell.jsx:274
 msgid "Opening…"
 msgstr ""
 
-#: composer-builder/includes/class-uich-cb-enqueue.php:430
+#: composer-builder/includes/class-uich-cb-enqueue.php:433
 #: composer-builder/build/383.8611d438.js:1
 #: composer-builder/build/944.6493b249.js:1
 #: composer-builder/build/editor.js:16
@@ -305,17 +305,17 @@ msgid "Saving…"
 msgstr ""
 
 #. translators: %s: product name, e.g. "UiChemy".
-#: composer-builder/includes/class-uich-cb-enqueue.php:433
+#: composer-builder/includes/class-uich-cb-enqueue.php:436
 #, php-format
 msgid "Build this page visually with the %s builder."
 msgstr ""
 
-#: composer-builder/includes/class-uich-cb-enqueue.php:434
+#: composer-builder/includes/class-uich-cb-enqueue.php:437
 msgid "Could not open the builder. Please save the page and try again."
 msgstr ""
 
 #. translators: %s: product name, e.g. "UiChemy".
-#: composer-builder/includes/class-uich-cb-enqueue.php:436
+#: composer-builder/includes/class-uich-cb-enqueue.php:439
 #, php-format
 msgid "This page is built with %s. Changes saved here are not shown on the site, and the next save in the builder replaces them. Edit the page in the builder instead."
 msgstr ""
@@ -364,11 +364,11 @@ msgstr ""
 msgid "Invalid post ID."
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:59
+#: composer-builder/includes/library/class-uich-cb-library.php:61
 msgid "Header with menu"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:60
+#: composer-builder/includes/library/class-uich-cb-library.php:62
 #: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:796
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:335
 #: composer-builder/build/915.a27b3873.js:1
@@ -377,8 +377,8 @@ msgstr ""
 #: composer-builder/build/editor.js:45
 #: composer-builder/build/editor.js:56
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:102
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:103
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/inspector/PagePanel.jsx:85
 #: composer-builder/src/editor/shell/inspector/PagePanel.jsx:89
 #: composer-builder/src/editor/shell/inspector/panel/LayersTree.jsx:80
@@ -396,33 +396,33 @@ msgstr ""
 msgid "Header"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:293
+#: composer-builder/includes/library/class-uich-cb-library.php:295
 msgid "Centred hero"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:294
-#: composer-builder/includes/library/class-uich-cb-library.php:503
+#: composer-builder/includes/library/class-uich-cb-library.php:296
+#: composer-builder/includes/library/class-uich-cb-library.php:505
 msgid "Hero"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:502
+#: composer-builder/includes/library/class-uich-cb-library.php:504
 msgid "Split hero"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:717
+#: composer-builder/includes/library/class-uich-cb-library.php:719
 msgid "Logo strip"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:718
+#: composer-builder/includes/library/class-uich-cb-library.php:720
 msgid "Logos"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:839
+#: composer-builder/includes/library/class-uich-cb-library.php:841
 msgid "Feature grid"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:840
-#: composer-builder/includes/library/class-uich-cb-library.php:998
+#: composer-builder/includes/library/class-uich-cb-library.php:842
+#: composer-builder/includes/library/class-uich-cb-library.php:1000
 #: new-dashboard/build/index.js:65
 #: new-dashboard/build/index.js:75
 #: new-dashboard/src/uichemy-composer/admin/screens/RoleManager.jsx:185
@@ -431,75 +431,75 @@ msgstr ""
 msgid "Features"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:997
+#: composer-builder/includes/library/class-uich-cb-library.php:999
 msgid "Image and text"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:1144
+#: composer-builder/includes/library/class-uich-cb-library.php:1146
 msgid "How it works in 3 steps"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:1145
+#: composer-builder/includes/library/class-uich-cb-library.php:1147
 msgid "Process"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:1288
+#: composer-builder/includes/library/class-uich-cb-library.php:1290
 msgid "Stats with numbers"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:1289
+#: composer-builder/includes/library/class-uich-cb-library.php:1291
 msgid "Stats"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:1460
+#: composer-builder/includes/library/class-uich-cb-library.php:1462
 msgid "Single testimonial"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:1461
-#: composer-builder/includes/library/class-uich-cb-library.php:1569
+#: composer-builder/includes/library/class-uich-cb-library.php:1463
+#: composer-builder/includes/library/class-uich-cb-library.php:1571
 #: new-dashboard/build/index.js:38
 #: new-dashboard/src/uichemy-fields/components/cptTemplates.js:45
 msgid "Testimonials"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:1568
+#: composer-builder/includes/library/class-uich-cb-library.php:1570
 msgid "Testimonial cards"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:1735
+#: composer-builder/includes/library/class-uich-cb-library.php:1737
 msgid "Pricing with yearly switch"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:1736
+#: composer-builder/includes/library/class-uich-cb-library.php:1738
 msgid "Pricing"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:2034
+#: composer-builder/includes/library/class-uich-cb-library.php:2036
 msgid "Team grid"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:2035
+#: composer-builder/includes/library/class-uich-cb-library.php:2037
 #: new-dashboard/build/index.js:38
 #: new-dashboard/src/uichemy-fields/components/cptTemplates.js:37
 msgid "Team"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:2173
+#: composer-builder/includes/library/class-uich-cb-library.php:2175
 msgid "FAQ accordion"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:2174
+#: composer-builder/includes/library/class-uich-cb-library.php:2176
 #: new-dashboard/build/index.js:38
 #: new-dashboard/src/uichemy-fields/components/cptTemplates.js:54
 msgid "FAQ"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:2407
+#: composer-builder/includes/library/class-uich-cb-library.php:2409
 msgid "Latest blog posts"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:2408
-#: composer-builder/includes/library/class-uich-cb-library.php:6673
+#: composer-builder/includes/library/class-uich-cb-library.php:2410
+#: composer-builder/includes/library/class-uich-cb-library.php:6752
 #: new-dashboard/build/index.js:10
 #: new-dashboard/build/index.js:38
 #: new-dashboard/src/uichemy-fields/components/cptTemplates.js:25
@@ -507,29 +507,29 @@ msgstr ""
 msgid "Blog"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:2601
-#: composer-builder/includes/library/class-uich-cb-library.php:2602
-#: composer-builder/includes/library/class-uich-cb-library.php:2743
+#: composer-builder/includes/library/class-uich-cb-library.php:2603
+#: composer-builder/includes/library/class-uich-cb-library.php:2604
+#: composer-builder/includes/library/class-uich-cb-library.php:2745
 msgid "Call to action"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:2742
+#: composer-builder/includes/library/class-uich-cb-library.php:2744
 msgid "Newsletter signup"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:2897
+#: composer-builder/includes/library/class-uich-cb-library.php:2899
 msgid "Contact form"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:2898
+#: composer-builder/includes/library/class-uich-cb-library.php:2900
 msgid "Contact"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:3130
+#: composer-builder/includes/library/class-uich-cb-library.php:3132
 msgid "Footer with links"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:3131
+#: composer-builder/includes/library/class-uich-cb-library.php:3133
 #: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:798
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:336
 #: composer-builder/build/915.a27b3873.js:1
@@ -538,8 +538,8 @@ msgstr ""
 #: composer-builder/build/editor.js:45
 #: composer-builder/build/editor.js:56
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:102
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:103
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/inspector/PagePanel.jsx:85
 #: composer-builder/src/editor/shell/inspector/PagePanel.jsx:89
 #: composer-builder/src/editor/shell/inspector/panel/LayersTree.jsx:81
@@ -559,114 +559,114 @@ msgstr ""
 msgid "Footer"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:3315
+#: composer-builder/includes/library/class-uich-cb-library.php:3317
 msgid "Post header"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:3316
-#: composer-builder/includes/library/class-uich-cb-library.php:3437
-#: composer-builder/includes/library/class-uich-cb-library.php:3549
-#: composer-builder/includes/library/class-uich-cb-library.php:4765
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1611
+#: composer-builder/includes/library/class-uich-cb-library.php:3318
+#: composer-builder/includes/library/class-uich-cb-library.php:3439
+#: composer-builder/includes/library/class-uich-cb-library.php:3551
+#: composer-builder/includes/library/class-uich-cb-library.php:4767
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1614
 #: new-dashboard/build/index.js:51
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:800
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:808
 msgid "Post"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:3436
+#: composer-builder/includes/library/class-uich-cb-library.php:3438
 #: composer-builder/build/editor.js:45
 #: new-dashboard/build/composer.js:11
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:160
 msgid "Post content"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:3548
+#: composer-builder/includes/library/class-uich-cb-library.php:3550
 msgid "Author box"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:3656
+#: composer-builder/includes/library/class-uich-cb-library.php:3658
 msgid "Related posts, 3 columns"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:3657
-#: composer-builder/includes/library/class-uich-cb-library.php:3855
-#: composer-builder/includes/library/class-uich-cb-library.php:4160
-#: composer-builder/includes/library/class-uich-cb-library.php:4435
-#: composer-builder/includes/library/class-uich-cb-library.php:5526
-#: composer-builder/includes/library/class-uich-cb-library.php:5779
+#: composer-builder/includes/library/class-uich-cb-library.php:3659
+#: composer-builder/includes/library/class-uich-cb-library.php:3857
+#: composer-builder/includes/library/class-uich-cb-library.php:4162
+#: composer-builder/includes/library/class-uich-cb-library.php:4437
+#: composer-builder/includes/library/class-uich-cb-library.php:5528
+#: composer-builder/includes/library/class-uich-cb-library.php:5781
 msgid "Post lists"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:3854
+#: composer-builder/includes/library/class-uich-cb-library.php:3856
 msgid "Posts grid with page numbers"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:4159
+#: composer-builder/includes/library/class-uich-cb-library.php:4161
 msgid "Posts list with page numbers"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:4434
+#: composer-builder/includes/library/class-uich-cb-library.php:4436
 msgid "Posts with category filter"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:4764
+#: composer-builder/includes/library/class-uich-cb-library.php:4766
 msgid "Previous and next post"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:4896
+#: composer-builder/includes/library/class-uich-cb-library.php:4898
 msgid "Browse by category"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:4897
-#: composer-builder/includes/library/class-uich-cb-library.php:5127
+#: composer-builder/includes/library/class-uich-cb-library.php:4899
+#: composer-builder/includes/library/class-uich-cb-library.php:5129
 #: new-dashboard/build/index.js:38
 #: new-dashboard/src/uichemy-fields/components/cptTemplates.js:78
 #: uichemy-composer/assets/js/uich-dd-schema.js:37
 msgid "Categories"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:5126
+#: composer-builder/includes/library/class-uich-cb-library.php:5128
 msgid "Post categories and tags"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:5277
+#: composer-builder/includes/library/class-uich-cb-library.php:5279
 msgid "Archive title"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:5278
-#: composer-builder/includes/library/class-uich-cb-library.php:5391
+#: composer-builder/includes/library/class-uich-cb-library.php:5280
+#: composer-builder/includes/library/class-uich-cb-library.php:5393
 msgid "Archive header"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:5390
+#: composer-builder/includes/library/class-uich-cb-library.php:5392
 msgid "Archive title with category chips"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:5525
+#: composer-builder/includes/library/class-uich-cb-library.php:5527
 msgid "Archive posts grid with page numbers"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:5778
+#: composer-builder/includes/library/class-uich-cb-library.php:5780
 msgid "Archive posts list with page numbers"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:6039
+#: composer-builder/includes/library/class-uich-cb-library.php:6041
 msgid "404 with big number"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:6040
-#: composer-builder/includes/library/class-uich-cb-library.php:6193
-#: composer-builder/includes/library/class-uich-cb-library.php:6429
+#: composer-builder/includes/library/class-uich-cb-library.php:6042
+#: composer-builder/includes/library/class-uich-cb-library.php:6195
+#: composer-builder/includes/library/class-uich-cb-library.php:6431
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:226
 msgid "404"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:6192
+#: composer-builder/includes/library/class-uich-cb-library.php:6194
 msgid "404 with search and recent posts"
 msgstr ""
 
-#: composer-builder/includes/library/class-uich-cb-library.php:6428
+#: composer-builder/includes/library/class-uich-cb-library.php:6430
 msgid "404 split with illustration"
 msgstr ""
 
@@ -697,7 +697,7 @@ msgid "You are not allowed to duplicate this item."
 msgstr ""
 
 #: composer-builder/includes/rest/class-uich-cb-rest-cms.php:775
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3844
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3847
 #: includes/fields/content-types/uich-fields-field-api.php:1249
 #: composer-builder/build/383.8611d438.js:1
 #: composer-builder/build/editor.js:67
@@ -714,7 +714,7 @@ msgid "Yes"
 msgstr ""
 
 #: composer-builder/includes/rest/class-uich-cb-rest-cms.php:779
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3845
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3848
 #: includes/fields/content-types/uich-fields-field-api.php:1249
 #: composer-builder/build/383.8611d438.js:1
 #: composer-builder/build/editor.js:67
@@ -832,7 +832,11 @@ msgstr ""
 msgid "A page needs a name."
 msgstr ""
 
-#: composer-builder/includes/rest/class-uich-cb-rest-page.php:648
+#: composer-builder/includes/rest/class-uich-cb-rest-page.php:574
+msgid "You are not allowed to edit this document."
+msgstr ""
+
+#: composer-builder/includes/rest/class-uich-cb-rest-page.php:652
 #: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:814
 #: composer-builder/build/editor.js:33
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:491
@@ -1001,9 +1005,9 @@ msgstr ""
 
 #: includes/admin/class-uich-atomic-imgs.php:200
 #: includes/admin/class-uich-bricks-imgs.php:11
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4259
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4374
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4448
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4262
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4377
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4451
 #: includes/new-dashboard/class-uich-nd-app-password.php:353
 #: includes/new-dashboard/class-uich-nd-auth.php:203
 #: includes/webpage/class-uich-webpage-import.php:1206
@@ -1549,9 +1553,9 @@ msgstr ""
 #: composer-builder/build/915.a27b3873.js:1
 #: composer-builder/build/editor.js:3
 #: composer-builder/build/editor.js:23
-#: composer-builder/build/editor.js:87
-#: composer-builder/build/editor.js:90
-#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:287
+#: composer-builder/build/editor.js:88
+#: composer-builder/build/editor.js:91
+#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:295
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:400
 #: composer-builder/src/editor/shell/sidebar/SectionCategories.jsx:6
 #: new-dashboard/build/composer.js:26
@@ -1624,9 +1628,9 @@ msgstr ""
 #: composer-builder/build/944.6493b249.js:1
 #: composer-builder/build/editor.js:2
 #: composer-builder/build/editor.js:52
-#: composer-builder/build/editor.js:89
-#: composer-builder/build/editor.js:104
-#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:186
+#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:105
+#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:194
 #: composer-builder/src/editor/shell/cms/CmsWorkspace.jsx:93
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:127
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:214
@@ -1639,7 +1643,7 @@ msgstr ""
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:627
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:634
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:803
-#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:355
+#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:357
 #: new-dashboard/src/uichemy-fields/components/TaxonomyForm.jsx:98
 msgid "Add"
 msgstr ""
@@ -1655,7 +1659,7 @@ msgstr ""
 #: composer-builder/build/944.6493b249.js:1
 #: composer-builder/build/editor.js:11
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:86
+#: composer-builder/build/editor.js:87
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:366
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:370
 #: new-dashboard/build/944.c367c9b9.js:1
@@ -2023,7 +2027,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #: includes/fields/content-types/class-uich-fields-admin-logic.php:3424
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:243
 msgid "Deleted permanently."
 msgstr ""
@@ -2041,26 +2045,26 @@ msgid "Their saved data is kept and the groups return as soon as Pro is active."
 msgstr ""
 
 #: includes/fields/content-types/class-uich-fields-field-groups-render.php:237
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2996
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2999
 #: composer-builder/build/editor.js:29
 #: new-dashboard/build/composer.js:10
 #: new-dashboard/src/uichemy-composer/chat-upsell.jsx:56
 msgid "Upgrade"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:377
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:380
 msgid "Some custom fields were not saved. Their previous values were kept."
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:584
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:587
 #: new-dashboard/build/index.js:51
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:1221
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:2132
 msgid "Max"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:589
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3450
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:592
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3453
 #: composer-builder/build/editor.js:11
 #: composer-builder/build/editor.js:21
 #: composer-builder/build/editor.js:22
@@ -2088,28 +2092,28 @@ msgstr ""
 #: new-dashboard/src/uichemy-composer/admin/screens/ImageOptimizerSettings.jsx:195
 #: new-dashboard/src/uichemy-composer/composer-construct-tab.jsx:1139
 #: new-dashboard/src/uichemy-composer/composer-construct-tab.jsx:1237
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:431
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1048
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1052
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1363
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1364
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:436
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1055
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1059
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1370
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1371
 #: new-dashboard/src/uichemy-composer/composer-inspector-v2.jsx:95
-#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:275
+#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:274
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:414
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:944
 #: new-dashboard/src/uichemy-fields/components/ui/kit.jsx:360
 msgid "Remove"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:745
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3948
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:748
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3951
 #: uichemy-composer/assets/js/uichemy-composer-editor-panel.js:5281
 msgid "Select Image"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:746
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1221
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5413
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:749
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1224
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5416
 #: composer-builder/build/editor.js:45
 #: new-dashboard/build/composer.js:11
 #: new-dashboard/build/index.js:51
@@ -2120,57 +2124,57 @@ msgstr ""
 msgid "Select"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:762
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:765
 msgid "Selected file does not meet the size requirements."
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:981
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:984
 msgid "Link dialog unavailable."
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1117
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1213
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5377
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5408
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1120
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1216
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5380
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5411
 #: composer-builder/build/editor.js:45
 #: new-dashboard/build/composer.js:11
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:91
 msgid "Time"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1118
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1214
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5378
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5409
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1121
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1217
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5381
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5412
 msgid "Hour"
-msgstr ""
-
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1122
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1216
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5379
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5410
-msgid "Minute"
 msgstr ""
 
 #: includes/fields/content-types/class-uich-fields-field-groups-render.php:1125
 #: includes/fields/content-types/class-uich-fields-field-groups-render.php:1219
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5380
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5411
-msgid "Second"
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5382
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5413
+msgid "Minute"
 msgstr ""
 
 #: includes/fields/content-types/class-uich-fields-field-groups-render.php:1128
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1221
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5381
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5412
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1222
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5383
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5414
+msgid "Second"
+msgstr ""
+
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1131
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1224
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5384
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5415
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:26
 #: new-dashboard/src/uichemy-composer/composer-history-panel.jsx:51
 msgid "Now"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1129
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5382
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1132
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5385
 #: composer-builder/build/523.6b06d4be.js:5
 #: composer-builder/build/733.4001f2bd.js:1
 #: composer-builder/build/editor.js:73
@@ -2190,15 +2194,15 @@ msgstr ""
 msgid "Done"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1212
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5407
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1215
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:5410
 msgid "Choose Time"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1631
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3394
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1634
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3397
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/cms/parts.jsx:40
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:194
 #: new-dashboard/build/fields-editor.js:3
@@ -2209,7 +2213,7 @@ msgstr ""
 msgid "Search…"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1632
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1635
 #: composer-builder/build/226.1364e3cb.js:3
 #: composer-builder/build/editor.js:67
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:197
@@ -2218,63 +2222,63 @@ msgstr ""
 msgid "Selected"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1633
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1636
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:905
 msgid "Available"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1634
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3412
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1637
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3415
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:899
 msgid "Filter by term"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1635
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:1638
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:952
 msgid "Maximum number of posts reached."
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2033
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2036
 msgid "Enter a valid email address. The previous value was kept."
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2036
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2039
 msgid "Enter a valid URL, including http:// or https://. The previous value was kept."
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2038
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2041
 msgid "This field is required."
 msgstr ""
 
 #. translators: %s: comma-separated list of required field labels.
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2218
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2221
 #, php-format
 msgid "These fields are required and cannot be left empty: %s"
 msgstr ""
 
 #. translators: %s: the required field's label.
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2240
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2243
 #, php-format
 msgid "<strong>Error</strong>: %s is required."
 msgstr ""
 
 #. translators: %s: field type label, e.g. "Repeater".
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2983
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2986
 #, php-format
 msgid "%s fields require UiChemy Pro"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2989
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:2992
 msgid "The data saved in this field is kept and will be editable again as soon as Pro is active."
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3121
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3124
 #: composer-builder/build/944.6493b249.js:3
 #: composer-builder/build/editor.js:23
 #: composer-builder/build/editor.js:57
@@ -2296,8 +2300,8 @@ msgstr ""
 msgid "Value"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3249
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3256
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3252
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3259
 #: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:471
 #: composer-builder/build/editor.js:22
 #: composer-builder/build/editor.js:29
@@ -2306,19 +2310,19 @@ msgstr ""
 #: new-dashboard/build/composer.js:10
 #: new-dashboard/build/composer.js:18
 #: new-dashboard/src/uichemy-composer/composer-color-picker.jsx:214
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:162
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:167
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:160
 msgid "Opacity"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3304
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3307
 #: composer-builder/src/editor/shell/inspector/panel/ContentPanel.jsx:412
 #: composer-builder/src/editor/shell/inspector/panel/ContentPanel.jsx:424
 #: composer-builder/src/editor/shell/inspector/panel/ContentPanel.jsx:432
 msgid "Edit link"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3305
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3308
 #: composer-builder/build/editor.js:56
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/composer.js:22
@@ -2328,11 +2332,11 @@ msgstr ""
 msgid "Remove link"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3308
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3311
 msgid "Select Link"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3318
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3321
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/build/index.js:51
@@ -2341,14 +2345,14 @@ msgstr ""
 msgid "Search posts…"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3346
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3349
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:699
 msgid "Search users…"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3399
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3402
 #: composer-builder/build/editor.js:23
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/composer.js:26
@@ -2368,14 +2372,14 @@ msgstr ""
 msgid "Post type"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3426
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3429
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:906
 msgid "Available posts"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3427
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3430
 #: composer-builder/build/editor.js:23
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/composer.js:26
@@ -2387,32 +2391,32 @@ msgstr ""
 msgid "Load more"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3430
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3433
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:934
 msgid "Selected posts"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3470
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3473
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:779
 msgid "Invalid taxonomy. Update the field group settings."
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3561
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3564
 msgid "— Select —"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3587
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3590
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:698
 msgid "Search links…"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3713
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3716
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/build/index.js:25
@@ -2425,57 +2429,57 @@ msgstr ""
 msgid "Select…"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3777
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3780
 msgid "Toggle all"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3945
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3948
 #: composer-builder/src/editor/shell/inspector/panel/ContentPanel.jsx:447
 #: composer-builder/src/editor/shell/inspector/panel/ContentPanel.jsx:467
 msgid "Edit image"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3946
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3949
 #: composer-builder/build/editor.js:52
 #: composer-builder/build/editor.js:56
 #: new-dashboard/build/composer.js:18
 #: new-dashboard/build/composer.js:22
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:527
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:532
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1013
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1014
 msgid "Remove image"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3987
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3990
 msgid "File name:"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3995
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3998
 msgid "Edit file"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3996
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3999
 #: new-dashboard/build/index.js:70
 #: new-dashboard/src/uichemy-composer/admin/screens/FontsSettings.jsx:189
 msgid "Remove file"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:3998
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4001
 msgid "Select File"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4005
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4008
 msgid "No sub fields defined for this repeater."
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4050
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4053
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:540
 msgid "Remove row"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4059
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4062
 #: composer-builder/build/editor.js:67
 #: new-dashboard/build/fields-editor.js:3
 #: new-dashboard/build/index.js:51
@@ -2484,7 +2488,7 @@ msgstr ""
 msgid "Add row"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4412
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4415
 #: composer-builder/build/editor.js:22
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/index.js:75
@@ -2494,7 +2498,7 @@ msgstr ""
 msgid "Users"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4478
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4481
 #: composer-builder/build/915.a27b3873.js:1
 #: new-dashboard/build/index.js:20
 #: new-dashboard/build/index.js:39
@@ -2505,7 +2509,7 @@ msgstr ""
 msgid "Archives"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4523
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4526
 #: composer-builder/build/editor.js:22
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/index.js:19
@@ -2517,7 +2521,7 @@ msgstr ""
 msgid "Posts"
 msgstr ""
 
-#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4562
+#: includes/fields/content-types/class-uich-fields-field-groups-render.php:4565
 #: uichemy-composer/includes/admin/widgets/class-uichemy-composer-widget.php:511
 #: composer-builder/build/editor.js:45
 #: new-dashboard/build/composer.js:11
@@ -2572,7 +2576,7 @@ msgstr ""
 #: includes/fields/content-types/class-uich-fields-register.php:776
 #: includes/fields/content-types/class-uich-fields-register.php:929
 #: composer-builder/build/523.6b06d4be.js:5
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:374
 #: composer-builder/src/editor/shell/code/PageCode.jsx:435
 #: composer-builder/src/editor/shell/code/PageCode.jsx:450
@@ -2594,7 +2598,7 @@ msgstr ""
 #. translators: %s: content type name in singular, e.g. post
 #: includes/fields/content-types/class-uich-fields-register.php:778
 #: composer-builder/build/editor.js:72
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:158
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:433
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:500
@@ -2614,7 +2618,7 @@ msgstr ""
 #. translators: %s: content type name in plural, e.g. posts
 #: includes/fields/content-types/class-uich-fields-register.php:784
 #: includes/fields/content-types/class-uich-fields-register.php:921
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:489
 #, php-format,js-format
 msgid "Search %s"
@@ -2644,7 +2648,7 @@ msgstr ""
 #: uichemy-composer/includes/seo/class-uich-seo-schema.php:1604
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:855
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:904
-#: composer-builder/build/editor.js:75
+#: composer-builder/build/editor.js:76
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:117
 #, php-format,js-format
 msgid "All %s"
@@ -2676,7 +2680,7 @@ msgstr ""
 
 #: includes/fields/content-types/class-uich-fields-register.php:799
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/FeaturedImage.jsx:20
 #: composer-builder/src/editor/shell/cms/FeaturedImage.jsx:36
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:27
@@ -2707,9 +2711,12 @@ msgid "Use as featured image"
 msgstr ""
 
 #. translators: %s: the content type name
+#. translators: %s: content type name, e.g. Posts
 #: includes/fields/content-types/class-uich-fields-register.php:804
 #: includes/fields/content-types/class-uich-fields-register.php:947
-#, php-format
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:40
+#, php-format,js-format
 msgid "%s list"
 msgstr ""
 
@@ -3819,8 +3826,8 @@ msgstr ""
 #: uichemy-composer/includes/admin/class-uichemy-admin-menu.php:194
 #: uichemy-composer/includes/admin/class-uichemy-admin-menu.php:195
 #: composer-builder/build/editor.js:19
-#: composer-builder/build/editor.js:104
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:105
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:590
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:719
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:723
@@ -4245,7 +4252,7 @@ msgstr ""
 #: new-dashboard/build/944.c367c9b9.js:1
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:770
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5166
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5187
 msgid "Typography"
 msgstr ""
 
@@ -4371,7 +4378,7 @@ msgstr ""
 #: uichemy-composer/includes/admin/class-uichemy-admin-menu.php:152
 #: composer-builder/build/915.a27b3873.js:4
 #: composer-builder/build/editor.js:33
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:694
 #: composer-builder/src/editor/shell/theme-builder/ThemeBuilderWorkspace.jsx:40
 #: new-dashboard/build/index.js:7
@@ -4447,8 +4454,8 @@ msgstr ""
 msgid "%s Pro"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-admin-menu.php:577
-#: uichemy-composer/includes/admin/class-uichemy-admin-menu.php:584
+#: uichemy-composer/includes/admin/class-uichemy-admin-menu.php:582
+#: uichemy-composer/includes/admin/class-uichemy-admin-menu.php:589
 #: uichemy-composer/includes/admin/class-uichemy-rest-permissions.php:60
 msgid "This is a UiChemy Pro feature."
 msgstr ""
@@ -4488,8 +4495,8 @@ msgstr ""
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/src/uichemy-composer/composer-canvas-typo.jsx:108
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:597
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5142
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5169
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5163
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5190
 msgid "Background"
 msgstr ""
 
@@ -4518,7 +4525,7 @@ msgstr ""
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:58
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/src/uichemy-composer/composer-inspector-v2.jsx:173
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5170
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5191
 msgid "Border"
 msgstr ""
 
@@ -4564,8 +4571,8 @@ msgstr ""
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:10
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5539
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5723
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5540
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5726
 #: new-dashboard/src/uichemy-composer/plugin-registrations.js:21
 msgid "Chat"
 msgstr ""
@@ -4598,7 +4605,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:22
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5564
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5565
 #: new-dashboard/src/uichemy-composer/composer-construct-tab.jsx:1359
 #: new-dashboard/src/uichemy-composer/composer-developer-views.jsx:37
 msgid "Code"
@@ -4620,7 +4627,7 @@ msgstr ""
 #: composer-builder/build/733.4001f2bd.js:1
 #: composer-builder/build/editor.js:45
 #: composer-builder/build/editor.js:61
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/agent/CliConnect.jsx:71
 #: composer-builder/src/editor/shell/canvas/SectionMenu.jsx:39
 #: composer-builder/src/editor/shell/common/ShortcutsDialog.jsx:31
@@ -4631,14 +4638,15 @@ msgstr ""
 #: new-dashboard/build/index.js:7
 #: new-dashboard/build/index.js:9
 #: new-dashboard/build/index.js:32
-#: new-dashboard/src/components/MCPConfigTabs.jsx:283
+#: new-dashboard/src/components/MCPConfigTabs.jsx:297
 #: new-dashboard/src/screens/dashboard/HealthNotices.jsx:85
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:218
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:219
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:228
 #: new-dashboard/src/screens/dashboard/panels.jsx:66
 #: new-dashboard/src/screens/errors/ErrorCard.jsx:100
 #: new-dashboard/src/screens/wizard/ConnectScreen.jsx:43
 #: new-dashboard/src/screens/wizard/ConnectScreen.jsx:69
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5331
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5332
 #: new-dashboard/src/uichemy-composer/composer-code.jsx:326
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:806
 #: new-dashboard/src/uichemy-fields/api.js:447
@@ -4841,7 +4849,7 @@ msgstr ""
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:559
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:659
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:663
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4616
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4637
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:106
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:133
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:111
@@ -4869,9 +4877,9 @@ msgstr ""
 #: composer-builder/build/226.1364e3cb.js:2
 #: composer-builder/build/editor.js:8
 #: composer-builder/build/editor.js:45
-#: composer-builder/build/editor.js:89
-#: composer-builder/build/editor.js:104
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:105
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:128
 #: composer-builder/src/editor/shell/inspector/panel/LayersTree.jsx:303
 #: composer-builder/src/editor/shell/layers/LayersFloat.jsx:127
@@ -4896,8 +4904,8 @@ msgstr ""
 #: new-dashboard/build/composer.js:23
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/index.js:51
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3457
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5167
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3476
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5188
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:198
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:2038
 msgid "Layout"
@@ -4947,7 +4955,7 @@ msgstr ""
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:10
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5290
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5311
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:119
 #: new-dashboard/src/uichemy-composer/composer-spacing.jsx:202
 msgid "Margin"
@@ -5004,7 +5012,7 @@ msgstr ""
 #: new-dashboard/src/uichemy-composer/composer-inspector-v2.jsx:158
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:592
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:598
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5287
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5308
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:118
 #: new-dashboard/src/uichemy-composer/composer-spacing.jsx:223
 msgid "Padding"
@@ -5020,7 +5028,7 @@ msgstr ""
 #: composer-builder/build/733.4001f2bd.js:1
 #: composer-builder/build/editor.js:45
 #: composer-builder/build/editor.js:61
-#: composer-builder/src/editor/shell/canvas/Canvas.jsx:293
+#: composer-builder/src/editor/shell/canvas/Canvas.jsx:295
 #: composer-builder/src/editor/shell/code/code-files.js:116
 #: composer-builder/src/editor/shell/code/PageCode.jsx:161
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:95
@@ -5029,7 +5037,7 @@ msgstr ""
 #: new-dashboard/build/715.86144f70.js:2
 #: new-dashboard/build/composer.js:28
 #: new-dashboard/build/index.js:51
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5279
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5280
 #: new-dashboard/src/uichemy-composer/composer-code.jsx:652
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:812
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:817
@@ -5149,7 +5157,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/src/uichemy-composer/composer-canvas-toolbar-actions.jsx:16
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:604
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5168
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5189
 msgid "Spacing"
 msgstr ""
 
@@ -5179,7 +5187,7 @@ msgstr ""
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:522
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:663
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:2386
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5134
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5155
 #: new-dashboard/src/uichemy-composer/composer-variables.jsx:1614
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:98
 #: uichemy-composer/assets/blocks/uichemy-composer/index.js:215
@@ -5431,6 +5439,39 @@ msgstr ""
 msgid "ago"
 msgstr ""
 
+#: uichemy-composer/includes/dynamic/class-uich-twig.php:401
+msgid "Sample image"
+msgstr ""
+
+#: uichemy-composer/includes/dynamic/class-uich-twig.php:405
+msgid "Sample title"
+msgstr ""
+
+#: uichemy-composer/includes/dynamic/class-uich-twig.php:406
+msgid "Sample name"
+msgstr ""
+
+#: uichemy-composer/includes/dynamic/class-uich-twig.php:407
+#: uichemy-composer/includes/dynamic/class-uich-twig.php:408
+msgid "A short sample description. Your content will appear here when it is available."
+msgstr ""
+
+#: uichemy-composer/includes/dynamic/class-uich-twig.php:409
+msgid "This is sample content for the editor preview. Your published content will appear here when it is available."
+msgstr ""
+
+#: uichemy-composer/includes/dynamic/class-uich-twig.php:416
+msgid "Sample category"
+msgstr ""
+
+#: uichemy-composer/includes/dynamic/class-uich-twig.php:417
+msgid "Sample author"
+msgstr ""
+
+#: uichemy-composer/includes/dynamic/class-uich-twig.php:443
+msgid "Sample content"
+msgstr ""
+
 #: uichemy-composer/includes/dynamic/dynamic-tags/class-uich-dynamic-tags.php:80
 msgid "Composer · Post"
 msgstr ""
@@ -5479,7 +5520,7 @@ msgstr ""
 
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:51
 #: composer-builder/build/editor.js:23
-#: composer-builder/build/editor.js:85
+#: composer-builder/build/editor.js:86
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:340
 #: new-dashboard/build/composer.js:26
 #: new-dashboard/build/index.js:75
@@ -5496,7 +5537,7 @@ msgstr ""
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:53
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:601
 #: composer-builder/build/editor.js:18
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:540
 #: new-dashboard/build/index.js:3
 #: new-dashboard/build/index.js:77
@@ -5516,7 +5557,7 @@ msgstr ""
 #: composer-builder/build/editor.js:45
 #: composer-builder/build/editor.js:61
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/canvas/ElementRail.jsx:180
 #: composer-builder/src/editor/shell/canvas/ElementRail.jsx:184
 #: composer-builder/src/editor/shell/canvas/SectionMenu.jsx:47
@@ -5550,7 +5591,7 @@ msgstr ""
 #: new-dashboard/src/uichemy-composer/admin/screens/ThemeBuilder.jsx:719
 #: new-dashboard/src/uichemy-composer/admin/screens/ThemeBuilderCanvas.jsx:315
 #: new-dashboard/src/uichemy-composer/admin/screens/WhiteLabel.jsx:258
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5335
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5336
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:713
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:905
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:819
@@ -5667,7 +5708,7 @@ msgstr ""
 #: new-dashboard/src/seo/panel/SeoPanel.jsx:785
 #: new-dashboard/src/uichemy-composer/admin/screens/RoleManager.jsx:36
 #: new-dashboard/src/uichemy-composer/composer-color-picker.jsx:259
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:766
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:771
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:571
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:586
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:599
@@ -5677,10 +5718,10 @@ msgstr ""
 
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:410
 #: composer-builder/build/editor.js:52
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:356
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:281
+#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:280
 msgid "Apply"
 msgstr ""
 
@@ -5923,6 +5964,10 @@ msgstr ""
 msgid "UiChemy pipeline: Figma-to-HTML conversion, design-system globals, and full WordPress site building. Call uichemy-composer/instructions first for the build order."
 msgstr ""
 
+#: uichemy-composer/includes/mcp/v2/class-uichemy-mcp-server-v2.php:685
+msgid "The UiChemy MCP server is switched off. Turn on \"MCP server\" in UiChemy > Settings to connect."
+msgstr ""
+
 #: uichemy-composer/includes/model/class-uich-model-provider.php:234
 msgid "\"object_types\" is required: the post type slugs this taxonomy attaches to. A taxonomy attached to nothing is registered, invisible in the admin, and unqueryable."
 msgstr ""
@@ -5963,7 +6008,7 @@ msgstr ""
 #: uichemy-composer/includes/perf/class-uichemy-fast-load.php:118
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5175
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5196
 msgid "Animation"
 msgstr ""
 
@@ -5997,7 +6042,7 @@ msgstr ""
 #: new-dashboard/build/715.86144f70.js:2
 #: new-dashboard/build/composer.js:4
 #: new-dashboard/src/uichemy-composer/composer-code.jsx:212
-#: new-dashboard/src/uichemy-composer/composer-icons.jsx:472
+#: new-dashboard/src/uichemy-composer/composer-icons.jsx:491
 #: new-dashboard/src/uichemy-composer/composer-libraries.jsx:218
 msgid "JS"
 msgstr ""
@@ -6145,7 +6190,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/src/uichemy-composer/composer-code.jsx:309
 #: new-dashboard/src/uichemy-composer/composer-code.jsx:748
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5115
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5136
 msgid "Assets"
 msgstr ""
 
@@ -6183,11 +6228,11 @@ msgstr ""
 msgid "Master switch for every optimization in the \"optimizations\", \"elementor\" and \"woocommerce\" groups."
 msgstr ""
 
-#: uichemy-composer/includes/seo/class-uich-seo-admin.php:172
+#: uichemy-composer/includes/seo/class-uich-seo-admin.php:177
 #: composer-builder/build/226.1364e3cb.js:2
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:104
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:105
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:105
 #: composer-builder/src/editor/shell/inspector/PagePanel.jsx:60
 #: composer-builder/src/editor/shell/inspector/PagePanel.jsx:64
@@ -7912,7 +7957,7 @@ msgstr ""
 #: composer-builder/src/editor/shell/add-section/AddSectionDialog.jsx:52
 #: new-dashboard/build/composer.js:11
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5333
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5334
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:815
 #: uichemy-composer/assets/js/uichemy-composer-editor-panel.js:240
 msgid "Paste"
@@ -7931,9 +7976,9 @@ msgstr ""
 #: composer-builder/build/editor.js:19
 #: composer-builder/build/editor.js:22
 #: composer-builder/build/editor.js:23
-#: composer-builder/build/editor.js:89
-#: composer-builder/build/editor.js:101
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:102
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/agent/CliConnect.jsx:58
 #: composer-builder/src/editor/shell/canvas/EmptyState.jsx:28
 #: composer-builder/src/editor/shell/canvas/EmptyState.jsx:33
@@ -8020,7 +8065,7 @@ msgid "Cut section"
 msgstr ""
 
 #: composer-builder/build/226.1364e3cb.js:2
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/canvas/SectionMenu.jsx:41
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:85
 msgid "Paste below"
@@ -8071,7 +8116,7 @@ msgstr ""
 #: composer-builder/build/944.6493b249.js:1
 #: composer-builder/build/editor.js:6
 #: composer-builder/build/editor.js:44
-#: composer-builder/build/editor.js:105
+#: composer-builder/build/editor.js:106
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:98
 #: composer-builder/src/editor/shell/common/section-actions.js:78
 #: composer-builder/src/editor/shell/common/section-actions.js:91
@@ -8086,7 +8131,7 @@ msgstr ""
 #: composer-builder/build/226.1364e3cb.js:2
 #: composer-builder/build/245.cfe5f9cf.js:1
 #: composer-builder/build/editor.js:44
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:99
 #: composer-builder/src/editor/shell/common/ShortcutsDialog.jsx:21
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:576
@@ -8103,15 +8148,15 @@ msgid "Paste section"
 msgstr ""
 
 #: composer-builder/build/226.1364e3cb.js:2
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:102
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:675
 msgid "Site styles"
 msgstr ""
 
 #: composer-builder/build/226.1364e3cb.js:2
-#: composer-builder/build/editor.js:101
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:102
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:103
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:699
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:702
@@ -8125,7 +8170,7 @@ msgstr ""
 
 #: composer-builder/build/226.1364e3cb.js:2
 #: composer-builder/build/editor.js:16
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:104
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:590
 #: composer-builder/src/editor/shell/topbar/PageMenu.jsx:119
@@ -8146,7 +8191,7 @@ msgid "Keyboard shortcuts"
 msgstr ""
 
 #: composer-builder/build/226.1364e3cb.js:2
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:110
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:417
 msgid "Current"
@@ -8163,7 +8208,7 @@ msgstr ""
 #: new-dashboard/build/index.js:75
 #: new-dashboard/src/uichemy-composer/admin/screens/RoleManager.jsx:57
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:224
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5145
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5146
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:90
 msgid "Design"
 msgstr ""
@@ -8254,7 +8299,7 @@ msgid "Pages"
 msgstr ""
 
 #: composer-builder/build/226.1364e3cb.js:2
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:131
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:607
 msgid "AI chat"
@@ -8271,21 +8316,21 @@ msgid "Show left panel"
 msgstr ""
 
 #: composer-builder/build/226.1364e3cb.js:2
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:133
 #: composer-builder/src/editor/shell/topbar/RightPanelToggle.jsx:10
 msgid "Hide right panel"
 msgstr ""
 
 #: composer-builder/build/226.1364e3cb.js:2
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:133
 #: composer-builder/src/editor/shell/topbar/RightPanelToggle.jsx:10
 msgid "Show right panel"
 msgstr ""
 
 #: composer-builder/build/226.1364e3cb.js:2
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:139
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:141
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:684
@@ -8309,8 +8354,8 @@ msgstr ""
 #: composer-builder/build/226.1364e3cb.js:2
 #: composer-builder/build/editor.js:44
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:104
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:105
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/canvas/InsertPoint.jsx:36
 #: composer-builder/src/editor/shell/canvas/PageEndBar.jsx:46
 #: composer-builder/src/editor/shell/common/CommandPalette.jsx:176
@@ -8391,12 +8436,12 @@ msgstr ""
 #: composer-builder/build/245.cfe5f9cf.js:1
 #: composer-builder/build/editor.js:45
 #: composer-builder/build/editor.js:61
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/canvas/SectionMenu.jsx:40
 #: composer-builder/src/editor/shell/common/ShortcutsDialog.jsx:32
 #: new-dashboard/build/composer.js:11
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5332
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5333
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:809
 #: uichemy-composer/assets/js/uichemy-composer-editor-panel.js:239
 msgid "Cut"
@@ -8411,8 +8456,8 @@ msgstr ""
 #: composer-builder/build/editor.js:10
 #: composer-builder/build/editor.js:45
 #: composer-builder/build/editor.js:61
-#: composer-builder/build/editor.js:87
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:88
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/canvas/ElementRail.jsx:169
 #: composer-builder/src/editor/shell/canvas/ElementRail.jsx:172
 #: composer-builder/src/editor/shell/canvas/SectionMenu.jsx:42
@@ -8428,7 +8473,7 @@ msgstr ""
 #: new-dashboard/build/index.js:51
 #: new-dashboard/build/index.js:77
 #: new-dashboard/src/seo/screens.jsx:756
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5330
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5331
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:803
 #: new-dashboard/src/uichemy-fields/components/ContentTable.jsx:359
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:1583
@@ -8932,7 +8977,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:28
 #: new-dashboard/build/index.js:65
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:148
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5279
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5280
 #: new-dashboard/src/uichemy-composer/composer-code.jsx:653
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:839
 #: uichemy-composer/assets/js/uich-dd-schema.js:159
@@ -9942,11 +9987,11 @@ msgstr ""
 #: new-dashboard/build/index.js:9
 #: new-dashboard/build/index.js:77
 #: new-dashboard/build/seo-editor.js:4
-#: new-dashboard/src/components/MCPConfigTabs.jsx:283
-#: new-dashboard/src/components/MCPConfigTabs.jsx:294
+#: new-dashboard/src/components/MCPConfigTabs.jsx:297
+#: new-dashboard/src/components/MCPConfigTabs.jsx:309
 #: new-dashboard/src/screens/dashboard/HealthNotices.jsx:85
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:218
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:234
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:219
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:247
 #: new-dashboard/src/screens/dashboard/panels.jsx:66
 #: new-dashboard/src/screens/errors/ErrorCard.jsx:100
 #: new-dashboard/src/screens/wizard/ConnectScreen.jsx:53
@@ -10167,7 +10212,7 @@ msgid "Upgrade to Pro"
 msgstr ""
 
 #: composer-builder/build/915.a27b3873.js:1
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:88
 #: new-dashboard/build/index.js:20
 #: new-dashboard/src/screens/dashboard/ThemeBuilderCanvas.jsx:216
@@ -10441,7 +10486,7 @@ msgid "Fit to screen"
 msgstr ""
 
 #: composer-builder/build/915.a27b3873.js:1
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/sidebar/SectionCategories.jsx:6
 #: new-dashboard/build/index.js:20
 #: new-dashboard/build/index.js:60
@@ -10508,8 +10553,8 @@ msgid "will be permanently deleted. This can’t be undone. It does not go to Tr
 msgstr ""
 
 #: composer-builder/build/915.a27b3873.js:1
-#: composer-builder/build/editor.js:79
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:80
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:241
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:395
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:468
@@ -10851,7 +10896,7 @@ msgstr ""
 #: new-dashboard/build/944.c367c9b9.js:1
 #: new-dashboard/build/composer.js:23
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:680
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:2969
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:2971
 msgid "Add class"
 msgstr ""
 
@@ -10944,7 +10989,7 @@ msgstr ""
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:575
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:581
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:603
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4615
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4636
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:19
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:132
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:147
@@ -11112,8 +11157,8 @@ msgstr ""
 #: composer-builder/build/editor.js:54
 #: new-dashboard/build/944.c367c9b9.js:1
 #: new-dashboard/build/composer.js:20
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1446
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1447
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1453
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1454
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:824
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:907
 msgid "Close (Esc)"
@@ -11195,7 +11240,7 @@ msgstr ""
 #: new-dashboard/build/944.c367c9b9.js:1
 #: new-dashboard/build/composer.js:10
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5573
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5574
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:887
 #: new-dashboard/src/uichemy-composer/composer-variables.jsx:1187
 #: new-dashboard/src/uichemy-composer/composer-variables.jsx:1583
@@ -11532,45 +11577,57 @@ msgstr ""
 
 #. translators: %d: HTTP status code
 #: composer-builder/build/editor.js:2
-#: composer-builder/src/editor/host/page-client.js:179
+#: composer-builder/src/editor/host/page-client.js:182
 #, js-format
 msgid "Save failed (%d)."
 msgstr ""
 
 #: composer-builder/build/editor.js:2
-#: composer-builder/src/editor/host/page-client.js:220
+#: composer-builder/src/editor/host/page-client.js:223
 msgid "The server did not confirm this save. Your changes are still unsaved."
 msgstr ""
 
 #: composer-builder/build/editor.js:2
-#: composer-builder/src/editor/host/page-client.js:359
+#: composer-builder/src/editor/host/page-client.js:362
 msgid "This page type is not available over the REST API."
 msgstr ""
 
 #: composer-builder/build/editor.js:2
-#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:117
-msgid "Adds to the page"
+#: composer-builder/build/editor.js:59
+#: composer-builder/build/editor.js:61
+#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:167
+#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:191
+#: new-dashboard/build/composer.js:26
+#: new-dashboard/build/composer.js:28
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:375
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5694
+msgid "Dynamic"
 msgstr ""
 
 #: composer-builder/build/editor.js:2
 #: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:118
+msgid "Adds to the page"
+msgstr ""
+
+#: composer-builder/build/editor.js:2
+#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:119
 msgid "Adds at the top"
 msgstr ""
 
 #. translators: %s: name of the section it goes after
 #: composer-builder/build/editor.js:3
-#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:123
+#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:124
 #, js-format
 msgid "Adds after %s"
 msgstr ""
 
 #: composer-builder/build/editor.js:3
-#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:126
+#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:127
 msgid "Adds here"
 msgstr ""
 
 #: composer-builder/build/editor.js:3
-#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:284
+#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:292
 #: new-dashboard/build/index.js:51
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:494
 msgid "Category"
@@ -11578,7 +11635,7 @@ msgstr ""
 
 #. translators: %s: search text
 #: composer-builder/build/editor.js:4
-#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:295
+#: composer-builder/src/editor/shell/add-section/LibraryTab.jsx:303
 #, js-format
 msgid "No sections match “%s”."
 msgstr ""
@@ -11871,7 +11928,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/composer.js:26
 #: new-dashboard/src/uichemy-composer/composer-app.jsx:364
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5010
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5031
 msgid "Loop"
 msgstr ""
 
@@ -11956,10 +12013,10 @@ msgstr ""
 #: new-dashboard/build/composer.js:11
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5349
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5035
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5044
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5048
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5350
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5056
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5065
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5069
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:783
 msgid "Mark as loop"
 msgstr ""
@@ -11980,10 +12037,10 @@ msgstr ""
 #: new-dashboard/build/composer.js:11
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5350
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5057
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5066
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5070
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5351
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5078
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5087
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5091
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:795
 msgid "Mark as form"
 msgstr ""
@@ -12406,7 +12463,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:11
 #: composer-builder/build/editor.js:72
-#: composer-builder/build/editor.js:85
+#: composer-builder/build/editor.js:86
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:186
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:318
 #: composer-builder/src/editor/shell/inspector/panel/ContentPanel.jsx:552
@@ -12538,9 +12595,9 @@ msgstr ""
 #: new-dashboard/src/seo/panel/SeoPanel.jsx:607
 #: new-dashboard/src/seo/SeoScreen.jsx:487
 #: new-dashboard/src/seo/ui.jsx:401
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:507
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:508
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:517
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:512
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:513
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:522
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:986
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:987
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:996
@@ -12609,7 +12666,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/seo-editor.js:4
 #: new-dashboard/src/seo/panel/SeoPanel.jsx:653
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5179
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5200
 msgid "Schema"
 msgstr ""
 
@@ -13049,8 +13106,8 @@ msgstr ""
 #: new-dashboard/build/index.js:19
 #: new-dashboard/build/index.js:51
 #: new-dashboard/src/screens/dashboard/ThemeBuilderConditions.jsx:59
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3455
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5116
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3474
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5137
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:194
 #: uichemy-composer/assets/blocks/uichemy-composer/index.js:376
 #: uichemy-composer/assets/js/uich-dd-schema.js:27
@@ -13394,8 +13451,8 @@ msgid "Choose post type"
 msgstr ""
 
 #: composer-builder/build/editor.js:21
-#: composer-builder/build/editor.js:75
-#: composer-builder/build/editor.js:85
+#: composer-builder/build/editor.js:76
+#: composer-builder/build/editor.js:86
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:131
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:331
 #: new-dashboard/build/index.js:19
@@ -13697,10 +13754,10 @@ msgstr ""
 #: new-dashboard/build/composer.js:23
 #: new-dashboard/src/uichemy-composer/composer-canvas-typo.jsx:168
 #: new-dashboard/src/uichemy-composer/composer-color-picker.jsx:260
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:76
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:77
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:315
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3193
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:81
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:82
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:320
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3198
 msgid "Global"
 msgstr ""
 
@@ -13805,7 +13862,7 @@ msgid "Custom range…"
 msgstr ""
 
 #: composer-builder/build/editor.js:22
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/CmsWorkspace.jsx:88
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/src/uichemy-composer/composer-construct-tab.jsx:1052
@@ -14011,7 +14068,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:23
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:86
+#: composer-builder/build/editor.js:87
 #: composer-builder/src/editor/shell/cms/cms-model.js:10
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:355
 #: new-dashboard/build/composer.js:26
@@ -14230,7 +14287,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:23
 #: composer-builder/build/editor.js:29
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:28
 #: new-dashboard/build/composer.js:10
 #: new-dashboard/build/composer.js:26
@@ -14372,7 +14429,7 @@ msgstr ""
 #: new-dashboard/src/uichemy-composer/composer-app.jsx:365
 #: new-dashboard/src/uichemy-composer/composer-construct-tab.jsx:1710
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:655
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5015
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5036
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:130
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:1095
 msgid "Form"
@@ -14453,7 +14510,7 @@ msgid "Fewer options"
 msgstr ""
 
 #: composer-builder/build/editor.js:23
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:86
 #: new-dashboard/build/composer.js:26
 #: new-dashboard/src/uichemy-composer/composer-construct-tab.jsx:1735
@@ -14767,33 +14824,33 @@ msgstr ""
 
 #: composer-builder/build/editor.js:23
 #: new-dashboard/build/composer.js:4
-#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:745
+#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:752
 msgid "Drag to change · Shift ×10 · ⌘ ×0.1"
 msgstr ""
 
 #: composer-builder/build/editor.js:23
 #: new-dashboard/build/composer.js:4
-#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:963
+#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:970
 msgid "No font found"
 msgstr ""
 
 #: composer-builder/build/editor.js:23
 #: new-dashboard/build/composer.js:4
-#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:963
+#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:970
 msgid "No matches"
 msgstr ""
 
 #: composer-builder/build/editor.js:23
 #: new-dashboard/build/composer.js:4
-#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:1145
-#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:1279
+#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:1152
+#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:1286
 msgid "Show options"
 msgstr ""
 
 #: composer-builder/build/editor.js:23
 #: new-dashboard/build/composer.js:4
-#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:1146
-#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:1280
+#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:1153
+#: new-dashboard/src/uichemy-composer/composer-inputs.jsx:1287
 msgid "Toggle options"
 msgstr ""
 
@@ -15096,7 +15153,7 @@ msgstr ""
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:10
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:646
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:651
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:50
 msgid "Inset"
 msgstr ""
@@ -15282,7 +15339,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:22
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:97
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4666
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4687
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:134
 msgid "Gradient"
 msgstr ""
@@ -15326,7 +15383,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:23
 #: new-dashboard/build/index.js:51
 #: new-dashboard/src/uichemy-composer/composer-inspector-v2.jsx:126
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3456
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3475
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:146
 #: new-dashboard/src/uichemy-composer/composer-variables.jsx:698
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:3044
@@ -15754,7 +15811,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:29
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:588
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:649
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:497
@@ -16071,7 +16128,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:33
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/common/WorkspaceBack.jsx:20
 #: composer-builder/src/editor/shell/inspector/PagePanel.jsx:101
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:680
@@ -16218,7 +16275,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:42
 #: composer-builder/build/editor.js:73
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:241
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:388
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:472
@@ -16240,7 +16297,7 @@ msgstr ""
 #. translators: %s: the button's action, e.g. Publish
 #. translators: %s: content type name, e.g. Posts
 #: composer-builder/build/editor.js:42
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:412
 #: composer-builder/src/editor/shell/topbar/PublishButton.jsx:203
 #, js-format
@@ -16283,7 +16340,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:42
 #: composer-builder/build/editor.js:73
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:248
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:387
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:473
@@ -16377,7 +16434,7 @@ msgstr ""
 
 #. translators: %s: keyboard shortcut
 #: composer-builder/build/editor.js:44
-#: composer-builder/build/editor.js:105
+#: composer-builder/build/editor.js:106
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:566
 #: composer-builder/src/editor/shell/topbar/HistoryButtons.jsx:13
 #, js-format
@@ -16386,7 +16443,7 @@ msgstr ""
 
 #. translators: %s: keyboard shortcut
 #: composer-builder/build/editor.js:44
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:573
 #: composer-builder/src/editor/shell/topbar/HistoryButtons.jsx:16
 #, js-format
@@ -16444,8 +16501,8 @@ msgstr ""
 
 #: composer-builder/build/editor.js:44
 #: composer-builder/build/editor.js:45
-#: composer-builder/build/editor.js:104
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:105
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:539
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:591
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:707
@@ -16462,8 +16519,8 @@ msgstr ""
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:10
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5392
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5394
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5393
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5395
 #: new-dashboard/src/uichemy-composer/composer-toolbar.jsx:177
 msgid "Open panel"
 msgstr ""
@@ -16536,7 +16593,7 @@ msgid "Navigation"
 msgstr ""
 
 #: composer-builder/build/editor.js:45
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:766
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:772
 #: new-dashboard/build/composer.js:11
@@ -17021,7 +17078,7 @@ msgstr ""
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:11
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5043
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5064
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:777
 msgid "This element is a form. An element can't be both a form and a loop, so remove the form first."
 msgstr ""
@@ -17030,7 +17087,7 @@ msgstr ""
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:11
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5053
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5074
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:788
 msgid "Form. Click to remove."
 msgstr ""
@@ -17039,7 +17096,7 @@ msgstr ""
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:11
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5065
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5086
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:789
 msgid "This element is a loop. An element can't be both a loop and a form, so remove the loop first."
 msgstr ""
@@ -17226,11 +17283,11 @@ msgstr ""
 
 #: composer-builder/build/editor.js:46
 #: composer-builder/build/editor.js:61
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/layers/LayersFloat.jsx:156
 #: new-dashboard/build/composer.js:12
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5386
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5387
 #: new-dashboard/src/uichemy-composer/composer-layers.jsx:1370
 msgid "Drag to resize"
 msgstr ""
@@ -17239,8 +17296,8 @@ msgstr ""
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:12
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:652
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:653
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:657
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:658
 #: new-dashboard/src/uichemy-composer/composer-spacing.jsx:208
 #: new-dashboard/src/uichemy-composer/composer-spacing.jsx:209
 #: new-dashboard/src/uichemy-composer/composer-spacing.jsx:229
@@ -17254,8 +17311,8 @@ msgstr ""
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:12
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:652
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:653
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:657
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:658
 #: new-dashboard/src/uichemy-composer/composer-spacing.jsx:208
 #: new-dashboard/src/uichemy-composer/composer-spacing.jsx:209
 #: new-dashboard/src/uichemy-composer/composer-spacing.jsx:229
@@ -17474,10 +17531,10 @@ msgstr ""
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3094
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3250
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3251
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3318
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3096
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3269
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3270
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3337
 #: new-dashboard/src/uichemy-composer/composer-motion.jsx:531
 msgid "This element"
 msgstr ""
@@ -17544,27 +17601,27 @@ msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:272
+#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:271
 msgid "JSON-LD"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:273
+#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:272
 msgid "invalid JSON"
 msgstr ""
 
 #. translators: schema type, e.g. FAQPage
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:277
+#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:276
 #, js-format
 msgid "%s JSON"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: composer-builder/build/editor.js:72
-#: composer-builder/build/editor.js:99
+#: composer-builder/build/editor.js:100
 #: composer-builder/src/editor/shell/agent/ProposalCard.jsx:48
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:117
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:355
@@ -17578,7 +17635,7 @@ msgstr ""
 #: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:231
 #: new-dashboard/src/uichemy-composer/admin/screens/RoleManager.jsx:314
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:367
-#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:282
+#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:281
 #: new-dashboard/src/uichemy-fields/components/FormModal.jsx:534
 #: new-dashboard/src/uichemy-fields/components/migrate/MigrateWizard.jsx:362
 #: new-dashboard/src/uichemy-fields/components/migrate/MigrateWizard.jsx:482
@@ -17593,7 +17650,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:352
+#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:350
 msgid "Select a schema type"
 msgstr ""
 
@@ -17605,7 +17662,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:359
+#: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:361
 msgid "JSON to add"
 msgstr ""
 
@@ -17730,49 +17787,49 @@ msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:175
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:176
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:180
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:181
 msgid "Decrease opacity by 0.1"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:202
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:203
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:207
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:208
 msgid "Increase opacity by 0.1"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:260
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:265
 msgid "Text Shadow Color"
 msgstr ""
 
 #. translators: breakpoint name
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:308
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:313
 #, js-format
 msgid "Inherited from %s"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:338
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:343
 msgid "Select Background Image"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:341
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:346
 msgid "Use this image"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:507
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:508
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:523
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:512
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:513
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:528
 msgid "Override image"
 msgstr ""
 
@@ -17781,9 +17838,9 @@ msgstr ""
 #: composer-builder/src/editor/shell/inspector/panel/ContentPanel.jsx:461
 #: new-dashboard/build/composer.js:18
 #: new-dashboard/build/composer.js:22
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:507
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:508
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:523
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:512
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:513
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:528
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:986
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:987
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1005
@@ -17795,7 +17852,7 @@ msgstr ""
 #: composer-builder/build/editor.js:56
 #: new-dashboard/build/composer.js:18
 #: new-dashboard/build/composer.js:22
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:517
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:522
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:996
 msgid "Dynamic image"
 msgstr ""
@@ -17804,7 +17861,7 @@ msgstr ""
 #: composer-builder/build/editor.js:56
 #: new-dashboard/build/composer.js:18
 #: new-dashboard/build/composer.js:22
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:542
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:547
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1033
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1034
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:2316
@@ -17814,7 +17871,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:552
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:557
 msgid "Background image URL"
 msgstr ""
 
@@ -17822,7 +17879,7 @@ msgstr ""
 #: composer-builder/build/editor.js:56
 #: new-dashboard/build/composer.js:18
 #: new-dashboard/build/composer.js:22
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:553
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:558
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1046
 msgid "Paste image URL"
 msgstr ""
@@ -17831,8 +17888,8 @@ msgstr ""
 #: composer-builder/build/editor.js:56
 #: new-dashboard/build/composer.js:18
 #: new-dashboard/build/composer.js:22
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:565
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:566
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:570
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:571
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1058
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1059
 msgid "Insert dynamic image value"
@@ -17841,38 +17898,38 @@ msgstr ""
 #. translators: property type
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1004
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1011
 #, js-format
 msgid "This property is not editable here (%s)."
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1023
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1030
 msgid "Value resolves to a global token"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1083
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1090
 msgid "Min width"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1083
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1090
 msgid "Max width"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1083
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1090
 msgid "Min height"
 msgstr ""
 
 #: composer-builder/build/editor.js:52
 #: new-dashboard/build/composer.js:18
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1083
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1090
 msgid "Max height"
 msgstr ""
 
@@ -17880,15 +17937,15 @@ msgstr ""
 #: composer-builder/build/editor.js:54
 #: new-dashboard/build/composer.js:18
 #: new-dashboard/build/composer.js:20
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1156
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1418
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1163
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1425
 msgid "Add property"
 msgstr ""
 
 #. translators: %d: number of properties that can be added.
 #: composer-builder/build/editor.js:53
 #: new-dashboard/build/composer.js:19
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1159
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1166
 #, js-format
 msgid "%d available"
 msgstr ""
@@ -17896,47 +17953,47 @@ msgstr ""
 #. translators: %d: number of properties inherited from a parent.
 #: composer-builder/build/editor.js:54
 #: new-dashboard/build/composer.js:20
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1164
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1171
 #, js-format
 msgid "%d inherited"
 msgstr ""
 
 #: composer-builder/build/editor.js:54
 #: new-dashboard/build/composer.js:20
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1182
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1189
 msgid "Search properties"
 msgstr ""
 
 #. translators: search text
 #: composer-builder/build/editor.js:54
 #: new-dashboard/build/composer.js:20
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1220
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1227
 #, js-format
 msgid "No properties match \"%s\""
 msgstr ""
 
 #: composer-builder/build/editor.js:54
 #: new-dashboard/build/composer.js:20
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1224
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1231
 msgid "↑↓ move"
 msgstr ""
 
 #: composer-builder/build/editor.js:54
 #: new-dashboard/build/composer.js:20
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1224
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1231
 msgid "↵ add"
 msgstr ""
 
 #: composer-builder/build/editor.js:54
 #: new-dashboard/build/composer.js:20
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1224
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1231
 msgid "esc close"
 msgstr ""
 
 #. translators: CSS selector
 #: composer-builder/build/editor.js:54
 #: new-dashboard/build/composer.js:20
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1382
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1389
 #, js-format
 msgid "Defined here: %s"
 msgstr ""
@@ -17945,15 +18002,15 @@ msgstr ""
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:20
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1454
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3079
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1461
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3081
 msgid "Press Enter to add"
 msgstr ""
 
 #. translators: %d: number of properties added.
 #: composer-builder/build/editor.js:55
 #: new-dashboard/build/composer.js:21
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1421
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:1428
 #, js-format
 msgid "%d added"
 msgstr ""
@@ -17970,7 +18027,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/src/uichemy-composer/composer-assets.jsx:162
 #: new-dashboard/src/uichemy-composer/composer-assets.jsx:255
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5431
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5452
 msgid "Pick an element on the canvas to edit it directly."
 msgstr ""
 
@@ -17997,7 +18054,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:21
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/src/uichemy-composer/composer-assets.jsx:263
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5147
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5168
 msgid "Objects"
 msgstr ""
 
@@ -18248,8 +18305,8 @@ msgid "Developer view"
 msgstr ""
 
 #: composer-builder/build/editor.js:56
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:80
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:104
 #: new-dashboard/build/composer.js:22
 #: new-dashboard/src/uichemy-composer/composer-developer-views.jsx:36
 #: new-dashboard/src/uichemy-composer/composer-inspector-v2.jsx:142
@@ -18260,7 +18317,7 @@ msgstr ""
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:22
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5145
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5146
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:90
 msgid "Design: visual editing for clients"
 msgstr ""
@@ -18278,7 +18335,7 @@ msgstr ""
 #: new-dashboard/src/dashboard/personas.js:29
 #: new-dashboard/src/uichemy-composer/admin/screens/RoleManager.jsx:58
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:224
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5146
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5147
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:91
 msgid "Developer"
 msgstr ""
@@ -18287,7 +18344,7 @@ msgstr ""
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:22
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5146
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5147
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:91
 msgid "Developer: full classes, code and scopes"
 msgstr ""
@@ -18421,11 +18478,11 @@ msgstr ""
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/composer.js:28
 #: new-dashboard/src/uichemy-composer/composer-app.jsx:999
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5284
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5294
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5285
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5295
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:665
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:671
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6053
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6074
 msgid "Element"
 msgstr ""
 
@@ -18436,7 +18493,7 @@ msgstr ""
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:763
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:770
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:771
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6069
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6090
 msgid "Change element tag"
 msgstr ""
 
@@ -18783,7 +18840,7 @@ msgstr ""
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/index.js:39
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1993
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5165
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5186
 #: new-dashboard/src/uichemy-fields/components/CptForm.jsx:71
 msgid "Attributes"
 msgstr ""
@@ -18957,38 +19014,38 @@ msgstr ""
 #: composer-builder/build/editor.js:57
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:372
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:2966
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:2968
 msgid "+ Add class"
 msgstr ""
 
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3096
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3251
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3319
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3098
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3270
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3338
 msgid "→ class"
 msgstr ""
 
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3098
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3244
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3315
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3100
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3263
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3334
 msgid "Inline overrides on this element only - inline styles can't be responsive, so editing here moves them to a per-element class"
 msgstr ""
 
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3099
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3245
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3316
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3101
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3264
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3335
 msgid "Inline overrides on this element only"
 msgstr ""
 
 #. translators: %s: HTML tag name
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3102
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3104
 #, js-format
 msgid "Every <%s>"
 msgstr ""
@@ -18998,8 +19055,8 @@ msgstr ""
 #: composer-builder/build/editor.js:57
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:358
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3116
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3271
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3118
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3290
 #, js-format
 msgid "Remove class %s"
 msgstr ""
@@ -19007,9 +19064,9 @@ msgstr ""
 #. translators: %s: CSS selector
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3132
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3288
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3400
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3134
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3307
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3419
 #, js-format
 msgid "Compound selector · %s"
 msgstr ""
@@ -19017,8 +19074,8 @@ msgstr ""
 #. translators: %s: CSS selector
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3134
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3291
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3136
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3310
 #, js-format
 msgid "Remove rule %s"
 msgstr ""
@@ -19026,7 +19083,7 @@ msgstr ""
 #. translators: %s: scope name
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3146
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3152
 #, js-format
 msgid "Styles go to: %s"
 msgstr ""
@@ -19034,7 +19091,7 @@ msgstr ""
 #. translators: %d: number of elements
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3155
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3160
 #, js-format
 msgid "Used on %d element on this page"
 msgid_plural "Used on %d elements on this page"
@@ -19043,37 +19100,44 @@ msgstr[1] ""
 
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3175
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3176
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3180
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3181
 msgid "Styles go to"
+msgstr ""
+
+#: composer-builder/build/editor.js:57
+#: new-dashboard/build/composer.js:23
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3224
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3225
+msgid "Highlight class on canvas"
 msgstr ""
 
 #. translators: %s: CSS selector
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3256
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3329
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3275
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3348
 #, js-format
 msgid "Tag selector · %s"
 msgstr ""
 
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3367
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3386
 msgid "Remove class"
 msgstr ""
 
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
 #: new-dashboard/build/index.js:51
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3411
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3430
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:2973
 msgid "Remove rule"
 msgstr ""
 
 #: composer-builder/build/editor.js:57
 #: new-dashboard/build/composer.js:23
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3427
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3446
 msgid "Fold the class list back"
 msgstr ""
 
@@ -19083,15 +19147,15 @@ msgstr ""
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:82
 #: new-dashboard/build/composer.js:23
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3458
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5171
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:3477
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5192
 msgid "Effects"
 msgstr ""
 
 #. translators: %s: property group name. Keep the <b> tags.
 #: composer-builder/build/editor.js:58
 #: new-dashboard/build/composer.js:24
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4852
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4873
 #, js-format
 msgid "No properties set for <b>%s</b> in this scope."
 msgstr ""
@@ -19099,49 +19163,49 @@ msgstr ""
 #. translators: Keep the <b> tags.
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4857
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4878
 msgid "Use <b>Add property</b> to start editing."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4977
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4998
 msgid "Loop · more actions"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4977
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4998
 msgid "Form · more actions"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4977
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4998
 msgid "Mark as loop or form"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4978
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4999
 msgid "More element actions"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5000
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5021
 msgid "This element is a loop. Click to manage."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5002
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5023
 msgid "This element is a form. Click to manage."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5003
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5024
 msgid "Mark this element as a dynamic loop or form"
 msgstr ""
 
@@ -19149,204 +19213,204 @@ msgstr ""
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5345
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5018
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5346
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5039
 msgid "Mark as"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5031
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5052
 msgid "Loop. Click to remove."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5079
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5100
 msgid "Copy style"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5082
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5103
 msgid "Replace this element’s own style with the copied one. Its classes are kept."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5084
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5105
 msgid "Paste style"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5087
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5108
 msgid "Remove this element’s own style, at every breakpoint. Its classes are kept."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5089
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5110
 msgid "Reset style"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5153
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5174
 msgid "Entrance"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5181
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5202
 msgid "Custom CSS"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5307
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5328
 msgid "Click an element on the page to edit its text, image or link."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5308
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5329
 msgid "Nothing selected · click an element on the page to edit it"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5323
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5344
 msgid "Type text here…"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5350
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5371
 msgid "Button text"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5350
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5371
 msgid "e.g. Send message"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5359
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5380
 msgid "This scene is drawn by the section's JavaScript, not by HTML you can type into."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5364
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5385
 msgid "This is a piece of the element around it. Select that element to change it."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5365
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5386
 msgid "A dropdown choice · edit it on the dropdown"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5365
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5386
 msgid "Part of the media around it · select that to edit"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5369
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5390
 msgid "Checkboxes, radios and similar fields have no text of their own. Edit the label next to them."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5370
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5391
 msgid "No text in this field · edit its label instead"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5374
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5395
 msgid "This element is a shape (a line, a dot, a bar). It has no text; change how it looks with Fill below."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5375
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5396
 msgid "A shape with no text · change its Fill below"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5379
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5400
 msgid "This element only holds other elements. Click one of them on the page to edit its text or image."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5380
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5401
 msgid "Holds other elements · click one on the page to edit it"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5430
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5451
 msgid "This section has no editable text."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4610
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4631
 msgid "Background type"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4634
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4655
 msgid "Fill type"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4652
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4653
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4724
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4725
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4673
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4674
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4745
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4746
 msgid "Remove color"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4684
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4685
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4705
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4706
 msgid "Remove gradient"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5658
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5679
 msgid "Hide on"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5661
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5682
 msgid "Hide on device"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5623
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5644
 msgid "Entrance animation"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5783
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5804
 msgid "Only Desktop supports local style customization."
 msgstr ""
 
@@ -19354,16 +19418,16 @@ msgstr ""
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5141
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5894
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5909
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5142
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5915
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5930
 msgid "Editing mode"
 msgstr ""
 
 #. translators: %d: number of elements
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5940
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5961
 #, js-format
 msgid "Global class · used on %d element here"
 msgid_plural "Global class · used on %d elements here"
@@ -19372,50 +19436,50 @@ msgstr[1] ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5941
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5962
 msgid "Global class · only this element here"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5944
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5965
 msgid "Edits at this breakpoint or state stay on this page."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5945
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5966
 msgid "Others are outlined on the canvas. Edits also change other pages using it."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5946
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5967
 msgid "Edits also change other pages using it."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5943
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5964
 msgid "Only an admin can change it site-wide, so edits stay on this page."
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5957
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5978
 msgid "Changes this element only"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5958
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5979
 msgid "Changes every element this rule matches"
 msgstr ""
 
 #. translators: 1: number of other elements, 2: HTML tag name
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5963
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5984
 #, js-format
 msgid "Also changes %1$d other <%2$s> in this section"
 msgid_plural "Also changes %1$d other <%2$s> elements in this section"
@@ -19425,7 +19489,7 @@ msgstr[1] ""
 #. translators: %s: HTML tag name
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5964
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5985
 #, js-format
 msgid "Every <%s> - only this one in this section"
 msgstr ""
@@ -19433,7 +19497,7 @@ msgstr ""
 #. translators: 1: number of other elements, 2: CSS class name
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5970
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5991
 #, js-format
 msgid "Also changes %1$d other element with .%2$s in this section"
 msgid_plural "Also changes %1$d other elements with .%2$s in this section"
@@ -19443,7 +19507,7 @@ msgstr[1] ""
 #. translators: %s: CSS class name
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5971
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5992
 #, js-format
 msgid "Only this element uses .%s here - other pages may too"
 msgstr ""
@@ -19451,26 +19515,26 @@ msgstr ""
 #: composer-builder/build/editor.js:59
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:264
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:5985
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6006
 msgid "Element path"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6025
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6046
 msgid "Select parent"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6026
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6047
 msgid "Select parent element"
 msgstr ""
 
 #: composer-builder/build/editor.js:59
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:297
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6054
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6075
 msgid "root"
 msgstr ""
 
@@ -19481,7 +19545,7 @@ msgstr ""
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:289
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:302
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6056
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6077
 #, js-format
 msgid "Editing the %s rule"
 msgstr ""
@@ -19490,7 +19554,7 @@ msgstr ""
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:162
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:636
 #: new-dashboard/build/composer.js:25
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6118
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:6141
 msgid "has values"
 msgstr ""
 
@@ -19555,17 +19619,8 @@ msgstr ""
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:26
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:375
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5691
-msgid "Dynamic"
-msgstr ""
-
-#: composer-builder/build/editor.js:59
-#: composer-builder/build/editor.js:61
-#: new-dashboard/build/composer.js:26
-#: new-dashboard/build/composer.js:28
 #: new-dashboard/src/uichemy-composer/composer-app.jsx:389
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5693
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5696
 msgid "Dynamic panel"
 msgstr ""
 
@@ -19573,7 +19628,7 @@ msgstr ""
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:28
 #: new-dashboard/src/uichemy-composer/composer-app.jsx:999
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5283
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5284
 #, js-format
 msgid "Element %s"
 msgstr ""
@@ -19599,8 +19654,8 @@ msgstr ""
 #: new-dashboard/src/seo/SeoScreen.jsx:487
 #: new-dashboard/src/seo/ui.jsx:401
 #: new-dashboard/src/uichemy-composer/composer-app.jsx:1123
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:375
-#: new-dashboard/src/uichemy-composer/composer-fields.jsx:376
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:380
+#: new-dashboard/src/uichemy-composer/composer-fields.jsx:381
 msgid "Change"
 msgstr ""
 
@@ -19612,45 +19667,45 @@ msgstr ""
 
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5385
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5386
 msgid "Resize panel"
 msgstr ""
 
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5392
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5394
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5393
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5395
 msgid "Hide panel"
 msgstr ""
 
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5395
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5396
 msgid "AI is working"
 msgstr ""
 
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5455
 #: new-dashboard/src/uichemy-composer/composer-app.jsx:5456
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5457
 msgid "Dock panel to the right side"
 msgstr ""
 
 #: composer-builder/build/editor.js:61
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:638
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5472
 #: new-dashboard/src/uichemy-composer/composer-app.jsx:5473
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5474
 msgid "Expand panel"
 msgstr ""
 
 #: composer-builder/build/editor.js:61
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:638
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5472
 #: new-dashboard/src/uichemy-composer/composer-app.jsx:5473
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5474
 msgid "Collapse panel"
 msgstr ""
 
@@ -19659,20 +19714,20 @@ msgstr ""
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:150
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:172
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5478
 #: new-dashboard/src/uichemy-composer/composer-app.jsx:5479
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5480
 msgid "Close panel"
 msgstr ""
 
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5503
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5504
 msgid "You don't have access to the UiChemy editor."
 msgstr ""
 
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5531
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5532
 msgid "Panel"
 msgstr ""
 
@@ -19681,26 +19736,26 @@ msgstr ""
 #: new-dashboard/build/index.js:39
 #: new-dashboard/build/index.js:65
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:141
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5549
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5550
 #: new-dashboard/src/uichemy-fields/components/CptForm.jsx:26
 msgid "Editor"
 msgstr ""
 
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5632
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5633
 msgid "Inspector"
 msgstr ""
 
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5709
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5712
 msgid "Code editor"
 msgstr ""
 
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:28
-#: new-dashboard/src/uichemy-composer/composer-app.jsx:5710
+#: new-dashboard/src/uichemy-composer/composer-app.jsx:5713
 msgid "Loading code editor…"
 msgstr ""
 
@@ -19808,7 +19863,7 @@ msgid "Resize SEO panel"
 msgstr ""
 
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/seo/SeoResizeHandle.jsx:111
 #: composer-builder/src/editor/shell/sidebar/SideResizeHandle.jsx:97
 msgid "Drag to resize · double-click to reset"
@@ -19899,7 +19954,7 @@ msgid "Could not create it (%d)."
 msgstr ""
 
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:86
+#: composer-builder/build/editor.js:87
 #: composer-builder/src/editor/shell/cms/cms-model.js:11
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:355
 #: new-dashboard/build/index.js:51
@@ -20042,7 +20097,7 @@ msgid "Row %d"
 msgstr ""
 
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/canvas/ElementRail.jsx:163
 #: composer-builder/src/editor/shell/canvas/ElementRail.jsx:164
 #: composer-builder/src/editor/shell/canvas/SectionMenu.jsx:44
@@ -20056,7 +20111,7 @@ msgid "Move up"
 msgstr ""
 
 #: composer-builder/build/editor.js:67
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/canvas/ElementRail.jsx:166
 #: composer-builder/src/editor/shell/canvas/ElementRail.jsx:167
 #: composer-builder/src/editor/shell/canvas/SectionMenu.jsx:45
@@ -20219,14 +20274,14 @@ msgid "Scheduled."
 msgstr ""
 
 #: composer-builder/build/editor.js:69
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:90
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:229
 msgid "Published."
 msgstr ""
 
 #: composer-builder/build/editor.js:69
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:91
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:229
 msgid "Moved to drafts."
@@ -20247,7 +20302,7 @@ msgstr ""
 #. translators: %s: error message
 #. translators: %s: the error message
 #: composer-builder/build/editor.js:72
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/canvas/CanvasToolbar.jsx:61
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:107
 #: composer-builder/src/editor/shell/Studio.jsx:122
@@ -20284,7 +20339,7 @@ msgstr ""
 
 #: composer-builder/build/editor.js:72
 #: composer-builder/build/editor.js:73
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:23
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:25
 #: composer-builder/src/editor/shell/cms/ItemPanel.jsx:144
 msgid "item"
 msgstr ""
@@ -20369,102 +20424,113 @@ msgid "Clear all"
 msgstr ""
 
 #: composer-builder/build/editor.js:73
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:30
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:44
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:51
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:65
 msgid "Code copied"
 msgstr ""
 
 #: composer-builder/build/editor.js:73
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:45
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:66
 msgid "Could not copy — select the code and copy it by hand"
 msgstr ""
 
 #. translators: %s: content type name, e.g. Posts
 #: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:54
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:75
 #, js-format
 msgid "How to show %s"
 msgstr ""
 
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:58
-msgid "Copy the code below."
-msgstr ""
-
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:59
-msgid "In the editor, open a page and paste it into a section's HTML (Code)."
-msgstr ""
-
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:62
-#, js-format
-msgid "Publish the page. It shows your %s and stays up to date as you add more."
-msgstr ""
-
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:67
-msgid "What to show"
-msgstr ""
-
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:70
-#, js-format
-msgid "List of %s"
-msgstr ""
-
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:74
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:40
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:98
 #, js-format
 msgid "One %s"
 msgstr ""
 
-#: composer-builder/build/editor.js:74
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:45
+msgid "Added to the page. Publish the page to show it on the site."
+msgstr ""
+
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:77
+msgid "Add to this page"
+msgstr ""
+
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:82
+msgid "Pick what to show and how it looks, below."
+msgstr ""
+
+#: composer-builder/build/editor.js:75
 #: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:83
+msgid "Press Add to this page, or copy the code into a section's HTML (Code) on another page."
+msgstr ""
+
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:86
+#, js-format
+msgid "Publish the page. It shows your %s and stays up to date as you add more."
+msgstr ""
+
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:91
+msgid "What to show"
+msgstr ""
+
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:94
+#, js-format
+msgid "List of %s"
+msgstr ""
+
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:107
 msgid "With style"
 msgstr ""
 
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:83
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:107
 msgid "Without style"
 msgstr ""
 
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:90
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:114
 msgid "Copy code"
 msgstr ""
 
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:95
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:119
 msgid "Some parts need UiChemy Pro"
 msgstr ""
 
-#: composer-builder/build/editor.js:74
-#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:96
+#: composer-builder/build/editor.js:75
+#: composer-builder/src/editor/shell/cms/HowToUseDialog.jsx:120
 msgid "Title, link, image and content show on every plan. Date, excerpt, categories and custom fields show with UiChemy Pro."
 msgstr ""
 
-#: composer-builder/build/editor.js:74
+#: composer-builder/build/editor.js:75
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:48
 msgid "Any date"
 msgstr ""
 
-#: composer-builder/build/editor.js:74
+#: composer-builder/build/editor.js:75
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:49
 msgid "Last 7 days"
 msgstr ""
 
-#: composer-builder/build/editor.js:74
+#: composer-builder/build/editor.js:75
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:50
 msgid "Last 30 days"
 msgstr ""
 
-#: composer-builder/build/editor.js:74
+#: composer-builder/build/editor.js:75
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:51
 msgid "Last 12 months"
 msgstr ""
 
-#: composer-builder/build/editor.js:74
+#: composer-builder/build/editor.js:75
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:81
 #: new-dashboard/build/index.js:37
 #: new-dashboard/src/uichemy-fields/utils/labels.js:44
@@ -20472,18 +20538,18 @@ msgstr ""
 msgid "Item"
 msgstr ""
 
-#: composer-builder/build/editor.js:75
+#: composer-builder/build/editor.js:76
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:127
 msgid "Any"
 msgstr ""
 
-#: composer-builder/build/editor.js:75
+#: composer-builder/build/editor.js:76
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:134
 msgid "All authors"
 msgstr ""
 
-#: composer-builder/build/editor.js:75
-#: composer-builder/build/editor.js:85
+#: composer-builder/build/editor.js:76
+#: composer-builder/build/editor.js:86
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:137
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:346
 #: uichemy-composer/assets/js/uich-dd-schema.js:30
@@ -20491,26 +20557,26 @@ msgid "Date"
 msgstr ""
 
 #. translators: 1: content type name in plural, e.g. posts, 2: error message
-#: composer-builder/build/editor.js:77
+#: composer-builder/build/editor.js:78
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:201
 #, js-format
 msgid "Could not load %1$s: %2$s"
 msgstr ""
 
 #. translators: 1: number of failed items, 2: number of items, 3: error message
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:222
 #, js-format
 msgid "%1$d of %2$d could not be changed: %3$s"
 msgstr ""
 
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:231
 msgid "Moved to the trash."
 msgstr ""
 
 #. translators: %d: number of items
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:232
 #, js-format
 msgid "%d item moved to the trash."
@@ -20518,20 +20584,20 @@ msgid_plural "%d items moved to the trash."
 msgstr[0] ""
 msgstr[1] ""
 
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:234
 msgid "Restored as drafts."
 msgstr ""
 
 #. translators: %s: content type name in singular, e.g. post
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:238
 #, js-format
 msgid "Delete this %s permanently?"
 msgstr ""
 
 #. translators: %d: number of items
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:239
 #, js-format
 msgid "Delete %d item permanently?"
@@ -20539,126 +20605,126 @@ msgid_plural "Delete %d items permanently?"
 msgstr[0] ""
 msgstr[1] ""
 
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:240
 msgid "This cannot be undone."
 msgstr ""
 
-#: composer-builder/build/editor.js:79
+#: composer-builder/build/editor.js:80
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:247
 msgid "Empty the trash?"
 msgstr ""
 
 #. translators: %s: content type name in singular, e.g. post
-#: composer-builder/build/editor.js:81
+#: composer-builder/build/editor.js:82
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:249
 #, js-format
 msgid "Every %s in the trash is deleted permanently."
 msgstr ""
 
-#: composer-builder/build/editor.js:81
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:82
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:250
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:488
 msgid "Empty trash"
 msgstr ""
 
 #. translators: 1: number deleted, 2: number that failed, 3: error message
-#: composer-builder/build/editor.js:81
+#: composer-builder/build/editor.js:82
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:282
 #, js-format
 msgid "%1$d deleted, %2$d could not be: %3$s"
 msgstr ""
 
 #. translators: %s: error message
-#: composer-builder/build/editor.js:81
+#: composer-builder/build/editor.js:82
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:283
 #, js-format
 msgid "The trash could not be emptied: %s"
 msgstr ""
 
-#: composer-builder/build/editor.js:81
+#: composer-builder/build/editor.js:82
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:281
 msgid "Trash emptied."
 msgstr ""
 
 #. translators: 1: content type name in singular, e.g. post, 2: error message
-#: composer-builder/build/editor.js:83
+#: composer-builder/build/editor.js:84
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:294
 #, js-format
 msgid "Could not start a new %1$s: %2$s"
 msgstr ""
 
 #. translators: %s: item title
-#: composer-builder/build/editor.js:83
+#: composer-builder/build/editor.js:84
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:304
 #, js-format
 msgid "Duplicated “%s” as a draft."
 msgstr ""
 
 #. translators: %s: error message
-#: composer-builder/build/editor.js:85
+#: composer-builder/build/editor.js:86
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:308
 #, js-format
 msgid "Could not duplicate: %s"
 msgstr ""
 
-#: composer-builder/build/editor.js:85
+#: composer-builder/build/editor.js:86
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:324
 msgid "Password protected"
 msgstr ""
 
 #. translators: %s: date and time
-#: composer-builder/build/editor.js:86
+#: composer-builder/build/editor.js:87
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:353
 #, js-format
 msgid "Last modified %s"
 msgstr ""
 
-#: composer-builder/build/editor.js:86
+#: composer-builder/build/editor.js:87
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:355
 msgid "Modified"
 msgstr ""
 
 #. translators: %s: plugin name, e.g. ACF
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:420
 #, js-format
 msgid "Edit in %s"
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:421
 msgid "Advanced edit"
 msgstr ""
 
 #. translators: %s: content type name in singular, e.g. post
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:427
 #, js-format
 msgid "Every %s. Click one to edit its title and fields."
 msgstr ""
 
 #. translators: %s: content type name in plural, e.g. posts
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:428
 #, js-format
 msgid "Your %s built with UiChemy. Click one to edit its title and fields."
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:432
 msgid "How to use"
 msgstr ""
 
 #. translators: %s: content type name, e.g. Posts
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:439
 #, js-format
 msgid "%s by status"
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:394
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:467
 #: new-dashboard/build/index.js:25
@@ -20669,50 +20735,50 @@ msgstr ""
 msgid "Restore"
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:389
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:474
 msgid "Move to trash"
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:497
 msgid "Nothing matches these filters"
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:497
 msgid "Nothing matches that search"
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:497
 msgid "The trash is empty"
 msgstr ""
 
 #. translators: %s: content type name in plural, e.g. posts
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:498
 #, js-format
 msgid "No %s built with UiChemy yet"
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:499
 msgid "Try another choice, or clear the filters and search."
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:499
 msgid "Create one here."
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/PostsView.jsx:500
 msgid "Clear filters"
 msgstr ""
 
-#: composer-builder/build/editor.js:87
+#: composer-builder/build/editor.js:88
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:26
 #: composer-builder/src/editor/shell/topbar/PageSettingsDialog.jsx:266
 #: new-dashboard/build/index.js:38
@@ -20724,76 +20790,76 @@ msgid "Excerpt"
 msgstr ""
 
 #. translators: %s: name of the new post type
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:67
 #, js-format
 msgid "%s created."
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:80
 msgid "Create custom post type"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:81
 msgid "A new kind of content, like Projects, Team or Events, with its own list here."
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:94
 msgid "Name (plural)"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:95
 #: new-dashboard/build/index.js:38
 #: new-dashboard/src/uichemy-fields/components/cptTemplates.js:29
 msgid "Projects"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:97
 msgid "Name (singular)"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:98
 msgid "Project"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:101
 msgid "Key"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:101
 msgid "Used in the code and the database. Lowercase, up to 20 characters. It cannot change once items exist."
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:111
 msgid "Each item has"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:112
 msgid "Each item has a title, its UiChemy design, and"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:120
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:121
 msgid "Items can have a parent"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/NewTypeDialog.jsx:120
 msgid "Like pages, instead of like posts."
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/CmsWorkspace.jsx:79
 #: new-dashboard/build/index.js:25
 #: new-dashboard/build/index.js:77
@@ -20802,22 +20868,22 @@ msgstr ""
 msgid "Content types"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/CmsWorkspace.jsx:91
 msgid "Add custom post type"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/CmsWorkspace.jsx:97
 msgid "Turn on Custom Fields in UiChemy › Settings › Features to create one."
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/CmsWorkspace.jsx:111
 msgid "The CMS could not load"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/CmsWorkspace.jsx:113
 #: new-dashboard/build/index.js:51
 #: new-dashboard/build/index.js:77
@@ -20827,136 +20893,136 @@ msgstr ""
 msgid "Try again"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/CmsWorkspace.jsx:121
 msgid "No content you can edit"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/cms/CmsWorkspace.jsx:121
 msgid "Your role cannot edit posts or custom post types on this site."
 msgstr ""
 
-#: composer-builder/build/editor.js:89
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/layers/LayersFloat.jsx:118
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:356
 msgid "Edit layers"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/layers/LayersFloat.jsx:138
 msgid "Close layers"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/layers/LayersFloat.jsx:153
 msgid "The page is empty. Add a section to see its layers."
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/common/ConflictBar.jsx:35
 msgid "Replace the newer saved page with all changes from this tab? This cannot merge the two versions."
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/common/ConflictBar.jsx:36
 msgid "Discard the unsaved changes in this tab and load the saved page?"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/common/ConflictBar.jsx:42
 msgid "Your changes saved"
 msgstr ""
 
-#: composer-builder/build/editor.js:89
+#: composer-builder/build/editor.js:90
 #: composer-builder/src/editor/shell/common/ConflictBar.jsx:42
 msgid "Saved version loaded"
 msgstr ""
 
 #. translators: %s: error message
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/common/ConflictBar.jsx:46
 #, js-format
 msgid "Could not resolve: %s"
 msgstr ""
 
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/common/ConflictBar.jsx:57
 msgid "A newer version of this page is saved."
 msgstr ""
 
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/common/ConflictBar.jsx:58
 msgid "Your changes are still in this tab. Saving is paused to protect both versions. Keep editing here while you review the other tab, then choose which version to keep. These options do not merge changes."
 msgstr ""
 
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/common/ConflictBar.jsx:68
 msgid "Load saved version"
 msgstr ""
 
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/common/ConflictBar.jsx:77
 msgid "Replace saved version"
 msgstr ""
 
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/sidebar/SideResizeHandle.jsx:92
 msgid "Resize sidebar"
 msgstr ""
 
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/sidebar/SectionCategories.jsx:70
 msgid "Section category"
 msgstr ""
 
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/sidebar/SectionCategories.jsx:72
 msgid "Scroll categories left"
 msgstr ""
 
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/sidebar/SectionCategories.jsx:89
 msgid "Scroll categories right"
 msgstr ""
 
-#: composer-builder/build/editor.js:90
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:91
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:69
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:627
 msgid "Nothing to undo yet."
 msgstr ""
 
-#: composer-builder/build/editor.js:90
+#: composer-builder/build/editor.js:91
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:37
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:39
 msgid "Just now"
 msgstr ""
 
 #. translators: %d: number of minutes
-#: composer-builder/build/editor.js:91
+#: composer-builder/build/editor.js:92
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:42
 #, js-format
 msgid "%d min ago"
 msgstr ""
 
 #. translators: %d: number of hours
-#: composer-builder/build/editor.js:92
+#: composer-builder/build/editor.js:93
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:45
 #, js-format
 msgid "%d h ago"
 msgstr ""
 
 #. translators: %d: number of days
-#: composer-builder/build/editor.js:92
+#: composer-builder/build/editor.js:93
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:47
 #, js-format
 msgid "%d d ago"
 msgstr ""
 
 #. translators: %d: number of steps
-#: composer-builder/build/editor.js:93
+#: composer-builder/build/editor.js:94
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:124
 #, js-format
 msgid "%d step, hide them"
@@ -20965,7 +21031,7 @@ msgstr[0] ""
 msgstr[1] ""
 
 #. translators: %d: number of steps
-#: composer-builder/build/editor.js:93
+#: composer-builder/build/editor.js:94
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:125
 #, js-format
 msgid "%d step, show them"
@@ -20973,117 +21039,117 @@ msgid_plural "%d steps, show them"
 msgstr[0] ""
 msgstr[1] ""
 
-#: composer-builder/build/editor.js:93
+#: composer-builder/build/editor.js:94
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:144
 msgid "Restore to this step"
 msgstr ""
 
-#: composer-builder/build/editor.js:93
+#: composer-builder/build/editor.js:94
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:241
 msgid "Could not load the saved versions."
 msgstr ""
 
-#: composer-builder/build/editor.js:93
+#: composer-builder/build/editor.js:94
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:260
 msgid "Could not load more versions."
 msgstr ""
 
-#: composer-builder/build/editor.js:93
+#: composer-builder/build/editor.js:94
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:301
 msgid "This version has no builder content."
 msgstr ""
 
-#: composer-builder/build/editor.js:93
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:94
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:305
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:525
 msgid "Could not load that version."
 msgstr ""
 
 #. translators: %s: how long ago it was saved, e.g. 2 hours ago
-#: composer-builder/build/editor.js:95
+#: composer-builder/build/editor.js:96
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:344
 #, js-format
 msgid "Previewing current version from %s. Apply to keep it, or Discard."
 msgstr ""
 
 #. translators: %s: how long ago it was saved, e.g. 2 hours ago
-#: composer-builder/build/editor.js:97
+#: composer-builder/build/editor.js:98
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:346
 #, js-format
 msgid "Previewing revision from %s. Apply to keep it, or Discard."
 msgstr ""
 
 #. translators: %s: how long ago it was saved, e.g. 2 hours ago
-#: composer-builder/build/editor.js:99
+#: composer-builder/build/editor.js:100
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:348
 #, js-format
 msgid "Previewing autosave from %s. Apply to keep it, or Discard."
 msgstr ""
 
 #. translators: %s: date and time of the revision
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:315
 #, js-format
 msgid "Revision from %s applied"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:315
 msgid "Revision applied"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:316
 msgid "Save the page to keep it, or Undo to go back."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:361
 msgid "You have unsaved changes. Click a version to preview it; Discard brings your changes back."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:362
 msgid "Click a version to preview it on the page."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:367
 msgid "Loading saved versions"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:374
 msgid "No revisions saved yet"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:375
 msgid "Each time the page is saved a version is kept here, to look back at or bring back."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:379
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:585
 msgid "Saved versions"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:381
 #: new-dashboard/build/index.js:77
 #: new-dashboard/src/seo/screens.jsx:524
 msgid "Unknown"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:411
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:608
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:677
 msgid "no builder content"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:415
 #: composer-builder/src/editor/shell/inspector/panel/ContentPanel.jsx:466
 #: composer-builder/src/editor/shell/inspector/panel/ContentPanel.jsx:468
@@ -21094,195 +21160,195 @@ msgstr ""
 msgid "Loading"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:417
 #: new-dashboard/build/index.js:65
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:218
 msgid "Autosave"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:425
 msgid "Loading more versions"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:477
 msgid "Could not load the version history."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:564
 msgid "Review version restore"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:567
 #, js-format
 msgid "Selected older version: %s"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:569
 msgid "This replaces the page content and page settings in this editor, including unsaved edits. Site-wide settings stay unchanged. Undo returns to your previous work."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:570
 msgid "Nothing is saved or published until you choose Save or Publish. Use Preview to check it first."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:514
 msgid "This version has no builder document."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:571
 msgid "Load into editor"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:578
 msgid "Unsaved editor work based on an older saved version."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:578
 msgid "Unsaved editor work. The current saved version is unchanged."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:578
 msgid "Editor matches the current saved page."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:593
 msgid "No saved versions yet. One is kept every time the page is saved."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:600
 msgid "Current saved"
 msgstr ""
 
 #. translators: %d: version number
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:600
 #, js-format
 msgid "v%d"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:618
 msgid "Review restore"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:625
 msgid "This session (unsaved edits)"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:639
 msgid "Undo last"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:652
 msgid "No saved versions yet. Each save keeps one."
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:669
 msgid "Current saved version"
 msgstr ""
 
-#: composer-builder/build/editor.js:101
+#: composer-builder/build/editor.js:102
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:680
 msgid "Selected for review"
 msgstr ""
 
 #. translators: %s: search text
-#: composer-builder/build/editor.js:102
+#: composer-builder/build/editor.js:103
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:114
 #, js-format
 msgid "No elements match “%s”."
 msgstr ""
 
-#: composer-builder/build/editor.js:102
+#: composer-builder/build/editor.js:103
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:277
 msgid "No editor link came back."
 msgstr ""
 
 #. translators: %s: error message
-#: composer-builder/build/editor.js:103
+#: composer-builder/build/editor.js:104
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:285
 #, js-format
 msgid "Could not create the header: %s"
 msgstr ""
 
-#: composer-builder/build/editor.js:103
 #: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:286
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:291
 msgid "please try again."
 msgstr ""
 
 #. translators: %s: error message
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:290
 #, js-format
 msgid "Could not create the footer: %s"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:308
 msgid "Creating header…"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:308
 msgid "Add header"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:309
 msgid "Creating footer…"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:309
 msgid "Add footer"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:317
 msgid "Edit header"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:317
 msgid "Edit footer"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:587
 msgid "Add elements and sections"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:193
 msgid "Search sections"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:193
 msgid "Search elements"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:204
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:207
 #: new-dashboard/build/index.js:25
@@ -21295,65 +21361,65 @@ msgstr ""
 msgid "Clear search"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:207
 msgid "Close add"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:215
 #: new-dashboard/build/index.js:51
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:2001
 msgid "Elements"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:216
 msgid "Sections"
 msgstr ""
 
-#: composer-builder/build/editor.js:104
+#: composer-builder/build/editor.js:105
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:382
 msgid "No sections yet."
 msgstr ""
 
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:648
 msgid "Sidebar panels"
 msgstr ""
 
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:652
 msgid "Back to AI chat"
 msgstr ""
 
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:672
 msgid "Site styles: colours, fonts and theme style"
 msgstr ""
 
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:680
 msgid "CMS: posts and custom post types"
 msgstr ""
 
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:690
 msgid "Theme Builder: headers, footers and templates"
 msgstr ""
 
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/canvas/SectionMenu.jsx:37
 msgid "Ask in chat"
 msgstr ""
 
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/topbar/RightPanelToggle.jsx:12
 msgid "Show page styles"
 msgstr ""
 
 #. translators: %s: the workspace being loaded, e.g. data or motion
-#: composer-builder/build/editor.js:106
+#: composer-builder/build/editor.js:107
 #: composer-builder/src/editor/shell/Studio.jsx:483
 #, js-format
 msgid "Loading %s…"
@@ -21449,7 +21515,7 @@ msgid "Three pricing tiers, the middle one highlighted"
 msgstr ""
 
 #: composer-builder/src/editor/shell/add-section/PromptTab.jsx:36
-#: new-dashboard/src/components/MCPConfigTabs.jsx:264
+#: new-dashboard/src/components/MCPConfigTabs.jsx:276
 msgid "Generate"
 msgstr ""
 
@@ -23304,7 +23370,7 @@ msgid "Generate connection"
 msgstr ""
 
 #: new-dashboard/build/index.js:6
-#: new-dashboard/src/components/MCPConfigTabs.jsx:264
+#: new-dashboard/src/components/MCPConfigTabs.jsx:276
 #: new-dashboard/src/screens/dashboard/McpSetup.jsx:145
 msgid "Regenerate"
 msgstr ""
@@ -23351,49 +23417,54 @@ msgid "Setup method"
 msgstr ""
 
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/components/MCPConfigTabs.jsx:271
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:228
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:225
+msgid "Generate the connection above first. Then you can copy this."
+msgstr ""
+
+#: new-dashboard/build/index.js:7
+#: new-dashboard/src/components/MCPConfigTabs.jsx:283
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:241
 msgid "Add to Cursor"
 msgstr ""
 
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:232
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:245
 msgid "Copy a one-line terminal command that adds this to Claude Desktop automatically. Needs Node.js 18+."
 msgstr ""
 
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/components/MCPConfigTabs.jsx:294
-#: new-dashboard/src/components/MCPConfigTabs.jsx:317
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:234
+#: new-dashboard/src/components/MCPConfigTabs.jsx:309
+#: new-dashboard/src/components/MCPConfigTabs.jsx:332
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:247
 msgid "Auto Connect"
 msgstr ""
 
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:243
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:256
 msgid "The prompt points at:"
 msgstr ""
 
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/components/MCPConfigTabs.jsx:317
-#: new-dashboard/src/components/MCPConfigTabs.jsx:319
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:243
+#: new-dashboard/src/components/MCPConfigTabs.jsx:332
+#: new-dashboard/src/components/MCPConfigTabs.jsx:334
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:256
 msgid "Save to:"
 msgstr ""
 
 #. translators: %s: detected OS name.
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:245
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:258
 #, js-format
 msgid "(detected %s)"
 msgstr ""
 
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:254
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:267
 msgid "Restart & start building"
 msgstr ""
 
 #: new-dashboard/build/index.js:7
-#: new-dashboard/src/screens/dashboard/McpSetup.jsx:255
+#: new-dashboard/src/screens/dashboard/McpSetup.jsx:268
 msgid "Restart your AI tool, then ask it to build or edit a page. It works through this plugin on this site."
 msgstr ""
 
@@ -34729,35 +34800,39 @@ msgstr ""
 msgid "QA · screens"
 msgstr ""
 
-#: new-dashboard/src/components/MCPConfigTabs.jsx:215
+#: new-dashboard/src/components/MCPConfigTabs.jsx:106
+msgid "Generate an Application Password first. Then you can copy this."
+msgstr ""
+
+#: new-dashboard/src/components/MCPConfigTabs.jsx:227
 msgid "Could not generate Application Password."
 msgstr ""
 
-#: new-dashboard/src/components/MCPConfigTabs.jsx:268
+#: new-dashboard/src/components/MCPConfigTabs.jsx:280
 msgid "Open Cursor and install the server"
 msgstr ""
 
-#: new-dashboard/src/components/MCPConfigTabs.jsx:286
+#: new-dashboard/src/components/MCPConfigTabs.jsx:311
 msgid "Copy & paste this command into your terminal to automatically add the Claude Desktop MCP. Needs Node.js 18+."
 msgstr ""
 
-#: new-dashboard/src/components/MCPConfigTabs.jsx:313
+#: new-dashboard/src/components/MCPConfigTabs.jsx:328
 msgid "Generate an Application Password to reveal and copy the real config."
 msgstr ""
 
-#: new-dashboard/src/components/MCPConfigTabs.jsx:315
+#: new-dashboard/src/components/MCPConfigTabs.jsx:330
 msgid "Paste this prompt into Claude Desktop, Cursor, Codex or Antigravity. The AI will add the config for you."
 msgstr ""
 
-#: new-dashboard/src/components/MCPConfigTabs.jsx:317
+#: new-dashboard/src/components/MCPConfigTabs.jsx:332
 msgid "Or click"
 msgstr ""
 
-#: new-dashboard/src/components/MCPConfigTabs.jsx:317
+#: new-dashboard/src/components/MCPConfigTabs.jsx:332
 msgid "paste in your terminal, and restart Claude Desktop."
 msgstr ""
 
-#: new-dashboard/src/components/MCPConfigTabs.jsx:319
+#: new-dashboard/src/components/MCPConfigTabs.jsx:334
 msgid "Then restart the client."
 msgstr ""
 
@@ -35118,12 +35193,12 @@ msgid "More states"
 msgstr ""
 
 #. translators: %s: property group name. Keep the <b> tags.
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4843
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4864
 #, js-format
 msgid "No <b>%s</b> properties are defined on this global."
 msgstr ""
 
-#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4846
+#: new-dashboard/src/uichemy-composer/composer-inspector.jsx:4867
 msgid "Edit the global token to change its values."
 msgstr ""
 
