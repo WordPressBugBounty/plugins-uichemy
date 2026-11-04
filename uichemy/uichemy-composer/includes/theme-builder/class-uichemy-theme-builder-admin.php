@@ -165,10 +165,11 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 			wp_enqueue_script(
 				'uichemy-tb-editor',
 				UICHEMY_URL . 'assets/js/uichemy-tb-editor.js',
-				array( 'wp-plugins', 'wp-edit-post', 'wp-editor', 'wp-element', 'wp-components' ),
+				array( 'wp-plugins', 'wp-edit-post', 'wp-editor', 'wp-element', 'wp-components', 'wp-i18n' ),
 				UICHEMY_VERSION,
 				true
 			);
+			wp_set_script_translations( 'uichemy-tb-editor', 'uichemy' );
 
 			wp_localize_script(
 				'uichemy-tb-editor',

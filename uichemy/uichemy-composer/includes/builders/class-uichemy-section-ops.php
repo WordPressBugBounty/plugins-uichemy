@@ -774,9 +774,10 @@ if ( ! class_exists( 'UiChemy_Section_Ops' ) ) {
 		 * @param UiChemy_Builder_Driver $driver  Driver that owns the post.
 		 * @param int                    $post_id Post id.
 		 * @param string                 $area    Content area.
+		 * @param callable|null          $on_js   Takes each section's JS ($uid, $js) instead of printing it inline.
 		 * @return string Rendered HTML, '' when there is nothing to render.
 		 */
-		public static function render_html_for( $driver, $post_id, $area = 'content' ) {
+		public static function render_html_for( $driver, $post_id, $area = 'content', $on_js = null ) {
 			if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 				return '';
 			}
@@ -791,6 +792,10 @@ if ( ! class_exists( 'UiChemy_Section_Ops' ) ) {
 				$settings = $section['settings'];
 				$uid      = (string) $section['uid'];
 				$scope    = '.uichemy-composer-' . sanitize_html_class( $uid );
+				if ( is_callable( $on_js ) ) {
+					call_user_func( $on_js, sanitize_html_class( $uid ), (string) ( $settings['raw_js'] ?? '' ) );
+					unset( $settings['raw_js'] );
+				}
 
 				if ( ! empty( $settings['raw_html'] ) && class_exists( 'Uich_Dynamic' ) ) {
 					// Judged by the author of the post these sections belong to.

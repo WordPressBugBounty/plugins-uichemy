@@ -276,8 +276,12 @@ class UiChemy_Bricks_Composer extends \Bricks\Element {
 				continue;
 			}
 			if ( ! empty( $this->settings[ "uichemy_slot_{$i}_is_image" ] ) ) {
+				$image = isset( $this->settings[ "uichemy_slot_{$i}_image" ] ) ? $this->settings[ "uichemy_slot_{$i}_image" ] : array();
+				// An empty image control is a slot not filled yet, not a removed image: keep the markup's src.
+				if ( empty( $image ) || ( is_array( $image ) && empty( $image['url'] ) && empty( $image['id'] ) ) ) {
+					continue;
+				}
 				$render_settings[ "slot_{$i}_is_image" ] = 'yes';
-				$image                                   = isset( $this->settings[ "uichemy_slot_{$i}_image" ] ) ? $this->settings[ "uichemy_slot_{$i}_image" ] : array();
 				$image                                   = is_array( $image ) ? $image : array();
 				// Bricks' native image control stores {id, size, ...} and only
 				// resolves `url` at its OWN render time (wp_get_attachment_image_url),
@@ -328,25 +332,23 @@ class UiChemy_Bricks_Composer extends \Bricks\Element {
 		// JS-side comment on $obfuscate_scripts for what that breaks).
 		$html = UiChemy_Composer_Renderer::render_html( $render_settings, $scope, $uid, false, $scope_css, $is_builder_context );
 
-		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-		echo "<div {$this->render_attributes( '_root' )}>" . $html . '</div>';
+		// Live-page editor only: stamp layer paths before the section's JS changes the DOM.
+		$stamp = ( ! $is_builder_context && class_exists( 'UiChemy_Composer_Enqueue' ) && UiChemy_Composer_Enqueue::$frontend_editor_active
+			&& method_exists( 'UiChemy_Composer_Renderer', 'layer_path_stamp_script' ) )
+			? UiChemy_Composer_Renderer::layer_path_stamp_script()
+			: '';
 
-		if ( ! $is_builder_context && '' !== trim( $raw_js ) ) {
-			add_action(
-				'wp_footer',
-				function () use ( $uid, $raw_js ) {
-					// Motion variables -> values preamble + property reads.
-					if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
-						$raw_js = UiChemy_Composer_Renderer::compile_motion( $raw_js );
-					}
-					$safe_js = preg_replace( '#</(script)#i', '<\\\\/$1', $raw_js );
-					echo "\n<script id=\"uichemy-composer-js-" . esc_attr( $uid ) . '" data-cfasync="false" data-no-optimize="1">';
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-					echo $safe_js;
-					echo "</script>\n";
-				},
-				20
-			);
+		// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+		echo "<div {$this->render_attributes( '_root' )}>" . $html . $stamp . '</div>';
+
+		// Run-with runtime when the output needs it (GSAP / three.js load in UiChemy_Bricks_Driver::queue_footer_js).
+		if ( ! $is_builder_context && class_exists( 'UiChemy_RunWith' ) && UiChemy_RunWith::output_needs_runtime( $html ) ) {
+			UiChemy_RunWith::enqueue_runtime();
+		}
+
+		// Front end: before </body>, after GSAP.
+		if ( ! $is_builder_context && '' !== trim( $raw_js ) && class_exists( 'UiChemy_Bricks_Driver' ) ) {
+			UiChemy_Bricks_Driver::queue_footer_js( $uid, $raw_js );
 		}
 	}
 }

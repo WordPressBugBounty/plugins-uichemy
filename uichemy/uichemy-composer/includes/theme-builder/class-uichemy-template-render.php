@@ -30,6 +30,46 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 		private static $render_id = 0;
 
 		/**
+		 * Template IDs being rendered right now, innermost last.
+		 *
+		 * @var int[]
+		 */
+		private static $rendering = array();
+
+		/**
+		 * The template being rendered right now, or 0 outside one.
+		 *
+		 * @return int
+		 */
+		public static function current_rendering_template() {
+			return self::$rendering ? (int) end( self::$rendering ) : 0;
+		}
+
+		/**
+		 * `the_content` start inside a template: the page's own blocks have no template owner.
+		 *
+		 * @param string $content Content.
+		 * @return string
+		 */
+		public static function enter_post_content( $content ) {
+			self::$rendering[] = 0;
+			return $content;
+		}
+
+		/**
+		 * `the_content` end inside a template: restore the template owner.
+		 *
+		 * @param string $content Content.
+		 * @return string
+		 */
+		public static function leave_post_content( $content ) {
+			if ( self::$rendering && 0 === end( self::$rendering ) ) {
+				array_pop( self::$rendering );
+			}
+			return $content;
+		}
+
+		/**
 		 * Register front-end hooks. No-op in the admin.
 		 *
 		 * @return void
@@ -251,6 +291,13 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 			add_action( 'wp_enqueue_scripts', array( __CLASS__, 'enqueue_elementor_styles' ), 5 );
 			// Keep the preview canvas clean — no admin bar chrome over the template.
 			add_filter( 'show_admin_bar', '__return_false' );
+			// ...nor the room WordPress makes for it. The bump styles
+			// (`html { margin-top: 32px }`, 46px on narrow screens) are queued on
+			// the admin bar's earlier answer, so they still printed with no bar to
+			// make room for, and every template sat on an empty strip — in the
+			// block editor that strip was drawn above the page's header.
+			remove_action( 'wp_enqueue_scripts', 'wp_enqueue_admin_bar_bump_styles' );
+			remove_action( 'wp_head', '_admin_bar_bump_cb' );
 
 			include UICHEMY_PATH . 'includes/theme-builder/views/preview.php';
 			exit;
@@ -489,9 +536,24 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 			if ( $doc ) {
 				Uich_Dynamic::push_document( $id );
 			}
+			self::$rendering[] = $id;
+			// Post content a template outputs belongs to the page, not the template.
+			if ( 1 === count( self::$rendering ) ) {
+				add_filter( 'the_content', array( __CLASS__, 'enter_post_content' ), -PHP_INT_MAX );
+				add_filter( 'the_content', array( __CLASS__, 'leave_post_content' ), PHP_INT_MAX );
+			}
 			try {
 				return self::render_template_html( $id );
 			} finally {
+				// Drop any post-content marker left open, then this template.
+				while ( self::$rendering && 0 === end( self::$rendering ) ) {
+					array_pop( self::$rendering );
+				}
+				array_pop( self::$rendering );
+				if ( ! self::$rendering ) {
+					remove_filter( 'the_content', array( __CLASS__, 'enter_post_content' ), -PHP_INT_MAX );
+					remove_filter( 'the_content', array( __CLASS__, 'leave_post_content' ), PHP_INT_MAX );
+				}
 				if ( $doc ) {
 					Uich_Dynamic::pop_document();
 				}
@@ -548,7 +610,8 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				}
 				$driver = UiChemy_Builder_Registry::get( 'bricks' );
 
-				return $driver ? UiChemy_Section_Ops::render_html_for( $driver, $id ) : '';
+				// Section JS goes to the footer, after GSAP, as on a Bricks page.
+				return $driver ? UiChemy_Section_Ops::render_html_for( $driver, $id, 'content', array( 'UiChemy_Bricks_Driver', 'queue_footer_js' ) ) : '';
 			}
 
 			if ( ! class_exists( '\Elementor\Plugin' ) ) {

@@ -89,11 +89,13 @@
 	// "+ Add class" dropdown and Layers menus, hiding them behind the panel
 	// entirely. Leaving a wide buffer below 2147483646 so any future portaled
 	// UI added at that same max-ish value still safely stacks above the panel.
+	// Lift .uich-portal-root (menus, popovers, tooltips at z-index 100250) above the panel.
 	function ensureZIndexFix() {
 		if ( document.getElementById( ZFIX_STYLE_ID ) ) { return; }
 		var style = document.createElement( 'style' );
 		style.id = ZFIX_STYLE_ID;
-		style.textContent = '#' + PANEL_ID + '{z-index:2147483000 !important;}';
+		style.textContent = '#' + PANEL_ID + '{z-index:2147483000 !important;}'
+			+ '.uich-portal-root{position:relative;z-index:2147483001 !important;}';
 		document.head.appendChild( style );
 	}
 
@@ -165,9 +167,10 @@
 	// tab was ALREADY active, the click (and its uncollapse side effect) would
 	// never fire on first open — leaving the panel stuck at its 44px header
 	// strip even though the "correct" tab is technically selected.
+	// Docked right, collapsed means slid off-screen (uich-dock-slid), not the 44px header.
 	function isCollapsed() {
 		var panel = document.getElementById( PANEL_ID );
-		return ! panel || panel.style.height === '44px';
+		return ! panel || panel.style.height === '44px' || panel.classList.contains( 'uich-dock-slid' );
 	}
 
 	// Click the tab button, then verify shortly after that it actually became
@@ -593,6 +596,24 @@
 		hidePanel();
 	}
 
+	// Selecting another Composer element in Bricks loads it in the open Composer.
+	function bricksState() {
+		var host = document.querySelector( '.brx-body.main' );
+		var app = host && host.__vue_app__;
+		var gp = app && app.config && app.config.globalProperties;
+		return gp && gp.$_state ? gp.$_state : null;
+	}
+	function followBricksSelection() {
+		var bridge = bricksBridge();
+		if ( ! bridge || typeof bridge.getActiveClientId !== 'function' || typeof bridge.activate !== 'function' ) { return; }
+		var activeId = bridge.getActiveClientId();
+		var st = bricksState();
+		if ( ! activeId || ! st || ! st.activeId || st.activeId === activeId ) { return; }
+		var el = st.activeElement;
+		if ( ! el || el.id !== st.activeId || el.name !== 'uichemy-composer' ) { return; }
+		bridge.activate( st.activeId );
+	}
+
 	function readSettings() {
 		var ta = findSettingsTextarea();
 		if ( ! ta ) { return null; }
@@ -674,11 +695,18 @@
 	// Native setter bypass + dispatched 'input' event, same technique as
 	// writeSettings() above, so Bricks' own Vue binding on the control's
 	// underlying <input> picks up the programmatic change.
+	// Set while forwarding raw_html into a field, so the reverse sync ignores that input event.
+	var forwarding = false;
 	function setTextValue( el, value ) {
 		if ( ! el || el.value === value ) { return; }
 		var setter = Object.getOwnPropertyDescriptor( window.HTMLInputElement.prototype, 'value' ).set;
 		setter.call( el, value );
-		el.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+		forwarding = true;
+		try {
+			el.dispatchEvent( new Event( 'input', { bubbles: true } ) );
+		} finally {
+			forwarding = false;
+		}
 	}
 
 	// Pushes parsed raw_html content INTO the native per-slot controls. Skips
@@ -719,8 +747,17 @@
 	// them. Same rule as images: only re-push when the raw_html-derived value
 	// itself changes, never merely because the control's own value diverged.
 	var lastForwardedText = {};
+	// Both caches are kept per Bricks element, so reselecting one never re-pushes over its picks.
+	var forwardedByElement = {};
 
 	function forwardSyncFromRawHtml() {
+		var st = bricksState();
+		var elementKey = ( st && st.activeId ) ? String( st.activeId ) : '';
+		if ( ! forwardedByElement[ elementKey ] ) {
+			forwardedByElement[ elementKey ] = { image: {}, text: {} };
+		}
+		lastForwardedImageSrc = forwardedByElement[ elementKey ].image;
+		lastForwardedText = forwardedByElement[ elementKey ].text;
 		var settings = readSettings();
 		if ( ! settings ) { return; }
 		var rawHtml = settings.raw_html || '';
@@ -741,22 +778,23 @@
 			var imageCb = getCheckboxInput( i, 'is_image' );
 			if ( slot.kind === 'image' ) {
 				setCheckboxValue( imageCb, true );
+				// Mark as sent only once the field exists (it appears a tick after its flag).
 				var srcFromHtml = slot.src || '';
 				if ( lastForwardedImageSrc[ i ] !== srcFromHtml ) {
-					lastForwardedImageSrc[ i ] = srcFromHtml;
 					var urlInput = getImageUrlInputEl( i );
 					if ( urlInput && document.activeElement !== urlInput ) {
 						setTextValue( urlInput, srcFromHtml );
+						lastForwardedImageSrc[ i ] = srcFromHtml;
 					}
 				}
 			} else {
 				setCheckboxValue( imageCb, false );
 				var textFromHtml = slot.text || '';
 				if ( lastForwardedText[ i ] !== textFromHtml ) {
-					lastForwardedText[ i ] = textFromHtml;
 					var textInput = getTextInputEl( i );
 					if ( textInput && document.activeElement !== textInput ) {
 						setTextValue( textInput, textFromHtml );
+						lastForwardedText[ i ] = textFromHtml;
 					}
 				}
 			}
@@ -788,6 +826,7 @@
 	// groups expand/collapse or the selected element changes.
 	function attachReverseSyncListeners() {
 		document.addEventListener( 'input', function ( e ) {
+			if ( forwarding ) { return; }
 			var target = e.target;
 			if ( ! target || target.tagName !== 'INPUT' || target.type === 'checkbox' ) { return; }
 			var wrap = target.closest( '[data-controlkey^="uichemy_slot_"]' );
@@ -813,6 +852,7 @@
 		reviveCanvasScripts();
 		forwardSyncFromRawHtml();
 		deactivateIfElementGone();
+		followBricksSelection();
 		window.setTimeout( watch, POLL_MS );
 	}
 

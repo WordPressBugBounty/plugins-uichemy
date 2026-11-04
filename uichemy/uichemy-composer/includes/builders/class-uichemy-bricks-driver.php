@@ -276,12 +276,48 @@ if ( ! class_exists( 'UiChemy_Bricks_Driver' ) ) {
 			if ( ! isset( $element['settings'] ) || ! is_array( $element['settings'] ) ) {
 				$element['settings'] = array();
 			}
+			$element['settings'] = $this->sync_slot_texts( $element['settings'], $settings );
 			$element['settings'][ self::SETTINGS_KEY ] = wp_json_encode(
 				$settings,
 				JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE
 			);
 
 			return $element;
+		}
+
+		/**
+		 * Update Text N fields whose slot text changed in raw_html, so writes from outside the builder render.
+		 *
+		 * @param array $bricks_settings The element's Bricks settings.
+		 * @param array $settings        The new Composer settings map.
+		 * @return array
+		 */
+		private function sync_slot_texts( array $bricks_settings, array $settings ) {
+			if ( ! isset( $settings['raw_html'] ) || ! class_exists( 'UiChemy_Composer_Renderer' ) || ! method_exists( 'UiChemy_Composer_Renderer', 'slot_texts' ) ) {
+				return $bricks_settings;
+			}
+			$old_raw = '';
+			if ( isset( $bricks_settings[ self::SETTINGS_KEY ] ) ) {
+				$old     = json_decode( (string) $bricks_settings[ self::SETTINGS_KEY ], true );
+				$old_raw = is_array( $old ) && isset( $old['raw_html'] ) ? (string) $old['raw_html'] : '';
+			}
+			$new_raw = (string) $settings['raw_html'];
+			if ( $old_raw === $new_raw ) {
+				return $bricks_settings;
+			}
+			$before = UiChemy_Composer_Renderer::slot_texts( $old_raw );
+			$after  = UiChemy_Composer_Renderer::slot_texts( $new_raw );
+			foreach ( $after as $i => $text ) {
+				$key = "uichemy_slot_{$i}_text";
+				if ( null === $text || ! array_key_exists( $key, $bricks_settings ) ) {
+					continue;
+				}
+				$was = array_key_exists( $i, $before ) ? $before[ $i ] : null;
+				if ( $was !== $text ) {
+					$bricks_settings[ $key ] = $text;
+				}
+			}
+			return $bricks_settings;
 		}
 
 		/**
@@ -611,6 +647,62 @@ if ( ! class_exists( 'UiChemy_Bricks_Driver' ) ) {
 				),
 				'notes'  => $notes,
 			);
+		}
+
+		/**
+		 * Section scripts queued for the footer, keyed by uid so a section rendered twice runs once.
+		 *
+		 * @var array<string,string>
+		 */
+		private static $footer_js = array();
+
+		/**
+		 * Queue a Bricks section's JS for before </body> (after GSAP and the page code) and load the libraries it uses.
+		 *
+		 * @param string $uid    Section uid (its `uichemy-composer-{uid}` scope).
+		 * @param string $raw_js Section JS.
+		 * @return void
+		 */
+		public static function queue_footer_js( $uid, $raw_js ) {
+			$raw_js = (string) $raw_js;
+			if ( '' === trim( $raw_js ) ) {
+				return;
+			}
+
+			// Only the libraries the JS uses, as the Elementor widget and the Gutenberg block do.
+			if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
+				if ( preg_match( '/\bgsap\b|\bScrollTrigger\b/', $raw_js ) ) {
+					\UiChemy_Composer_Renderer::enqueue_gsap_runtime();
+				}
+				if ( preg_match( '/\bTHREE\b/', $raw_js ) ) {
+					\UiChemy_Composer_Renderer::enqueue_three_runtime();
+				}
+			}
+
+			if ( empty( self::$footer_js ) ) {
+				add_action( 'wp_footer', array( __CLASS__, 'print_footer_js' ), 99 );
+			}
+			self::$footer_js[ (string) $uid ] = $raw_js;
+		}
+
+		/**
+		 * Print the queued section scripts (wp_footer).
+		 *
+		 * @return void
+		 */
+		public static function print_footer_js() {
+			foreach ( self::$footer_js as $uid => $raw_js ) {
+				// Motion variables -> values preamble + property reads.
+				if ( class_exists( 'UiChemy_Composer_Renderer' ) ) {
+					$raw_js = \UiChemy_Composer_Renderer::compile_motion( $raw_js );
+				}
+				$safe_js = preg_replace( '#</(script)#i', '<\\\\/$1', $raw_js );
+				echo "\n<script id=\"uichemy-composer-js-" . esc_attr( $uid ) . '" data-cfasync="false" data-no-optimize="1">';
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				echo $safe_js;
+				echo "</script>\n";
+			}
+			self::$footer_js = array();
 		}
 	}
 }

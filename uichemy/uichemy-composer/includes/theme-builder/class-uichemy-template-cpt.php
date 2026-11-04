@@ -361,6 +361,12 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 				return Uich_CB_Content::edit_url( $post_id );
 			}
 
+			// A Bricks template opens in the Bricks builder on its own URL.
+			if ( 'bricks' === $editor ) {
+				$permalink = get_permalink( $post_id );
+				return $permalink ? add_query_arg( 'bricks', 'run', $permalink ) : '';
+			}
+
 			return add_query_arg(
 				array(
 					'post'   => $post_id,

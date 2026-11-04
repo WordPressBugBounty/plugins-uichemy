@@ -372,10 +372,16 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 					return UiChemy_Composer_MCP_Server::execute_get_globals_css( $params );
 
 				case 'set':
-					return UiChemy_Composer_MCP_Server::execute_set_globals_css( $params );
-
 				case 'patch':
-					return UiChemy_Composer_MCP_Server::execute_edit_globals_css( $params );
+					$result = 'set' === $action
+						? UiChemy_Composer_MCP_Server::execute_set_globals_css( $params )
+						: UiChemy_Composer_MCP_Server::execute_edit_globals_css( $params );
+					// Tokens just changed: the site's design.md (uichemy-composer/memory)
+					// has to follow, or be created.
+					if ( is_array( $result ) && class_exists( 'UiChemy_MCP_Context' ) ) {
+						$result['design_md'] = UiChemy_MCP_Context::design_md_reminder();
+					}
+					return $result;
 
 				case '':
 					return new WP_Error( 'uich_mcp_error', 'Missing "action". Valid: get, set, patch.' );

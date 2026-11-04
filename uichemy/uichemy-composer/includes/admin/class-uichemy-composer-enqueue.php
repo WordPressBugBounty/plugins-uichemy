@@ -430,6 +430,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 				'Dashed' => __( 'Dashed', 'uichemy' ),
 				'Direct Editor' => __( 'Direct Editor', 'uichemy' ),
 				'Display' => __( 'Display', 'uichemy' ),
+				'Example: data-id|123 || aria-label|Read more' => __( 'Example: data-id|123 || aria-label|Read more', 'uichemy' ),
 				'Dotted' => __( 'Dotted', 'uichemy' ),
 				'Double' => __( 'Double', 'uichemy' ),
 				'Elementor Globals Editor' => __( 'Elementor Globals Editor', 'uichemy' ),
@@ -487,6 +488,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 				'Right' => __( 'Right', 'uichemy' ),
 				'Row Gap' => __( 'Row Gap', 'uichemy' ),
 				'SVG Code' => __( 'SVG Code', 'uichemy' ),
+				'UiChemy Composer tabs' => __( 'UiChemy Composer tabs', 'uichemy' ),
 				'SVG URL' => __( 'SVG URL', 'uichemy' ),
 				'SVG mode' => __( 'SVG mode', 'uichemy' ),
 				'Select an element first' => __( 'Select an element first', 'uichemy' ),
@@ -585,6 +587,11 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 				}
 			}
 
+			// The editor needs the renderer for runtime_urls() below.
+			if ( ! class_exists( 'UiChemy_Composer_Renderer' ) && is_readable( UICHEMY_PATH . 'includes/admin/widgets/class-uichemy-composer-renderer.php' ) ) {
+				require_once UICHEMY_PATH . 'includes/admin/widgets/class-uichemy-composer-renderer.php';
+			}
+
 			wp_localize_script(
 				$handle,
 				'uichUiChemyBlockCfg',
@@ -596,6 +603,15 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					// brand logo but never opened the icon picker would otherwise keep
 					// UiChemy's mark in the inserter.
 					'logo'        => function_exists( 'uich_brand_logo_url' ) ? uich_brand_logo_url() : '',
+					// The block's preview iframe is where the on-canvas toolbar
+					// renders, the Gutenberg counterpart of Elementor's preview
+					// document (see enqueue_preview_canvas_css()), so it links the
+					// same stylesheet. Empty when the build is missing.
+					'canvasCss'   => $this->canvas_css_url(),
+					// GSAP / three.js URLs for the block preview iframe.
+					'runtime'     => ( class_exists( 'UiChemy_Composer_Renderer' ) && method_exists( 'UiChemy_Composer_Renderer', 'runtime_urls' ) )
+						? UiChemy_Composer_Renderer::runtime_urls()
+						: array( 'gsap' => array(), 'three' => '' ),
 				)
 			);
 		}
@@ -789,6 +805,32 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 				true
 			);
 			wp_set_script_translations( 'uichemy-composer-bricks-adapter', 'uichemy' );
+
+			// Tailwind preflight makes <img>/<svg> block; restore inline on Bricks' loading screen so its version badge sits beside the logo.
+			wp_add_inline_style(
+				'uichemy-composer-composer',
+				'#bricks-preloader img,#bricks-preloader svg{display:inline;vertical-align:baseline;}'
+			);
+
+			// Theme Builder header/footer around Bricks' canvas; builder window only (the canvas is a builder request too).
+			if ( function_exists( 'bricks_is_builder_main' ) && bricks_is_builder_main() && class_exists( 'UiChemy_Locations' ) ) {
+				$locations = UiChemy_Locations::editor_locations( get_queried_object_id() );
+				if ( ! empty( $locations ) ) {
+					$locations_js = UICHEMY_PATH . 'assets/js/uichemy-composer-bricks-locations.js';
+					wp_enqueue_script(
+						'uichemy-composer-bricks-locations',
+						UICHEMY_URL . 'assets/js/uichemy-composer-bricks-locations.js',
+						array(),
+						file_exists( $locations_js ) ? filemtime( $locations_js ) : UICHEMY_VERSION,
+						true
+					);
+					wp_add_inline_script(
+						'uichemy-composer-bricks-locations',
+						'window.uichBricksLocations = ' . wp_json_encode( array( 'locations' => $locations ) ) . ';',
+						'before'
+					);
+				}
+			}
 		}
 
 		/**
@@ -967,6 +1009,15 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 			// Composer loaded in there is an invisible panel whose pickers listen
 			// to every canvas click.
 			if ( class_exists( 'Uich_CB_Canvas' ) && Uich_CB_Canvas::is_canvas() ) {
+				return false;
+			}
+			// A Theme Builder template's isolated preview (?uichemy_tb_preview=<id>,
+			// UiChemy_Template_Render::maybe_preview) shows ONE template, not a
+			// page: the query underneath is the home page, so an editor here would
+			// edit that instead. It is also how the block editor draws the page's
+			// header and footer, where the editor's top bar and its 46px offset
+			// landed inside the drawn header.
+			if ( isset( $_GET['uichemy_tb_preview'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
 				return false;
 			}
 			if ( class_exists( '\Elementor\Plugin' )
@@ -1468,6 +1519,19 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 				array(),
 				filemtime( $css_file )
 			);
+		}
+
+		/**
+		 * Versioned URL of canvas.css, or '' when it has not been built.
+		 *
+		 * @return string
+		 */
+		private function canvas_css_url() {
+			$css_file = UICHEMY_BUILD_PATH . 'canvas.css';
+			if ( ! file_exists( $css_file ) ) {
+				return '';
+			}
+			return add_query_arg( 'ver', filemtime( $css_file ), UICHEMY_BUILD_URL . 'canvas.css' );
 		}
 
 		public function enqueue_composer_editor_script() {

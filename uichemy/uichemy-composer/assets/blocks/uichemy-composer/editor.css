@@ -178,3 +178,29 @@
 	font-weight: 500;
 	justify-content: center;
 }
+
+/* Section width in the block editor canvas.
+   On a theme without theme.json, WordPress caps every block at 840px in the
+   editor (`html :where(.wp-block) { max-width: 840px }`, core's
+   edit-post/classic.css, loaded only for such themes), a stand-in for a text
+   column. A Composer section is a page section, and on the page it spans the
+   theme's content area, so in the editor it sat in a narrow column with empty
+   space either side, next to a header and footer drawn at full width. With no
+   alignment chosen it takes the canvas width; Wide and Full keep WordPress's
+   own rules.
+
+   Deliberately low specificity (`html body :where(…)`, 0-0-2): just enough to
+   beat that classic rule (0-0-1) and NOT a theme.json layout's content size
+   (`.is-layout-constrained > …`, 0-1-0). A theme with theme.json lays the page
+   out the same way in the editor and on the site, so there the editor is
+   already right and must be left alone. Gutenberg-only selectors: Bricks loads
+   this file too. */
+html body :where(.editor-styles-wrapper .wp-block.wp-block-uichemy-composer:not([data-align])) {
+	max-width: none;
+}
+/* ...and the page title with them, so the title and the sections start on the
+   same edge as they do on the page. Only on a post that has a Composer section;
+   any other post keeps WordPress's text column. Same specificity, same reason. */
+html body :where(.editor-styles-wrapper:has(.wp-block-uichemy-composer) .editor-post-title.wp-block) {
+	max-width: none;
+}

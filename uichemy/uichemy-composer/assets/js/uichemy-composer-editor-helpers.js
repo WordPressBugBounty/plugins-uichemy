@@ -1,5 +1,7 @@
 (function ($) {
 	'use strict';
+	/* i18n helpers (wp-i18n is a declared script dependency). */
+	var __ = ( window.wp && window.wp.i18n && window.wp.i18n.__ ) || function ( text ) { return text; };
 	var UichSHE = window.UichUiChemyComposerEditor;
 	if (!UichSHE || UichSHE.__uichUiChemyComposerHelpersRegistered) {
 		return;
@@ -859,7 +861,8 @@
 
 	function getNodeLabel(node, index) {
 		if (node.nodeType === Node.TEXT_NODE) {
-			return `Text ${index + 1}`;
+			/* translators: %d: text node number */
+			return __( 'Text %d', 'uichemy' ).replace( '%d', index + 1 );
 		}
 
 		const tagName = node.tagName ? node.tagName.toLowerCase() : 'node';

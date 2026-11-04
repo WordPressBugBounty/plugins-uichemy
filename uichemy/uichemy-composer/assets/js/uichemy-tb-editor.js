@@ -14,6 +14,7 @@
 	}
 
 	var el             = wp.element.createElement;
+	var __             = ( wp.i18n && wp.i18n.__ ) || function ( text ) { return text; };
 	var useState       = wp.element.useState;
 	var registerPlugin = wp.plugins.registerPlugin;
 	var Button         = wp.components && wp.components.Button;
@@ -52,20 +53,20 @@
 						window.location.href = url;
 					} else {
 						setBusy( false );
-						window.alert( 'Could not switch to Elementor.' );
+						window.alert( __( 'Could not switch to Elementor.', 'uichemy' ) );
 					}
 				} )
 				.catch( function () {
 					setBusy( false );
-					window.alert( 'Could not switch to Elementor.' );
+					window.alert( __( 'Could not switch to Elementor.', 'uichemy' ) );
 				} );
 		}
 
 		return el(
 			Panel,
 			{ name: 'uichemy-theme-builder', title: 'UiChemy', className: 'uichemy-tb-panel' },
-			el( 'p', { style: { marginTop: 0 } }, 'Editing this template with the block editor. Prefer Elementor?' ),
-			el( Button, { variant: 'secondary', isBusy: busy, disabled: busy, onClick: go }, busy ? 'Switching…' : 'Edit with Elementor' )
+			el( 'p', { style: { marginTop: 0 } }, __( 'Editing this template with the block editor. Prefer Elementor?', 'uichemy' ) ),
+			el( Button, { variant: 'secondary', isBusy: busy, disabled: busy, onClick: go }, busy ? __( 'Switching…', 'uichemy' ) : __( 'Edit with Elementor', 'uichemy' ) )
 		);
 	}
 

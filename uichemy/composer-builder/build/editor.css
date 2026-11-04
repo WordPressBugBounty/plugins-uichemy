@@ -2336,7 +2336,8 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
 .m3CqgIhWsihpUA_bhR9j { position: relative; z-index: 1; border-radius: inherit; }
 /* Border light ONLY — no bloom outside the box (Jay, 2026-09-29): the light is
    masked to a 2px band on the edge and nothing paints beyond it. */
-.nO2G50fv0tAsRx59gLjB { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; opacity: 0; transition: opacity var(--uc-dur-slow) var(--uc-ease-standard); z-index: 2; padding: 2px; background: conic-gradient(from var(--uc-loader-angle), transparent 0deg 205deg, var(--uc-brand-glow-hover) 225deg, var(--uc-brand) 275deg, var(--uc-brand-on) 288deg, var(--uc-brand) 298deg, transparent 322deg); -webkit-mask: linear-gradient(var(--uc-inverse-bg) 0 0) content-box, linear-gradient(var(--uc-inverse-bg) 0 0); -webkit-mask-composite: xor; -webkit-mask: linear-gradient(var(--uc-inverse-bg) 0 0) content-box, linear-gradient(var(--uc-inverse-bg) 0 0); mask: linear-gradient(var(--uc-inverse-bg) 0 0) content-box, linear-gradient(var(--uc-inverse-bg) 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
+/* Literal mask colour: a var() in the `mask` shorthand is lost when the shadow root copies this CSS as text. */
+.nO2G50fv0tAsRx59gLjB { position: absolute; inset: 0; pointer-events: none; border-radius: inherit; opacity: 0; transition: opacity var(--uc-dur-slow) var(--uc-ease-standard); z-index: 2; padding: 2px; background: conic-gradient(from var(--uc-loader-angle), transparent 0deg 205deg, var(--uc-brand-glow-hover) 225deg, var(--uc-brand) 275deg, var(--uc-brand-on) 288deg, var(--uc-brand) 298deg, transparent 322deg); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; }
 .WE1BzjxfZpSMBw3chEyI .nO2G50fv0tAsRx59gLjB { opacity: 1; animation: gFuY2iD0P0P2NTMIplz2 var(--_speed) linear infinite; }
 @keyframes gFuY2iD0P0P2NTMIplz2 { to { --uc-loader-angle: 360deg; } }
 
@@ -23408,6 +23409,8 @@ body.uich-bricks-dock.uich-bricks-dock-resizing #bricks-toolbar {
    inspector (via :has() on our host), so ordinary blocks keep the stock width
    and Page/Block are only ever affected while you're editing a composer block.
    One number to tune, it's a custom property for exactly that reason. */
+/* Desktop only: below 782px WordPress's sidebar is a full-width overlay. */
+@media (min-width: 782px) {
 body[data-uich-builder="gutenberg"] .interface-complementary-area:has(.uich-inspector-host),
 body[data-uich-builder="gutenberg"] .interface-interface-skeleton__sidebar:has(.uich-inspector-host) {
   --uichemy-gb-sidebar-w: 320px;
@@ -23419,6 +23422,11 @@ body[data-uich-builder="gutenberg"] .interface-interface-skeleton__sidebar:has(.
      not), which is exactly the gap this pins shut. */
   width: var(--uichemy-gb-sidebar-w) !important;
   max-width: var(--uichemy-gb-sidebar-w) !important;
+}
+}
+/* Minimised inspector: hide the sidebar column in place (CSS only, so the panel and its toolbar stay mounted). */
+body[data-uich-builder="gutenberg"] .interface-interface-skeleton__sidebar:has(.uich-inspector-host > .panel.inspector-min) {
+  display: none !important;
 }
 /* Fill the column all the way. The sidebar is a CHAIN of wrappers, skeleton
    sidebar → complementary area (the `overflow:auto` scroll container, also
@@ -23469,6 +23477,32 @@ body[data-uich-builder="gutenberg"] .block-editor-block-inspector:has(.uich-insp
 .uich-inspector-host .panel[data-theme="dark"],
 .uich-inspector-host .panel.dock-right[data-theme="dark"] {
   background: var(--panel-bg);
+}
+/* ...and that ground has to reach the bottom of the sidebar. Every wrapper from
+   WordPress's scroll container down to the panel sized to its content, so a short
+   tab (Design with one element selected, an empty Code pane) ended mid-column and
+   WP's white sidebar showed under a dark panel. The whole chain becomes a column
+   that grows to fill: `1 0 auto` keeps the content's own height as the floor, so
+   a long field list still overflows and scrolls with the sidebar exactly as
+   before. The Chat tab is left out: it has its own fixed-height chain (below).
+
+   The chain is "every element between WordPress's scroll container and our
+   host" (`.interface-complementary-area :has(…)`), not a list of WordPress's
+   wrapper classes: those have changed between releases (the sidebar moved
+   packages, the tab panels were rebuilt), and a list stops matching the day a
+   wrapper is renamed or added, while the path always holds. */
+body[data-uich-builder="gutenberg"] .interface-complementary-area:has(.uich-inspector-host > .panel:not(.tab-chat)) {
+  display: flex;
+  flex-direction: column;
+}
+body[data-uich-builder="gutenberg"] .interface-complementary-area :has(.uich-inspector-host > .panel:not(.tab-chat)),
+body[data-uich-builder="gutenberg"] .uich-inspector-host:has(> .panel:not(.tab-chat)) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 0 auto;
+}
+body[data-uich-builder="gutenberg"] .uich-inspector-host > .panel:not(.tab-chat) {
+  flex: 1 0 auto;
 }
 /* Drawer-only chrome: WordPress already provides every one of these. The close
    button and tab row are the sidebar's own; dragging the width is the sidebar's
@@ -23571,14 +23605,40 @@ body[data-uich-builder="gutenberg"] .block-editor-block-inspector:has(.uich-insp
 .uich-inspector-host .code2-body {
   min-height: 240px;
 }
-/* Cap each code editor at a fixed height with its own scroll. Without this,
-   CodeMirror (height:100% of .ed-pane-body-live, which flexes to fit) grows to
-   show every line, so a long HTML/CSS/JS file balloons the whole sidebar. A
-   fixed box height turns each editor into a fixed, internally-scrolling pane.
-   Inspector-only, the drawer keeps flex:1 and fills its own shell. */
+/* Each code editor takes the space left in the sidebar and scrolls inside it.
+   CodeMirror is height:100% of .ed-pane-body-live, so a content-sized box grew
+   to show every line and a long HTML/CSS/JS file ballooned the whole sidebar.
+   This used to be fixed at 280px, which stopped that but left the editor
+   ending a third of the way down an otherwise empty, full-height pane. The pane
+   above it already fills the sidebar (the full-height chain near the top of
+   this section), so a zero basis lets the editor take exactly what is left and
+   never what its content asks for; long files scroll inside. The floor keeps it
+   usable on short screens, where the sidebar scrolls instead. Same model as the
+   drawer, which fills its own shell. */
 .uich-inspector-host .ed-pane-body-live {
-  flex: 0 0 auto;
-  height: 280px;
+  flex: 1 1 0;
+  height: auto;
+  min-height: 240px;
+}
+/* Pane header. The CSS and JS panes carry three tools (Assets, Format, Copy),
+   ~253px at the drawer's button padding, which leaves the title ~8px in the
+   sidebar column: its icon collapsed to nothing and "CSS" plus the placement
+   button slid under "Assets". The title keeps its size, the tools take the
+   compact padding, and if a translation still does not fit they drop to their
+   own row instead of overlapping. */
+.uich-inspector-host .ed-pane-head {
+  flex-wrap: wrap;
+  row-gap: 6px;
+}
+.uich-inspector-host .ed-pane-title {
+  flex-shrink: 0;
+}
+.uich-inspector-host .ed-pane-tools {
+  margin-left: auto;
+}
+.uich-inspector-host .ed-pane-tools > button {
+  padding: 0 6px;
+  gap: 4px;
 }
 /* Match the Gutenberg-native 2px radius on the code editor panes (they ship at
    8px), same treatment as the prompt box, so the composer reads the same across
@@ -23645,23 +23705,31 @@ body[data-uich-builder="gutenberg"] .block-editor-block-inspector:has( .uich-ins
   background: var(--panel-bg);
   padding-inline: 14px;
 }
-/* Chat tab: fill the sidebar height. The fixed height goes on the PANEL, and the
-   flex column inside it then divides that up on its own, scope pill and compose
-   bar at their natural heights, transcript taking everything left over.
+/* Chat tab: fill the sidebar height, EXACTLY. The panel takes the sidebar's own
+   height through a flex column from WordPress's scroll container down (the same
+   chain the other tabs use above, but able to shrink: `1 1 0` + `min-height: 0`,
+   since the transcript scrolls inside rather than the sidebar). The flex column
+   inside the panel then divides that up on its own, scope pill and compose bar at
+   their natural heights, transcript taking everything left over.
 
-   Only ONE measured number, and it is the stable one: 116px of chrome above the
-   panel (the editor header plus WordPress's Page/Block tab row). An earlier
-   version put `height: calc(100vh - 440px)` on the TRANSCRIPT instead, which
-   meant estimating the compose bar's height as well, and every pixel that
-   estimate was short pushed the prompt box off the bottom of the screen. Here the
-   compose bar measures itself, so it is always fully visible.
-
-   Errors stay bounded and cosmetic: too tall and WordPress's sidebar scrolls a
-   little (the sticky compose bar above keeps the prompt box on screen), too short
-   and there is a small gap under it. The min-height is the floor for short
-   viewports and for fullscreen mode, where the chrome above is smaller. */
+   This replaced `height: calc(100vh - 116px)`, a guess at the chrome above the
+   panel that only held with no admin bar: in the normal (non-fullscreen) editor
+   it came up 68px short and left a white strip under a dark panel. The 360px
+   floor is for very short viewports, where the sidebar scrolls instead. */
+body[data-uich-builder="gutenberg"] .interface-complementary-area:has(.uich-inspector-host > .panel.tab-chat) {
+  display: flex;
+  flex-direction: column;
+}
+/* Every element on the path, as above, rather than WordPress's class names. */
+body[data-uich-builder="gutenberg"] .interface-complementary-area :has(.uich-inspector-host > .panel.tab-chat) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 0;
+  min-height: 0;
+}
 .uich-inspector-host .panel.tab-chat {
-  height: calc(100vh - 116px);
+  flex: 1 1 0;
+  height: auto;
   min-height: 360px;
   max-height: none;
 }
@@ -23684,31 +23752,20 @@ body[data-uich-builder="gutenberg"] .block-editor-block-inspector:has( .uich-ins
   min-height: 0;
 }
 /* The transcript takes the slack and owns the scrolling.
-   `flex-basis: auto` with a `min-height` floor, never `flex: 1 1 0`, a zero
-   basis floors at zero the moment anything upstream fails to supply a definite
-   height, and then the conversation and the "What do you want to do?" empty state
-   both vanish, leaving just the prompt box. An auto basis starts from content
-   height, and the floor means the worst case is a transcript that scrolls sooner
-   than it should, not one that disappears. */
+   This box holds BOTH chat states, the "What do you want to do?" setup card AND
+   the message list, and must be the same height for either, so the panel reads
+   identically whether the chat is empty or full and the compose bar never moves
+   when you send. It used to be pinned with `height: calc(100vh - 470px)`, an
+   estimate of everything else in the column, because the parent chain gave it
+   no definite height to fill. The chain above now does (the panel is exactly
+   the sidebar's height), so it simply takes what is left: `flex: 1 1 0` sizes
+   it from the slack and never from its content, and `overflow-y` scrolls a
+   long conversation inside it. The floor keeps a few lines of transcript on a
+   very short screen. */
 .uich-inspector-host .panel.tab-chat .chat2-body {
-  /* PINNED to the viewport, not floored. This box holds BOTH chat states, the
-     "What do you want to do?" setup card AND the message list, so whatever it
-     measures is the height of both. Earlier it was `min-height` + `flex: 1 1
-     auto`, which let a long conversation grow it taller than the setup card
-     (the parent chain that should have capped it doesn't resolve on WordPress's
-     inspector markup). A fixed `height` removes that: the box is exactly this
-     tall no matter how many messages it holds, so the panel reads identically
-     whether the chat is empty or full, which is the whole request here.
-       flex 0 0 auto → content can't stretch or squash the box off this height;
-       overflow-y   → a long conversation scrolls INSIDE it, so the compose bar
-                      below never moves when you send.
-     470px is everything that isn't this box: ~100px of panel tab rows + ~53px
-     scope row + ~175px compose bar + ~104px of editor chrome above the panel +
-     margins. Erring high a touch keeps the compose bar fully visible, a small
-     gap is fine, a clipped Send button is not. This is the one number to tune. */
-  flex: 0 0 auto;
-  height: calc(100vh - 470px);
-  min-height: 0;
+  flex: 1 1 0;
+  height: auto;
+  min-height: 120px;
   max-height: none;
   overflow-y: auto;
 }
@@ -23773,15 +23830,21 @@ body[data-uich-builder="gutenberg"] .block-editor-block-inspector:has( .uich-ins
 .uich-inspector-host .panel.dock-right .prop-rows { gap: 12px; }
 .uich-inspector-host .panel.dock-right .prop-row { row-gap: 12px; }
 
+/* Not inside `.rp-insp`: the right panel's inspector keeps its own two-column
+   grid (`.panel.dock-right.uc-chrome .rp-insp .field.pf`, more specific than
+   anything here), so stacking only the CHILDREN there pushed every control into
+   the 80px label column while the 190px control column sat empty — font size,
+   colour and select values were clipped to a few pixels. Those fields now get the
+   same label + control row the Elementor and Bricks drawer shows. */
 @container (max-width: 359px) {
-  .uich-inspector-host .panel.dock-right .field.pf {
+  .uich-inspector-host .panel.dock-right .field.pf:not(.rp-insp .field.pf) {
     grid-template-columns: minmax(0, 1fr);
     align-items: stretch;
     -moz-column-gap: 0;
          column-gap: 0;
     row-gap: 4px;
   }
-  .uich-inspector-host .panel.dock-right .field.pf > .pf-label {
+  .uich-inspector-host .panel.dock-right .field.pf:not(.rp-insp .field.pf) > .pf-label {
     grid-column: 1;
     /* The label owns a full row now, so it no longer needs to be squeezed into a
        fixed column, let long names wrap instead of truncating with an ellipsis. */
@@ -23789,7 +23852,7 @@ body[data-uich-builder="gutenberg"] .block-editor-block-inspector:has( .uich-ins
   }
   /* Anything that was pinned to the control column (input stacks, hints,
      applied-from notes) now follows the label in the single column. */
-  .uich-inspector-host .panel.dock-right .field.pf > *:not(.pf-label) {
+  .uich-inspector-host .panel.dock-right .field.pf:not(.rp-insp .field.pf) > *:not(.pf-label) {
     grid-column: 1;
   }
 }
@@ -27682,6 +27745,10 @@ body.uichemy-frontend-editor .uich-rp.uc-chrome :is(.uc-portal, .uc-pop-dark, [d
 .rp-scope-row:focus-visible { background: var(--uc-surface-hover, rgba(255, 255, 255, 0.07)); }
 .rp-scope-row__label { min-width: 0; flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rp-scope-row.is-global .rp-scope-row__label { color: var(--uc-global, #a78bfa); }
+/* A Global Class is listed (to see or remove it) but is not an edit target:
+   it is edited in Site styles. */
+.rp-scope-row[aria-disabled='true'] { cursor: default; }
+.rp-scope-row[aria-disabled='true']:hover { background: transparent; }
 .rp-scope-row__tag { font-size: var(--uc-text-2xs, 11px); color: var(--uc-text-muted, #8a8a8a); }
 .rp-scope-row__remove { opacity: 0; flex: 0 0 auto; }
 .rp-scope-row:hover .rp-scope-row__remove,
@@ -31344,6 +31411,12 @@ body.uipb-right-hidden .uipb-studio .uich-mtl-launch { right: calc(var(--uipb-gu
 /* A loop (∞) or dynamic data, after the name: the same purple the canvas
    rings them in (composer-box-overlay.js, KIND_INK). */
 .uipb-layer__mark { display: inline-flex; vertical-align: -2px; margin-left: 5px; color: #8B5CF6; }
+/* Hidden on some devices (Hide on): an eye-off plus each device, muted, so it
+   reads as a state and not as the purple of loop / dynamic data. */
+.uipb-layer__mark[data-kind='hide-on'] { gap: 2px; color: var(--uc-text-muted); }
+/* Hidden on the device the canvas shows: dimmed like the eye's hide. */
+.uipb-layer[data-device-hidden] .uipb-layer__icon,
+.uipb-layer[data-device-hidden] .uipb-layer__name { opacity: 0.45; }
 /* Rename in place: the field takes the name's slot. */
 .uipb-layer__rename {
   flex: 1;

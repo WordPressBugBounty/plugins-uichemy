@@ -443,11 +443,22 @@ if ( ! class_exists( 'Uich_CB_Render' ) ) {
 				return;
 			}
 
+			// The styles go out after the Google Fonts they use (UiChemy_Google_Fonts),
+			// so a family picked in Font family is linked before the first paint.
+			$styles = '';
+			$fonts  = '';
+
 			foreach ( self::page_code_sources() as $post_id ) {
 				$sections = Uich_CB_Content::to_editor_sections( self::page_cb_content( $post_id ) );
 
 				foreach ( (array) $sections as $section ) {
 					$uid = is_array( $section ) && isset( $section['id'] ) ? sanitize_key( $section['id'] ) : '';
+					if ( class_exists( 'UiChemy_Google_Fonts' ) && is_array( $section ) && isset( $section['settings'] ) ) {
+						$fonts .= UiChemy_Google_Fonts::links_for_css(
+							( isset( $section['settings']['raw_css'] ) ? (string) $section['settings']['raw_css'] : '' ) . "\n"
+							. ( isset( $section['settings']['raw_html'] ) ? (string) $section['settings']['raw_html'] : '' )
+						);
+					}
 					$css = '' !== $uid && isset( $section['settings']['raw_css'] ) ? (string) $section['settings']['raw_css'] : '';
 
 					if ( '' === trim( $css ) || isset( self::$css_in_head[ $post_id ][ $uid ] ) ) {
@@ -461,10 +472,12 @@ if ( ! class_exists( 'Uich_CB_Render' ) ) {
 					}
 
 					self::$css_in_head[ $post_id ][ $uid ] = true;
-					// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Builder CSS, scoped by the shared Composer renderer as it prints it inline.
-					echo "\n" . '<style id="uich-cb-css-' . esc_attr( $post_id . '-' . $uid ) . '">' . $scoped . '</style>';
+					$styles .= "\n" . '<style id="uich-cb-css-' . esc_attr( $post_id . '-' . $uid ) . '">' . $scoped . '</style>';
 				}
 			}
+
+			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Font <link>s built with esc_url()/esc_attr(); builder CSS scoped by the shared Composer renderer as it prints it inline.
+			echo $fonts . $styles;
 		}
 
 		/**

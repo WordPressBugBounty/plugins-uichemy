@@ -262,8 +262,13 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 		public static function missing_build_notice() {
 			?>
 			<div class="notice notice-warning">
-				<p><strong>New dashboard:</strong> the React build is missing.
-				Run <code>cd new-dashboard &amp;&amp; npm install &amp;&amp; npm run build</code> from the plugin root.</p>
+				<p><?php
+				printf(
+					/* translators: %s: the build command */
+					wp_kses( __( '<strong>New dashboard:</strong> the React build is missing. Run %s from the plugin root.', 'uichemy' ), array( 'strong' => array() ) ),
+					'<code>cd new-dashboard &amp;&amp; npm install &amp;&amp; npm run build</code>'
+				);
+				?></p>
 			</div>
 			<?php
 		}

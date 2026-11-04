@@ -1610,7 +1610,7 @@
 							return '';
 						}
 						seen.add(idToken);
-						const meta = source === 'widget' ? 'Widget CSS' : (source === 'atomic' ? 'Elementor Atomic variable' : 'Elementor global');
+						const meta = source === 'widget' ? __( 'Widget CSS', 'uichemy' ) : (source === 'atomic' ? __( 'Elementor Atomic variable', 'uichemy' ) : __( 'Elementor global', 'uichemy' ));
 						return `<button type="button" class="uichemy-composer-direct-global-color-option" data-global-color-id="${encodeURIComponent(idToken)}"><span class="uichemy-composer-direct-global-color-swatch" style="background:${swatch};"></span><span>${title}<span class="uichemy-composer-direct-global-color-option-meta">${meta}</span></span></button>`;
 					}).filter(Boolean).join('');
 				};
@@ -2258,8 +2258,8 @@
 				}
 			}
 			dot.style.background = String(color || '#7dd3fc');
-			dot.setAttribute('aria-label', `Style origin: from .${token}`);
-			dot.title = `Style origin: from .${token}`;
+			dot.setAttribute('aria-label', sprintf( /* translators: %s: class name */ __( 'Style origin: from .%s', 'uichemy' ), token ));
+			dot.title = sprintf( /* translators: %s: class name */ __( 'Style origin: from .%s', 'uichemy' ), token );
 			dot.dataset.styleOriginProperty = String(property || '');
 			dot.__ucStyleOriginEntries = entries || [];
 		}
@@ -2287,8 +2287,8 @@
 				}
 			}
 			dot.style.background = String(color || '#7dd3fc');
-			dot.setAttribute('aria-label', `Style origin: from .${token}`);
-			dot.title = `Style origin: from .${token}`;
+			dot.setAttribute('aria-label', sprintf( /* translators: %s: class name */ __( 'Style origin: from .%s', 'uichemy' ), token ));
+			dot.title = sprintf( /* translators: %s: class name */ __( 'Style origin: from .%s', 'uichemy' ), token );
 			dot.dataset.styleOriginProperty = String(property || '');
 			dot.__ucStyleOriginEntries = entries || [];
 		}
@@ -3709,7 +3709,7 @@
 					source: 'typography',
 					token,
 					label: token,
-					meta: `Elementor v3 global typography · ${title}`,
+					meta: sprintf( /* translators: %s: typography preset name */ __( 'Elementor v3 global typography · %s', 'uichemy' ), title ),
 					typographyTitle: title,
 				});
 			});
@@ -3732,7 +3732,8 @@
 					source: 'atomic_class',
 					token,
 					label: token,
-					meta: `Elementor Atomic global class · ${title}`,
+					/* translators: %s: Elementor global class title */
+					meta: sprintf( __( 'Elementor Atomic global class · %s', 'uichemy' ), title ),
 					typographyTitle: '',
 				});
 			});
@@ -3750,7 +3751,7 @@
 					source: 'local',
 					token,
 					label: token,
-					meta: 'Local class from this widget HTML/CSS',
+					meta: __( 'Local class from this widget HTML/CSS', 'uichemy' ),
 					typographyTitle: '',
 				});
 			});
@@ -4090,7 +4091,7 @@
 			const slotMeta = typeof activeSlotIndex === 'number' ? ` · slot ${activeSlotIndex + 1}` : '';
 			directMeta.textContent = node
 				? `${UichSHE.getNodeLabel(node, typeof activeSlotIndex === 'number' ? activeSlotIndex : 0)}${slotMeta}${isAnchor ? ' · anchor element' : ''}${isDynamicText ? ' · dynamic text enabled' : ''}`
-				: (activeLayer ? `${activeLayer.label} is currently a non-editable layer. Select a row tagged with a slot number to edit text.` : 'No editable element is currently selected.');
+				: (activeLayer ? sprintf( /* translators: %s: layer name */ __( '%s is currently a non-editable layer. Select a row tagged with a slot number to edit text.', 'uichemy' ), activeLayer.label ) : __( 'No editable element is currently selected.', 'uichemy' ));
 			const canEditClasses = !!(typographyTarget && typographyTarget.nodeType === Node.ELEMENT_NODE);
 			ensureDirectEditorV3TypographyNameCache();
 			const appliedClassTokens = parseClassNameString(resolvedSnapshot.className || '');
@@ -4215,7 +4216,7 @@
 			directImagePath.placeholder = isSvgLayer ? 'https://example.com/icon.svg' : 'https://example.com/image.jpg';
 			directImagePreview.disabled = !isMediaLayer;
 			directImagePreview.setAttribute('aria-label', isSvgLayer ? 'Select SVG' : 'Change Image');
-			directImageEmpty.textContent = isSvgLayer ? 'No SVG selected' : 'No image selected';
+			directImageEmpty.textContent = isSvgLayer ? __( 'No SVG selected', 'uichemy' ) : __( 'No image selected', 'uichemy' );
 			const svgCodePreviewSrc = isSvgCodeMode
 				? svgMarkupToPreviewDataUri(UichSHE.getUiChemyComposerEditorValueById('uichemy-composer-direct-svg-code') || inlineSvgMarkup)
 				: '';
@@ -4640,7 +4641,7 @@
 				directLayoutSection.style.display = canEditLayout ? '' : 'none';
 			}
 			directReset.disabled = !(canEditSelection || canEditLayout);
-			directStatus.textContent = node ? '' : 'This layer is for structure only. Choose a slot-backed layer to edit values.';
+			directStatus.textContent = node ? '' : __( 'This layer is for structure only. Choose a slot-backed layer to edit values.', 'uichemy' );
 			UichSHE.setUiChemyComposerPreviewSelectionPath(activeLayer && activeLayer.path ? activeLayer.path : '');
 
 			/*

@@ -95,6 +95,11 @@
 		} catch (e) {
 			/* noop */
 		}
+		// Gutenberg block inside a theme-builder template: owner id stamped by the block render.
+		var owner = w && w.getAttribute ? parseInt(w.getAttribute("data-uichemy-owner") || "", 10) : 0;
+		if (owner) {
+			return owner;
+		}
 		if (CFG && CFG.postId) {
 			return CFG.postId;
 		}

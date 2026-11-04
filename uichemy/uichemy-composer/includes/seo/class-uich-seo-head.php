@@ -993,7 +993,7 @@ if ( ! class_exists( 'Uich_SEO_Head' ) ) {
 					remove_filter( 'map_meta_cap', $lift, PHP_INT_MAX );
 				}
 				if ( ! $saved || is_wp_error( $saved ) ) {
-					return is_wp_error( $saved ) ? $saved : new WP_Error( 'uich_seo_save_failed', 'The page head code could not be saved.' );
+					return is_wp_error( $saved ) ? $saved : new WP_Error( 'uich_seo_save_failed', __( 'The page head code could not be saved.', 'uichemy' ) );
 				}
 				delete_post_meta( $post_id, self::PAGE_META );
 			}

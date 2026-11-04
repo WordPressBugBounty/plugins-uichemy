@@ -40,6 +40,24 @@ add_action(
 	11
 );
 
+// Lets the Bricks builder open UiChemy header/footer templates built with Bricks (not in Bricks > Settings post types).
+add_filter(
+	'bricks/builder/supported_post_types',
+	function ( $post_types, $current_post_type ) {
+		if ( ! class_exists( 'UiChemy_Template_CPT' ) || UiChemy_Template_CPT::POST_TYPE !== $current_post_type ) {
+			return $post_types;
+		}
+		$post_id = (int) get_the_ID();
+		if ( $post_id && 'bricks' === UiChemy_Template_CPT::editor_for( $post_id ) ) {
+			$post_types   = is_array( $post_types ) ? $post_types : array();
+			$post_types[] = $current_post_type;
+		}
+		return $post_types;
+	},
+	10,
+	2
+);
+
 // Panel-asset enqueueing (bricks_is_builder() gated) lives in
 // UiChemy_Composer_Enqueue::enqueue_bricks_editor_script(), hooked on
 // `get_footer` alongside the Elementor/Gutenberg equivalents for consistency.

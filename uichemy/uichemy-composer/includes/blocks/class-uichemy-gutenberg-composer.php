@@ -97,13 +97,15 @@ if ( ! class_exists( 'UiChemy_Gutenberg_Composer' ) ) {
 			$wl    = function_exists( 'uich_brand_wl' ) ? uich_brand_wl() : array();
 			$title = ( ! empty( $wl['widget_category'] ) )
 				? sanitize_text_field( $wl['widget_category'] )
-				: esc_html__( 'UiChemy', 'uichemy' );
+				: ( function_exists( 'uich_brand_name' ) ? uich_brand_name() : __( 'UiChemy', 'uichemy' ) );
 
 			array_unshift(
 				$categories,
 				array(
 					'slug'  => 'uichemy',
-					'title' => esc_html( $title ),
+					// Plain text: the block editor prints it as a React text node, so
+					// esc_html() here showed "Acme &amp; Co" in the inserter.
+					'title' => wp_strip_all_tags( $title ),
 					'icon'  => null,
 				)
 			);
@@ -245,13 +247,29 @@ if ( ! class_exists( 'UiChemy_Gutenberg_Composer' ) ) {
 			// get_block_wrapper_attributes() does NOT add the auto `wp-block-<name>`
 			// class the way a static save-side useBlockProps would, so emit it here or
 			// the whole-page picker never sees Gutenberg composer instances.
-			$marker_class       = 'wp-block-uichemy-composer ' . $scope_class;
+			$marker_class = 'wp-block-uichemy-composer ' . $scope_class;
+			$wrapper_args = array( 'class' => $marker_class );
+
+			// Inside a theme-builder template: stamp the template id so the live-page editor loads it from there.
+			$owner_id = ( class_exists( 'UiChemy_Template_Render' ) && method_exists( 'UiChemy_Template_Render', 'current_rendering_template' ) )
+				? UiChemy_Template_Render::current_rendering_template()
+				: 0;
+			if ( $owner_id && current_user_can( 'edit_post', $owner_id ) ) {
+				$wrapper_args['data-uichemy-owner'] = (string) $owner_id;
+			}
+
 			$wrapper_attributes = function_exists( 'get_block_wrapper_attributes' )
-				? get_block_wrapper_attributes( array( 'class' => $marker_class ) )
+				? get_block_wrapper_attributes( $wrapper_args )
 				: 'class="' . esc_attr( $marker_class ) . '"';
 
+			// Live-page editor only: stamp layer paths before the section's JS changes the DOM.
+			$stamp = ( class_exists( 'UiChemy_Composer_Enqueue' ) && UiChemy_Composer_Enqueue::$frontend_editor_active
+				&& method_exists( 'UiChemy_Composer_Renderer', 'layer_path_stamp_script' ) )
+				? UiChemy_Composer_Renderer::layer_path_stamp_script()
+				: '';
+
 			// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-			return '<div ' . $wrapper_attributes . '>' . $html . '</div>';
+			return '<div ' . $wrapper_attributes . '>' . $html . $stamp . '</div>';
 		}
 
 		/**

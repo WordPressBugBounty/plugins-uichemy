@@ -258,13 +258,22 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 					$plugins[ $slug ]['Title'] = $name;
 				}
 				// The description is written for the free plugin, so it is applied to
-				// that row only; Pro keeps its own (which names no brand).
+				// that row only. Pro's own header description names UiChemy (and
+				// "White Label"), so on a renamed site it gets a neutral line instead.
 				if ( ! $is_pro && ! empty( $wl['description'] ) ) {
 					$plugins[ $slug ]['Description'] = $wl['description'];
+				} elseif ( $is_pro && ! empty( $wl['plugin_name'] ) ) {
+					$plugins[ $slug ]['Description'] = sprintf(
+						/* translators: %s: white-labelled plugin name. */
+						__( 'Pro features for %s.', 'uichemy' ),
+						$wl['plugin_name']
+					);
 				}
 				if ( ! empty( $wl['author'] ) ) {
 					$plugins[ $slug ]['Author']     = $wl['author'];
 					$plugins[ $slug ]['AuthorName'] = $wl['author'];
+					// A custom author with no URL must not keep linking to POSIMYTH.
+					$plugins[ $slug ]['AuthorURI'] = '';
 				}
 				if ( ! empty( $wl['author_url'] ) ) {
 					$plugins[ $slug ]['AuthorURI'] = $wl['author_url'];
@@ -519,6 +528,8 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				// The performance switches the Performance screen lists, so the screen has
 				// no copy of the list of its own.
 				'performance' => class_exists( 'UiChemy_Fast_Load' ) ? UiChemy_Fast_Load::registry() : array(),
+				// Settings > MCP: the owner's context and the AI's memory.
+				'mcp'         => class_exists( 'UiChemy_MCP_Context' ) ? UiChemy_MCP_Context::dashboard_payload() : null,
 				// Full config for the two screens that edit it. Those screens live
 				// only in Pro (WhiteLabel.jsx / RoleManager.jsx), so in Free these
 				// would ship to a page that renders the upsell instead and reads

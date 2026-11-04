@@ -165,7 +165,7 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 				// editor_for() answer "composer" for this template.
 				if ( ! Uich_CB_Content::save_cb_content( $post_id, $document ) ) {
 					wp_delete_post( $post_id, true );
-					return new WP_Error( 'uichemy_tb_composer_failed', 'The template could not be saved as a Composer Builder document.' );
+					return new WP_Error( 'uichemy_tb_composer_failed', __( 'The template could not be saved as a Composer Builder document.', 'uichemy' ) );
 				}
 			} elseif ( in_array( $editor, array( 'bricks', 'gutenberg' ), true ) && ! isset( $args['content'] ) ) {
 				if ( 'bricks' === $editor ) {

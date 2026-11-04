@@ -70,6 +70,10 @@ require_once $uichemy_model_layer . 'class-uich-model-terms.php';
 // The Composer Builder document actions page / post switch to in Composer
 // Builder mode (UiChemy_Builder_Context::is_composer_mode()).
 require_once plugin_dir_path( __FILE__ ) . 'v2/class-uichemy-composer-builder-actions.php';
+// Site / admin context and the AI's memory (Settings > MCP), served as the
+// uichemy-composer/memory ability and at the end of the briefing.
+require_once plugin_dir_path( __FILE__ ) . 'v2/class-uichemy-mcp-context.php';
+UiChemy_MCP_Context::init();
 require_once plugin_dir_path( __FILE__ ) . 'v2/class-uichemy-mcp-v2-router.php';
 require_once plugin_dir_path( __FILE__ ) . 'v2/class-uichemy-abilities.php';
 UiChemy_Abilities::init();

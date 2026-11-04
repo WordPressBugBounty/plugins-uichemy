@@ -184,6 +184,17 @@ if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
 				}
 			}
 
+			// The owner's context and the AI's memory (Settings > MCP) go LAST, on
+			// both surfaces: whatever briefing is served, the site's own instructions
+			// are the final word the model reads.
+			if ( class_exists( 'UiChemy_MCP_Context' ) ) {
+				$context = UiChemy_MCP_Context::briefing_section();
+
+				if ( '' !== $context ) {
+					$document = ( '' === $document ) ? $context : $document . "\n\n" . $context;
+				}
+			}
+
 			return $document;
 		}
 

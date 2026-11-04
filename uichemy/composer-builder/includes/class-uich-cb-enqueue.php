@@ -57,6 +57,11 @@ if ( ! class_exists( 'Uich_CB_Enqueue' ) ) {
 		const HANDLE_GUTENBERG_CSS = 'uich-cb-gutenberg-style';
 
 		/**
+		 * Handle: the page's header / footer drawn in the block editor.
+		 */
+		const HANDLE_GUTENBERG_LOCATIONS_JS = 'uich-cb-gutenberg-locations';
+
+		/**
 		 * Webpack entry name for the block-editor stylesheet.
 		 *
 		 * Built rather than static because it carries the dashboard's design
@@ -426,7 +431,18 @@ if ( ! class_exists( 'Uich_CB_Enqueue' ) ) {
 					// Built with the builder: the site shows its document, not
 					// what this editor saves (U-03).
 					'managed'  => Uich_CB_Content::is_enabled( $post_id ),
+					// The page template a page made of Composer sections is put
+					// on, so its sections reach the edges as they do in the
+					// builder (uich-cb-gutenberg.js, watchFirstSection). Pages
+					// only: a post keeps the theme's single layout (title, meta),
+					// and a Theme Builder template is a piece of a page whose
+					// layout the builder sets itself (Canvas, see
+					// Uich_CB_Page_Settings::default_template_layout).
+					'fullWidthTemplate' => ( 'page' === get_post_type( $post_id ) && class_exists( 'Uich_CB_Page_Settings' ) ) ? Uich_CB_Page_Settings::TPL_FULL_WIDTH : '',
 					'i18n'     => array(
+						/* translators: %s: page template name, e.g. "UiChemy Full width". */
+						'fullWidth' => sprintf( __( 'Page template set to "%s", so your sections span the full width of the page. You can change it under Page → Template.', 'uichemy' ), class_exists( 'Uich_CB_Page_Settings' ) ? Uich_CB_Page_Settings::own_templates()[ Uich_CB_Page_Settings::TPL_FULL_WIDTH ] : '' ),
+						'undo'      => __( 'Undo', 'uichemy' ),
 						/* translators: %s: product name, e.g. "UiChemy". */
 						'edit'     => sprintf( __( 'Edit with %s', 'uichemy' ), $brand ),
 						'opening'  => __( 'Opening…', 'uichemy' ),
@@ -442,6 +458,46 @@ if ( ! class_exists( 'Uich_CB_Enqueue' ) ) {
 			);
 
 			wp_set_script_translations( self::HANDLE_GUTENBERG_JS, 'uichemy' );
+
+			self::block_editor_locations( $post_id );
+		}
+
+		/**
+		 * The page's header and footer, drawn around the block editor's canvas.
+		 *
+		 * The builder's canvas shows them because it IS the page; the block
+		 * editor only draws the post's content, so it is handed the templates
+		 * the page will have (UiChemy_Locations::editor_locations) and draws
+		 * each in place, offering "Edit Header" / "Edit Footer" on hover like
+		 * the canvas does. Nothing is enqueued when no header or footer applies.
+		 *
+		 * @param int $post_id Post being edited.
+		 * @return void
+		 */
+		private static function block_editor_locations( $post_id ) {
+			if ( ! class_exists( 'UiChemy_Locations' ) ) {
+				return;
+			}
+
+			$locations = UiChemy_Locations::editor_locations( $post_id );
+			if ( empty( $locations ) ) {
+				return;
+			}
+
+			$js = UICH_CB_PATH . 'assets/js/uich-cb-gutenberg-locations.js';
+			wp_enqueue_script(
+				self::HANDLE_GUTENBERG_LOCATIONS_JS,
+				UICH_CB_URL . 'assets/js/uich-cb-gutenberg-locations.js',
+				array( 'wp-data', 'wp-i18n' ),
+				file_exists( $js ) ? (string) filemtime( $js ) : UICH_VERSION,
+				true
+			);
+
+			self::print_payload(
+				self::HANDLE_GUTENBERG_LOCATIONS_JS,
+				'uichComposerBuilderLocations',
+				array( 'locations' => $locations )
+			);
 		}
 
 		/**

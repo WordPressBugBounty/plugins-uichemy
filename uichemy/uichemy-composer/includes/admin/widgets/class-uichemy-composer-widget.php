@@ -177,7 +177,7 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 				'content_text_edit',
 				array(
 					'type'      => \Elementor\Controls_Manager::RAW_HTML,
-					'raw'       => '<div style="text-align:center;padding:6px 0"><button class="elementor-button elementor-button-default" onclick="elementor.channels.editor.trigger(\'uichemy:composer:edit_layers\')">Add Text</button></div>',
+					'raw'       => '<div style="text-align:center;padding:6px 0"><button class="elementor-button elementor-button-default" onclick="elementor.channels.editor.trigger(\'uichemy:composer:edit_layers\')">' . esc_html__( 'Add Text', 'uichemy' ) . '</button></div>',
 					'condition' => array(
 						'raw_html' => '',
 						'raw_css'  => '',
@@ -455,7 +455,7 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 				'content_links_edit',
 				array(
 					'type'      => \Elementor\Controls_Manager::RAW_HTML,
-					'raw'       => '<div style="text-align:center;padding:6px 0"><button class="elementor-button elementor-button-default" onclick="elementor.channels.editor.trigger(\'uichemy:composer:edit_layers\')">Add Links</button></div>',
+					'raw'       => '<div style="text-align:center;padding:6px 0"><button class="elementor-button elementor-button-default" onclick="elementor.channels.editor.trigger(\'uichemy:composer:edit_layers\')">' . esc_html__( 'Add Links', 'uichemy' ) . '</button></div>',
 					'condition' => array(
 						'raw_html' => '',
 						'raw_css'  => '',
@@ -574,7 +574,7 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 				'content_media_edit',
 				array(
 					'type'      => \Elementor\Controls_Manager::RAW_HTML,
-					'raw'       => '<div style="text-align:center;padding:6px 0"><button class="elementor-button elementor-button-default" onclick="elementor.channels.editor.trigger(\'uichemy:composer:edit_layers\')">Add Media</button></div>',
+					'raw'       => '<div style="text-align:center;padding:6px 0"><button class="elementor-button elementor-button-default" onclick="elementor.channels.editor.trigger(\'uichemy:composer:edit_layers\')">' . esc_html__( 'Add Media', 'uichemy' ) . '</button></div>',
 					'condition' => array(
 						'raw_html' => '',
 						'raw_css'  => '',
@@ -1900,6 +1900,11 @@ if ( ! class_exists( 'UiChemy_Composer_Widget' ) ) {
 					// boosted) scope so @media bodies still pick up the doubled-scope specificity.
 					$tail     = substr( $selector, strlen( $base ) );
 					$scoped[] = $selector_leading . $scope . $tail;
+					continue;
+				}
+				// A leading section wrapper is the section itself (see UiChemy_Composer_Renderer::scope_css_block_to_widget).
+				if ( preg_match( '/^(\.wp-block-uichemy-composer|\.uichemy-bricks-composer|\.elementor-widget-uichemy-composer)(?=$|[\s>+~:.#\[])/', $selector, $wrapper_match ) ) {
+					$scoped[] = $selector_leading . $scope . substr( $selector, strlen( $wrapper_match[1] ) );
 					continue;
 				}
 				$scoped[] = $selector_leading . $scope . ' ' . $selector;

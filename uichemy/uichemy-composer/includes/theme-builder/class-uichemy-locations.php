@@ -983,6 +983,101 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 		}
 
 		/**
+		 * The header and footer a post will be shown with, for the block editor.
+		 *
+		 * The Composer Builder's canvas is the page itself, so its header and
+		 * footer simply render (and mark_for_builder_canvas() tags them). The
+		 * block editor only draws the post's content, so it is told what the
+		 * page will have around it and draws it in context — the same templates,
+		 * the same "Edit Header" / "Edit Footer" way into them.
+		 *
+		 * Display conditions read the MAIN query (is_singular(), the queried
+		 * object…), which in wp-admin is the edit screen, not the post. So the
+		 * query is pointed at the post just for the resolve — parsed, never run —
+		 * and put back, with the resolver's memo flushed on both sides so neither
+		 * answer leaks into the other. A header or footer template's own edit
+		 * screen gets nothing back, as on its own URL (the resolver's rule).
+		 *
+		 * Only templates the current user may edit: drawing one goes through the
+		 * signed preview, which refuses anyone else.
+		 *
+		 * @param int $post_id Post being edited.
+		 * @return array<int,array<string,mixed>> One entry per location, header first.
+		 */
+		public static function editor_locations( $post_id ) {
+			$post = get_post( (int) $post_id );
+			if ( ! $post instanceof WP_Post
+				|| ! class_exists( 'UiChemy_Template_Resolver' )
+				|| ! class_exists( 'UiChemy_Template_CPT' )
+				|| ! class_exists( 'UiChemy_Template_Store' ) ) {
+				return array();
+			}
+
+			global $wp_query, $wp_the_query;
+			$saved_query     = $wp_query;
+			$saved_the_query = $wp_the_query;
+
+			// page_id, not p: only that makes WP_Query treat it as a page, which
+			// is what is_page() / is_front_page() conditions ask about.
+			$args = 'page' === $post->post_type
+				? array( 'page_id' => $post->ID )
+				: array(
+					'p'         => $post->ID,
+					'post_type' => $post->post_type,
+				);
+			$query = new WP_Query();
+			$query->parse_query( $args );
+			// Parsed, never run, so the post is put on it by hand: a page's
+			// queried object comes from page_id, but any other type's comes from
+			// the fetched post, and conditions naming a specific post read it.
+			$query->post              = $post;
+			$query->posts             = array( $post );
+			$query->post_count        = 1;
+			$query->found_posts       = 1;
+			$query->queried_object    = $post;
+			$query->queried_object_id = (int) $post->ID;
+			$wp_query     = $query; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- restored below.
+			$wp_the_query = $query; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited -- restored below.
+			UiChemy_Template_Resolver::flush_cache();
+
+			$out = array();
+			try {
+				foreach ( array( 'header', 'footer' ) as $type ) {
+					$id = (int) UiChemy_Template_Resolver::resolve( $type );
+					if ( ! $id || ! current_user_can( 'edit_post', $id ) ) {
+						continue;
+					}
+					$out[] = array(
+						'type'       => $type,
+						'id'         => $id,
+						'title'      => get_the_title( $id ),
+						'editor'     => UiChemy_Template_CPT::editor_for( $id ),
+						'editUrl'    => UiChemy_Template_CPT::edit_url_for( $id ),
+						// The same signed, isolated view the dashboard's Preview uses
+						// (UiChemy_Template_Render::maybe_preview): the template on its
+						// own, with its styles, and no theme header or footer. The
+						// embed flag makes it report its height (views/preview.php).
+						'previewUrl' => add_query_arg(
+							array(
+								'uichemy_tb_preview' => $id,
+								'_wpnonce'           => wp_create_nonce( 'uichemy_tb_preview_' . $id ),
+								'uichemy_tb_embed'   => '1',
+							),
+							home_url( '/' )
+						),
+						'label'      => 'header' === $type ? __( 'Edit Header', 'uichemy' ) : __( 'Edit Footer', 'uichemy' ),
+					);
+				}
+			} finally {
+				$wp_query     = $saved_query; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+				$wp_the_query = $saved_the_query; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited
+				UiChemy_Template_Resolver::flush_cache();
+			}
+
+			return $out;
+		}
+
+		/**
 		 * Enqueue Elementor base frontend styles when a header/footer applies.
 		 *
 		 * @return void

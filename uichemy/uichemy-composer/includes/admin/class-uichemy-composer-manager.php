@@ -113,9 +113,11 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 */
 		public function register_widget_category( $elements_manager ) {
 			$wl    = uichemy_white_label_settings();
+			// No category set: fall back to the brand name, so a site that only
+			// renamed the plugin does not keep a "UiChemy" heading in the panel.
 			$title = ( ! empty( $wl['enabled'] ) && ! empty( $wl['widget_category'] ) )
 				? sanitize_text_field( $wl['widget_category'] )
-				: esc_html__( 'UiChemy', 'uichemy' );
+				: ( function_exists( 'uich_brand_name' ) ? uich_brand_name() : __( 'UiChemy', 'uichemy' ) );
 
 			$elements_manager->add_category(
 				'uichemy',
@@ -7897,6 +7899,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// Custom HTML block: re-escaping on output would corrupt valid markup.
 			// The location label interpolated into the comment is a fixed internal
 			// string ('head' / 'body_end'), never user input.
+			// The Globals block's typography classes name fonts too: link the
+			// Google ones before the code that uses them (UiChemy_Google_Fonts).
+			if ( 'head' === $location && class_exists( 'UiChemy_Google_Fonts' ) ) {
+				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- <link> tags built with esc_url()/esc_attr().
+				echo UiChemy_Google_Fonts::links_for_css( implode( "\n", array_map( 'strval', (array) $site_codes ) ) );
+			}
+
 			foreach ( $site_codes as $site_code ) {
 				/**
 				 * Filter site/page custom code just before it is printed. The SEO module
@@ -9949,7 +9958,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// Create sample post if requested and approved.
 			$sample_post_result = null;
 			if ( $create_sample_post && '' !== $sample_post_title ) {
-				$fallback_content   = '<p>This is a sample post created by UiChemy to preview the single post template.</p>';
+				$fallback_content   = '<p>' . esc_html__( 'This is a sample post created by UiChemy to preview the single post template.', 'uichemy' ) . '</p>';
 				$sample_post_id     = wp_insert_post( array(
 					'post_title'   => $sample_post_title,
 					'post_content' => '' !== $sample_post_content ? $sample_post_content : $fallback_content,

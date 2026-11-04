@@ -50,6 +50,49 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 			}
 		}
 
+		/**
+		 * Library URLs for previews outside the script queue (the Gutenberg block's srcdoc iframe).
+		 *
+		 * @return array{gsap:string[],three:string}
+		 */
+		public static function runtime_urls() {
+			if ( ! defined( 'UICHEMY_URL' ) ) {
+				return array( 'gsap' => array(), 'three' => '' );
+			}
+			$ver  = '3.15.0'; // Same GSAP release enqueue_gsap_runtime() pins.
+			$base = UICHEMY_URL . 'assets/js/vendor/gsap/';
+			$gsap = array();
+			foreach ( array( 'gsap', 'ScrollTrigger', 'MotionPathPlugin', 'DrawSVGPlugin' ) as $file ) {
+				$gsap[] = $base . $file . '.min.js?ver=' . $ver;
+			}
+
+			$three = '';
+			if ( defined( 'UICHEMY_BUILD_URL' ) ) {
+				$path  = defined( 'UICHEMY_BUILD_PATH' ) ? UICHEMY_BUILD_PATH . 'three.js' : '';
+				$three = UICHEMY_BUILD_URL . 'three.js' . ( ( $path && file_exists( $path ) ) ? '?ver=' . filemtime( $path ) : '' );
+			}
+
+			return array( 'gsap' => $gsap, 'three' => $three );
+		}
+
+		/**
+		 * Inline script stamping a live-page section's elements with layer paths; must match parseHtmlToLayers().
+		 *
+		 * @return string
+		 */
+		public static function layer_path_stamp_script() {
+			return '<script>(function(s){try{var r=s&&s.parentNode;if(!r)return;'
+				. 'var K={SCRIPT:1,STYLE:1,TEMPLATE:1,NOSCRIPT:1,META:1,LINK:1,HEAD:1};'
+				. 'var w=function(n,b,k){var c=n.firstChild;for(;c;c=c.nextSibling){'
+				. 'if(c.nodeType!==1||K[c.tagName])continue;'
+				. 'if(c.hasAttribute("data-uich-link-wrap")){w(c,b,k);continue;}'
+				. 'if((c.tagName==="INPUT"&&(c.name||"").indexOf("_uich_")===0)||(c.classList&&c.classList.contains("uich-hp")))continue;'
+				. 'var p=b+"."+(k.i++);c.setAttribute("data-uich-path",p);'
+				. 'var t=c.tagName.toUpperCase();if(t==="SVG"||(t==="IMG"&&c.getAttribute("data-as")==="svg")){'
+				. 'var q=c.querySelectorAll("[data-uich-path]");for(var j=0;j<q.length;j++)q[j].removeAttribute("data-uich-path");continue;}w(c,p,{i:0});}};'
+				. 'w(r,"0",{i:0});}catch(e){}})(document.currentScript);</script>';
+		}
+
 		public static function enqueue_three_runtime() {
 			if ( ! defined( 'UICHEMY_BUILD_URL' ) ) {
 				return;
@@ -638,6 +681,11 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 					$out      .= "<script>(function(){var id='uich-w-" . $widget_id . "';var old=document.getElementById(id);if(old)old.parentNode.removeChild(old);var s=document.createElement('style');s.id=id;s.textContent=" . $css_json . ";document.head.appendChild(s);})();</script>";
 				} else {
 					// On the frontend there are no re-renders — inline <style> is fine.
+					// The Google Fonts it uses go first (UiChemy_Google_Fonts); the
+					// editor's canvas loads them in JS (composer-font-autoload.js).
+					if ( class_exists( 'UiChemy_Google_Fonts' ) ) {
+						$out .= UiChemy_Google_Fonts::links_for_css( $raw_css_src . "\n" . (string) $settings['raw_html'] );
+					}
 					$out .= '<style>' . $scoped_css . '</style>';
 				}
 			}
@@ -875,6 +923,35 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 				return true;
 			}
 			return (bool) preg_match( '/\.svg(?:[?#]|$)/i', $normalized );
+		}
+
+		/**
+		 * Slot texts of raw_html in render() order (null for image/svg), for builders with their own slot fields.
+		 *
+		 * @param string $raw_html Composer markup.
+		 * @return array<int,string|null>
+		 */
+		public static function slot_texts( $raw_html ) {
+			$raw_html = (string) $raw_html;
+			if ( '' === trim( $raw_html ) ) {
+				return array();
+			}
+			$renderer                = new self();
+			$dom                     = new \DOMDocument();
+			$dom->preserveWhiteSpace = true;
+			libxml_use_internal_errors( true );
+			$dom->loadHTML( '<?xml encoding="utf-8" ?>' . $raw_html, LIBXML_HTML_NOIMPLIED | LIBXML_HTML_NODEFDTD );
+			libxml_clear_errors();
+
+			$out = array();
+			foreach ( $renderer->get_text_nodes( $dom ) as $i => $node ) {
+				if ( $i >= 20 ) {
+					break;
+				}
+				$kind      = $renderer->get_slot_kind( $node );
+				$out[ $i ] = in_array( $kind, array( 'text', 'anchor' ), true ) ? trim( (string) $node->textContent ) : null;
+			}
+			return $out;
 		}
 
 		private function get_slot_kind( $node ) {
@@ -1595,6 +1672,11 @@ JS;
 					// boosted) scope so @media bodies still pick up the doubled-scope specificity.
 					$tail     = substr( $selector, strlen( $base ) );
 					$scoped[] = $selector_leading . $scope . $tail;
+					continue;
+				}
+				// A leading section wrapper (page-strength override) is the section itself: swap it for the scope.
+				if ( preg_match( '/^(\.wp-block-uichemy-composer|\.uichemy-bricks-composer|\.elementor-widget-uichemy-composer)(?=$|[\s>+~:.#\[])/', $selector, $wrapper_match ) ) {
+					$scoped[] = $selector_leading . $scope . substr( $selector, strlen( $wrapper_match[1] ) );
 					continue;
 				}
 				$scoped[] = $selector_leading . $scope . ' ' . $selector;

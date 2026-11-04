@@ -312,7 +312,7 @@
 				// Provider label, honouring the loop-item relabel.
 				function provLabel(key) {
 					if (loopAlias && loopSource && key === loopSource) {
-						return "Loop item (" + loopAlias + ")";
+						return sprintf( /* translators: %s: loop alias */ __( "Loop item (%s)", "uichemy" ), loopAlias );
 					}
 					return S.PROVIDERS[key] ? S.PROVIDERS[key].label : key;
 				}
@@ -641,7 +641,7 @@
 						// Fallback.
 						opts2.appendChild(
 							field(
-								"If empty, show",
+								__( "If empty, show", "uichemy" ),
 								el("input", {
 									class: "uich-dd-input",
 									value: state.fallback,

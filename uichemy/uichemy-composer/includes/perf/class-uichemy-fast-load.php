@@ -2015,6 +2015,10 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			$css_out = array();
 			$js_out  = array();
 			foreach ( array_unique( array_filter( $ids ) ) as $post_id ) {
+				// Only the Elementor widget skips its own output for this; others would run their JS twice.
+				if ( class_exists( 'UiChemy_Builder_Registry' ) && 'elementor' !== UiChemy_Builder_Registry::detect_post_builder( $post_id ) ) {
+					continue;
+				}
 				$trusted = self::author_allows_raw_code( $post_id );
 				foreach ( array_values( self::load_sections_for( $post_id ) ) as $position => $sec ) {
 					$uid      = (string) ( $sec['uid'] ?? '' );

@@ -475,6 +475,93 @@
 		} );
 	}
 
+	/* ------------------------------------------------------------------ *
+	 * A page of Composer sections lays out full width
+	 * ------------------------------------------------------------------ */
+
+	/**
+	 * Put a page on "UiChemy Full width" when its first Composer section goes in.
+	 *
+	 * On the theme's default template the page sits in the theme's content
+	 * container under its title, so sections built edge to edge (a hero, a
+	 * full-bleed band) were boxed in on the site while the builder and the
+	 * Elementor widget show them full width. The template that fixes that
+	 * already exists (Uich_CB_Page_Settings); this chooses it at the one
+	 * moment it is plainly what is meant, and says so, with Undo.
+	 *
+	 * Deliberately narrow, so it never rearranges a page somebody laid out:
+	 *  - only the transition from no sections to one, during this visit — an
+	 *    existing page is never touched just by opening it;
+	 *  - only when sections are ALL the page holds — a post that drops one
+	 *    section among its paragraphs keeps its text column and its title;
+	 *  - only from the theme's default template — a template someone picked
+	 *    is theirs;
+	 *  - only when this post type offers the template.
+	 * Once. The post's own blocks loading must never read as an insert, so the
+	 * blocks are the post's (core/editor, parsed when the editor is set up),
+	 * not the block list's (which fills in a beat later, after "ready"), and
+	 * the change has to be one the user made: one with an undo step.
+	 */
+	function watchFirstSection() {
+		var template = cfg.fullWidthTemplate;
+		var editor = wp.data.select( 'core/editor' );
+		if ( ! template || ! editor
+			|| typeof editor.__unstableIsEditorReady !== 'function'
+			|| typeof editor.getEditorBlocks !== 'function'
+			|| typeof editor.hasEditorUndo !== 'function' ) {
+			return;
+		}
+
+		var hadSection = null;
+		var unsubscribe = wp.data.subscribe( function () {
+			if ( ! editor.__unstableIsEditorReady() ) {
+				return;
+			}
+			var blocks = editor.getEditorBlocks() || [];
+			var sections = blocks.filter( function ( b ) { return b && 'uichemy/composer' === b.name; } ).length;
+			if ( null === hadSection ) {
+				hadSection = sections > 0;
+				return;
+			}
+			if ( ! sections ) {
+				hadSection = false;
+				return;
+			}
+			if ( hadSection ) {
+				return;
+			}
+			hadSection = true;
+
+			if ( ! editor.hasEditorUndo() || sections !== blocks.length || editor.getEditedPostAttribute( 'template' ) ) {
+				return;
+			}
+			var available = ( editor.getEditorSettings() || {} ).availableTemplates || {};
+			if ( ! Object.prototype.hasOwnProperty.call( available, template ) ) {
+				return;
+			}
+
+			unsubscribe();
+			wp.data.dispatch( 'core/editor' ).editPost( { template: template } );
+			var notices = wp.data.dispatch( 'core/notices' );
+			if ( notices && i18n.fullWidth ) {
+				notices.createInfoNotice( i18n.fullWidth, {
+					id: 'uich-cb-full-width',
+					type: 'snackbar',
+					actions: [
+						{
+							label: i18n.undo || 'Undo',
+							onClick: function () {
+								wp.data.dispatch( 'core/editor' ).editPost( { template: '' } );
+							},
+						},
+					],
+				} );
+			}
+		} );
+	}
+
+	watchFirstSection();
+
 	if ( document.readyState === 'loading' ) {
 		document.addEventListener( 'DOMContentLoaded', watchHeader );
 	} else {

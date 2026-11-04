@@ -46,6 +46,35 @@
 	// React composer bridge (feeds the active block into the composer store).
 	var GB = function () { return window.UichComposerGutenberg; };
 
+	// The Composer pill's "Toggle element outlines". The core draws it into the
+	// Elementor preview document; here every section lives in its own preview
+	// frame inside the editor canvas, which the core never reaches, so the button
+	// did nothing. Each frame draws it itself from the event the core sends
+	// (composer-toolbar.jsx), and again after a reload. Same hairline as the core.
+	var OUTLINE_EVENT = 'uich:composer-outline';
+	var OUTLINE_STYLE_ID = 'uich-canvas-outline';
+	var OUTLINE_CSS = '#uich-pv-root *:not(.uich-tw, .uich-tw *) {'
+		+ ' outline: 1px solid rgba(147, 151, 167, 0.55) !important;'
+		+ ' outline-offset: -1px !important; }';
+	var outlineOn = false;
+	window.addEventListener( OUTLINE_EVENT, function ( e ) {
+		outlineOn = !! ( e && e.detail && e.detail.on );
+	} );
+	function applyOutline( d, on ) {
+		if ( ! d || ! d.head ) { return; }
+		var style = d.getElementById( OUTLINE_STYLE_ID );
+		if ( on ) {
+			if ( ! style ) {
+				style = d.createElement( 'style' );
+				style.id = OUTLINE_STYLE_ID;
+				d.head.appendChild( style );
+			}
+			style.textContent = OUTLINE_CSS;
+		} else if ( style && style.parentNode ) {
+			style.parentNode.removeChild( style );
+		}
+	}
+
 	/**
 	 * Reveal the composer when a Composer block is selected.
 	 *
@@ -416,6 +445,36 @@
 		return out;
 	}
 
+	// Page-scope code (head CSS/fonts, body JS) every section preview needs; a block without its copy borrows the page's.
+	function pageCodeFor( settings ) {
+		var head = settings.page_custom_code_head || '';
+		var foot = settings.page_custom_code_footer || '';
+		if ( ! head || ! foot ) {
+			var gb = GB();
+			var pc = ( gb && typeof gb.getPageCode === 'function' ) ? gb.getPageCode() : null;
+			if ( pc ) {
+				head = head || pc.head || '';
+				foot = foot || pc.body || '';
+			}
+		}
+		return { head: String( head ), foot: String( foot ) };
+	}
+
+	// GSAP / three.js when the section's JS uses them, as on the front end.
+	function runtimeTagsFor( js ) {
+		var rt = ( window.uichUiChemyBlockCfg && window.uichUiChemyBlockCfg.runtime ) || {};
+		var urls = [];
+		if ( /\bgsap\b|\bScrollTrigger\b/.test( js ) && Array.isArray( rt.gsap ) ) {
+			urls = urls.concat( rt.gsap );
+		}
+		if ( /\bTHREE\b/.test( js ) && rt.three ) {
+			urls.push( rt.three );
+		}
+		return urls.map( function ( u ) {
+			return '<scr' + 'ipt src="' + String( u ).replace( /"/g, '&quot;' ) + '"></scr' + 'ipt>';
+		} ).join( '' );
+	}
+
 	// Decode HTML entities kses may have injected into stored code (e.g. `&&` →
 	// `&#038;&#038;`). Code fields never legitimately contain HTML entities.
 	function decodeCodeEntities( s ) {
@@ -490,6 +549,12 @@
 		var heightRef = useRef( height );
 
 		var deps = buildDepTags( settings.raw_deps_standard );
+		var pageCode = pageCodeFor( settings );
+		var runtime = runtimeTagsFor( js );
+		// Front-end wrapper classes and script id, so page CSS and the section's JS find this section.
+		var uid = String( props.uid || '' ).replace( /[^a-z0-9_-]/gi, '' );
+		var rootClass = 'wp-block-uichemy-composer' + ( uid ? ' uichemy-composer-' + uid : '' );
+		var scriptId = uid ? ' id="uichemy-composer-js-' + uid + '"' : '';
 
 		// Site Globals (#uichemy-globals CSS variables + global classes) must be
 		// mirrored into this isolated iframe, else `var(--…)` tokens applied to
@@ -545,15 +610,30 @@
 		// iframe — dropping input focus and the floating editor toolbar that lives
 		// inside this document. Only a script-context change (js/deps) needs a real
 		// reload to re-run cleanly.
+		// The composer's on-canvas toolbar portals INTO this document, so it needs
+		// the design system's canvas stylesheet here, the same file PHP enqueues
+		// into Elementor's preview. Without it the bar's controls rendered as bare
+		// browser buttons in a black box over the content. canvas.css carries no
+		// preflight and scopes every rule to the `.uich-tw` island, so the
+		// section's own markup is not restyled.
+		var canvasCssUrl = ( window.uichUiChemyBlockCfg && window.uichUiChemyBlockCfg.canvasCss ) || '';
 		var nextSrcDoc = '<!doctype html><html><head><meta charset="utf-8">'
 			+ '<base target="_blank">'
-			+ '<style>html,body{margin:0;padding:0;}</style>'
+			// flow-root keeps the first and last elements' margins INSIDE body. They
+			// used to collapse through it, so body.scrollHeight (what resize()
+			// measures) came up short by exactly those margins and the frame showed
+			// its own scrollbar. The space they take is the same as on the page.
+			+ '<style>html,body{margin:0;padding:0;}body{display:flow-root;}</style>'
+			+ ( canvasCssUrl ? '<link rel="stylesheet" id="uich-pv-canvas-css" href="' + canvasCssUrl.replace( /"/g, '&quot;' ) + '">' : '' )
 			+ '<style data-uichemy-globals id="uich-pv-globals">' + ( globalsCss || '' ) + '</style>'
+			+ pageCode.head
 			+ deps.before
 			+ '<style id="uich-pv-css">' + css + '</style></head><body>'
-			+ '<div id="uich-pv-root">' + html + '</div>'
-			+ ( js ? '<scr' + 'ipt>' + js + '</scr' + 'ipt>' : '' )
+			+ '<div id="uich-pv-root" class="' + rootClass + '">' + html + '</div>'
+			+ runtime
+			+ ( js ? '<scr' + 'ipt' + scriptId + '>' + js + '</scr' + 'ipt>' : '' )
 			+ deps.after
+			+ pageCode.foot
 			+ '</body></html>';
 
 		// Debounce the actual iframe reload. Reassigning srcDoc re-navigates the
@@ -571,21 +651,26 @@
 		var srcDoc = dState[ 0 ];
 		var setSrcDoc = dState[ 1 ];
 		var debounceRef = useRef( null );
+		// The HTML the preview document currently carries; a reload resets it.
+		var appliedHtmlRef = useRef( { html: html } );
 
 		useEffect( function () {
 			if ( debounceRef.current ) {
 				window.clearTimeout( debounceRef.current );
 			}
+			var srcHtml = html;
 			debounceRef.current = window.setTimeout( function () {
+				appliedHtmlRef.current = { html: srcHtml };
 				setSrcDoc( nextSrcDoc );
 			}, 400 );
 			return function () { window.clearTimeout( debounceRef.current ); };
-		}, [ js, deps.before, deps.after ] );
+		}, [ js, deps.before, deps.after, pageCode.head, pageCode.foot, uid ] );
 
 		// Apply html / css / globals changes IN PLACE — no srcDoc reassign, so the
 		// iframe is not reloaded and the composer's floating editor (which lives in
 		// this document) keeps its focus and stays mounted. Runs only once the frame
 		// has loaded; before that the initial srcDoc already carries these values.
+		// Compare with what was last written, not the live DOM (scripts and the picker change it).
 		useEffect( function () {
 			var frame = ref.current;
 			if ( ! frame ) { return undefined; }
@@ -593,7 +678,9 @@
 			if ( ! d || ! d.body ) { return undefined; }
 			try {
 				var root = d.getElementById( 'uich-pv-root' );
-				if ( root && root.innerHTML !== html ) { root.innerHTML = html; }
+				var applied = appliedHtmlRef.current;
+				if ( root && applied.html !== html ) { root.innerHTML = html; }
+				appliedHtmlRef.current = { html: html };
 				var cssEl = d.getElementById( 'uich-pv-css' );
 				if ( cssEl && cssEl.textContent !== css ) { cssEl.textContent = css; }
 				var gEl = d.getElementById( 'uich-pv-globals' );
@@ -657,6 +744,7 @@
 					var d = frame.contentDocument;
 					if ( d ) {
 						d.addEventListener( 'click', swallowLinkNav, true );
+						applyOutline( d, outlineOn );
 					}
 					if ( d && d.body && typeof ResizeObserver !== 'undefined' ) {
 						if ( observer ) {
@@ -679,6 +767,16 @@
 				window.clearTimeout( t2 );
 			};
 		}, [ srcDoc ] );
+
+		useEffect( function () {
+			function onOutline( e ) {
+				try { applyOutline( ref.current && ref.current.contentDocument, !! ( e && e.detail && e.detail.on ) ); } catch ( err ) { /* cross-origin guard */ }
+			}
+			window.addEventListener( OUTLINE_EVENT, onOutline );
+			// Turned on before this frame mounted (a section added while it is on).
+			try { applyOutline( ref.current && ref.current.contentDocument, outlineOn ); } catch ( err ) { /* cross-origin guard */ }
+			return function () { window.removeEventListener( OUTLINE_EVENT, onOutline ); };
+		}, [] );
 
 		return el( 'iframe', {
 			ref: ref,
@@ -838,7 +936,7 @@
 			// capture the click (selecting the block); once selected the overlay
 			// lifts so the preview is interactive.
 			body = el( 'div', { key: 'preview-wrap', style: { position: 'relative' } },
-				el( PreviewFrame, { settings: attributes.settings } ),
+				el( PreviewFrame, { settings: attributes.settings, uid: attributes.uid } ),
 				! isSelected ? el( 'div', {
 					'aria-hidden': 'true',
 					style: { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, zIndex: 1, cursor: 'pointer' }

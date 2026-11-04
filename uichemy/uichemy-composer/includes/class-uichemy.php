@@ -155,6 +155,7 @@ class UiChemy {
 		require_once UICHEMY_PATH . 'includes/admin/globals/class-uichemy-atomic-globals.php';
 		require_once UICHEMY_PATH . 'includes/admin/globals/class-uichemy-globals-migration.php';
 		require_once UICHEMY_PATH . 'includes/admin/class-uichemy-composer-enqueue.php';
+		require_once UICHEMY_PATH . 'includes/admin/class-uichemy-google-fonts.php';
 		require_once UICHEMY_PATH . 'includes/admin/class-uichemy-composer-manager.php';
 		// Publishes UiChemy's colour globals into the block theme's theme.json
 		// palette (Site Editor → Styles → Colors → Edit palette, THEME row).
