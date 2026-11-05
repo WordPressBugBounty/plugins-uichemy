@@ -94,6 +94,163 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 			// tell the builder which of them render on this request so that
 			// code prints wherever the template does.
 			add_filter( 'uich_cb/page_code_sources', array( __CLASS__, 'composer_code_sources' ) );
+
+			// A header / footer template opened on its own (the canvas) gets the
+			// code and CSS of a page it is shown on, so it is styled as it is
+			// on the site.
+			add_filter( 'uich_cb/context_sources', array( __CLASS__, 'composer_context_sources' ), 10, 2 );
+		}
+
+		/**
+		 * On a header or footer template's own URL, the page it previews on.
+		 *
+		 * A header or footer never renders alone on the site: it sits on a
+		 * page, and its styles often come from that page's head code (a
+		 * stylesheet or font linked there) or CSS. Opened alone in the
+		 * Composer Builder it had none of that, so the editor showed the
+		 * header unstyled while every page showed it styled.
+		 *
+		 * @param int[] $sources     Post IDs so far.
+		 * @param int   $document_id The builder document being viewed.
+		 * @return int[]
+		 */
+		public static function composer_context_sources( $sources, $document_id ) {
+			$document_id = (int) $document_id;
+
+			if ( ! $document_id
+				|| ! class_exists( 'UiChemy_Template_CPT' )
+				|| ! is_singular( UiChemy_Template_CPT::POST_TYPE )
+				|| (int) get_queried_object_id() !== $document_id
+			) {
+				return $sources;
+			}
+
+			$type = (string) get_post_meta( $document_id, UiChemy_Template_CPT::META_TYPE, true );
+
+			if ( ! in_array( $type, array( 'header', 'footer' ), true ) ) {
+				return $sources;
+			}
+
+			$page = self::context_page_for( $document_id );
+
+			/**
+			 * Filter the page a header / footer template previews on in the
+			 * Composer Builder: its head / body-end code and CSS load with the
+			 * template. 0 for none.
+			 *
+			 * @since 5.5.3
+			 *
+			 * @param int $page_id     Page ID, or 0.
+			 * @param int $template_id Template post ID.
+			 */
+			$page = (int) apply_filters( 'uichemy/theme_builder/context_page', $page, $document_id );
+
+			if ( $page ) {
+				$sources[] = $page;
+			}
+
+			return $sources;
+		}
+
+		/**
+		 * The page a header / footer template is shown on, for its preview.
+		 *
+		 * Its display conditions decide: a page it names first, then the front
+		 * page, then the newest page of a post type it is shown on — always a
+		 * published Composer Builder page it is not excluded from, since only
+		 * those have code to bring. 0 when there is none.
+		 *
+		 * @param int $template_id Template post ID.
+		 * @return int
+		 */
+		private static function context_page_for( $template_id ) {
+			if ( ! class_exists( 'Uich_CB_Content' ) || ! class_exists( 'UiChemy_Template_Store' ) ) {
+				return 0;
+			}
+
+			$conditions = UiChemy_Template_Store::sanitize_conditions( get_post_meta( $template_id, UiChemy_Template_CPT::META_CONDITIONS, true ) );
+			$named      = array();
+			$excluded   = array();
+			$types      = array();
+
+			if ( ! empty( $conditions['rules'] ) && is_array( $conditions['rules'] ) ) {
+				foreach ( $conditions['rules'] as $rule ) {
+					$rule_type = isset( $rule['type'] ) ? (string) $rule['type'] : '';
+					$exclude   = isset( $rule['match'] ) && 'exclude' === $rule['match'];
+					$value     = isset( $rule['value'] ) ? $rule['value'] : '';
+
+					if ( 'singular' === $rule_type ) {
+						$ids = array_map( 'absint', (array) $value );
+						if ( $exclude ) {
+							$excluded = array_merge( $excluded, $ids );
+						} else {
+							$named = array_merge( $named, $ids );
+						}
+					} elseif ( 'post_type' === $rule_type && ! $exclude && is_string( $value ) && post_type_exists( $value ) ) {
+						$types[] = $value;
+					}
+				}
+			} else {
+				$excluded = array_map( 'absint', (array) $conditions['exclude'] );
+				if ( 'specific' === $conditions['scope'] ) {
+					$named = array_map( 'absint', (array) $conditions['include'] );
+				}
+			}
+
+			$usable = static function ( $id ) use ( $excluded ) {
+				return $id
+					&& ! in_array( $id, $excluded, true )
+					&& 'publish' === get_post_status( $id )
+					&& ! post_password_required( $id )
+					&& Uich_CB_Content::is_enabled( $id );
+			};
+
+			foreach ( $named as $id ) {
+				if ( $usable( $id ) ) {
+					return $id;
+				}
+			}
+
+			// Named pages only, and none usable: a page it is not shown on
+			// would be the wrong context.
+			if ( ! empty( $named ) && empty( $types ) ) {
+				return 0;
+			}
+
+			if ( empty( $types ) ) {
+				$front = 'page' === get_option( 'show_on_front' ) ? (int) get_option( 'page_on_front' ) : 0;
+				if ( $usable( $front ) ) {
+					return $front;
+				}
+			}
+
+			$ids = get_posts(
+				array(
+					'post_type'      => empty( $types ) ? 'page' : array_values( array_unique( $types ) ),
+					'post_status'    => 'publish',
+					'posts_per_page' => 5,
+					'orderby'        => 'date',
+					'order'          => 'DESC',
+					'fields'         => 'ids',
+					'no_found_rows'  => true,
+					'has_password'   => false,
+					// phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- One small, editor-only lookup.
+					'meta_query'     => array(
+						array(
+							'key'   => Uich_CB_Content::META_ENABLED,
+							'value' => '1',
+						),
+					),
+				)
+			);
+
+			foreach ( $ids as $id ) {
+				if ( $usable( (int) $id ) ) {
+					return (int) $id;
+				}
+			}
+
+			return 0;
 		}
 
 		/**

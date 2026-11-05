@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.5.2
+Stable tag: 5.5.3
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -271,6 +271,13 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.5.3 = 5 November 2026
+- Added: Right-click menu with Format code in the builder code editor.
+- Improved: Header and footer templates show their styles while editing.
+- Fixed: Theme Builder dialogs not following dark mode.
+- Fixed: Settings sidebar overlapping the dashboard health notice.
+- Fixed: Various minor bugs and design improvements.
 
 = 5.5.2 = 4 November 2026
 - Added: Manage AI instructions, memory and a style guide in Settings > MCP.

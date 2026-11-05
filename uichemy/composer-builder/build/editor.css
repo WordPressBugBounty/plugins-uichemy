@@ -32341,6 +32341,11 @@ body.uich-cb-body .media-modal { font-family: -apple-system, BlinkMacSystemFont,
    editor grows past the viewport and the page scrolls instead of the code. */
 .uipb-code__editor { flex: 1; min-height: 0; overflow: hidden; }
 .uipb-code__editor .CodeMirror { height: 100%; font-size: var(--uc-text-sm, 13px); }
+/* The right-click menu's box around the editor: it adds no box of its own,
+   so the editor lays out exactly as before. */
+.uipb-code__cm-box { display: contents; }
+/* The shortcut beside "Format code" in that menu. */
+.uipb-code__kbd { margin-left: auto; padding-left: 16px; font-family: var(--uc-font-mono, monospace); font-size: var(--uc-text-xs, 11px); color: var(--uc-text-subtle, var(--uc-text-muted)); }
 
 /* Developer's Code section shares the same editor and save path, in one column. */
 .uipb-studio .panel.dock-right.uc-chrome .rp-insp .rp-body:has(.rp-developer-views[data-view='code']),

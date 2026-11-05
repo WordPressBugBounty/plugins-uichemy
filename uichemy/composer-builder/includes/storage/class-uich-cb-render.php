@@ -439,7 +439,13 @@ if ( ! class_exists( 'Uich_CB_Render' ) ) {
 				return;
 			}
 
-			if ( class_exists( 'Uich_CB_Canvas' ) && Uich_CB_Canvas::is_canvas() ) {
+			// On the canvas the documents being drawn style their sections live,
+			// so only the context documents (context_sources()) print here: they
+			// render nothing on this request, and their CSS has no other way in.
+			$canvas = class_exists( 'Uich_CB_Canvas' ) && Uich_CB_Canvas::is_canvas();
+			$ids    = $canvas ? self::context_sources() : self::page_code_sources();
+
+			if ( empty( $ids ) ) {
 				return;
 			}
 
@@ -448,7 +454,7 @@ if ( ! class_exists( 'Uich_CB_Render' ) ) {
 			$styles = '';
 			$fonts  = '';
 
-			foreach ( self::page_code_sources() as $post_id ) {
+			foreach ( $ids as $post_id ) {
 				$sections = Uich_CB_Content::to_editor_sections( self::page_cb_content( $post_id ) );
 
 				foreach ( (array) $sections as $section ) {
@@ -527,14 +533,61 @@ if ( ! class_exists( 'Uich_CB_Render' ) ) {
 			 */
 			$sources = (array) apply_filters( 'uich_cb/page_code_sources', array(), $page );
 
+			// Context documents go first: they stand in for the page around what
+			// is being viewed, so everything on the request gets the last word
+			// over them, as the page itself does over its header.
+			$sources = array_merge( self::context_sources(), $sources );
+
 			if ( $page ) {
 				$sources[] = $page;
 			}
 
+			return self::builder_documents( $sources );
+		}
+
+		/**
+		 * Builder posts that do not render on this request but whose code and
+		 * CSS belong on it, because what IS rendered depends on them.
+		 *
+		 * A header or footer template opened on its own (its own URL, where
+		 * the Composer Builder's canvas loads it) is one: on the front end it
+		 * always sits on a page, and that page's head code is often what links
+		 * the stylesheet, fonts and scripts the header is styled by. Without
+		 * it the editor showed the header unstyled while the site showed it
+		 * styled. The Theme Builder picks the page (a page the template is
+		 * shown on); this class only prints its code.
+		 *
+		 * @return int[]
+		 */
+		public static function context_sources() {
+			$page = self::current_page_id();
+
+			/**
+			 * Filter the builder posts whose head / body-end code and CSS print on
+			 * this request as context, without their body rendering.
+			 *
+			 * @since 5.5.3
+			 *
+			 * @param int[] $post_ids Post IDs, in print order.
+			 * @param int   $page_id  The builder document being viewed, or 0.
+			 */
+			$ids = self::builder_documents( (array) apply_filters( 'uich_cb/context_sources', array(), $page ) );
+
+			// A context is never the document being viewed itself.
+			return array_values( array_diff( $ids, array( $page ) ) );
+		}
+
+		/**
+		 * Builder documents among the given IDs: once each, first position
+		 * kept, in order.
+		 *
+		 * @param array $ids Post IDs.
+		 * @return int[]
+		 */
+		private static function builder_documents( array $ids ) {
 			$out = array();
-			foreach ( $sources as $id ) {
+			foreach ( $ids as $id ) {
 				$id = (int) $id;
-				// Once each, first position kept; builder documents only.
 				if ( $id && ! in_array( $id, $out, true ) && Uich_CB_Content::is_enabled( $id ) ) {
 					$out[] = $id;
 				}
