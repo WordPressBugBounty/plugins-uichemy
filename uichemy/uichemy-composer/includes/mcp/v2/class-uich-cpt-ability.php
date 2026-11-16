@@ -135,7 +135,7 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 				. 'START WITH "describe". It reports every post type and taxonomy with the plugin that registered it, whether UiChemy can write to it at all, which field groups target it, and the additive/identity boundary below. '
 				. 'ORDER: register-post-type -> register-taxonomy -> ensure-term -> register-field-group -> add-fields -> (write content) -> set-terms. A post type with no field group has no custom fields, a field group with no location rule shows nowhere, and a taxonomy with no terms renders as an empty archive and an empty filter - all three are silent, none of them errors. '
 				. 'TERMS ARE NOT OPTIONAL. Registering a taxonomy does not populate it. Create the terms in the same session with "ensure-term" and put them on posts with "set-terms"; if the values are a fixed list nobody will browse by - a status, a tier, a size - model it as a select field instead and skip the taxonomy entirely. Deciding this AFTER the content is written is expensive: the alternative at that point is a parallel select field driving the front end off a shadow copy of a taxonomy that stays decorative. '
-				. 'DELEGATION: every write goes through one modelling provider - "uichemy" (UiChemy Custom Fields, built in and edited under UiChemy > Custom Fields), "acf" or "jetengine". With ONE active, "provider" is optional. With MORE than one active every write REFUSES until you pass "provider" - ask the user which one they want their model in rather than choosing, and say where the existing model already lives ("owner" on each type, "provider" on each group), because a model split across two plugins cannot be moved later without rewriting every template. With NONE active the refusal names the options: switch UiChemy Custom Fields on (Settings > Features - the user\'s call, never yours), install ACF or JetEngine, or model the content with plain posts, categories and tags. UiChemy Custom Fields has no options pages and no gallery type (use a repeater of images). '
+				. 'DELEGATION: every write goes through one modelling provider - "uichemy" (UiChemy Custom Fields, built in and edited under UiChemy > Custom Fields), "acf" or "jetengine". With ONE active, "provider" is optional. With MORE than one active every write REFUSES until you pass "provider" - ask the user which one they want their model in rather than choosing, and say where the existing model already lives ("owner" on each type, "provider" on each group), because a model split across two plugins cannot be moved later without rewriting every template. UiChemy Custom Fields starts switched off on a new site: a write with provider "uichemy", or with no provider while neither ACF nor JetEngine is active, switches it on by itself and says so in "notice" - tell the user. A dry run never switches it on. UiChemy Custom Fields has no options pages and no gallery type (use a repeater of images). '
 				. 'THE BOUNDARY. Additive changes go through here: create a type, create a group, add a field, change a field\'s label / instructions / required / choices / default. Identity-changing ones are REFUSED and the refusal says what to do instead: renaming a field (every template binds by NAME, so a rename silently blanks every binding while the page still looks built), changing a field\'s type, deleting a field, changing or deleting a post type. '
 				. 'ACF FREE vs PRO matters here. repeater, flexible_content, gallery and clone do not exist as field types on ACF free, and ACF does not refuse them - it stores their value as a scalar, which reads back intact and becomes one empty row the moment ACF Pro is installed. UiChemy refuses those types on free instead, naming what is missing. "describe" reports the edition under "providers". '
 				. 'REGISTRATION TIMING: a UiChemy Custom Fields or JetEngine post type or taxonomy registers on the NEXT request, so anything that has to SEE it - a field group, a loop, a template condition - belongs in a separate call. ACF registers immediately. '
@@ -152,6 +152,24 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 		 * @return array<int,array>
 		 */
 		private static function actions() {
+			$actions = self::base_actions();
+			foreach ( $actions as $i => $action ) {
+				if ( 'describe' !== $action['name'] ) {
+					$actions[ $i ]['parameters']['dry_run'] = array(
+						'type'        => 'boolean',
+						'description' => 'Run every check this call makes (provider, slugs, field definitions) and change nothing.',
+					);
+				}
+			}
+			return $actions;
+		}
+
+		/**
+		 * The actions as declared, before dry_run is added to the writes.
+		 *
+		 * @return array<int,array>
+		 */
+		private static function base_actions() {
 			$provider = array(
 				'type'        => 'string',
 				'enum'        => array( 'uichemy', 'acf', 'jetengine' ),
@@ -291,7 +309,7 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 						),
 						'rewrite_slug'   => array(
 							'type'        => 'string',
-							'description' => 'The URL segment. Defaults to the slug with underscores turned into hyphens.',
+							'description' => 'The URL base before each item. Defaults to the slug with underscores turned into hyphens. May be nested to sit under a page, e.g. "resources/module-library".',
 						),
 						'show_in_rest'   => array(
 							'type'        => 'boolean',
@@ -526,6 +544,8 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 			if ( is_wp_error( $unknown ) ) {
 				return $unknown;
 			}
+			$dry = ! empty( $params['dry_run'] );
+			unset( $params['dry_run'] );
 
 			// Terms are CONTENT, not schema. They belong to WordPress rather than
 			// to any modelling provider, they are created identically whichever
@@ -535,6 +555,17 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 			if ( 'ensure_term' === $action || 'set_terms' === $action ) {
 				if ( ! class_exists( 'Uich_Model_Terms' ) ) {
 					return new WP_Error( 'uich_model_unavailable', 'The UiChemy term layer is not loaded.' );
+				}
+
+				if ( $dry ) {
+					$taxonomy = isset( $params['taxonomy'] ) ? (string) $params['taxonomy'] : '';
+					if ( ! taxonomy_exists( $taxonomy ) ) {
+						return new WP_Error( 'uich_cpt_unknown_taxonomy', sprintf( 'There is no taxonomy "%s".', $taxonomy ) );
+					}
+					if ( 'set_terms' === $action && ! get_post( isset( $params['post_id'] ) ? (int) $params['post_id'] : 0 ) ) {
+						return new WP_Error( 'uich_invalid_post_id', 'There is no post with that post_id.' );
+					}
+					return array( 'dry_run' => true, 'action' => $action, 'taxonomy' => $taxonomy );
 				}
 
 				return 'ensure_term' === $action
@@ -548,11 +579,96 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 				return $gate;
 			}
 
+			$prefer = isset( $params['provider'] ) ? $params['provider'] : '';
+			if ( $dry && self::would_switch_on( $prefer ) ) {
+				return array(
+					'dry_run'  => true,
+					'action'   => $action,
+					'provider' => 'uichemy',
+					'message'  => 'Preview only. UiChemy Custom Fields is switched off on this site; the same call without dry_run switches it on and then makes this change. Nothing was changed.',
+				);
+			}
+			$switched_on = $dry ? false : self::maybe_switch_on( $prefer );
+
 			$provider = Uich_Model::pick( isset( $params['provider'] ) ? $params['provider'] : '' );
 			if ( is_wp_error( $provider ) ) {
 				return $provider;
 			}
 
+			if ( $dry ) {
+				return self::dry_run( $action, $params, $provider );
+			}
+
+			$result = self::write( $action, $params, $provider );
+			if ( $switched_on && is_array( $result ) ) {
+				$result['feature_switched_on'] = 'custom_fields';
+				$result['notice']              = uich_feature_auto_enabled_note( 'custom_fields' );
+			} elseif ( $switched_on && is_wp_error( $result ) ) {
+				// It stays on even though this write was refused, so say so here too.
+				$result = new WP_Error(
+					$result->get_error_code(),
+					$result->get_error_message() . ' Note: ' . uich_feature_auto_enabled_note( 'custom_fields' ),
+					$result->get_error_data()
+				);
+			}
+			return $result;
+		}
+
+		/**
+		 * Switch UiChemy Custom Fields on for a write that would land in it.
+		 *
+		 * It starts off on a new site only to stay out of the way until it is
+		 * used. It is switched on when the write names provider "uichemy", or
+		 * names none and neither ACF nor JetEngine is active - then it is the
+		 * only place the write can go. With ACF or JetEngine active and no
+		 * provider named, the write goes there as before: that site models its
+		 * content in that plugin.
+		 *
+		 * @param string $prefer Provider the caller named, or ''.
+		 * @return bool Whether this call switched it on.
+		 */
+		private static function maybe_switch_on( $prefer ) {
+			if ( ! self::would_switch_on( $prefer ) || ! uich_feature_auto_enable( 'custom_fields' ) ) {
+				return false;
+			}
+			if ( class_exists( 'Uich_Fields_Loader' ) ) {
+				Uich_Fields_Loader::boot_now();
+			}
+			return true;
+		}
+
+		/**
+		 * Whether a write naming this provider would switch Custom Fields on.
+		 *
+		 * @param string $prefer Provider the caller named, or ''.
+		 * @return bool
+		 */
+		private static function would_switch_on( $prefer ) {
+			if ( ! function_exists( 'uich_feature_auto_enable' ) || uich_feature_enabled( 'custom_fields' ) ) {
+				return false;
+			}
+			$features = uich_features();
+			if ( empty( $features['custom_fields']['default_off'] ) ) {
+				return false;
+			}
+			$prefer = sanitize_key( (string) $prefer );
+			if ( '' !== $prefer ) {
+				return 'uichemy' === $prefer;
+			}
+			$others = Uich_Model::active();
+			unset( $others['uichemy'] );
+			return ! $others;
+		}
+
+		/**
+		 * Run one model write through the chosen provider.
+		 *
+		 * @param string              $action   Action name.
+		 * @param array               $params   Action parameters.
+		 * @param Uich_Model_Provider $provider Provider.
+		 * @return array|WP_Error
+		 */
+		private static function write( $action, array $params, $provider ) {
 			switch ( $action ) {
 				case 'register_post_type':
 					return $provider->register_post_type( $params );
@@ -694,6 +810,47 @@ if ( ! class_exists( 'Uich_CPT_Ability' ) ) {
 			unset( $flat['action'], $flat['action_parameters'] );
 
 			return array( $action, array_merge( $flat, $params ) );
+		}
+
+		/**
+		 * dry_run: the checks a schema write makes before it writes, and nothing else.
+		 *
+		 * @param string              $action   Normalised action (underscores).
+		 * @param array               $params   Action parameters.
+		 * @param Uich_Model_Provider $provider The provider the write would use.
+		 * @return array|WP_Error
+		 */
+		private static function dry_run( $action, array $params, $provider ) {
+			$slug = isset( $params['slug'] ) ? sanitize_key( (string) $params['slug'] ) : '';
+			if ( 'register_post_type' === $action && post_type_exists( $slug ) ) {
+				return new WP_Error( 'uich_cpt_exists', sprintf( 'Post type "%s" already exists. UiChemy does not reconfigure an existing type.', $slug ) );
+			}
+			if ( 'register_taxonomy' === $action ) {
+				if ( taxonomy_exists( $slug ) ) {
+					return new WP_Error( 'uich_cpt_exists', sprintf( 'Taxonomy "%s" already exists.', $slug ) );
+				}
+				foreach ( (array) ( $params['object_types'] ?? array() ) as $type ) {
+					if ( ! post_type_exists( (string) $type ) ) {
+						return new WP_Error( 'uich_cpt_unknown_post_type', sprintf( 'Post type "%s" does not exist, so the taxonomy would be attached to nothing.', $type ) );
+					}
+				}
+			}
+			if ( 'register_field_group' === $action || 'add_fields' === $action ) {
+				$fields = ! empty( $params['fields'] ) ? Uich_Model::normalise_fields( $params['fields'] ) : array();
+				if ( is_wp_error( $fields ) ) {
+					return $fields;
+				}
+				$clash = self::name_clash( $provider, $fields );
+				if ( is_wp_error( $clash ) ) {
+					return $clash;
+				}
+			}
+			return array(
+				'dry_run'  => true,
+				'action'   => $action,
+				'provider' => $provider->slug(),
+				'message'  => 'Preview only: the provider, the names and the field definitions passed the checks this call makes before it writes. Nothing was changed.',
+			);
 		}
 
 		/**

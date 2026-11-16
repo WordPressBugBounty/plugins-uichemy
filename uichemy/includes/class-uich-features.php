@@ -15,8 +15,12 @@
  *
  * The switches live in the shared `uichemy_settings` option as
  * `feature_{slug}`, so they save through the same Settings pipeline as every
- * other toggle. A key absent from storage means ON: every feature ships
- * enabled, and a site that has never opened Settings must not lose one.
+ * other toggle. A key absent from storage means ON, so a site that used a
+ * feature before switches existed never loses it. A feature marked
+ * `default_off` (Custom Fields, Module Studio) starts OFF on a new site
+ * instead: activation writes its switch as off unless the site already has
+ * data for it (uich_feature_seed_defaults()). Its dashboard tab stays either
+ * way and, while off, offers to switch it on.
  *
  * A feature that already had an on/off switch of its own declares `store`
  * instead, and that setting stays the single source of truth: SEO's switch
@@ -48,6 +52,8 @@ if ( ! function_exists( 'uich_features' ) ) {
 			'custom_fields' => array(
 				'label'       => 'Custom Fields',
 				'description' => 'Custom post types, taxonomies and field groups built with this plugin. Turn off if you model content with ACF, JetEngine or another plugin.',
+				// New sites start with it off; the dashboard tab stays and offers to switch it on.
+				'default_off' => true,
 			),
 			'seo'           => array(
 				'label'       => 'SEO',
@@ -62,6 +68,7 @@ if ( ! function_exists( 'uich_features' ) ) {
 			'module_studio' => array(
 				'label'       => 'Module Studio',
 				'description' => 'Modules: PHP, CSS, JS and HTML placed site-wide or by condition, or small features of their own. Turn off if you manage custom code with another plugin.',
+				'default_off' => true,
 			),
 		);
 	}
@@ -234,5 +241,108 @@ if ( ! function_exists( 'uich_feature_set' ) ) {
 		unset( $node );
 
 		update_option( $store['option'], $option );
+	}
+}
+
+if ( ! function_exists( 'uich_feature_in_use' ) ) {
+	/**
+	 * Whether the site already has data for a feature, so it must stay on.
+	 *
+	 * Read straight from the database: on activation the feature's own module
+	 * may not be loaded.
+	 *
+	 * @param string $slug Feature slug.
+	 * @return bool
+	 */
+	function uich_feature_in_use( $slug ) {
+		global $wpdb;
+		switch ( $slug ) {
+			case 'custom_fields':
+				// Any definition (post type, taxonomy, field group, options page), even trashed.
+				return (bool) $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = %s LIMIT 1", 'uich_content_types' ) );
+			case 'module_studio':
+				// Created the first time Module Studio stores a module.
+				return '' !== (string) get_option( 'uichemy_module_studio_code_dir', '' );
+		}
+		return false;
+	}
+}
+
+if ( ! function_exists( 'uich_feature_seed_defaults' ) ) {
+	/**
+	 * On activation, switch each `default_off` feature off on a site that never
+	 * chose for it and has no data for it.
+	 *
+	 * A switch already stored (on or off) is the site's own choice and stays.
+	 * A site with data for the feature keeps it on: that site was using it.
+	 *
+	 * @return void
+	 */
+	function uich_feature_seed_defaults() {
+		$settings = get_option( 'uichemy_settings', array() );
+		$settings = is_array( $settings ) ? $settings : array();
+		foreach ( uich_features() as $slug => $feature ) {
+			if ( empty( $feature['default_off'] ) || uich_feature_store( $slug ) ) {
+				continue;
+			}
+			if ( array_key_exists( uich_feature_setting_key( $slug ), $settings ) || uich_feature_in_use( $slug ) ) {
+				continue;
+			}
+			uich_feature_set( $slug, false );
+		}
+	}
+}
+
+if ( ! function_exists( 'uich_feature_auto_enable' ) ) {
+	/**
+	 * Switch a `default_off` feature on because an agent is writing to it.
+	 *
+	 * Custom Fields and Module Studio start off on a new site only so they stay
+	 * out of the way until they are used. An agent that creates a post type or
+	 * writes a module IS using it, so its first write switches the feature on
+	 * rather than refusing. Reads never call this. Features without
+	 * `default_off` (SEO) are the user's call and are never switched on here.
+	 *
+	 * The switch is the same one Settings > Features writes, so the user can
+	 * turn it off again there.
+	 *
+	 * @param string $slug Feature slug.
+	 * @return bool True when this call switched it on; false when it was already
+	 *              on or may not be switched on automatically.
+	 */
+	function uich_feature_auto_enable( $slug ) {
+		$features = uich_features();
+		if ( empty( $features[ $slug ]['default_off'] ) || uich_feature_stored( $slug ) ) {
+			return false;
+		}
+
+		uich_feature_set( $slug, true );
+		if ( 'custom_fields' === $slug ) {
+			// Its post types and taxonomies need the rewrite rules rebuilt once they register.
+			update_option( 'uich_ct_flush_rewrite', 1, true );
+		}
+
+		/**
+		 * A `default_off` feature was switched on by an agent's first write to it.
+		 *
+		 * @param string $slug Feature slug.
+		 */
+		do_action( 'uichemy_feature_auto_enabled', $slug );
+
+		return uich_feature_stored( $slug );
+	}
+}
+
+if ( ! function_exists( 'uich_feature_auto_enabled_note' ) ) {
+	/**
+	 * What an ability tells the agent after it switched a feature on.
+	 *
+	 * @param string $slug Feature slug.
+	 * @return string
+	 */
+	function uich_feature_auto_enabled_note( $slug ) {
+		$features = uich_features();
+		$label    = isset( $features[ $slug ]['label'] ) ? $features[ $slug ]['label'] : $slug;
+		return sprintf( '%s was switched off on this site, so this write switched it on (UiChemy > Settings > Features). Tell the user it is on now and that they can switch it off again there.', $label );
 	}
 }

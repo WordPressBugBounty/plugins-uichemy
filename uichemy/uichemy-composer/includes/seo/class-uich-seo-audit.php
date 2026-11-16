@@ -686,7 +686,8 @@ if ( ! class_exists( 'Uich_SEO_Audit' ) ) {
 					'check'    => 'seo_head_conflict',
 					/* translators: %s: plugin. */
 					'message'  => sprintf( __( 'This plugin is set to handle SEO, but %s is also installed. It has paused so your pages do not get two sets of SEO settings.', 'uichemy' ), $own['competitor']['label'] ),
-					'fix'      => 'uichemy-composer/seo (settings: head_owner)',
+					// Which plugin prints the SEO tags is the user's choice: ask, then set it.
+					'fix'      => 'Ask the user which plugin should handle SEO, then uichemy-composer/seo (action="update-site-settings", values={ head_owner: "uichemy" } or { head_owner: "external" }).',
 				);
 			}
 			$post_id = is_array( $params ) && ! empty( $params['post_id'] ) ? absint( $params['post_id'] ) : 0;
@@ -716,12 +717,23 @@ if ( ! class_exists( 'Uich_SEO_Audit' ) ) {
 				if ( in_array( $id, self::RESERVED, true ) ) {
 					continue;
 				}
-				$checks[] = array(
+				$row = array(
 					'check'    => 'seo_' . $c[0],
 					'scope'    => $c[3],
 					'severity' => $c[1],
 				);
+				// run() reports a page's stored SEO findings; the site-wide ones come
+				// from the site audit, so say where to find them.
+				if ( 'page' !== $c[3] ) {
+					$row['reported_by'] = 'uichemy-composer/seo (action="audit-site-seo")';
+				}
+				$checks[] = $row;
 			}
+			$checks[] = array(
+				'check'    => 'seo_head_conflict',
+				'scope'    => 'site',
+				'severity' => 'blocker',
+			);
 			return $checks;
 		}
 	}

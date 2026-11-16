@@ -75,6 +75,13 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 			// to the onboarding wizard.
 			set_transient( 'uich_do_activation_redirect', true, MINUTE_IN_SECONDS * 5 );
 
+			// Custom Fields and Module Studio start off on a new site (their tabs stay
+			// and offer to switch them on). A site that already chose, or has data
+			// for one, keeps it as it is.
+			if ( function_exists( 'uich_feature_seed_defaults' ) ) {
+				uich_feature_seed_defaults();
+			}
+
 			// Deactivation removed the Custom Fields rewrite rules; ask for a flush on the next init
 			// (after the types register again) so their URLs come back.
 			update_option( 'uich_ct_flush_rewrite', 1, true );

@@ -729,6 +729,9 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				// uich_cb_builder_enabled().
 				'enable_builder'         => 1,
 				'enable_mcp'             => 1,
+				// Code Mode, the v3 MCP (beta). Off, the v3 and v1 URLs serve the v2
+				// tools. See UiChemy_Code_Mode::is_enabled().
+				'enable_code_mode'       => 1,
 				'store_forms'            => 1,
 				'enable_frontend_editor' => 1,
 				// The scroll-timeline dock on the live page. Off here means it is never
@@ -840,6 +843,12 @@ if ( ! class_exists( 'UiChemy_Admin_Menu' ) ) {
 				// stored instead of switching it off. Absent in storage too means on.
 				if ( ( 'enable_fast_load' === $key || 0 === strpos( $key, 'perf_' ) ) && ! array_key_exists( $key, (array) $input ) ) {
 					$out[ $key ] = UiChemy_Fast_Load::opt( $key ) ? 1 : 0;
+					continue;
+				}
+				// Code Mode too: only its own switch turns it off, never a save that left it out.
+				if ( 'enable_code_mode' === $key && ! array_key_exists( $key, (array) $input ) ) {
+					$stored      = get_option( 'uichemy_settings', array() );
+					$out[ $key ] = is_array( $stored ) && array_key_exists( $key, $stored ) && empty( $stored[ $key ] ) ? 0 : 1;
 					continue;
 				}
 				// Feature switches follow the same rule: a save that does not mention one keeps what

@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.5.3
+Stable tag: 5.6.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -271,6 +271,16 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.6.0 = 16 November 2026
+- Added: Introducing Code Mode MCP (beta): fewer steps, tokens and context.
+- Added: Preview and undo for site changes made by AI assistants.
+- Added: Send bug reports and feature ideas to UiChemy from your AI chat.
+- Improved: Custom Fields and Module Studio stay off until first used.
+- Improved: Gutenberg import with headers, footers, images and full width.
+- Improved: Safer image imports and form file uploads.
+- Fixed: Custom Fields URL bases with a slash, like library/modules.
+- Fixed: Various minor bugs and design improvements.
 
 = 5.5.3 = 5 November 2026
 - Added: Right-click menu with Format code in the builder code editor.
@@ -571,6 +581,9 @@ Elementor v4 Atomic Elements with Global Classes and Variables now supported. Up
 This plugin connects to the following external services:
 
 **UiChemy Cloud API** : When you export a design from Figma, UiChemy communicates with its cloud API to process and convert your Figma design data into page builder compatible format. Design structure data (frames, layers, styles) is sent during export. No personal data is transmitted.
+[Privacy Policy](https://store.posimyth.com/privacy-policy/) | [Terms of Use](https://store.posimyth.com/terms-of-use/)
+
+**UiChemy Team reports** : An AI assistant connected over MCP can draft a bug report or feature request for the UiChemy team. A report is sent to `https://app.uichemy.com/api/uichemy/reports` only after you approve it in the chat, at most 10 a day. It contains the report text, the AI client's name, the UiChemy, WordPress and PHP versions, the page builder and the site language. No site address, user accounts, email addresses or server paths are sent.
 [Privacy Policy](https://store.posimyth.com/privacy-policy/) | [Terms of Use](https://store.posimyth.com/terms-of-use/)
 
 **Figma API** : UiChemy's Figma plugin reads your design data from Figma to generate the export. This requires the Figma plugin to access your currently open Figma file.

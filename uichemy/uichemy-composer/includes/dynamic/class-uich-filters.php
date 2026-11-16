@@ -63,6 +63,24 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 			$f['e']        = function ( $v ) {
 				return esc_html( (string) $v );
 			};
+			// A value printed inside a <script>: escaped as JavaScript string content
+			// (quotes, `<`, `&` and line breaks as \uXXXX), so it reads as text in a
+			// JS string and cannot end it or the tag. Uich_Twig adds it to plain
+			// {{ }} outputs inside script bodies (script_outputs_as_js()).
+			$f['uich_js_string'] = function ( $v ) {
+				if ( is_string( $v ) && self::is_marked_raw( $v ) ) {
+					return $v; // The author asked for raw output.
+				}
+				if ( $v instanceof Uich_Provider ) {
+					$v = $v->uich_read( '__toString', array() );
+				}
+				if ( null === $v || false === $v || is_array( $v ) || is_object( $v ) ) {
+					return '';
+				}
+				$v    = true === $v ? '1' : self::strip_marks( (string) $v );
+				$json = wp_json_encode( $v, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE );
+				return self::RAW_PREFIX . ( is_string( $json ) && strlen( $json ) >= 2 ? substr( $json, 1, -1 ) : '' );
+			};
 			$f['esc_attr'] = function ( $v ) {
 				return esc_attr( (string) $v );
 			};

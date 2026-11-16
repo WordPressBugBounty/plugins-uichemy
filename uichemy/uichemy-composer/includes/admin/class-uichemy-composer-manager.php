@@ -425,11 +425,15 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$css    = self::get_globals_block_css();
 			$report = array();
 			foreach ( (array) $edits as $edit ) {
-				if ( ! is_array( $edit ) ) {
-					continue;
-				}
-				$find = isset( $edit['find'] ) ? (string) $edit['find'] : '';
+				// A malformed edit is reported, never skipped: a batch whose other edits
+				// matched would otherwise say "success" with this one silently dropped.
+				$find = is_array( $edit ) && isset( $edit['find'] ) ? (string) $edit['find'] : '';
 				if ( '' === $find ) {
+					$report[] = array(
+						'find'  => '',
+						'count' => 0,
+						'error' => 'This edit has no "find" text, so nothing was replaced. Each edit is { find, replace }.',
+					);
 					continue;
 				}
 				$replace = isset( $edit['replace'] ) ? (string) $edit['replace'] : '';
@@ -1367,7 +1371,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// template is one document stored through Uich_CB_Content (see
 			// UiChemy_Template_Store::create()).
 			$wants_composer = class_exists( 'Uich_CB_Content' ) && class_exists( 'UiChemy_Builder_Context' ) && UiChemy_Builder_Context::is_composer_mode();
-			if ( $wants_composer ) {
+			// Gutenberg block markup sent as such (the kit importer's Gutenberg
+			// header and footer) is stored as it is, in Composer mode too: there it
+			// was turned away for having no html or css, and the header was lost.
+			$sends_blocks = isset( $payload['editor'], $payload['content'] )
+				&& 'gutenberg' === sanitize_key( (string) $payload['editor'] )
+				&& '' !== trim( (string) $payload['content'] );
+			if ( $wants_composer && ! $sends_blocks ) {
 				$editor = 'composer';
 			} else {
 				$tb_driver = self::mcp_driver_for_post( 0, isset( $payload['builder'] ) ? (string) $payload['builder'] : '', true );
@@ -4193,6 +4203,10 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			// --- Page-scoped check --------------------------------------------
 			$post_id = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
+			if ( $post_id && ! get_post( $post_id ) ) {
+				// Not a page with problems: no such post at all.
+				return new \WP_Error( 'uich_invalid_post_id', "There is no post {$post_id}. Find real ids with uichemy-composer/page (action=\"list\")." );
+			}
 			if ( $post_id && self::is_composer_builder_post( $post_id ) ) {
 				// A Composer Builder page is one document: it is empty or it is
 				// not, and there are no sections to count.
@@ -5095,7 +5109,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'items'   => $items,
 				'message' => $items
 					? ''
-					: 'Nothing matched the asset is probably not uploaded yet, so request an upload slot for it.',
+					: 'Nothing matched: the asset is probably not uploaded yet, so request an upload slot for it.',
 			);
 		}
 
@@ -5175,7 +5189,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			if ( ! $updated ) {
-				return new \WP_Error( 'uich_missing_param', 'Nothing to update supply at least one of alt, title, caption, description.' );
+				return new \WP_Error( 'uich_missing_param', 'Nothing to update: supply at least one of alt, title, caption, description.' );
 			}
 
 			return array(
@@ -5225,11 +5239,23 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return new \WP_Error( 'uich_tb_not_found', 'post_id is not a UiChemy theme-builder template.' );
 			}
 
+			// The documented shape: placement, read with the same type-aware rules as create.
+			if ( isset( $payload['placement'] ) && is_array( $payload['placement'] ) ) {
+				$normalized = self::normalize_theme_builder_placement( (string) get_post_meta( $post_id, UiChemy_Template_CPT::META_TYPE, true ), $payload['placement'] );
+				if ( is_wp_error( $normalized ) ) {
+					return $normalized;
+				}
+				$payload = array_merge( $payload, (array) ( $normalized['conditions'] ?? array() ) );
+				if ( isset( $normalized['target'] ) ) {
+					$payload['target'] = $normalized['target'];
+				}
+			}
+
 			$has_rules  = isset( $payload['rules'] ) && is_array( $payload['rules'] );
 			$has_legacy = isset( $payload['scope'] ) || isset( $payload['include'] ) || isset( $payload['exclude'] );
 			$has_target = isset( $payload['target'] );
 			if ( ! $has_rules && ! $has_legacy && ! $has_target ) {
-				return new \WP_Error( 'uich_tb_no_conditions', 'set-conditions needs at least one of: rules, scope, include, exclude, target.' );
+				return new \WP_Error( 'uich_tb_no_conditions', 'set-conditions needs placement (as in create), or rules, scope, include, exclude or target.' );
 			}
 
 			$conditions = array();
@@ -5948,7 +5974,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'item_var' => $item_var,
 				'query'    => $call,
 				'html'     => $html,
-				'message'  => 'Pass this html as a section to uichemy-composer/page, post or template. Inside the loop the item is "' . $item_var . '" e.g. {{ ' . $item_var . '.title }}. Custom fields need meta(): {{ ' . $item_var . ".meta('key') }}. Token names: uichemy-composer/dynamic (action=\"list-fields\").",
+				'message'  => 'Pass this html as a section to uichemy-composer/page, post or template. Inside the loop the item is "' . $item_var . '" e.g. {{ ' . $item_var . '.' . ( 'post' === $item_var ? 'title' : 'name' ) . ' }}. Custom fields need meta(): {{ ' . $item_var . ".meta('key') }}. Token names: uichemy-composer/dynamic (action=\"list-fields\").",
 			);
 		}
 
@@ -5998,7 +6024,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return new \WP_Error( 'uich_invalid_post_id', 'configure requires the post_id of the page holding the form.' );
 			}
 			if ( '' === $form_key ) {
-				return new \WP_Error( 'uich_missing_param', 'configure requires the "form_key" the data-atom-form value in your form markup.' );
+				return new \WP_Error( 'uich_missing_param', 'configure requires the "form_key": the data-atom-form value in your form markup.' );
 			}
 
 			$all     = get_post_meta( $post_id, Uich_Forms::CONFIG_META, true );
@@ -6010,6 +6036,15 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'subject'         => 'sanitize_text_field',
 				'success_message' => 'sanitize_text_field',
 			);
+
+			// An address that is not one would be stored as "", leaving the form with no
+			// recipient while the answer said it was set: refuse it instead.
+			if ( isset( $payload['email_to'] ) && '' !== trim( (string) $payload['email_to'] ) ) {
+				$address = trim( (string) $payload['email_to'] );
+				if ( ! is_email( $address ) ) {
+					return new \WP_Error( 'uich_bad_email', sprintf( 'email_to "%s" is not one email address. Nothing was changed.', $address ) );
+				}
+			}
 
 			$updated = array();
 			foreach ( $map as $key => $sanitizer ) {
@@ -7628,7 +7663,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'truncated'        => $truncated,
 				'matches'          => $matches,
 				'message'          => $truncated
-					? 'Result list capped at ' . $max . ' matches narrow the pattern or raise max_results.'
+					? 'Result list capped at ' . $max . ' matches: narrow the pattern or raise max_results.'
 					: '',
 			);
 		}

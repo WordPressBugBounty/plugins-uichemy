@@ -146,5 +146,9 @@ if ( is_multisite() ) {
 	uichemy_uninstall_fields_site();
 }
 
+// Black Friday banner dismissal flags (Uich_Bf_Banner::META_KEY). Only a UI state, not user data, so it
+// is always removed. User meta is shared by every site of a network, so once is enough.
+delete_metadata( 'user', 0, 'uich_bf_banner_bfcm2026_dismissed', '', true );
+
 // Builder, SEO, chat and every `uichemy_*` option (this deletes the setting read above, so it runs last).
 require_once __DIR__ . '/uichemy-composer/uninstall.php';

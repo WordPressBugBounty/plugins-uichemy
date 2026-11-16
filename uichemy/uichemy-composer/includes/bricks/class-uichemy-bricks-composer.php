@@ -347,7 +347,11 @@ class UiChemy_Bricks_Composer extends \Bricks\Element {
 		}
 
 		// Front end: before </body>, after GSAP.
-		if ( ! $is_builder_context && '' !== trim( $raw_js ) && class_exists( 'UiChemy_Bricks_Driver' ) ) {
+		// Only for an author who may publish code (the Gutenberg block and the
+		// Elementor widget apply the same gate): Bricks runs kses over element
+		// settings, which leaves plain JavaScript text untouched.
+		if ( ! $is_builder_context && '' !== trim( $raw_js ) && class_exists( 'UiChemy_Bricks_Driver' )
+			&& ( class_exists( 'Uich_Dynamic' ) ? Uich_Dynamic::author_trusted() : current_user_can( 'unfiltered_html' ) ) ) {
 			UiChemy_Bricks_Driver::queue_footer_js( $uid, $raw_js );
 		}
 	}

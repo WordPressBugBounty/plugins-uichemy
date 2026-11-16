@@ -240,6 +240,12 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 
 					case 'grep':
 						$action['description'] = 'Search the html, css and js of every ' . $noun . ' document, like grep -rn. Returns each matching line with the post_id and field to edit it with patch-code.';
+						if ( 'page' === $noun ) {
+							// Fixed to pages (the router forces post_type), so the filter would mislead.
+							unset( $action['action_parameters_schema']['properties']['post_type'] );
+						} else {
+							$action['description'] .= ' Searches the "post" type unless post_type names another.';
+						}
 						$kept[] = $action;
 						break;
 
@@ -732,16 +738,16 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				),
 				array(
 					'name'                     => 'entities',
-					'description'              => 'Resolve concrete records to real IDs. Use it for the exact id of a post, term or user before you reference one in a loop, a template condition, or a menu.',
+					'description'              => 'Resolve concrete records to real IDs. Use it for the exact id of a post, term or user before you reference one in a loop, a template condition, or a menu. Answers { action, kind, entities: [{ id, label, slug }] }; an unknown post type or taxonomy is an error naming the real ones.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => array(
 							'kind'      => array( 'type' => 'string', 'enum' => array( 'posts', 'terms', 'users' ), 'description' => 'Which record type to resolve. Default "posts".' ),
 							'search'    => array( 'type' => 'string', 'description' => 'Filter records by a search string.' ),
-							'post_type' => array( 'type' => 'string', 'description' => 'With kind="posts": which post type to search (default "post").' ),
+							'post_type' => array( 'type' => 'string', 'description' => 'With kind="posts": which post type to search (default "post"), or several comma separated ("post,page").' ),
 							'taxonomy'  => array( 'type' => 'string', 'description' => 'With kind="terms": which taxonomy (default "category").' ),
-							'include'   => array( 'type' => 'string', 'description' => 'CSV of ids or slugs to resolve back to their labels.' ),
-							'limit'     => array( 'type' => 'integer', 'description' => 'Soft cap on results.' ),
+							'include'   => array( 'type' => 'string', 'description' => 'CSV of ids or slugs to resolve back to their labels. Nothing matching returns nothing.' ),
+							'limit'     => array( 'type' => 'integer', 'description' => 'Soft cap on results (default 30 posts, 50 terms, 30 users).' ),
 						),
 						'required'   => array(),
 					),
@@ -811,7 +817,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => array(
-							'type' => array( 'type' => 'string', 'description' => 'Filter to one template type. Omit for all of them.' ),
+							'type' => array( 'type' => 'string', 'enum' => array( 'header', 'footer', 'single', 'archive', 'single_product', 'product_archive', 'order_received', 'search', 'error_404' ), 'description' => 'Filter to one template type. Omit for all of them.' ),
 						),
 						'required'   => array(),
 					),
@@ -837,7 +843,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 							'post_id' => $post_id,
 							'status'  => array( 'type' => 'string', 'enum' => array( 'active', 'inactive' ), 'description' => 'Target status.' ),
 						),
-						'required'   => array( 'post_id' ),
+						'required'   => array( 'post_id', 'status' ),
 					),
 				),
 				array(
@@ -1249,6 +1255,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 									'required'   => array( 'find', 'replace' ),
 								),
 							),
+							'dry_run' => array( 'type' => 'boolean', 'description' => 'Report each edit\'s matches and save nothing.' ),
 						),
 						'required'   => array( 'edits' ),
 					),
@@ -1277,7 +1284,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 						'action_parameters_schema' => array(
 							'type'       => 'object',
 							'properties' => array(
-								'provider' => array( 'type' => 'string', 'enum' => array( 'post', 'product', 'user', 'term', 'image', 'site', 'request' ), 'description' => 'Limit to one provider. Omit for all of them.' ),
+								'provider' => array( 'type' => 'string', 'enum' => array( 'post', 'product', 'user', 'term', 'image', 'site', 'request', 'cart', 'cart_item', 'order', 'order_item', 'comment' ), 'description' => 'Limit to one provider. Omit for all of them. The WooCommerce ones (product, cart, cart_item, order, order_item) are there only while WooCommerce is active.' ),
 							),
 							'required'   => array(),
 						),
@@ -1352,6 +1359,8 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 				return array(
 					array(
 						'name'                     => 'configure',
+						// Called with only post_id and form_key it reads (Code Mode runs it as a read).
+						'readonly_unless'          => array( 'email_to', 'subject', 'success_message', 'store' ),
 						'description'              => 'Set where a form delivers. Without a recipient a form still stores submissions but emails nobody - the usual reason a built contact form looks broken. Call with just post_id and form_key to read the current config.',
 						'action_parameters_schema' => array(
 							'type'       => 'object',

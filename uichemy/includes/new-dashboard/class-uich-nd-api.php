@@ -80,6 +80,27 @@ if ( ! class_exists( 'Uich_ND_Api' ) ) {
 				)
 			);
 
+			// The "turned off" screen of a feature's dashboard tab switches it on here.
+			register_rest_route(
+				self::NS,
+				'/feature',
+				array(
+					'methods'             => WP_REST_Server::CREATABLE,
+					'callback'            => array( __CLASS__, 'route_set_feature' ),
+					'permission_callback' => $auth,
+					'args'                => array(
+						'slug'    => array(
+							'required' => true,
+							'type'     => 'string',
+						),
+						'enabled' => array(
+							'required' => true,
+							'type'     => 'boolean',
+						),
+					),
+				)
+			);
+
 			register_rest_route(
 				self::NS,
 				'/mode',
@@ -287,6 +308,36 @@ if ( ! class_exists( 'Uich_ND_Api' ) ) {
 				array(
 					'builder'     => Uich_ND_Settings::get_builder(),
 					'recommended' => $recommended,
+				)
+			);
+		}
+
+		/**
+		 * Switch a feature (Settings > Features) on or off.
+		 *
+		 * The same stored switch the Settings page writes. The module boots on the
+		 * next request, so the screen reloads after this answers.
+		 *
+		 * @param WP_REST_Request $req Request with slug and enabled.
+		 * @return WP_REST_Response|WP_Error
+		 */
+		public static function route_set_feature( WP_REST_Request $req ) {
+			$slug = sanitize_key( (string) $req->get_param( 'slug' ) );
+			if ( ! function_exists( 'uich_features' ) || ! isset( uich_features()[ $slug ] ) ) {
+				return new WP_Error( 'invalid_feature', __( 'Unknown feature.', 'uichemy' ), array( 'status' => 400 ) );
+			}
+			$enabled = (bool) $req->get_param( 'enabled' );
+			uich_feature_set( $slug, $enabled );
+			if ( 'custom_fields' === $slug && $enabled ) {
+				// Its post types and taxonomies register from the next request; their
+				// URLs need the rewrite rules rebuilt once they do.
+				update_option( 'uich_ct_flush_rewrite', 1, true );
+			}
+			return rest_ensure_response(
+				array(
+					'slug'     => $slug,
+					'enabled'  => uich_feature_enabled( $slug ),
+					'features' => uich_feature_states(),
 				)
 			);
 		}

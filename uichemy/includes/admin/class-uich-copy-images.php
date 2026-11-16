@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 class Uichemy_Gutenberg_Image_Import {
 
 	/**
@@ -49,9 +53,13 @@ class Uichemy_Gutenberg_Image_Import {
 	public static function cross_copy_paste_media_import() {
 		check_ajax_referer( 'uichemy-ajax-nonce', 'nonce' );
 
-		if ( ! current_user_can( 'edit_posts' ) ) {
+		// Importing saves files into the media library, so it needs the right to
+		// upload as well as to edit: a Contributor has edit_posts but not upload_files.
+		if ( ! current_user_can( 'edit_posts' ) || ! current_user_can( 'upload_files' ) ) {
 			wp_send_json_error( __( 'You do not have permission to do this.', 'uichemy' ), 403 );
 		}
+
+		$updated_media = null;
 
 		$media_import = isset( $_POST['content'] ) ? wp_unslash( $_POST['content'] ) : ''; // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- JSON block/media payload; decoded then processed recursively.
 
@@ -226,8 +234,17 @@ class Uichemy_Gutenberg_Image_Import {
 			return false;
 		}
 
+		// Check what the bytes really are, not only what the name says: a
+		// "photo.jpg" that is not a JPEG is refused, as the media uploader does.
+		if ( ! self::content_matches_name( $file_name, $file_content ) ) {
+			return false;
+		}
+
 		// Upload the file content to WordPress
 		$upload_data = wp_upload_bits( $file_name, null, $file_content );
+		if ( ! empty( $upload_data['error'] ) || empty( $upload_data['file'] ) ) {
+			return false;
+		}
 
 		// Prepare attachment post data
 		$post_image = array(
@@ -264,6 +281,29 @@ class Uichemy_Gutenberg_Image_Import {
 			'url'     => $upload_data['url'],
 			'post_id' => (int) $post_id,
 		);
+	}
+
+	/**
+	 * Does a downloaded file's content match the type its name claims? Runs
+	 * WordPress's own check (wp_check_filetype_and_ext, which reads image
+	 * headers) on a temporary copy, against the types this user may upload.
+	 *
+	 * @param string $file_name Name the file will be saved under.
+	 * @param string $content   Downloaded bytes.
+	 * @return bool
+	 */
+	private static function content_matches_name( $file_name, $content ) {
+		if ( ! function_exists( 'wp_tempnam' ) ) {
+			require_once ABSPATH . 'wp-admin/includes/file.php';
+		}
+		$temp = wp_tempnam( $file_name );
+		if ( ! $temp || false === file_put_contents( $temp, $content ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- a private temp file, deleted below.
+			return false;
+		}
+		$checked = wp_check_filetype_and_ext( $temp, $file_name );
+		wp_delete_file( $temp );
+
+		return ! empty( $checked['ext'] ) && ! empty( $checked['type'] ) && empty( $checked['proper_filename'] );
 	}
 
 	public static function update_img_src_with_uploaded_url( $data, $block_name ) {

@@ -62,6 +62,98 @@ if ( ! class_exists( 'Uich_Fields_Loader' ) ) {
 		 * Boot.
 		 */
 		private function __construct() {
+			$this->boot();
+		}
+
+		/**
+		 * Boot the module now, on a request that started with it switched off.
+		 *
+		 * An agent's first write to Custom Fields switches it on mid-request
+		 * (uich_feature_auto_enable()). `init` and `rest_api_init` have already
+		 * run by then, so the callbacks the module adds to them are run here once,
+		 * in priority order: its post types register and its REST routes exist
+		 * for the write that follows on this same request.
+		 *
+		 * @return bool Whether the module is booted.
+		 */
+		public static function boot_now() {
+			if ( defined( 'UICH_FIELDS_BOOTED' ) ) {
+				return true;
+			}
+
+			$hooks  = array( 'init', 'rest_api_init' );
+			$before = array();
+			foreach ( $hooks as $hook ) {
+				$before[ $hook ] = self::callback_ids( $hook );
+			}
+
+			self::get_instance()->boot();
+
+			foreach ( $hooks as $hook ) {
+				if ( ! did_action( $hook ) ) {
+					continue;
+				}
+				$args = 'rest_api_init' === $hook ? array( rest_get_server() ) : array();
+				$done = $before[ $hook ];
+				// A callback may add more to the same hook (the REST controllers add
+				// their route callbacks from one), so repeat until nothing new appears.
+				for ( $pass = 0; $pass < 5; $pass++ ) {
+					$ran = false;
+					foreach ( self::callbacks( $hook ) as $id => $cb ) {
+						if ( isset( $done[ $id ] ) ) {
+							continue;
+						}
+						$done[ $id ] = true;
+						$ran         = true;
+						call_user_func_array( $cb['function'], array_slice( $args, 0, (int) $cb['accepted_args'] ) );
+					}
+					if ( ! $ran ) {
+						break;
+					}
+				}
+			}
+
+			return defined( 'UICH_FIELDS_BOOTED' );
+		}
+
+		/**
+		 * A hook's callbacks in priority order, keyed "priority|id".
+		 *
+		 * @param string $hook Hook name.
+		 * @return array<string,array>
+		 */
+		private static function callbacks( $hook ) {
+			global $wp_filter;
+			$out = array();
+			if ( empty( $wp_filter[ $hook ] ) || ! ( $wp_filter[ $hook ] instanceof WP_Hook ) ) {
+				return $out;
+			}
+			$by_priority = $wp_filter[ $hook ]->callbacks;
+			ksort( $by_priority );
+			foreach ( $by_priority as $priority => $list ) {
+				foreach ( $list as $id => $cb ) {
+					$out[ $priority . '|' . $id ] = $cb;
+				}
+			}
+			return $out;
+		}
+
+		/**
+		 * The keys of callbacks(), as a set.
+		 *
+		 * @param string $hook Hook name.
+		 * @return array<string,bool>
+		 */
+		private static function callback_ids( $hook ) {
+			return array_fill_keys( array_keys( self::callbacks( $hook ) ), true );
+		}
+
+		/**
+		 * Load the module unless it is booted already or switched off.
+		 *
+		 * @return void
+		 */
+		private function boot() {
 			/*
 			 * Another plugin on this site can carry the same module by history, not by current
 			 * identity: the two copies now use separate post types (`uich_content_types` vs the

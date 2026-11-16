@@ -157,10 +157,28 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 			if ( self::author_trusted( $post_id ) ) {
 				return self::render_html( $html, $overrides );
 			}
-			return (string) self::untrusted(
-				function () use ( $html, $overrides ) {
-					return self::render_html( $html, $overrides );
-				}
+			return self::render_untrusted_html( $html, $overrides );
+		}
+
+		/**
+		 * An untrusted render, filtered like the author's own HTML afterwards.
+		 *
+		 * The template's markup went through kses when it was saved, but the values
+		 * Twig fills in did not: `{% set u = "javascript:…" %}<a href="{{ u }}">`
+		 * passes the save check (it only sees `{{ u }}`) and printed a script URL.
+		 * Filtering the rendered HTML gives those values the same rules.
+		 *
+		 * @param string $html      Template.
+		 * @param array  $overrides Extra context.
+		 * @return string
+		 */
+		public static function render_untrusted_html( $html, array $overrides = array() ) {
+			return wp_kses_post(
+				(string) self::untrusted(
+					function () use ( $html, $overrides ) {
+						return self::render_html( $html, $overrides );
+					}
+				)
 			);
 		}
 
@@ -285,8 +303,26 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 						: array( 'display_name', 'user_nicename' );
 				}
 				if ( $include ) {
+					// Ids, or slugs (user_nicename) resolved to ids. Nothing that matches
+					// means nothing comes back, never every user.
+					$ids   = array_map( 'intval', array_filter( $include, 'is_numeric' ) );
+					$slugs = array_values( array_diff( $include, array_filter( $include, 'is_numeric' ) ) );
+					if ( $slugs ) {
+						$ids = array_merge(
+							$ids,
+							array_map(
+								'intval',
+								get_users(
+									array(
+										'nicename__in' => array_map( 'sanitize_title', $slugs ),
+										'fields'       => 'ID',
+									)
+								)
+							)
+						);
+					}
 					$args = array(
-						'include' => array_map( 'intval', array_filter( $include, 'is_numeric' ) ),
+						'include' => $ids ? $ids : array( 0 ),
 						'number'  => 0,
 					);
 				}
@@ -365,8 +401,30 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 					$args['s'] = $search;
 				}
 				if ( $include ) {
-					$args['post__in']       = array_map( 'intval', array_filter( $include, 'is_numeric' ) );
-					$args['posts_per_page'] = count( $args['post__in'] );
+					// Ids, or slugs (post_name) resolved to ids. Nothing that matches means
+					// nothing comes back: an empty post__in would return every post.
+					$ids   = array_map( 'intval', array_filter( $include, 'is_numeric' ) );
+					$slugs = array_values( array_diff( $include, array_filter( $include, 'is_numeric' ) ) );
+					if ( $slugs ) {
+						$ids = array_merge(
+							$ids,
+							array_map(
+								'intval',
+								get_posts(
+									array(
+										'post_type'        => $post_type,
+										'post_name__in'    => array_map( 'sanitize_title', $slugs ),
+										'post_status'      => array( 'publish', 'private', 'draft', 'pending' ),
+										'fields'           => 'ids',
+										'posts_per_page'   => count( $slugs ),
+										'suppress_filters' => true, // phpcs:ignore WordPressVIPMinimum.Performance.WPQueryParams.SuppressFilters_suppress_filters -- Same query as above.
+									)
+								)
+							)
+						);
+					}
+					$args['post__in']       = $ids ? $ids : array( 0 );
+					$args['posts_per_page'] = max( 1, count( $args['post__in'] ) );
 					$args['orderby']        = 'post__in';
 					unset( $args['s'] );
 				}
@@ -749,6 +807,18 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 			if ( 'entities' === $action ) {
 				$kind = isset( $args['kind'] ) ? (string) $args['kind'] : 'posts';
 
+				// The picker falls back to "post" / "category"; an AI asking for a type that
+				// does not exist must hear so, or it uses ids of the wrong type.
+				$types = array_filter( array_map( 'trim', explode( ',', isset( $args['post_type'] ) ? (string) $args['post_type'] : '' ) ) );
+				$bad   = array_values( array_diff( $types, array_filter( $types, 'post_type_exists' ) ) );
+				if ( 'posts' === $kind && $bad ) {
+					return new WP_Error( 'uich_unknown_post_type', sprintf( 'There is no post type "%s". The post types are: %s.', implode( '", "', $bad ), implode( ', ', get_post_types( array( 'public' => true ) ) ) ) );
+				}
+				$taxonomy = isset( $args['taxonomy'] ) ? trim( (string) $args['taxonomy'] ) : '';
+				if ( 'terms' === $kind && '' !== $taxonomy && ! taxonomy_exists( $taxonomy ) ) {
+					return new WP_Error( 'uich_unknown_taxonomy', sprintf( 'There is no taxonomy "%s". The taxonomies are: %s.', $taxonomy, implode( ', ', get_taxonomies( array( 'public' => true ) ) ) ) );
+				}
+
 				return array(
 					'action'   => 'entities',
 					'kind'     => in_array( $kind, array( 'terms', 'users' ), true ) ? $kind : 'posts',
@@ -1116,11 +1186,7 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 			if ( $trusted ) {
 				$out = self::render_html( $html, $overrides );
 			} else {
-				$out = (string) self::untrusted(
-					function () use ( $html, $overrides ) {
-						return self::render_html( $html, $overrides );
-					}
-				);
+				$out = self::render_untrusted_html( $html, $overrides );
 			}
 			return new WP_REST_Response( array( 'html' => $out ), 200 );
 		}

@@ -319,7 +319,7 @@ class Uich_Fields_Register {
 		$hierarchical = ! empty( $raw['hierarchical'] );
 		$has_archive  = ! empty( $raw['has_archive'] );
 		// Custom archive slug (optional). Empty => archive uses the post type key when enabled.
-		$archive_slug = isset( $raw['archive_slug'] ) ? sanitize_title( $raw['archive_slug'] ) : '';
+		$archive_slug = isset( $raw['archive_slug'] ) ? Uich_Fields_Fields::sanitize_slug_path( $raw['archive_slug'] ) : '';
 		$active       = ! isset( $raw['active'] ) || (bool) $raw['active'];
 		$description  = isset( $raw['description'] ) ? sanitize_textarea_field( $raw['description'] ) : '';
 
@@ -384,7 +384,7 @@ class Uich_Fields_Register {
 
 		// Rewrite & query options.
 		$rewrite_enabled = isset( $raw['rewrite_enabled'] ) ? (bool) $raw['rewrite_enabled'] : true;
-		$rewrite_slug    = isset( $raw['rewrite_slug'] ) ? sanitize_title( $raw['rewrite_slug'] ) : $key;
+		$rewrite_slug    = isset( $raw['rewrite_slug'] ) ? Uich_Fields_Fields::sanitize_slug_path( $raw['rewrite_slug'] ) : $key;
 		if ( '' === $rewrite_slug || self::is_reserved_var( $rewrite_slug ) ) {
 			$rewrite_slug = $key;
 		}
@@ -517,7 +517,7 @@ class Uich_Fields_Register {
 			$object_type = array( 'post' );
 		}
 
-		$rewrite_slug = isset( $raw['rewrite_slug'] ) ? sanitize_title( $raw['rewrite_slug'] ) : $key;
+		$rewrite_slug = isset( $raw['rewrite_slug'] ) ? Uich_Fields_Fields::sanitize_slug_path( $raw['rewrite_slug'] ) : $key;
 		if ( '' === $rewrite_slug || self::is_reserved_var( $rewrite_slug ) ) {
 			$rewrite_slug = $key;
 		}

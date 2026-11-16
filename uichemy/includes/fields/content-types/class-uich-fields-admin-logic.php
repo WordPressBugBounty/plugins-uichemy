@@ -721,7 +721,7 @@ class Uich_Fields_Admin_Logic {
 			return '';
 		}
 		if ( ! empty( $meta['rewrite_slug'] ) ) {
-			return sanitize_title( (string) $meta['rewrite_slug'] );
+			return Uich_Fields_Fields::sanitize_slug_path( (string) $meta['rewrite_slug'] );
 		}
 		$key_field = ( 'cpt' === $kind ) ? 'post_type_key' : 'taxonomy_key';
 		return isset( $meta[ $key_field ] ) ? sanitize_key( (string) $meta[ $key_field ] ) : '';
@@ -1533,7 +1533,8 @@ class Uich_Fields_Admin_Logic {
 			if ( empty( $meta[ $vk ] ) ) {
 				continue;
 			}
-			if ( in_array( sanitize_title( (string) $meta[ $vk ] ), self::reserved_keys(), true ) ) {
+			$value = 'rewrite_slug' === $vk ? Uich_Fields_Fields::sanitize_slug_path( (string) $meta[ $vk ] ) : sanitize_title( (string) $meta[ $vk ] );
+			if ( in_array( $value, self::reserved_keys(), true ) ) {
 				return new WP_Error(
 					'uich_ct_reserved_var',
 					sprintf(

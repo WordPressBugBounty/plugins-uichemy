@@ -18,6 +18,7 @@ class Uich_Fields_Fields {
 
 	const TYPE_KEY          = 'key';
 	const TYPE_SLUG         = 'slug';
+	const TYPE_SLUG_PATH    = 'slug_path';
 	const TYPE_BOOL_OR_SLUG = 'bool_or_slug';
 	const TYPE_TEXT         = 'text';
 	const TYPE_TEXTAREA     = 'textarea';
@@ -46,9 +47,10 @@ class Uich_Fields_Fields {
 			'show_in_rest'              => self::TYPE_BOOL,
 			'hierarchical'              => self::TYPE_BOOL,
 			'has_archive'               => self::TYPE_BOOL,
-			// Slug-typed: Register applies sanitize_title() anyway, so sanitize on the way in to keep stored == effective.
-			'archive_slug'              => self::TYPE_SLUG,
-			'rewrite_slug'              => self::TYPE_SLUG,
+			// URL bases: each segment sanitized like a slug, slashes kept (e.g. "library/modules"), the same
+			// rule Register applies, so stored == effective.
+			'archive_slug'              => self::TYPE_SLUG_PATH,
+			'rewrite_slug'              => self::TYPE_SLUG_PATH,
 			'rewrite_enabled'           => self::TYPE_BOOL,
 			'rewrite_with_front'        => self::TYPE_BOOL,
 			'rewrite_pages'             => self::TYPE_BOOL,
@@ -92,7 +94,7 @@ class Uich_Fields_Fields {
 			'hierarchical'              => self::TYPE_BOOL,
 			'object_type'               => self::TYPE_ARRAY_KEY,
 			'show_in_rest'              => self::TYPE_BOOL,
-			'rewrite_slug'              => self::TYPE_SLUG,
+			'rewrite_slug'              => self::TYPE_SLUG_PATH,
 			'rewrite'                   => self::TYPE_BOOL,
 			'rewrite_hierarchical'      => self::TYPE_BOOL,
 			'public'                    => self::TYPE_BOOL,
@@ -320,6 +322,22 @@ class Uich_Fields_Fields {
 	}
 
 	/**
+	 * Sanitize a URL base that may span several segments, e.g. "uichemy-composer/module-library".
+	 *
+	 * WordPress takes a "/" in a post type's or taxonomy's rewrite slug and in a has_archive string,
+	 * and ACF stores such bases, so a site moving over must keep them. sanitize_title() on the whole
+	 * value turned the "/" into "-" and moved every URL. Each segment is sanitized on its own instead;
+	 * leading, trailing and doubled slashes are dropped.
+	 *
+	 * @param string $value Raw URL base.
+	 * @return string
+	 */
+	public static function sanitize_slug_path( $value ) {
+		$parts = array_map( 'sanitize_title', explode( '/', str_replace( '\\', '/', (string) $value ) ) );
+		return implode( '/', array_values( array_filter( $parts, 'strlen' ) ) );
+	}
+
+	/**
 	 * Sanitize a single value by type.
 	 *
 	 * @param mixed  $value Raw value.
@@ -332,8 +350,9 @@ class Uich_Fields_Fields {
 			case self::TYPE_KEY:
 				return is_string( $value ) ? sanitize_key( $value ) : '';
 			case self::TYPE_SLUG:
-				// WP applies sanitize_title() when building rewrite rules regardless, so sanitize here to keep stored == effective.
 				return is_scalar( $value ) ? sanitize_title( wp_unslash( (string) $value ) ) : '';
+			case self::TYPE_SLUG_PATH:
+				return is_scalar( $value ) ? self::sanitize_slug_path( wp_unslash( (string) $value ) ) : '';
 			case self::TYPE_TEXT:
 				// REST JSON is never slashed: wp_unslash() here ate typed backslashes. is_scalar, not isset: an array reaching
 				// sanitize_text_field() raises a warning that can corrupt a REST response.

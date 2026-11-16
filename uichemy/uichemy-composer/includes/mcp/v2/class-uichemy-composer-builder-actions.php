@@ -153,6 +153,7 @@ if ( ! class_exists( 'UiChemy_Composer_Builder_Actions' ) ) {
 							array(
 								'upload_images' => self::upload_images_property(),
 								'expected_hash' => $expected_hash,
+								'dry_run'       => self::dry_run_property(),
 							)
 						),
 						'required'   => array( 'post_id' ),
@@ -184,6 +185,7 @@ if ( ! class_exists( 'UiChemy_Composer_Builder_Actions' ) ) {
 							),
 							'upload_images' => self::upload_images_property(),
 							'expected_hash' => $expected_hash,
+							'dry_run'       => self::dry_run_property(),
 						),
 						'required'   => array( 'post_id', 'edits' ),
 					),
@@ -298,6 +300,14 @@ if ( ! class_exists( 'UiChemy_Composer_Builder_Actions' ) ) {
 			if ( is_wp_error( $stale ) ) {
 				return $stale;
 			}
+			if ( ! empty( $params['dry_run'] ) ) {
+				return array(
+					'dry_run'   => true,
+					'post_id'   => $post_id,
+					'would_set' => array_keys( $fields ),
+					'message'   => 'Preview only: the page exists, the hash matches, nothing was saved.',
+				);
+			}
 
 			$media  = self::sideload( $fields, $params );
 			$fields = $media['fields'];
@@ -393,7 +403,7 @@ if ( ! class_exists( 'UiChemy_Composer_Builder_Actions' ) ) {
 
 				// Only the NEW text is sideloaded - what is already stored was
 				// handled when it was written.
-				if ( in_array( $field, array( 'html', 'css' ), true ) && '' !== $replace ) {
+				if ( empty( $params['dry_run'] ) && in_array( $field, array( 'html', 'css' ), true ) && '' !== $replace ) {
 					$one     = self::sideload( array( $field => $replace ), $params );
 					$replace = $one['fields'][ $field ];
 					$media   = self::merge_media_reports( $media, $one );
@@ -429,6 +439,16 @@ if ( ! class_exists( 'UiChemy_Composer_Builder_Actions' ) ) {
 				);
 			}
 
+			if ( ! empty( $params['dry_run'] ) ) {
+				return array(
+					'dry_run' => true,
+					'post_id' => $post_id,
+					'field'   => $field,
+					'edits'   => $report,
+					'message' => 'Preview only: these are the matches the edits would make; nothing was saved.',
+				);
+			}
+
 			$document['content'][ self::FIELDS[ $field ] ] = $value;
 
 			if ( ! Uich_CB_Content::save_cb_content( $post_id, $document ) ) {
@@ -448,6 +468,19 @@ if ( ! class_exists( 'UiChemy_Composer_Builder_Actions' ) ) {
 		// ============================================================
 		// HELPERS
 		// ============================================================
+
+		/**
+		 * The dry_run parameter set-code and patch-code take.
+		 *
+		 * @return array
+		 */
+		private static function dry_run_property() {
+			return array(
+				'type'        => 'boolean',
+				'description' => 'Check everything (the page, the hash, each edit\'s matches) and save nothing.',
+			);
+		}
+
 
 		/**
 		 * Insert a new post for create.

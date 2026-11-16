@@ -236,7 +236,7 @@ if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
 
 				// Same three gates the catalogues use, so this can never advertise
 				// something a gateway will refuse to run.
-				if ( empty( $meta['mcp']['public'] ) ) {
+				if ( ! UiChemy_MCP_Server_V2::is_served_meta( $meta ) || UiChemy_MCP_Server_V2::is_code_mode_ability( (string) $name ) ) {
 					continue;
 				}
 				if ( ( isset( $meta['mcp']['type'] ) ? $meta['mcp']['type'] : 'tool' ) !== 'tool' ) {
@@ -393,7 +393,7 @@ if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
 
 			$notes = array(
 				'seo'           => '**SEO is switched off.** `uichemy-composer/seo` and the `improve-seo` skill are not available, and SEO tags written into page or site head code (`<title>`, meta description, canonical, robots, Open Graph, JSON-LD) are STRIPPED and never printed, so another SEO plugin can own them without duplicates. Do not write SEO tags; if the user asks for SEO work, tell them UiChemy SEO is off and that it is switched on under UiChemy > Settings > Features.',
-				'custom_fields' => '**Custom Fields is switched off.** UiChemy\'s own post types, taxonomies and field groups are not loaded; `uichemy-composer/cpt` and `uichemy-composer/custom-fields` work through ACF or JetEngine only, if one is installed.',
+				'custom_fields' => '**Custom Fields is switched off.** UiChemy\'s own post types, taxonomies and field groups are not loaded yet. When the user wants a post type, taxonomy or field group, create it with `uichemy-composer/cpt` as usual: the first write switches Custom Fields on by itself (unless ACF or JetEngine is active and no provider is named - then the write goes there). Tell the user it was switched on.',
 			);
 
 			$lines = array();
@@ -407,7 +407,7 @@ if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
 				return '';
 			}
 
-			return "## Switched off on this site\n\nThe user turned these features off under Settings > Features, usually because another plugin does the job. Never switch one back on yourself.\n\n" . implode( "\n", $lines );
+			return "## Switched off on this site\n\nThese features are off under Settings > Features. Custom Fields and Module Studio switch on by themselves on your first write to them; SEO is the user's call, so never switch it on yourself.\n\n" . implode( "\n", $lines );
 		}
 
 		/**
@@ -439,7 +439,7 @@ if ( ! class_exists( 'UiChemy_Usage_Guide' ) ) {
 			$guide = <<<'GUIDE'
 # UiChemy: build real WordPress pages from figma designs, code, or a brief
 
-UiChemy is powered by the UiChemy plugin, which provides the Composer Elementor widget. The widget holds any HTML, CSS and JS, and gives the user a friendly editing interface for it directly inside the Elementor editor.
+This WordPress site is powered by the UiChemy plugin, which provides the Composer Elementor widget. The widget holds any HTML, CSS and JS, and gives the user a friendly editing interface for it directly inside the Elementor editor.
 
 One Composer widget is meant to hold one section of a webpage, and the `uichemy/*` abilities are how you create and edit them.
 	- **Conversion is meant to take place with per section code only**, because that is the only way the Composer editor can hand editability back to the user.
@@ -536,10 +536,10 @@ GUIDE;
 			// notes name both vocabularies on purpose.
 			$document = UiChemy_Builder_Context::for_mode( $document );
 
-			$intro = "On this site UiChemy builds with the **UiChemy Composer Builder**: each page is ONE document of HTML, CSS and JS that the user edits in the Composer Builder editor. Read \"Composer Builder mode\" below before anything else - where another part of this briefing describes building a page in pieces, that section wins.";
+			$intro = "This WordPress site builds with the **UiChemy Composer Builder**: where each page is ONE document of HTML, CSS and JS that the user edits in the Composer Builder Editor. Read \"Composer Builder mode\" below before anything else - where another part of this briefing describes building a page in pieces, that section wins.";
 
 			// The stock intro describes one Composer widget per section.
-			$intro_start = strpos( $document, 'UiChemy is powered by' );
+			$intro_start = strpos( $document, 'This WordPress site is powered by' );
 			$intro_end   = strpos( $document, 'Apart from widget scoped code:' );
 			if ( false !== $intro_start && false !== $intro_end && $intro_end > $intro_start ) {
 				$document = substr( $document, 0, $intro_start ) . $intro . "\n\n" . str_replace( 'Apart from widget scoped code:', 'Apart from the page document:', substr( $document, $intro_end ) );

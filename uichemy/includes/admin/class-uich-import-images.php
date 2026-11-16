@@ -86,6 +86,29 @@ if ( ! class_exists( 'Uich_Import_Images' ) ) {
 			return $content;
 		}
 
+		/**
+		 * Does a downloaded file's content match the type its name claims?
+		 * WordPress's own check (it reads image headers), on a temporary copy,
+		 * against the types this user may upload.
+		 *
+		 * @param string $file_name Name the file will be saved under.
+		 * @param string $content   Downloaded bytes.
+		 * @return bool
+		 */
+		private static function content_matches_name( $file_name, $content ) {
+			if ( ! function_exists( 'wp_tempnam' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
+			$temp = wp_tempnam( $file_name );
+			if ( ! $temp || false === file_put_contents( $temp, $content ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- a private temp file, deleted below.
+				return false;
+			}
+			$checked = wp_check_filetype_and_ext( $temp, $file_name );
+			wp_delete_file( $temp );
+
+			return ! empty( $checked['ext'] ) && ! empty( $checked['type'] ) && empty( $checked['proper_filename'] );
+		}
+
 		public static function upload_media( $url ) {
 			// Check if the image already exists in the media library
 			$existing_image = self::find_existing_image_attachment( array( 'url' => $url ) );
@@ -105,8 +128,16 @@ if ( ! class_exists( 'Uich_Import_Images' ) ) {
 				return false;
 			}
 
+			// Check what the bytes really are, not only what the name says.
+			if ( ! self::content_matches_name( $file_name, $file_content ) ) {
+				return false;
+			}
+
 			// Upload the file content to WordPress
 			$upload_data = wp_upload_bits( $file_name, null, $file_content );
+			if ( ! empty( $upload_data['error'] ) || empty( $upload_data['file'] ) ) {
+				return false;
+			}
 
 			// Prepare attachment post data
 			$post_image = array(

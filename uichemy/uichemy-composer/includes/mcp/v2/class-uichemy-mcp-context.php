@@ -323,6 +323,14 @@ if ( ! class_exists( 'UiChemy_MCP_Context' ) ) {
 
 			$moved  = array();
 			$memory = self::move_out( $memory, $moved );
+			if ( ! empty( $fields['dry_run'] ) ) {
+				return array(
+					'dry_run'        => true,
+					'memory'         => $record,
+					'would_create'   => null === $existing,
+					'would_move_out' => $moved,
+				);
+			}
 			$memory = self::save_memory( $memory );
 
 			return array(
@@ -556,6 +564,7 @@ if ( ! class_exists( 'UiChemy_MCP_Context' ) ) {
 								'type'        => 'string',
 								'description' => 'The complete design.md, in Markdown.',
 							),
+							'dry_run' => array( 'type' => 'boolean', 'description' => 'Check it and save nothing.' ),
 						),
 						'required'   => array( 'design_md' ),
 					),
@@ -590,6 +599,15 @@ if ( ! class_exists( 'UiChemy_MCP_Context' ) ) {
 			}
 
 			if ( 'write_design_md' === $action ) {
+				if ( ! empty( $params['dry_run'] ) ) {
+					$markdown = isset( $params['design_md'] ) && is_string( $params['design_md'] ) ? trim( $params['design_md'] ) : '';
+					return '' === $markdown
+						? new WP_Error( 'uich_mcp_error', 'Pass "design_md": the complete design.md. It cannot be emptied.' )
+						: array(
+							'dry_run' => true,
+							'chars'   => self::length( $markdown ),
+						);
+				}
 				$doc = self::set_design_md( isset( $params['design_md'] ) ? $params['design_md'] : '' );
 
 				return is_wp_error( $doc ) ? $doc : array(
@@ -695,7 +713,7 @@ SKELETON;
 
 			// A pointer, not the document: design.md can be long, and the briefing is
 			// paid on every session. The agent reads it once with read-design-md.
-			return "## Site design (design.md) - should follow\n\n"
+			return "## Site design (design.md) - must follow\n\n"
 				. "This site has a design.md: its global design decisions - colours, typography, buttons, border radius and shadows, spacing and layout, shared components. It is not included here.\n\n"
 				. "- Before you write HTML, CSS or JS for anything a visitor sees, read it with `" . self::ABILITY_NAME . "` `read-design-md` (once per session, and again after a context compaction) and build from it: its colours, type styles, button styles, radius and spacing. Only what the user asks in this chat overrides it.\n"
 				. '- ' . $globals . "\n"
@@ -896,7 +914,7 @@ GUIDE;
 				),
 				array(
 					'name'                     => 'save-memory',
-					'description'              => 'Create a memory, or update the one with the same name (fields left out keep their value). One fact per memory. Check the Memory index in the briefing first and reuse a name rather than duplicating. When the answer says consolidate_suggested: true, merge and prune memory before you carry on.',
+					'description'              => 'Create a memory, or update the one with the same name (fields left out keep their value; a NEW memory needs description, type and content). One fact per memory. Check the Memory index in the briefing first and reuse a name rather than duplicating. When the answer says consolidate_suggested: true, merge and prune memory before you carry on.',
 					'action_parameters_schema' => array(
 						'type'       => 'object',
 						'properties' => array(
@@ -917,6 +935,7 @@ GUIDE;
 								'type'        => 'string',
 								'description' => 'The memory. For feedback and project: the fact, then a "Why:" line and a "How to apply:" line. Link related memories as [[their-name]]. At most ' . self::CONTENT_MAX . ' characters.',
 							),
+							'dry_run' => array( 'type' => 'boolean', 'description' => 'Check it and save nothing.' ),
 						),
 						'required'   => array( 'name' ),
 					),
@@ -931,6 +950,7 @@ GUIDE;
 								'type'        => 'string',
 								'description' => 'The memory\'s name.',
 							),
+							'dry_run' => array( 'type' => 'boolean', 'description' => 'Check it and save nothing.' ),
 						),
 						'required'   => array( 'name' ),
 					),
@@ -975,6 +995,12 @@ GUIDE;
 					$name = self::slug( isset( $params['name'] ) ? $params['name'] : '' );
 					if ( '' === $name || null === self::find( self::get_memory()['memories'], $name ) ) {
 						return new WP_Error( 'uich_mcp_error', 'No memory named "' . $name . '". Names are listed in the Memory index of the briefing.' );
+					}
+					if ( ! empty( $params['dry_run'] ) ) {
+						return array(
+							'dry_run'      => true,
+							'would_delete' => $name,
+						);
 					}
 					$memory = self::delete_memory( $name );
 					return array(

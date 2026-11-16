@@ -345,13 +345,12 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 				// plain permalinks (?rest_route= / index.php). Send the full
 				// URLs from PHP so React never has to guess.
 				//
-				// v2 is the gateway surface an AI agent should connect to: it
-				// serves the discovery briefing, the skills and the full ability
-				// catalogue. v1 is the older flat tool list and stays where the
-				// Figma plugin expects it (see connect_url_base above), which is
-				// why only this AI-agent config moved.
+				// v3 is the URL an AI agent should connect to. It serves Code
+				// Mode, or v2's tools while Settings > AI clients > Code Mode is
+				// off, so a client set up with it never needs reconfiguring. v2's
+				// own URL keeps working until 2026-12-12 (see UiChemy_MCP_Server_V3).
 				'mcpUrls'    => array(
-					'regular' => esc_url_raw( rest_url( 'uichemy/v2/mcp' ) ),
+					'regular' => esc_url_raw( rest_url( 'uichemy/v3/mcp' ) ),
 				),
 				'user'       => array(
 					'id'       => $user ? (int) $user->ID : 0,

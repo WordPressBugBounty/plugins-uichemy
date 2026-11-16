@@ -1,5 +1,9 @@
 <?php
 
+if ( ! defined( 'ABSPATH' ) ) {
+	exit;
+}
+
 add_action( 'wp_ajax_uich_bricks_import_media', array( 'Uich_Bricks_Import_Images', 'import_media' ) );
 
 class Uich_Bricks_Import_Images {

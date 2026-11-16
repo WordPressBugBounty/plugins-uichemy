@@ -29,8 +29,9 @@
  * abilities stay separable from anything UiChemy itself registers later. That
  * separation is exactly what NAMESPACE_SLUG below filters on.
  *
- * This is UiChemy's only MCP endpoint. The legacy flat-tool endpoint at
- * /wp-json/uichemy/v1/mcp was removed.
+ * v3 (Code Mode, UiChemy_MCP_Server_V3) replaces this endpoint. v2 stays
+ * supported as it is until 2026-12-12; after that date every v2 request is
+ * routed to v3, as /wp-json/uichemy/v1/mcp already is (see the v3 file header).
  *
  * @link       https://posimyth.com/
  * @since      5.1.0
@@ -96,6 +97,19 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 				return $result;
 			}
 
+			self::prime_mcp_request( $request );
+
+			return $result;
+		}
+
+		/**
+		 * Per-request setup for a UiChemy MCP endpoint: the builder pin and, for
+		 * a client that sends no Mcp-Session-Id, a relay session. Public because
+		 * the v3 (Code Mode) endpoint runs the same setup on its own route.
+		 *
+		 * @param \WP_REST_Request $request Incoming request.
+		 */
+		public static function prime_mcp_request( $request ) {
 			// Read the builder pin (?builder= or X-UiChemy-Builder) for THIS request.
 			// It is done here rather than lazily because the resolved value is
 			// memoized, and a php-fpm worker is reused across requests — a lazy
@@ -107,27 +121,25 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 
 			// A real MCP client already supplied a session — leave it alone.
 			if ( $request->get_header( 'Mcp-Session-Id' ) ) {
-				return $result;
+				return;
 			}
 
 			// Need an authenticated user to own the session; if none, let the normal
 			// auth/permission flow reject the request.
 			$user_id = get_current_user_id();
 			if ( ! $user_id ) {
-				return $result;
+				return;
 			}
 
 			$session_manager = '\UiChemy\Deps\WP\MCP\Transport\Infrastructure\SessionManager';
 			if ( ! class_exists( $session_manager ) ) {
-				return $result;
+				return;
 			}
 
 			$session_id = $session_manager::create_session( $user_id );
 			if ( is_string( $session_id ) && '' !== $session_id ) {
 				$request->set_header( 'Mcp-Session-Id', $session_id );
 			}
-
-			return $result;
 		}
 
 		/**
@@ -196,6 +208,18 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		 * @param \UiChemy\Deps\WP\MCP\Core\McpAdapter $adapter The MCP Adapter instance.
 		 */
 		public static function register_mcp_server( $adapter ) {
+			self::register_on( $adapter, self::SERVER_ID, self::REST_NAMESPACE );
+		}
+
+		/**
+		 * Register this server's tools under a namespace. v3 uses it to serve v2
+		 * on its own URLs (v3, v1) while Code Mode is switched off.
+		 *
+		 * @param \UiChemy\Deps\WP\MCP\Core\McpAdapter $adapter   The MCP Adapter instance.
+		 * @param string                               $server_id Unique server id.
+		 * @param string                               $namespace REST namespace, e.g. "uichemy/v2".
+		 */
+		public static function register_on( $adapter, $server_id, $namespace ) {
 			if ( ! $adapter instanceof \UiChemy\Deps\WP\MCP\Core\McpAdapter ) {
 				return;
 			}
@@ -206,8 +230,8 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 			}
 
 			$adapter->create_server(
-				self::SERVER_ID,
-				self::REST_NAMESPACE,
+				$server_id,
+				$namespace,
 				self::REST_ROUTE,
 				self::SERVER_NAME,
 				self::SERVER_DESCRIPTION,
@@ -381,6 +405,26 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 				? $arguments['arguments']
 				: array();
 
+			$refused = self::check_call( $ability, $input );
+			if ( $refused ) {
+				return $refused;
+			}
+
+			return $ability->execute( $input );
+		}
+
+		/**
+		 * Everything that must pass before an ability runs: its own permission
+		 * check, then (page / post) whether this builder mode offers the action.
+		 *
+		 * Public because the v3 (Code Mode) endpoint runs every ability call a
+		 * script makes through this same check, before it executes or previews it.
+		 *
+		 * @param \WP_Ability $ability Resolved ability.
+		 * @param array       $input   Ability input.
+		 * @return WP_Error|null Null when the call may run.
+		 */
+		public static function check_call( $ability, array $input ) {
 			$permitted = $ability->check_permissions( $input );
 			if ( is_wp_error( $permitted ) ) {
 				return $permitted;
@@ -388,16 +432,11 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 			if ( ! $permitted ) {
 				return new WP_Error(
 					'uichemy_mcp_forbidden',
-					sprintf( 'You are not allowed to run "%s".', $name )
+					sprintf( 'You are not allowed to run "%s".', $ability->get_name() )
 				);
 			}
 
-			$refused = self::refuse_unoffered_action( $ability, $input );
-			if ( $refused ) {
-				return $refused;
-			}
-
-			return $ability->execute( $input );
+			return self::refuse_unoffered_action( $ability, $input );
 		}
 
 		/**
@@ -442,10 +481,13 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		 * arbitrary-ability escape hatch is exactly what the namespace scoping in
 		 * list_abilities() exists to prevent.
 		 *
+		 * Public because the v3 (Code Mode) endpoint resolves every call a script
+		 * makes through it, so both endpoints serve exactly the same abilities.
+		 *
 		 * @param string $name Full ability name.
 		 * @return \WP_Ability|WP_Error
 		 */
-		private static function resolve_served_ability( $name ) {
+		public static function resolve_served_ability( $name ) {
 			if ( '' === trim( $name ) ) {
 				return new WP_Error( 'uichemy_mcp_missing_name', 'Missing required parameter: name.' );
 			}
@@ -492,31 +534,10 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		 * @return array<int,array{name:string,label:string,description:string,actions?:array<int,string>}>
 		 */
 		private static function list_abilities( $apply_exclusions = true ) {
-			if ( ! function_exists( 'wp_get_abilities' ) ) {
-				return array();
-			}
+			$found = array();
 
-			$excluded = $apply_exclusions ? self::excluded_ability_names() : array();
-			$found    = array();
-
-			foreach ( wp_get_abilities() as $ability ) {
-				$name = $ability->get_name();
-
-				if ( ! self::is_served_namespace( $name ) ) {
-					continue;
-				}
-
-				$meta = $ability->get_meta();
-				if ( empty( $meta['mcp']['public'] ) ) {
-					continue;
-				}
-				if ( ( $meta['mcp']['type'] ?? 'tool' ) !== 'tool' ) {
-					continue;
-				}
-				if ( in_array( $name, $excluded, true ) ) {
-					continue;
-				}
-
+			foreach ( self::served_abilities( $apply_exclusions ) as $name => $ability ) {
+				$meta   = $ability->get_meta();
 				$record = array(
 					'name'        => $name,
 					'label'       => $ability->get_label(),
@@ -544,6 +565,71 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		}
 
 		/**
+		 * The abilities this endpoint serves, as WP_Ability objects keyed by name:
+		 * public `uichemy-composer/*` tools, minus the held-back ones unless
+		 * $apply_exclusions is false.
+		 *
+		 * Public because the v3 (Code Mode) endpoint builds its classes and
+		 * methods from exactly this list.
+		 *
+		 * @param bool $apply_exclusions Leave out the abilities held back from the list.
+		 * @return array<string,\WP_Ability>
+		 */
+		public static function served_abilities( $apply_exclusions = true ) {
+			if ( ! function_exists( 'wp_get_abilities' ) ) {
+				return array();
+			}
+
+			$excluded = $apply_exclusions ? self::excluded_ability_names() : array();
+			$found    = array();
+
+			foreach ( wp_get_abilities() as $ability ) {
+				$name = $ability->get_name();
+
+				if ( ! self::is_served_namespace( $name ) ) {
+					continue;
+				}
+
+				$meta = $ability->get_meta();
+				if ( ! self::is_served_meta( $meta ) || self::is_code_mode_ability( $name ) ) {
+					continue;
+				}
+				if ( ( $meta['mcp']['type'] ?? 'tool' ) !== 'tool' ) {
+					continue;
+				}
+				if ( in_array( $name, $excluded, true ) ) {
+					continue;
+				}
+
+				$found[ $name ] = $ability;
+			}
+
+			return $found;
+		}
+
+		/**
+		 * Is this ability one UiChemy serves? Public for MCP, or - while Code Mode
+		 * hides the per-feature abilities from other gateways - marked served.
+		 *
+		 * @param array $meta Ability meta.
+		 * @return bool
+		 */
+		public static function is_served_meta( $meta ) {
+			return ! empty( $meta['mcp']['public'] ) || ! empty( $meta['uichemy']['served'] );
+		}
+
+		/**
+		 * The Code Mode abilities are for other gateways; UiChemy's own endpoints
+		 * serve Code Mode as tools, and v3 must never call itself.
+		 *
+		 * @param string $name Ability name.
+		 * @return bool
+		 */
+		public static function is_code_mode_ability( $name ) {
+			return class_exists( 'UiChemy_Code_Mode_Abilities' ) && in_array( (string) $name, UiChemy_Code_Mode_Abilities::names(), true );
+		}
+
+		/**
 		 * Every ability this endpoint will RESOLVE, which is a wider set than the
 		 * one it lists.
 		 *
@@ -557,7 +643,7 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		 * @return array<int,string>
 		 */
 		private static function served_ability_names() {
-			return wp_list_pluck( self::list_abilities( false ), 'name' );
+			return array_keys( self::served_abilities( false ) );
 		}
 
 		/**
@@ -609,7 +695,7 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 				}
 
 				$meta = $ability->get_meta();
-				if ( empty( $meta['mcp']['public'] ) ) {
+				if ( ! self::is_served_meta( $meta ) || self::is_code_mode_ability( $name ) ) {
 					continue;
 				}
 				if ( ( $meta['mcp']['type'] ?? 'tool' ) !== $type ) {

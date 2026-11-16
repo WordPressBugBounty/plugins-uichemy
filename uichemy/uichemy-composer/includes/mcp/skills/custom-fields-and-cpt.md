@@ -131,12 +131,13 @@ JetEngine?"* Extending an existing type or group belongs with its owner -
 provider and is used automatically. It needs no extra plugin, and its fields are
 edited in the same dashboard as the rest of UiChemy.
 
-**When none is active, say so plainly** - *"UiChemy Custom Fields is switched off
-on this site and there is no ACF or JetEngine. You can switch it back on under
-UiChemy > Settings > Features, install ACF or JetEngine, or I can model this
-with plain posts, categories and tags, which I can bind and lay out today."*
-Never switch the feature on yourself: a user who turned it off usually did so
-because another plugin owns their content model. Never report an empty field
+**UiChemy Custom Fields switched off, and no ACF or JetEngine** - it starts off
+on a new site and switches on by itself on the first real write (not a dry run)
+to `uichemy-composer/cpt`, so just create the post type, taxonomy or field
+group. The result carries a `notice`; tell the user Custom Fields is on now and
+can be switched off again under UiChemy > Settings > Features. With ACF or
+JetEngine active and no `provider` named, the write goes to that plugin and
+Custom Fields stays off. Never report an empty field
 list as though the site had no data.
 
 **A field name in two providers is a write you have to pin.** `list` flags it as

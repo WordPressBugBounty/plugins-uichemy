@@ -331,11 +331,7 @@ if ( ! class_exists( 'UiChemy_Frontend_REST' ) ) {
 				if ( current_user_can( 'unfiltered_html' ) && ( ! $post_id || Uich_Dynamic::author_trusted( $post_id ) ) ) {
 					$resolved = Uich_Dynamic::render_html( $html, array( 'widget_id' => $uid ) );
 				} else {
-					$resolved = (string) Uich_Dynamic::untrusted(
-						function () use ( $html, $uid ) {
-							return Uich_Dynamic::render_html( $html, array( 'widget_id' => $uid ) );
-						}
-					);
+					$resolved = Uich_Dynamic::render_untrusted_html( $html, array( 'widget_id' => $uid ) );
 				}
 				wp_reset_postdata();
 				$post = $prev_post; // phpcs:ignore WordPress.WP.GlobalVariablesOverride.Prohibited

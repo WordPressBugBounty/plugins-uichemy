@@ -1113,7 +1113,7 @@ if ( ! class_exists( 'Uich_CB_Render' ) ) {
 				wp_enqueue_script( 'uichemy-three', UICHEMY_BUILD_URL . 'three.js', array(), ( $path && file_exists( $path ) ) ? filemtime( $path ) : $ver, true );
 			}
 
-			$code = self::compile_sections( UiChemy_Composer_Renderer::decode_code_entities( $js ) );
+			$code = UiChemy_Composer_Renderer::script_safe( self::compile_sections( UiChemy_Composer_Renderer::decode_code_entities( $js ) ) );
 
 			self::$footer_scripts[ md5( $code ) ] = $code;
 

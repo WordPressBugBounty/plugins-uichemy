@@ -164,9 +164,16 @@ if ( ! class_exists( 'Uich_Custom_Fields_Ability' ) ) {
 				'description' => 'The post type or taxonomy slug. Optional with an object_id (it is derived and then CHECKED - a mismatch is refused rather than guessed, because the wrong one writes real values onto the wrong object), required without one.',
 			);
 
+			// Relations join posts, terms and users; an options page is never one side.
+			$relation_object_type = array(
+				'type'        => 'string',
+				'enum'        => array( 'post', 'term', 'user' ),
+				'description' => 'WordPress\'s own object type of the object on this side of the relation. Defaults to "post".',
+			);
+
 			$object_id = array(
 				'type'        => array( 'integer', 'string' ),
-				'description' => 'The object to read or write. Resolve real ids with uichemy-composer/describe-site (action="entities").',
+				'description' => 'The object to read or write. Resolve real ids with uichemy-composer/describe-site (action="entities"). Required for every object_type except "options".',
 			);
 
 			$provider = array(
@@ -209,7 +216,7 @@ if ( ! class_exists( 'Uich_Custom_Fields_Ability' ) ) {
 						'names'          => $names,
 						'provider'       => $provider,
 					),
-					'required'    => array( 'object_id' ),
+					'required'    => array(),
 				),
 				array(
 					'name'        => 'update',
@@ -249,7 +256,7 @@ if ( ! class_exists( 'Uich_Custom_Fields_Ability' ) ) {
 						),
 						'provider'       => $provider,
 					),
-					'required'    => array( 'object_id', 'names' ),
+					'required'    => array( 'names' ),
 				),
 				array(
 					'name'        => 'revert',
@@ -271,7 +278,7 @@ if ( ! class_exists( 'Uich_Custom_Fields_Ability' ) ) {
 					'name'        => 'get-relations',
 					'description' => 'Relation membership. Relations are NOT meta - JetEngine keeps them in its own database tables, so a field write aimed at one goes nowhere and returns success. With no object_id this lists every relation on the site with its two sides; with one it adds that object\'s current membership and which side it sits on.',
 					'parameters'  => array(
-						'object_type'    => $object_type,
+						'object_type'    => $relation_object_type,
 						'object_subtype' => $object_subtype,
 						'object_id'      => array(
 							'type'        => array( 'integer', 'string' ),
@@ -292,7 +299,7 @@ if ( ! class_exists( 'Uich_Custom_Fields_Ability' ) ) {
 							'type'        => 'integer',
 							'description' => 'REQUIRED. From action="get-relations".',
 						),
-						'object_type'    => $object_type,
+						'object_type'    => $relation_object_type,
 						'object_subtype' => $object_subtype,
 						'object_id'      => $object_id,
 						'add'            => array(

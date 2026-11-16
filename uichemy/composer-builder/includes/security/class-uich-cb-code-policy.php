@@ -253,6 +253,17 @@ if ( ! class_exists( 'Uich_CB_Code_Policy' ) ) {
 		public static function clean_css( $css ) {
 			$css = str_replace( array( "\0", '<' ), '', (string) $css );
 
+			// Code is entity-decoded before it is printed, so a `<` written as an
+			// entity (`&lt;`, `&#60;`, `&#x3C;`, with or without the `;`) would
+			// come back as a real one. Remove those too, however they are spelled.
+			$css = (string) preg_replace_callback(
+				'/&(?:#[xX]?[0-9a-fA-F]+|[a-zA-Z][a-zA-Z0-9]*);?/',
+				static function ( $m ) {
+					return false !== strpos( html_entity_decode( $m[0], ENT_QUOTES | ENT_HTML5, 'UTF-8' ), '<' ) ? '' : $m[0];
+				},
+				$css
+			);
+
 			// Drop whole @import statements, up to their semicolon or the end.
 			$css = preg_replace( '/@import\b[^;]*;?/i', '', $css );
 

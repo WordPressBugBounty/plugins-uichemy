@@ -4813,10 +4813,28 @@ class Uich_Webpage_Import {
 	 * export keeps importing exactly as before.
 	 *
 	 * @param mixed $data Decoded navbar.json / footer.json.
-	 * @return array<int,array{key:string,default:bool,pages:string[],content:array}>
+	 * @return array<int,array{key:string,default:bool,pages:string[],content:array,source?:array}>
 	 */
 	protected function theme_part_variants_from_data( $data ) {
 		$variants = array();
+
+		/*
+		 * A Gutenberg export is one block-markup design, not an Elementor tree:
+		 * nothing below can read it, so the header and footer were dropped and
+		 * the site kept the theme's own. It goes through whole, as `source`, so
+		 * the template step takes its Gutenberg branch.
+		 */
+		if ( $this->is_gutenberg_replacement_data( $data ) ) {
+			return array(
+				array(
+					'key'     => '',
+					'default' => true,
+					'pages'   => array(),
+					'content' => array(),
+					'source'  => $data,
+				),
+			);
+		}
 
 		/*
 		 * The key has already been renamed once mid-development (`navbars` →
@@ -5071,7 +5089,9 @@ class Uich_Webpage_Import {
 				}
 			}
 
-			$variant_data = array( 'content' => $variant['content'] );
+			// A Gutenberg design is passed as exported (`_uich_webpage_gutenberg` +
+			// `markup`); rebuilding it as `content` would lose the markup.
+			$variant_data = isset( $variant['source'] ) ? $variant['source'] : array( 'content' => $variant['content'] );
 			if ( ! empty( $rules ) ) {
 				$variant_data['placement'] = array( 'rules' => $rules );
 			}
@@ -6364,7 +6384,37 @@ class Uich_Webpage_Import {
 		// at which point all blocks are registered and globalTypo remapping is reflected.
 		$this->invalidate_tpgb_block_css_file( $post_id );
 
+		$this->use_full_width_template( (int) $post_id, $post_type );
+
 		return $post_id;
+	}
+
+	/**
+	 * Put an imported Gutenberg page on "UiChemy Full width".
+	 *
+	 * The kit's sections are built edge to edge, but on the theme's default
+	 * template the page sits in the theme's content box under its title (the
+	 * Zero theme: a title and a 1140px box). The block editor switches a page
+	 * to Full width only when a Composer section is added by hand
+	 * (uich-cb-gutenberg.js); an import never goes through that, so it is set
+	 * here, at import time only.
+	 *
+	 * Pages only: an imported post keeps the theme's post layout (title, meta,
+	 * comments). A template someone already picked for the page stays.
+	 *
+	 * @param int    $post_id   Imported post.
+	 * @param string $post_type Its post type.
+	 * @return void
+	 */
+	protected function use_full_width_template( $post_id, $post_type ) {
+		if ( 'page' !== $post_type || ! class_exists( 'Uich_CB_Page_Settings' ) ) {
+			return;
+		}
+		$current = (string) get_post_meta( $post_id, '_wp_page_template', true );
+		if ( '' !== $current && 'default' !== $current ) {
+			return;
+		}
+		update_post_meta( $post_id, '_wp_page_template', Uich_CB_Page_Settings::TPL_FULL_WIDTH );
 	}
 
 	/**
@@ -12185,6 +12235,14 @@ class Uich_Webpage_Import {
 			foreach ( $current as $value ) {
 				if ( is_string( $value ) && $this->is_remote_image( $value ) ) {
 					$assets[ $value ] = $value;
+				} elseif ( is_string( $value ) && $this->is_html_with_urls( $value ) ) {
+					// A section's HTML (a UiChemy section, an HTML or text widget)
+					// holds its images in <img src>, srcset and inline url(): the
+					// value as a whole is never an image URL, so they stayed on the
+					// remote server.
+					foreach ( $this->scan_markup_for_remote_images( $value ) as $url ) {
+						$assets[ $url ] = $url;
+					}
 				}
 				if ( is_array( $value ) && isset( $value['url'] ) && $this->is_remote_image( $value['url'] ) ) {
 					$assets[ $value['url'] ] = $value['url'];
@@ -12220,14 +12278,22 @@ class Uich_Webpage_Import {
 			return true;
 		}
 
-		// Known image CDNs without file extension in URL.
+		// Known image CDNs without file extension in URL. api.uichemy.com serves
+		// the images UiChemy generates and stores, with no extension; left out,
+		// they were never copied into the Media Library and the site kept
+		// loading them from UiChemy's server. import_asset() still refuses a
+		// download that is not an image.
 		$image_hosts = array(
+			'api.uichemy.com',
 			'assets.lummi.ai',
 			'images.unsplash.com',
 			'cdn.dribbble.com',
 		);
+		// The host itself or a subdomain of it: a plain substring match would
+		// take creator-api.uichemy.com (the JSON server) for api.uichemy.com.
+		$host = strtolower( $host );
 		foreach ( $image_hosts as $allowed ) {
-			if ( strpos( $host, $allowed ) !== false ) {
+			if ( $host === $allowed || '.' . $allowed === substr( $host, -strlen( '.' . $allowed ) ) ) {
 				return true;
 			}
 		}
@@ -12784,14 +12850,30 @@ class Uich_Webpage_Import {
 	 * @param array $map  Map of original URL => array( 'id' => int, 'url' => string ).
 	 * @return array Modified data.
 	 */
-	protected function replace_asset_urls( $data, $map ) {
+	protected function replace_asset_urls( $data, $map, $pairs = null ) {
 		if ( ! is_array( $data ) ) {
 			return $data;
+		}
+		if ( null === $pairs ) {
+			// Longest first, so a URL that is the start of another never cuts it.
+			$pairs = array();
+			foreach ( $map as $from => $to ) {
+				$pairs[ $from ] = $to['url'];
+			}
+			uksort(
+				$pairs,
+				static function ( $a, $b ) {
+					return strlen( $b ) - strlen( $a );
+				}
+			);
 		}
 
 		foreach ( $data as $key => &$value ) {
 			if ( is_string( $value ) && isset( $map[ $value ] ) ) {
 				$value = $map[ $value ]['url'];
+			} elseif ( is_string( $value ) && ! empty( $pairs ) && $this->is_html_with_urls( $value ) ) {
+				// Images inside HTML, found by scan_elementor_assets().
+				$value = strtr( $value, $pairs );
 			}
 			if ( is_array( $value ) && isset( $value['url'] ) && isset( $map[ $value['url'] ] ) ) {
 				$original_url = $value['url'];
@@ -12799,11 +12881,22 @@ class Uich_Webpage_Import {
 				$value['id']  = $map[ $original_url ]['id'];
 			}
 			if ( is_array( $value ) ) {
-				$value = $this->replace_asset_urls( $value, $map );
+				$value = $this->replace_asset_urls( $value, $map, $pairs );
 			}
 		}
 
 		return $data;
+	}
+
+	/**
+	 * Is `$value` HTML or CSS that may carry image URLs (rather than one URL)?
+	 *
+	 * @param string $value Setting value.
+	 * @return bool
+	 */
+	protected function is_html_with_urls( $value ) {
+		return false !== strpos( $value, '://' )
+			&& ( false !== strpos( $value, '<' ) || false !== stripos( $value, 'url(' ) );
 	}
 
 	/**

@@ -169,7 +169,7 @@ if ( ! class_exists( 'Uich_Model' ) ) {
 			if ( ! $active ) {
 				return new WP_Error(
 					'uich_model_no_provider',
-					'This site has no content-modelling layer active, so UiChemy cannot create a post type, taxonomy or custom field here. UiChemy\'s own Custom Fields is switched off (Settings > Features) and neither ACF nor JetEngine is installed. Tell the user they can switch UiChemy Custom Fields back on, or install Advanced Custom Fields or JetEngine, and call this again - OR model the content with what WordPress already has (posts plus categories and tags), which UiChemy can bind and lay out today. Do not switch the feature on yourself: the user turned it off, usually because another plugin owns their content model.'
+					'This site has no content-modelling layer active yet: UiChemy\'s own Custom Fields is switched off (Settings > Features) and neither ACF nor JetEngine is installed. A real write through uichemy-composer/cpt (not a dry run) switches UiChemy Custom Fields on by itself and goes ahead, so just make the call without dry_run. Or model the content with what WordPress already has (posts plus categories and tags).'
 				);
 			}
 

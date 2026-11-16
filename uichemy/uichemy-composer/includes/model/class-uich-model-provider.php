@@ -199,9 +199,23 @@ if ( ! class_exists( 'Uich_Model_Provider' ) ) {
 				'supports'       => array_values( array_unique( $supports ) ),
 				'taxonomies'     => $taxonomies,
 				'menu_icon'      => isset( $args['menu_icon'] ) ? sanitize_text_field( (string) $args['menu_icon'] ) : 'dashicons-admin-post',
-				'rewrite_slug'   => isset( $args['rewrite_slug'] ) && '' !== $args['rewrite_slug'] ? sanitize_title( (string) $args['rewrite_slug'] ) : str_replace( '_', '-', $slug ),
+				'rewrite_slug'   => isset( $args['rewrite_slug'] ) && '' !== $args['rewrite_slug'] ? self::url_base( (string) $args['rewrite_slug'] ) : str_replace( '_', '-', $slug ),
 				'notes'          => $notes,
 			);
+		}
+
+		/**
+		 * A URL base, segment by segment: "uichemy-composer/module-library" keeps its "/".
+		 *
+		 * WordPress, ACF and UiChemy Custom Fields all take a nested base; sanitize_title() on the
+		 * whole value turned the "/" into "-" and the type landed at a different URL than asked.
+		 *
+		 * @param string $value Raw URL base.
+		 * @return string
+		 */
+		protected static function url_base( $value ) {
+			$parts = array_map( 'sanitize_title', explode( '/', str_replace( '\\', '/', (string) $value ) ) );
+			return implode( '/', array_values( array_filter( $parts, 'strlen' ) ) );
 		}
 
 		/**
@@ -263,7 +277,7 @@ if ( ! class_exists( 'Uich_Model_Provider' ) ) {
 				'public'            => ! isset( $args['public'] ) || (bool) $args['public'],
 				'show_in_rest'      => ! isset( $args['show_in_rest'] ) || (bool) $args['show_in_rest'],
 				'show_admin_column' => ! isset( $args['show_admin_column'] ) || (bool) $args['show_admin_column'],
-				'rewrite_slug'      => isset( $args['rewrite_slug'] ) && '' !== $args['rewrite_slug'] ? sanitize_title( (string) $args['rewrite_slug'] ) : str_replace( '_', '-', $slug ),
+				'rewrite_slug'      => isset( $args['rewrite_slug'] ) && '' !== $args['rewrite_slug'] ? self::url_base( (string) $args['rewrite_slug'] ) : str_replace( '_', '-', $slug ),
 			);
 		}
 

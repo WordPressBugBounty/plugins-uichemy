@@ -366,10 +366,11 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 		 * uploads/uichemy-forms/<random>/ with a random name prefix, so a
 		 * submission's file cannot be found by guessing.
 		 *
-		 * @param array $files $_FILES-shaped array from the request.
+		 * @param array      $files     $_FILES-shaped array from the request.
+		 * @param array|null $file_keys The form's file inputs (request keys); null accepts any (legacy schema).
 		 * @return array|WP_Error Field key => file URL.
 		 */
-		private static function handle_uploads( $files ) {
+		private static function handle_uploads( $files, $file_keys = null ) {
 			$out = array();
 			if ( empty( $files ) || ! is_array( $files ) ) {
 				return $out;
@@ -415,6 +416,10 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			foreach ( $files as $key => $file ) {
 				$key = sanitize_key( str_replace( array( ' ', '.' ), '_', (string) $key ) );
 				if ( '' === $key || 0 === strpos( $key, '_uich_' ) || ! is_array( $file ) || ! isset( $file['error'] ) || is_array( $file['error'] ) ) {
+					continue;
+				}
+				// A file sent for a field the form does not have is dropped, never stored.
+				if ( null !== $file_keys && ! in_array( $key, $file_keys, true ) ) {
 					continue;
 				}
 				if ( UPLOAD_ERR_NO_FILE === (int) $file['error'] ) {
@@ -634,7 +639,15 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 
 			// File fields: stored, then recorded as the file's URL (I-01). A file
 			// that cannot be accepted fails the whole submission, with a reason.
-			$uploaded = self::handle_uploads( $request->get_file_params() );
+			// Only the form's own file inputs may upload. A schema signed before
+			// 'files' was recorded (a page cached from an older version) has no
+			// list: it may still upload while the page's saved markup has a file
+			// input at all, and never once it has none (signatures do not expire).
+			$file_keys = isset( $schema['files'] ) ? array_map( 'sanitize_key', (array) $schema['files'] ) : null;
+			if ( null === $file_keys && ! self::post_has_file_input( $post_id ) ) {
+				$file_keys = array();
+			}
+			$uploaded  = self::handle_uploads( $request->get_file_params(), $file_keys );
 			if ( is_wp_error( $uploaded ) ) {
 				return new WP_REST_Response(
 					array(
@@ -802,18 +815,46 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 		}
 
 		/**
+		 * Does the post's saved markup (content or builder meta) have a file input?
+		 *
+		 * @param int $post_id Post the form is on.
+		 * @return bool
+		 */
+		private static function post_has_file_input( $post_id ) {
+			$post_id = (int) $post_id;
+			if ( $post_id <= 0 || ! get_post( $post_id ) ) {
+				return false;
+			}
+			$pattern = '/type\s*=\s*\\\\?["\']?file\b/i';
+			if ( preg_match( $pattern, (string) get_post_field( 'post_content', $post_id ) ) ) {
+				return true;
+			}
+			// The builders keep the markup in meta (the Composer document, Elementor data).
+			foreach ( (array) get_post_meta( $post_id ) as $values ) {
+				foreach ( (array) $values as $value ) {
+					if ( is_string( $value ) && false !== stripos( $value, 'file' ) && preg_match( $pattern, $value ) ) {
+						return true;
+					}
+				}
+			}
+			return false;
+		}
+
+		/**
 		 * Read a form's controls and record which ones are required and which are emails.
 		 *
 		 * @param string $form_html Inner HTML of the <form>.
-		 * @return array { required: string[], email: string[] } — request keys, as PHP parses them.
+		 * @return array { required: string[], email: string[], files: string[] } — request keys, as PHP parses them.
 		 */
 		private static function extract_schema( $form_html ) {
 			$required = array();
 			$email    = array();
+			$files    = array();
 			if ( ! preg_match_all( '/<(input|select|textarea)\b([^>]*)>/i', (string) $form_html, $controls, PREG_SET_ORDER ) ) {
 				return array(
 					'required' => array(),
 					'email'    => array(),
+					'files'    => array(),
 				);
 			}
 			foreach ( $controls as $c ) {
@@ -830,6 +871,10 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 				if ( 'input' === strtolower( $c[1] ) && preg_match( '/(?<![\w-])type\s*=\s*["\']?([a-z-]+)/i', $attrs, $tm ) ) {
 					$type = strtolower( $tm[1] );
 				}
+				// The file inputs the form has: only these may carry an upload.
+				if ( 'file' === $type ) {
+					$files[ sanitize_key( $key ) ] = true;
+				}
 				if ( in_array( $type, array( 'hidden', 'submit', 'button', 'reset', 'image', 'file' ), true ) ) {
 					continue;
 				}
@@ -843,6 +888,7 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			return array(
 				'required' => array_keys( $required ),
 				'email'    => array_keys( $email ),
+				'files'    => array_keys( $files ),
 			);
 		}
 

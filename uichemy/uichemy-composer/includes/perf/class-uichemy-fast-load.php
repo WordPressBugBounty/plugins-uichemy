@@ -2120,6 +2120,21 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 		}
 
 		/**
+		 * Queued code as it may be printed: no `</style` / `</script` can close its
+		 * element early, whichever path queued it.
+		 *
+		 * @param string $kind 'css' or 'js'.
+		 * @param string $code Code.
+		 * @return string
+		 */
+		private static function code_safe( $kind, $code ) {
+			if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
+				return (string) preg_replace( 'css' === $kind ? '#</(style)#i' : '#</(script)#i', '<\\/$1', (string) $code );
+			}
+			return 'css' === $kind ? UiChemy_Composer_Renderer::style_safe( $code ) : UiChemy_Composer_Renderer::script_safe( $code );
+		}
+
+		/**
 		 * Echo one queued item.
 		 *
 		 * @param array $item { kind, uid, code }
@@ -2129,9 +2144,9 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 			$id = esc_attr( $item['uid'] );
 			// phpcs:disable WordPress.Security.EscapeOutput.OutputNotEscaped -- Author CSS/JS already passed the widget's scoping, sanitizing and unfiltered_html rules.
 			if ( 'css' === $item['kind'] ) {
-				echo "\n<style id=\"uich-body-css-" . $id . "\">\n" . $item['code'] . "\n</style>\n";
+				echo "\n<style id=\"uich-body-css-" . $id . "\">\n" . self::code_safe( 'css', $item['code'] ) . "\n</style>\n";
 			} else {
-				echo "\n<script id=\"uich-body-js-" . $id . "\">\n" . $item['code'] . "\n</script>\n";
+				echo "\n<script id=\"uich-body-js-" . $id . "\">\n" . self::code_safe( 'js', $item['code'] ) . "\n</script>\n";
 			}
 			// phpcs:enable
 		}
@@ -2294,6 +2309,11 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 				$raw_css                    = isset( $settings['raw_css'] ) ? (string) $settings['raw_css'] : '';
 				if ( '' === trim( $raw_css ) ) {
 					continue;
+				}
+				// The rule the widget and the head placement apply: an author who may
+				// not publish code gets sanitized CSS (no @import, no script hooks).
+				if ( ! self::author_allows_raw_code( $post_id ) && class_exists( 'UiChemy_Composer_Manager' ) ) {
+					$raw_css = UiChemy_Composer_Manager::sanitize_css_block( $raw_css );
 				}
 
 				if ( 'elementor' === $builder ) {

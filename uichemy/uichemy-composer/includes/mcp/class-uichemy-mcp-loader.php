@@ -6,7 +6,8 @@
  * namespace - see v2/class-uichemy-abilities.php) and serves them through the
  * one MCP surface, /wp-json/uichemy/v2/mcp (UiChemy_MCP_Server_V2). The
  * execute_* handlers those abilities reach live on UiChemy_Composer_MCP_Server
- * (shared/). The legacy /wp-json/uichemy/v1/mcp flat-tool endpoint is gone.
+ * (shared/). Code Mode, /wp-json/uichemy/v3/mcp, also answers on the old
+ * /wp-json/uichemy/v1/mcp; v2 is routed to v3 after 2026-12-12 (see v3).
  *
  * @link       https://posimyth.com/
  * @since      1.0.0
@@ -93,6 +94,13 @@ Uich_Custom_Fields_Ability::init();
 Uich_CPT_Ability::init();
 
 /**
+ * Bug reports and feature requests from agents to the UiChemy team, drafted
+ * on the site and sent only after the user says yes in the chat.
+ */
+require_once plugin_dir_path( __FILE__ ) . 'v2/class-uichemy-team-ability.php';
+UiChemy_Team_Ability::init();
+
+/**
  * Contribute UiChemy's briefing to UiChemy's v2 discovery document, so a client
  * learns what UiChemy is and how to sequence its tools from the first call
  * instead of from the user.
@@ -161,6 +169,21 @@ if ( is_readable( $uichemy_mcp_autoload ) ) {
 		\UiChemy\Deps\WP\MCP\Core\McpAdapter::instance();
 
 		UiChemy_MCP_Server_V2::init();
+
+		/*
+		 * Code Mode: /wp-json/uichemy/v3/mcp (get_instructions, search, execute),
+		 * also on /wp-json/uichemy/v1/mcp. On by default; Settings > AI clients >
+		 * Code Mode, or UICHEMY_CODE_MODE false in wp-config.php, switches it off,
+		 * and then those URLs serve the v2 tools, so a client set up with the v3
+		 * URL keeps working. See code-mode/class-uichemy-code-mode.php.
+		 */
+		require_once plugin_dir_path( __FILE__ ) . 'code-mode/class-uichemy-code-mode.php';
+		require_once plugin_dir_path( __FILE__ ) . 'v3/class-uichemy-mcp-server-v3.php';
+		UiChemy_MCP_Server_V3::init();
+		// The same three tools as abilities, for other MCP gateways; while Code Mode
+		// is on they replace the per-feature abilities there.
+		require_once plugin_dir_path( __FILE__ ) . 'v3/class-uichemy-code-mode-abilities.php';
+		UiChemy_Code_Mode_Abilities::init();
 	}
 }
 

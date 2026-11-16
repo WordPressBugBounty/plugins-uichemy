@@ -56,8 +56,8 @@ if ( ! class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
 		//
 		// This class registers no MCP server and publishes no tool table. It
 		// holds the execute_* handlers the v2 router (UiChemy_MCP_V2_Router)
-		// dispatches to. The legacy /wp-json/uichemy/v1/mcp flat-tool endpoint
-		// was removed in 5.2.x; v2 (/wp-json/uichemy/v2/mcp) is the only surface.
+		// dispatches to. The old flat-tool /wp-json/uichemy/v1/mcp is now an
+		// alias of Code Mode (v3), which reaches these handlers through v2's abilities.
 		// ============================================================
 
 		public static function execute_check_config( $arguments = array() ) {
@@ -415,6 +415,10 @@ if ( ! class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
 					),
 				);
 			}
+			// A preview must never fall through to the real edit below.
+			if ( ! empty( $arguments['dry_run'] ) && ! method_exists( 'UiChemy_Composer_Manager', 'get_globals_block_css' ) ) {
+				return new WP_Error( 'uich_mcp_error', 'The design system cannot be previewed on this site.' );
+			}
 			// A find that matches several places replaces every one of them, and an
 			// anchor that looked unique (":is(.elementor-widget-…") silently copied
 			// a block into two spots. Count first: more than one match is refused
@@ -438,6 +442,32 @@ if ( ! class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
 						'uich_globals_find_not_unique',
 						'Nothing was saved: ' . count( $multi ) . ' edit(s) match more than one place, so every copy would change. Add surrounding text to make each find unique, or pass "all": true on an edit that really should change every match. ' . wp_json_encode( $multi ),
 						array( 'status' => 409, 'ambiguous' => $multi )
+					);
+				}
+
+				// A preview: the match count of every edit, in order, and nothing saved.
+				if ( ! empty( $arguments['dry_run'] ) ) {
+					$probe  = UiChemy_Composer_Manager::get_globals_block_css();
+					$report = array();
+					foreach ( $edits as $edit ) {
+						$find = is_array( $edit ) && isset( $edit['find'] ) ? (string) $edit['find'] : '';
+						if ( '' === $find ) {
+							$report[] = array( 'find' => '', 'count' => 0, 'error' => 'This edit has no "find" text.' );
+							continue;
+						}
+						$count    = substr_count( $probe, $find );
+						$probe    = str_replace( $find, isset( $edit['replace'] ) ? (string) $edit['replace'] : '', $probe );
+						$report[] = array( 'find' => $find, 'count' => $count );
+					}
+					$all = (bool) $report;
+					foreach ( $report as $row ) {
+						$all = $all && $row['count'] > 0;
+					}
+					return array(
+						'dry_run'      => true,
+						'success'      => $all,
+						'replacements' => $report,
+						'message'      => 'Preview only: these are the matches the edits would make; nothing was saved.',
 					);
 				}
 			}

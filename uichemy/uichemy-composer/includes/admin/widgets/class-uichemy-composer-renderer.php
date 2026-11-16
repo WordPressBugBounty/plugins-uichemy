@@ -367,6 +367,33 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 		}
 
 		/**
+		 * CSS made safe to print inside a <style> element.
+		 *
+		 * Code is entity-decoded just before it is printed (decode_code_entities()),
+		 * so whatever was checked when it was saved, `&lt;/style&gt;` comes back
+		 * here as a real `</style>`. That sequence is the only way out of a
+		 * <style> element, so it is broken up last, on output: `<\/style` ends
+		 * nothing. Every other `<` (media range queries, content strings) stays.
+		 *
+		 * @param string $css CSS, entities already decoded.
+		 * @return string
+		 */
+		public static function style_safe( $css ) {
+			return (string) preg_replace( '#</(style)#i', '<\/$1', (string) $css );
+		}
+
+		/**
+		 * JavaScript made safe to print inside a <script> element: no `</script`
+		 * can close it early (in JavaScript `<\/script` is the same string).
+		 *
+		 * @param string $js JavaScript, entities already decoded.
+		 * @return string
+		 */
+		public static function script_safe( $js ) {
+			return (string) preg_replace( '#</(script)#i', '<\/$1', (string) $js );
+		}
+
+		/**
 		 * Keep the author's straight quotes on the front end. Composer output is
 		 * printed inside the post content, where wptexturize curls " and ' into
 		 * smart quotes. Writing them as &#34; / &#39; in TEXT nodes renders the same
@@ -420,7 +447,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 					if ( 'script' === strtolower( $m[2] ) ) {
 						return self::safe_script_block( $m[1], $m[3], $m[4] );
 					}
-					return $m[1] . self::decode_code_entities( $m[3] ) . $m[4];
+					return $m[1] . self::style_safe( self::decode_code_entities( $m[3] ) ) . $m[4];
 				},
 				$html
 			);
@@ -521,7 +548,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 								if ( $scope_css ) {
 									$css = $self->scope_css_to_widget( $css, $scope );
 								}
-								return $s[1] . $css . $s[3];
+								return $s[1] . UiChemy_Composer_Renderer::style_safe( $css ) . $s[3];
 							},
 							$block
 						);
@@ -651,11 +678,18 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 				$output = UiChemy_Fast_Load::optimize_images( $output, $uid );
 			}
 
-			// Inject standard-scope 3rd-party assets.
-			[ $deps_before, $deps_after ] = $this->build_standard_deps_output(
-				! empty( $settings['raw_deps_standard'] ) ? $settings['raw_deps_standard'] : '',
-				$is_editor
-			);
+			// Inject standard-scope 3rd-party assets. They print <script src> /
+			// <link> tags, so outside the editor only for an author who may publish
+			// code: the gate the Elementor widget applies (content_allows_raw_code()).
+			// Block and Bricks settings only lose their TAGS to kses, so a URL list
+			// from anyone else would otherwise load and run.
+			$deps_allowed = $is_editor || ( class_exists( 'Uich_Dynamic' ) ? Uich_Dynamic::author_trusted() : current_user_can( 'unfiltered_html' ) );
+			[ $deps_before, $deps_after ] = $deps_allowed
+				? $this->build_standard_deps_output(
+					! empty( $settings['raw_deps_standard'] ) ? $settings['raw_deps_standard'] : '',
+					$is_editor
+				)
+				: array( '', '' );
 
 			// Only where an icon font is used: 602 bytes of guard on every page
 			// with none was waste (K-06).
@@ -669,7 +703,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 
 			if ( ! empty( $settings['raw_css'] ) ) {
 				$raw_css_src = self::decode_code_entities( (string) $settings['raw_css'] );
-				$scoped_css  = $scope_css ? $this->scope_css_to_widget( $raw_css_src, $widget_scope_selector ) : $raw_css_src;
+				$scoped_css  = self::style_safe( $scope_css ? $this->scope_css_to_widget( $raw_css_src, $widget_scope_selector ) : $raw_css_src );
 
 				if ( $is_editor ) {
 					// In the editor, inject CSS via JS into <head> so it is never inside
@@ -715,7 +749,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 					// same relative order 3rd-party "before" dependencies already use.
 					$out .= '<div class="uichemy-deferred-js" style="display:none" data-uichemy-js="' . esc_attr( self::compile_motion( self::decode_code_entities( (string) $settings['raw_js'] ) ) ) . '"></div>';
 				} else {
-					$out .= '<script>' . self::compile_motion( self::decode_code_entities( (string) $settings['raw_js'] ) ) . '</script>';
+					$out .= '<script>' . self::script_safe( self::compile_motion( self::decode_code_entities( (string) $settings['raw_js'] ) ) ) . '</script>';
 				}
 			}
 
@@ -1286,7 +1320,7 @@ if ( ! class_exists( 'UiChemy_Composer_Renderer' ) ) {
 		public static function scope_css_for_scope( $raw_css, $widget_scope_selector ) {
 			$raw_css  = self::decode_code_entities( (string) $raw_css );
 			$renderer = new self();
-			return $renderer->scope_css_to_widget( $raw_css, $widget_scope_selector );
+			return self::style_safe( $renderer->scope_css_to_widget( $raw_css, $widget_scope_selector ) );
 		}
 
 		/**

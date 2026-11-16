@@ -61,6 +61,8 @@ if ( ! class_exists( 'Uich_Twig' ) ) {
 				return $template;
 			}
 
+			$template = self::script_outputs_as_js( (string) $template );
+
 			try {
 				$tokens  = self::lex( $template );
 				$pos     = 0;
@@ -73,6 +75,50 @@ if ( ! class_exists( 'Uich_Twig' ) ) {
 				}
 				return $template; // Fail open to authored HTML rather than blowing up the page.
 			}
+		}
+
+		/**
+		 * Inside a JavaScript <script> body, print plain {{ }} outputs as JS string
+		 * content instead of HTML.
+		 *
+		 * Outputs are HTML-escaped (`"` → `&quot;`), and script bodies are entity-
+		 * decoded before they are printed (UiChemy_Composer_Renderer::safe_script_block()),
+		 * which turned a value's `"` back into a real quote: `var q = "{{ x }}"` with
+		 * x = `"+alert(1)+"` ran as code. Escaping for JavaScript instead keeps the
+		 * value text. Outputs that already choose their own filter (|raw, |json_encode,
+		 * |e, |esc_*) and non-JS scripts (JSON-LD, text/template, ...) are left alone.
+		 *
+		 * @param string $template Template source.
+		 * @return string
+		 */
+		private static function script_outputs_as_js( $template ) {
+			if ( false === stripos( $template, '<script' ) || false === strpos( $template, '{{' ) ) {
+				return $template;
+			}
+			$out = preg_replace_callback(
+				'#(<script\b[^>]*>)(.*?)(</script\s*>)#is',
+				static function ( $m ) {
+					if ( preg_match( '#\btype\s*=\s*["\']?\s*([^"\'\s>]+)#i', $m[1], $t )
+						&& ! preg_match( '#^(?:module|(?:text|application)/(?:x-)?(?:javascript|ecmascript)|text/(?:jscript|livescript))$#i', $t[1] ) ) {
+						return $m[0];
+					}
+					$body = preg_replace_callback(
+						'#\{\{(.*?)\}\}#s',
+						static function ( $o ) {
+							$expr = trim( $o[1] );
+							if ( '' === $expr || preg_match( '#\|\s*(?:raw|json_encode|e|escape|esc_[a-z_]+|uich_js_string)\b#', $expr ) ) {
+								return $o[0];
+							}
+							return '{{ (' . $expr . ')|uich_js_string }}';
+						},
+						$m[2]
+					);
+					return $m[1] . ( null === $body ? $m[2] : $body ) . $m[3];
+				},
+				$template
+			);
+			// A regex failure (backtrack limit) leaves the template as it was.
+			return null === $out ? $template : $out;
 		}
 
 		/**
