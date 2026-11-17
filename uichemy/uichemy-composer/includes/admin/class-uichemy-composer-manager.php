@@ -6018,7 +6018,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			$payload  = is_array( $payload ) ? $payload : array();
 			$post_id  = isset( $payload['post_id'] ) ? absint( $payload['post_id'] ) : 0;
-			$form_key = isset( $payload['form_key'] ) ? sanitize_text_field( (string) $payload['form_key'] ) : '';
+			// The same key the front end reads (Uich_Forms uses sanitize_key()), so
+			// "Contact" here and data-atom-form="Contact" meet as "contact".
+			$form_key = isset( $payload['form_key'] ) ? sanitize_key( (string) $payload['form_key'] ) : '';
 
 			if ( ! $post_id || ! get_post( $post_id ) ) {
 				return new \WP_Error( 'uich_invalid_post_id', 'configure requires the post_id of the page holding the form.' );
@@ -6031,26 +6033,40 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$all     = is_array( $all ) ? $all : array();
 			$current = isset( $all[ $form_key ] ) && is_array( $all[ $form_key ] ) ? $all[ $form_key ] : array();
 
+			// Parameter => array( stored key, sanitizer ). The stored keys are the ones the
+			// builder's Form tab writes and Uich_Forms::handle_submit() reads.
 			$map = array(
-				'email_to'        => 'sanitize_email',
-				'subject'         => 'sanitize_text_field',
-				'success_message' => 'sanitize_text_field',
+				'email_to'        => array( 'email_to', 'sanitize_email' ),
+				'subject'         => array( 'subject', 'sanitize_text_field' ),
+				'success_message' => array( 'success_message', 'sanitize_text_field' ),
+				'from_name'       => array( 'email_from', 'sanitize_text_field' ),
+				'reply_to'        => array( 'email_reply', 'sanitize_email' ),
+				'cc'              => array( 'email2', 'sanitize_email' ),
+				'webhook'         => array( 'webhook', 'esc_url_raw' ),
 			);
 
-			// An address that is not one would be stored as "", leaving the form with no
-			// recipient while the answer said it was set: refuse it instead.
-			if ( isset( $payload['email_to'] ) && '' !== trim( (string) $payload['email_to'] ) ) {
-				$address = trim( (string) $payload['email_to'] );
-				if ( ! is_email( $address ) ) {
-					return new \WP_Error( 'uich_bad_email', sprintf( 'email_to "%s" is not one email address. Nothing was changed.', $address ) );
+			// A value that is not valid would be stored as "", while the answer said it was
+			// set: refuse it instead, and change nothing.
+			foreach ( array( 'email_to', 'reply_to', 'cc' ) as $param ) {
+				if ( isset( $payload[ $param ] ) && '' !== trim( (string) $payload[ $param ] ) ) {
+					$address = trim( (string) $payload[ $param ] );
+					if ( ! is_email( $address ) ) {
+						return new \WP_Error( 'uich_bad_email', sprintf( '%s "%s" is not one email address. Nothing was changed.', $param, $address ) );
+					}
+				}
+			}
+			if ( isset( $payload['webhook'] ) && '' !== trim( (string) $payload['webhook'] ) ) {
+				$url = trim( (string) $payload['webhook'] );
+				if ( ! wp_http_validate_url( $url ) || ! in_array( wp_parse_url( $url, PHP_URL_SCHEME ), array( 'http', 'https' ), true ) ) {
+					return new \WP_Error( 'uich_bad_webhook', sprintf( 'webhook "%s" is not a public http(s) URL. Nothing was changed.', $url ) );
 				}
 			}
 
 			$updated = array();
-			foreach ( $map as $key => $sanitizer ) {
-				if ( isset( $payload[ $key ] ) ) {
-					$current[ $key ] = call_user_func( $sanitizer, (string) $payload[ $key ] );
-					$updated[]       = $key;
+			foreach ( $map as $param => $spec ) {
+				if ( isset( $payload[ $param ] ) ) {
+					$current[ $spec[0] ] = call_user_func( $spec[1], trim( (string) $payload[ $param ] ) );
+					$updated[]           = $param;
 				}
 			}
 			if ( isset( $payload['store'] ) ) {
@@ -6070,7 +6086,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				'config'   => $current,
 				'message'  => $updated
 					? 'Updated ' . implode( ', ', $updated ) . " for form \"{$form_key}\"."
-					: 'Read only pass email_to, subject, success_message or store to change anything.',
+					: 'Read only - pass email_to, subject, success_message, store, from_name, reply_to, cc or webhook to change anything.',
+				'note'     => 'On the form markup, data-atom-subject, data-atom-success and data-atom-actions take precedence over subject, success_message and store here. Email goes out through wp_mail(); if it does not arrive, set up UiChemy > Settings > SMTP.',
 			);
 		}
 
@@ -6086,7 +6103,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			$payload  = is_array( $payload ) ? $payload : array();
-			$form_key = isset( $payload['form_key'] ) ? sanitize_text_field( (string) $payload['form_key'] ) : '';
+			// The same key the front end reads (Uich_Forms uses sanitize_key()), so
+			// "Contact" here and data-atom-form="Contact" meet as "contact".
+			$form_key = isset( $payload['form_key'] ) ? sanitize_key( (string) $payload['form_key'] ) : '';
 			$limit    = isset( $payload['limit'] ) ? max( 1, min( 200, (int) $payload['limit'] ) ) : 50;
 			$offset   = isset( $payload['offset'] ) ? max( 0, (int) $payload['offset'] ) : 0;
 			$status   = isset( $payload['status'] ) ? sanitize_key( (string) $payload['status'] ) : 'all';

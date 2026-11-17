@@ -110,11 +110,72 @@ if ( ! class_exists( 'UiChemy_Code_Mode' ) ) {
 		 *
 		 * @return array{usage_guide:string, instructions:string}
 		 */
-		public static function instructions() {
+		public static function instructions( $section = '' ) {
+			$section = trim( (string) $section );
+			if ( '' !== $section ) {
+				return self::full_section( $section );
+			}
 			return array(
 				'usage_guide'  => self::how_to(),
 				'instructions' => UiChemy_Code_Mode_Catalog::plain( self::about() ),
 			);
+		}
+
+		/** Sections the briefing gives in short, with the whole text one call away. */
+		const ON_DEMAND = array( 'Code files', 'Memory', 'Store' );
+
+		/**
+		 * One briefing section in full: get_instructions(section: "Memory").
+		 *
+		 * @param string $section Section title, any case.
+		 * @return array{section:string, text:string}|array{error:string, sections:array<int,string>}
+		 */
+		private static function full_section( $section ) {
+			foreach ( self::ON_DEMAND as $title ) {
+				if ( 0 !== strcasecmp( $title, $section ) ) {
+					continue;
+				}
+				$text = '';
+				if ( 'Memory' === $title ) {
+					$context = class_exists( 'UiChemy_MCP_Context' ) ? self::v3_actions( self::v3_names( UiChemy_MCP_Context::briefing_section() ), 'Memory' ) : '';
+					$text    = self::markdown_section( $context, 'Memory' );
+				} else {
+					$parts = self::v2_parts();
+					if ( ! empty( $parts[ $title ] ) ) {
+						$body  = self::v3_names( $parts[ $title ] );
+						$owner = preg_match( '/`([A-Z][A-Za-z0-9]*)(?:::[a-zA-Z0-9]+\([^`]*\))?`/', $body, $m ) ? $m[1] : '';
+						$text  = '## ' . $title . "\n\n" . trim( self::v3_actions( $body, $owner ) );
+					}
+				}
+				if ( '' !== $text ) {
+					return array(
+						'section' => $title,
+						'text'    => UiChemy_Code_Mode_Catalog::plain( $text ),
+					);
+				}
+			}
+			return array(
+				'error'    => sprintf( 'No section "%s" on this site.', $section ),
+				'sections' => array_values(
+					array_filter(
+						self::ON_DEMAND,
+						static function ( $title ) {
+							return 'Store' !== $title || class_exists( 'WooCommerce' );
+						}
+					)
+				),
+			);
+		}
+
+		/**
+		 * One "## " section of a markdown text, up to the next "## " heading.
+		 *
+		 * @param string $markdown Markdown.
+		 * @param string $title    Section title.
+		 * @return string
+		 */
+		private static function markdown_section( $markdown, $title ) {
+			return preg_match( '/^## ' . preg_quote( $title, '/' ) . '\s*$.*?(?=^## |\z)/ms', (string) $markdown, $m ) ? trim( $m[0] ) : '';
 		}
 
 		/**
@@ -178,8 +239,9 @@ if ( ! class_exists( 'UiChemy_Code_Mode' ) ) {
 			}
 
 			$sections = self::v2_sections();
-			// The Store section says the WooCommerce rules in full: drop the short version.
-			if ( false !== strpos( $sections, '## Store' ) ) {
+			// The Store section says the WooCommerce rules in full, and without
+			// WooCommerce there is nothing to style: either way, drop the short version.
+			if ( false !== strpos( $sections, '## Store' ) || ! class_exists( 'WooCommerce' ) ) {
 				$lines = array_values(
 					array_filter(
 						$lines,
@@ -198,9 +260,9 @@ if ( ! class_exists( 'UiChemy_Code_Mode' ) ) {
 			if ( $skills ) {
 				$lines[] = '';
 				$lines[] = '## Skills';
-				$lines[] = 'A skill is the build PROCESS for one kind of job. Read the matching one with ReadSkill::call(name: "<name>") BEFORE you plan or call anything that builds; add part: "<part>" for one of its extra parts. Match on the user\'s intent without being asked; if several look close, pick the one whose description names what the user supplied (a design URL, their own code, or only a description); if none matches, say so rather than inventing a process. Keep this list and any skill you read across a context compaction: if you lose them, call get_instructions again. Skills name abilities the v2 way: uichemy-composer/page action "patch-code" is Page::patchCode() here.';
+				$lines[] = 'A skill is the build PROCESS for one kind of job. Read the matching one with ReadSkill::call(name: "<name>") BEFORE you plan or build (part: "<part>" for one of its extra parts), matching on the user\'s intent without being asked; if several fit, pick the one that names what the user supplied; if none does, say so. Keep this list and the skills you read across a context compaction (get_instructions again if you lose them). Skills name abilities the v2 way: uichemy-composer/page action "patch-code" is Page::patchCode() here. Read it when:';
 				foreach ( $skills as $skill ) {
-					$lines[] = sprintf( '- %s: %s', (string) ( $skill['name'] ?? '' ), trim( preg_replace( '/\s+/', ' ', (string) ( $skill['description'] ?? '' ) ) ) );
+					$lines[] = sprintf( '- %s: %s', (string) ( $skill['name'] ?? '' ), self::skill_trigger( (string) ( $skill['description'] ?? '' ) ) );
 				}
 			}
 
@@ -212,7 +274,7 @@ if ( ! class_exists( 'UiChemy_Code_Mode' ) ) {
 
 			// The owner's instructions, the AI's memory and design.md (Settings > MCP)
 			// go LAST, as on v2: the site's own instructions are the final word.
-			$context = class_exists( 'UiChemy_MCP_Context' ) ? self::v3_actions( self::v3_names( UiChemy_MCP_Context::briefing_section() ), 'Memory' ) : '';
+			$context = class_exists( 'UiChemy_MCP_Context' ) ? self::short_memory( self::v3_actions( self::v3_names( UiChemy_MCP_Context::briefing_section() ), 'Memory' ) ) : '';
 			if ( '' !== trim( $context ) ) {
 				$lines[] = '';
 				$lines[] = $context;
@@ -252,6 +314,39 @@ if ( ! class_exists( 'UiChemy_Code_Mode' ) ) {
 		}
 
 		/**
+		 * When to read a skill: its "Read this when ..." sentence, which is what a
+		 * model matches on; the skill itself says the rest.
+		 *
+		 * @param string $description Skill description.
+		 * @return string
+		 */
+		private static function skill_trigger( $description ) {
+			$description = trim( (string) preg_replace( '/\s+/', ' ', $description ) );
+			if ( preg_match( '/\bRead this (when|before)\s+(.+)$/i', $description, $m ) ) {
+				return ( 'before' === strtolower( $m[1] ) ? 'before ' : '' ) . rtrim( $m[2], '.' ) . '.';
+			}
+			return self::first_sentence( $description );
+		}
+
+		/**
+		 * The memory section with its rules in short; the index of memories (the
+		 * part that is about THIS site) stays whole.
+		 *
+		 * @param string $context Owner's instructions, memory and design.md.
+		 * @return string
+		 */
+		private static function short_memory( $context ) {
+			$full = self::markdown_section( $context, 'Memory' );
+			if ( '' === $full ) {
+				return $context;
+			}
+			$index = strpos( $full, '### Index' );
+			$short = "## Memory\n\nMemories are notes earlier AI sessions saved on this site, one fact each, with a name, a one-line description and a type (user, feedback, project or reference). Check that what a memory names still exists before you rely on it. Save with `Memory::saveMemory()` what is worth keeping across sessions (who the user is, guidance they gave, project decisions, where things live); update a memory that already covers it rather than adding a duplicate; never save secrets or what the site already records; say so in a few words when you save. Before your first save, read the full rules: `get_instructions` with section: \"Memory\"."
+				. ( false !== $index ? "\n\n" . trim( substr( $full, $index ) ) : '' );
+			return str_replace( $full, $short, $context );
+		}
+
+		/**
 		 * The v2 sections v3 serves as they are (in v3 names): the ones the
 		 * summary points to ("See Store below") and that no v3 rule replaces.
 		 * Each appears only when v2 has it on this site (Store with WooCommerce,
@@ -274,7 +369,13 @@ if ( ! class_exists( 'UiChemy_Code_Mode' ) ) {
 				// The section's own class is the first it names (Store, CodeFile ...).
 				$body  = self::v3_names( $parts[ $title ] );
 				$owner = preg_match( '/`([A-Z][A-Za-z0-9]*)(?:::[a-zA-Z0-9]+\([^`]*\))?`/', $body, $m ) ? $m[1] : '';
-				$out[] = '## ' . $title . "\n\n" . trim( self::v3_actions( $body, $owner ) );
+				$text = trim( self::v3_actions( $body, $owner ) );
+				if ( 'Store' === $title && ! class_exists( 'WooCommerce' ) ) {
+					$text = 'WooCommerce is not active on this site, so every `Store` method only answers that. If the user wants a shop, WooCommerce has to be installed and activated first; then call `get_instructions` again for the store rules.';
+				} elseif ( 'Code files' === $title ) {
+					$text = '`CodeFile` keeps standalone `.css` and `.js` files, served from `/wp-content/uichemy-composer/`. Section CSS and JS stay inline in the section by default; a file is for code several sections or pages share, or that already comes as one file. A file nothing references does nothing. Before you write or upload one, read the full rules: `get_instructions` with section: "Code files".';
+				}
+				$out[] = '## ' . $title . "\n\n" . $text;
 			}
 			return implode( "\n\n", $out );
 		}
@@ -385,7 +486,8 @@ if ( ! class_exists( 'UiChemy_Code_Mode' ) ) {
 			}
 
 			$modules = UiChemy_Code_Mode_Catalog::modules();
-			$query   = strtolower( trim( (string) $query ) );
+			$raw     = trim( (string) $query );
+			$query   = strtolower( $raw );
 			$limit   = max( 1, min( 50, (int) $limit ) );
 
 			if ( '' === $query ) {
@@ -396,147 +498,776 @@ if ( ! class_exists( 'UiChemy_Code_Mode' ) ) {
 				);
 			}
 
-			// "pages" should find "page": compare on a crude stem. Words that say nothing
-			// ("the", "is", "id") are dropped: they matched everything and buried the answer.
-			$stop  = array( 'the', 'and', 'for', 'with', 'from', 'into', 'this', 'that', 'what', 'which', 'how', 'are', 'was', 'its', 'all', 'any', 'can', 'use', 'using', 'used', 'via', 'per', 'one', 'out', 'site', 'uichemy', 'want', 'need', 'some', 'thing', 'make', 'before', 'after', 'there', 'their', 'have', 'has', 'should', 'would', 'will' );
+			$tokens = self::query_tokens( $raw );
+
+			// Keywords: the words that say something, crudely stemmed, each with the
+			// words the docs use for it and the near spellings a typo stands for.
 			$terms = array();
-			foreach ( preg_split( '/[^a-z0-9]+/', $query, -1, PREG_SPLIT_NO_EMPTY ) as $term ) {
-				if ( strlen( $term ) < 3 && ! ctype_digit( $term ) || in_array( $term, $stop, true ) ) {
+			foreach ( $tokens as $token ) {
+				if ( ( strlen( $token ) < 3 && ! ctype_digit( $token ) ) || in_array( $token, self::SEARCH_STOP, true ) ) {
 					continue;
 				}
-				$terms[] = strlen( $term ) > 3 ? preg_replace( '/(ies|es|s)$/', '', $term ) : $term;
+				$terms[] = self::stem( $token );
 			}
 			if ( ! $terms ) {
-				$terms = array_values( array_filter( preg_split( '/[^a-z0-9]+/', $query, -1, PREG_SPLIT_NO_EMPTY ) ) );
+				$terms = array_map( array( __CLASS__, 'stem' ), $tokens );
 			}
-			// Words people use that the docs do not: each also matches what the docs say.
-			$synonyms = array(
-				'id'        => array( 'entiti', 'resolve' ),
-				'feedback'  => array( 'report', 'request', 'bug' ),
-				'issue'     => array( 'bug', 'report', 'problem' ),
-				'broken'    => array( 'audit', 'finding', 'problem' ),
-				'ready'     => array( 'audit', 'readiness' ),
-				'finish'    => array( 'audit', 'readiness' ),
-				'problem'   => array( 'audit', 'finding' ),
-				'grid'      => array( 'loop', 'listing' ),
-				'latest'    => array( 'loop', 'recent' ),
-				'recent'    => array( 'loop' ),
-				'listing'   => array( 'loop' ),
-				'print'     => array( 'token', 'bind' ),
-				'output'    => array( 'token', 'bind' ),
-				'text'      => array( 'grep', 'pattern' ),
-				'turn'      => array( 'activ', 'enabl', 'disabl', 'toggle' ),
-				'activate'  => array( 'activ', 'toggle' ),
-				'enable'    => array( 'activ', 'toggle' ),
-				'disable'   => array( 'activ', 'toggle' ),
-				'acf'       => array( 'field' ),
-				'entri'     => array( 'submission' ),
-				'builder'   => array( 'describe', 'schema' ),
-				'template'  => array( 'theme' ),
-				'snippet'   => array( 'module' ),
-				'stylesheet' => array( 'css' ),
-				'favicon'   => array( 'icon' ),
-				'speed'     => array( 'performance' ),
-			);
 			if ( preg_match( '/\bids?\b/', $query ) ) {
 				$terms[] = 'id';
 			}
-			$groups = array();
-			foreach ( array_values( array_unique( $terms ) ) as $term ) {
-				$groups[ $term ] = array_merge( array( $term ), $synonyms[ $term ] ?? array() );
-			}
+			$terms = array_values( array_unique( $terms ) );
 
 			// One entry per method: its fields as word lists, strongest first.
 			$entries = array();
-			foreach ( $modules as $module ) {
+			$vocab   = array();
+			foreach ( $modules as $position => $module ) {
 				$about = self::words( $module['about'] ?? '' );
-				foreach ( $module['fns'] as $fn ) {
+				$class = self::words( $module['module'] . ' ' . $module['slug'] . ' ' . self::plain_label( $module['label'] ) );
+				foreach ( $module['fns'] as $order => $fn ) {
 					$param_text = '';
 					foreach ( $fn['params'] as $param ) {
 						$param_text .= ' ' . $param['description'] . ' ' . implode( ' ', array_filter( (array) ( $param['schema']['enum'] ?? ( $param['schema']['items']['enum'] ?? array() ) ), 'is_string' ) );
 					}
+					$summary = self::first_sentence( $fn['doc'] );
+					$fields  = array(
+						6 => self::words( $fn['fn'] . ' ' . $fn['action'] ),
+						4 => $class,
+						3 => self::words( implode( ' ', wp_list_pluck( $fn['params'], 'name' ) ) ),
+						2 => self::words( $summary ),
+						1 => array_merge( self::words( $fn['doc'] ), self::words( $param_text ), $about ),
+					);
+					foreach ( $fields as $words ) {
+						foreach ( $words as $word ) {
+							$vocab[ $word ] = true;
+						}
+					}
 					$entries[] = array(
 						'module' => $module,
 						'fn'     => $fn,
-						'fields' => array(
-							5 => self::words( $module['module'] . ' ' . $module['slug'] . ' ' . $fn['fn'] . ' ' . $fn['action'] ),
-							3 => self::words( implode( ' ', wp_list_pluck( $fn['params'], 'name' ) ) ),
-							2 => self::words( $module['label'] ),
-							1 => array_merge( self::words( $fn['doc'] ), self::words( $param_text ), $about ),
-						),
+						'order'  => $position * 1000 + $order,
+						'fields' => $fields,
 					);
 				}
+			}
+
+			// A method named as one word ("updatePermalinks", "listredirects") is what
+			// the query wants, whatever class its parts happen to name.
+			$named        = self::named_methods( $raw, $modules );
+			$intent_query = $raw;
+			foreach ( $named['words'] as $word ) {
+				$intent_query = (string) preg_replace( '/\b' . preg_quote( $word, '/' ) . '\b/', ' ', $intent_query );
+			}
+			$intents = self::class_intents( self::query_tokens( $intent_query ), $modules, $vocab );
+			// "load the seo skill": the skill is what is asked for.
+			if ( isset( $intents['ReadSkill'] ) ) {
+				$intents = array( 'ReadSkill' => $intents['ReadSkill'] ) + $intents;
+			}
+			// In a sentence ("which pages have no meta title"), "page" or "post" is
+			// usually where the job happens, not what it is about: the other
+			// classes it names go first. A list of names ("Page Media") keeps its order.
+			if ( count( $intents ) > 1 && count( $tokens ) >= 4 ) {
+				$generic = array();
+				foreach ( array( 'Page', 'Post' ) as $class ) {
+					if ( isset( $intents[ $class ] ) && in_array( self::stem( strtolower( implode( ' ', $intents[ $class ] ) ) ), array( 'page', 'post' ), true ) ) {
+						$generic[ $class ] = $intents[ $class ];
+						unset( $intents[ $class ] );
+					}
+				}
+				$intents = $intents ? $intents + $generic : $generic;
+			}
+
+			// Store answers "WooCommerce is not active" for every call on a site without
+			// it, so it only takes room in the results when the query asks for a shop.
+			// "product" alone is often a page about one ("product page design"):
+			// it unlocks Store only next to a word about selling one.
+			if ( isset( $intents['Store'] ) && ! class_exists( 'WooCommerce' ) ) {
+				$named_by = array_map( array( __CLASS__, 'stem' ), array_map( 'strtolower', $intents['Store'] ) );
+				if ( array( 'product' ) === array_values( array_unique( $named_by ) ) && array_intersect( array_map( array( __CLASS__, 'stem' ), $tokens ), array( 'page', 'design', 'section', 'layout', 'template', 'card', 'gallery', 'image', 'photo' ) ) ) {
+					unset( $intents['Store'] );
+				}
+			}
+			$store_named = (bool) array_filter( array_keys( $named['methods'] ), static fn( $k ) => 0 === strpos( $k, 'Store::' ) );
+			if ( ! class_exists( 'WooCommerce' ) && ! isset( $intents['Store'] ) && ! $store_named ) {
+				$entries = array_values(
+					array_filter(
+						$entries,
+						static function ( $entry ) {
+							return 'Store' !== $entry['module']['module'];
+						}
+					)
+				);
+			}
+
+			// Per term: the words it matches as typed (with its near spellings when it
+			// is not a word the docs use), and its synonyms, which count half: the
+			// word someone wrote is the better guess at what they want.
+			$groups   = array();
+			$synonyms = array();
+			foreach ( $terms as $term ) {
+				$direct = array_merge( array( $term ), self::SEARCH_VARIANTS[ $term ] ?? array() );
+				if ( ! self::known_prefix( $term, $vocab ) ) {
+					$direct = array_merge( $direct, self::near_words( $term, array_keys( $vocab ) ) );
+				}
+				$groups[ $term ]   = array_values( array_unique( $direct ) );
+				$synonyms[ $term ] = array_values( array_diff( self::SEARCH_SYNONYMS[ $term ] ?? array(), $direct ) );
 			}
 
 			// A term found in few methods says more than one found in most of them.
 			$weight_of = array();
 			foreach ( $groups as $term => $alternatives ) {
-				$df = 0;
+				$df  = 0;
+				$any = array_merge( $alternatives, $synonyms[ $term ] );
 				foreach ( $entries as $entry ) {
 					foreach ( $entry['fields'] as $words ) {
-						if ( self::has_any_word( $words, $alternatives ) ) {
+						if ( self::has_any_word( $words, $any ) ) {
 							++$df;
 							break;
 						}
 					}
 				}
-				$weight_of[ $term ] = $df ? 1 + log( count( $entries ) / $df ) : 0;
+				$weight_of[ $term ] = $df ? 1 + log( max( 1, count( $entries ) ) / $df ) : 0;
 			}
 
-			$all = array();
-			$any = array();
+			// The words that named a class are already used to pick its methods; the
+			// rest of the query ranks them.
+			$intent_words = array();
+			foreach ( $intents as $class => $words ) {
+				foreach ( $words as $word ) {
+					$intent_words[ self::stem( $word ) ] = true;
+				}
+			}
+			$rest = array_values( array_diff( array_keys( $groups ), array_keys( $intent_words ) ) );
+
+			$wants_delete = (bool) array_intersect( array_map( array( __CLASS__, 'stem' ), $tokens ), self::DELETE_WORDS );
+			$hits         = array();
 			foreach ( $entries as $entry ) {
-				$score   = 0.0;
-				$matched = 0;
+				$score    = 0.0;
+				$matched  = 0;
+				$rest_hit = 0;
+				$rest_sum = 0.0;
+				$contrib  = array();
 				foreach ( $groups as $term => $alternatives ) {
+					$best = 0.0;
 					foreach ( $entry['fields'] as $weight => $words ) {
 						if ( self::has_any_word( $words, $alternatives ) ) {
-							$score += $weight * $weight_of[ $term ];
-							++$matched;
-							break;
+							$best = max( $best, (float) $weight );
+						} elseif ( $synonyms[ $term ] && self::has_any_word( $words, $synonyms[ $term ] ) ) {
+							$best = max( $best, $weight * 0.5 );
+						}
+					}
+					if ( $best > 0 ) {
+						$score            += $best * $weight_of[ $term ];
+						$contrib[ $term ]  = $best * $weight_of[ $term ];
+						++$matched;
+						if ( in_array( $term, $rest, true ) ) {
+							++$rest_hit;
+							$rest_sum += $best * $weight_of[ $term ];
 						}
 					}
 				}
-				if ( ! $matched ) {
+				$class = $entry['module']['module'];
+				$key   = $class . '::' . $entry['fn']['fn'];
+				if ( ! $matched && ! isset( $intents[ $class ] ) && ! isset( $named['methods'][ $key ] ) ) {
 					continue;
 				}
-				$hit = array(
-					'matched' => $matched,
-					'score'   => $score,
-					'call'    => UiChemy_Code_Mode_Php_Emitter::signature( $entry['module'], $entry['fn'] ),
-					'summary' => self::first_sentence( $entry['fn']['doc'] ),
-					'kind'    => $entry['fn']['kind'],
-				);
-				if ( count( $groups ) === $matched ) {
-					$all[] = $hit;
-				} else {
-					$any[] = $hit;
+				// A method named exactly what the query says ("list" -> list(), not
+				// listRedirects()) is the likelier one of a tie.
+				if ( isset( $groups[ self::stem( strtolower( $entry['fn']['fn'] ) ) ] ) ) {
+					$score += 1.0;
+					if ( in_array( self::stem( strtolower( $entry['fn']['fn'] ) ), $rest, true ) ) {
+						$rest_sum += 1.0;
+					}
 				}
+				// Deleting is never the guess: without a delete verb in the query, a
+				// deleting method ranks below the rest.
+				// And when the query does ask to delete, the deleting method is the one.
+				$factor = 'delete' === $entry['fn']['kind'] ? ( $wants_delete ? 1.5 : 0.3 ) : 1.0;
+				if ( 1.0 !== $factor ) {
+					$score    *= $factor;
+					$rest_sum *= $factor;
+					foreach ( $contrib as $t => $v ) {
+						$contrib[ $t ] = $v * $factor;
+					}
+				}
+				// Covering more of the query counts, but a word in the method's name
+				// still outweighs several words met somewhere in a long description.
+				$coverage = count( $groups ) ? $matched / count( $groups ) : 0;
+				$hits[]   = array(
+					'class'    => $class,
+					'key'      => $key,
+					'named'    => isset( $named['methods'][ $key ] ) ? $named['methods'][ $key ] : null,
+					'contrib'  => $contrib,
+					'order'    => $entry['order'],
+					'all'      => count( $groups ) === $matched,
+					'score'    => $score * ( 0.5 + 0.5 * $coverage ) + ( count( $groups ) === $matched ? 1.0 : 0.0 ),
+					'rest'     => $rest ? $rest_sum * ( 0.5 + 0.5 * $rest_hit / count( $rest ) ) : 0.0,
+					'call'     => UiChemy_Code_Mode_Php_Emitter::signature( $entry['module'], $entry['fn'] ),
+					'summary'  => self::first_sentence( $entry['fn']['doc'] ),
+					'kind'     => $entry['fn']['kind'],
+					'delete_penalised' => ! $wants_delete,
+				);
 			}
 
-			$by_score = static function ( $a, $b ) {
-				return array( $b['matched'], $b['score'] ) <=> array( $a['matched'], $a['score'] );
-			};
-			usort( $all, $by_score );
-			usort( $any, $by_score );
-			// Methods that match every term first; when they are few, the best partial
-			// matches fill the list instead of nothing.
-			$hits = array_merge( $all, $any );
+			// Methods the query names come first, closest spelling first.
+			$first = array_values( array_filter( $hits, static fn( $h ) => null !== $h['named'] ) );
+			usort(
+				$first,
+				static function ( $a, $b ) {
+					return array( $a['named'], $a['order'] ) <=> array( $b['named'], $b['order'] );
+				}
+			);
+			$others = array_values( array_filter( $hits, static fn( $h ) => null === $h['named'] ) );
+			$ranked = array_merge( $first, self::rank_hits( $others, $intents, $rest, $modules, $limit - count( $first ) ) );
+			$all    = count( array_filter( $hits, static fn( $h ) => $h['all'] ) );
 
 			$results = array();
-			foreach ( array_slice( $hits, 0, $limit ) as $hit ) {
-				unset( $hit['score'], $hit['matched'] );
-				$results[] = $hit;
+			foreach ( array_slice( $ranked, 0, $limit ) as $hit ) {
+				$results[] = array(
+					'call'    => $hit['call'],
+					'summary' => $hit['summary'],
+					'kind'    => $hit['kind'],
+				);
 			}
 
 			return array(
-				'query'   => $query,
-				'matched' => $all ? ( $any ? 'all terms first, then some' : 'all terms' ) : ( $any ? 'any term' : 'nothing' ),
+				'query'     => $query,
+				'matched'   => $all ? ( count( $hits ) > $all ? 'all terms first, then some' : 'all terms' ) : ( $hits ? 'any term' : 'nothing' ),
 				'total'     => count( $hits ),
-				'all_terms' => count( $all ),
-				'results' => $results,
-				'next'    => 'If these signatures are enough, write the script and run it with `execute`. For a method\'s parameter details and allowed values, search its exact name, e.g. "Page::grep".',
+				'all_terms' => $all,
+				'results'   => $results,
+				'next'      => 'If these signatures are enough, write the script and run it with `execute`. For a method\'s parameter details and allowed values, search its exact name, e.g. "Page::grep".',
 			);
+		}
+
+		/** Words a query uses that say nothing about which method it wants. */
+		const SEARCH_STOP = array( 'the', 'and', 'for', 'with', 'from', 'into', 'this', 'that', 'what', 'which', 'how', 'are', 'was', 'its', 'all', 'any', 'can', 'use', 'using', 'used', 'via', 'per', 'one', 'out', 'site', 'uichemy', 'want', 'need', 'some', 'thing', 'before', 'after', 'there', 'their', 'have', 'has', 'should', 'would', 'will', 'please', 'way', 'my', 'our', 'your', 'about', 'like', 'just', 'also', 'then', 'them', 'does', 'did', 'not', 'own' );
+
+		/**
+		 * Words people use that the docs do not: each also matches what the docs say.
+		 * Keys and values are stems (see stem()).
+		 */
+		const SEARCH_SYNONYMS = array(
+			'id'          => array( 'entiti', 'resolve' ),
+			'feedback'    => array( 'report', 'request', 'bug' ),
+			'issue'       => array( 'bug', 'report', 'problem' ),
+			'broken'      => array( 'error', 'log', 'audit', 'finding' ),
+			'crash'       => array( 'error', 'log', 'safe' ),
+			'fatal'       => array( 'error', 'log', 'safe' ),
+			'white'       => array( 'error', 'safe' ),
+			'working'     => array( 'error', 'log' ),
+			'ready'       => array( 'audit', 'readiness' ),
+			'finish'      => array( 'audit', 'readiness' ),
+			'problem'     => array( 'audit', 'finding' ),
+			'grid'        => array( 'loop', 'listing' ),
+			'latest'      => array( 'loop', 'recent' ),
+			'recent'      => array( 'loop' ),
+			'listing'     => array( 'loop' ),
+			'print'       => array( 'token', 'bind' ),
+			'output'      => array( 'token', 'bind' ),
+			'text'        => array( 'grep', 'pattern', 'html', 'section' ),
+			'turn'        => array( 'activ', 'enabl', 'disabl', 'toggle' ),
+			'activate'    => array( 'activ', 'toggle' ),
+			'reactivate'  => array( 'activ', 'toggle' ),
+			'enable'      => array( 'activ', 'toggle' ),
+			'disable'     => array( 'activ', 'toggle' ),
+			'switch'      => array( 'activ', 'toggle' ),
+			'acf'         => array( 'field' ),
+			'entry'       => array( 'submission' ),
+			'response'    => array( 'submission' ),
+			'lead'        => array( 'submission' ),
+			'enquiry'     => array( 'submission' ),
+			'inquiry'     => array( 'submission' ),
+			'builder'     => array( 'describe', 'schema' ),
+			'template'    => array( 'theme' ),
+			'snippet'     => array( 'module' ),
+			'stylesheet'  => array( 'css' ),
+			'style'       => array( 'css', 'design' ),
+			'styling'     => array( 'css', 'design' ),
+			'favicon'     => array( 'icon' ),
+			'speed'       => array( 'performance', 'optimi' ),
+			'fast'        => array( 'performance' ),
+			'slow'        => array( 'performance' ),
+			'add'         => array( 'create', 'insert', 'append' ),
+			'make'        => array( 'create' ),
+			'new'         => array( 'create' ),
+			'build'       => array( 'create' ),
+			'insert'      => array( 'create', 'append' ),
+			'edit'        => array( 'update', 'patch', 'set' ),
+			'change'      => array( 'update', 'patch', 'set' ),
+			'modify'      => array( 'update', 'patch', 'set' ),
+			'rename'      => array( 'update', 'title' ),
+			'replace'     => array( 'patch', 'update' ),
+			'swap'        => array( 'patch', 'update' ),
+			'fix'         => array( 'patch', 'update', 'audit' ),
+			'remove'      => array( 'delete' ),
+			'delete'      => array( 'trash' ),
+			'erase'       => array( 'delete' ),
+			'trash'       => array( 'delete' ),
+			'find'        => array( 'search', 'grep', 'list', 'find' ),
+			'lookup'      => array( 'search', 'find', 'get' ),
+			'look'        => array( 'search', 'find', 'get' ),
+			'locate'      => array( 'search', 'find', 'grep' ),
+			'show'        => array( 'list', 'read', 'preview' ),
+			'view'        => array( 'get', 'list', 'read' ),
+			'see'         => array( 'get', 'list', 'read' ),
+			'read'        => array( 'get', 'read' ),
+			'fetch'       => array( 'get', 'read' ),
+			'heading'     => array( 'html', 'section', 'title' ),
+			'headline'    => array( 'html', 'section', 'title' ),
+			'button'      => array( 'html', 'section', 'link' ),
+			'paragraph'   => array( 'html', 'section' ),
+			'hero'        => array( 'html', 'section' ),
+			'banner'      => array( 'html', 'section' ),
+			'cta'         => array( 'html', 'section', 'link' ),
+			'content'     => array( 'html', 'section', 'code' ),
+			'copy'        => array( 'html', 'grep', 'duplicat' ),
+			'layout'      => array( 'section', 'structure', 'html' ),
+			'landing'     => array( 'page' ),
+			'block'       => array( 'section' ),
+			'element'     => array( 'section' ),
+			'image'       => array( 'media', 'imag' ),
+			'photo'       => array( 'media', 'imag' ),
+			'picture'     => array( 'media', 'imag' ),
+			'img'         => array( 'media', 'imag' ),
+			'alt'         => array( 'alt', 'imag' ),
+			'colour'      => array( 'color' ),
+			'color'       => array( 'color', 'design' ),
+			'palette'     => array( 'color', 'design' ),
+			'font'        => array( 'font', 'typography', 'design' ),
+			'typography'  => array( 'font', 'typography' ),
+			'php'         => array( 'php', 'module', 'code' ),
+			'javascript'  => array( 'js', 'script' ),
+			'script'      => array( 'js', 'script', 'code' ),
+			'publish'     => array( 'status', 'update' ),
+			'draft'       => array( 'status' ),
+			'schedule'    => array( 'date', 'status' ),
+			'shop'        => array( 'store', 'product' ),
+			'woocommerce' => array( 'store', 'product' ),
+			'menu'        => array( 'menu', 'navigation', 'header' ),
+			'nav'         => array( 'menu', 'navigation', 'header' ),
+			'navigation'  => array( 'menu', 'navigation', 'header' ),
+			'meta'        => array( 'meta', 'seo' ),
+			'title'       => array( 'title', 'seo' ),
+			'undo'        => array( 'revert', 'restore' ),
+			'remember'    => array( 'save', 'memory' ),
+			'note'        => array( 'save', 'memory' ),
+			'forget'      => array( 'delete', 'memory' ),
+			'homepage'    => array( 'front', 'home', 'setting' ),
+			'home'        => array( 'front', 'setting' ),
+			'appear'      => array( 'grep', 'text', 'section' ),
+			'contain'     => array( 'grep', 'find' ),
+			'mention'     => array( 'grep', 'find' ),
+			'where'       => array( 'grep', 'text' ),
+			'only'        => array( 'condition' ),
+			'every'       => array( 'condition' ),
+			'everywhere'  => array( 'condition' ),
+			'display'     => array( 'condition', 'get' ),
+			'exclude'     => array( 'condition' ),
+			'featured'    => array( 'thumbnail', 'featured' ),
+			'thumbnail'   => array( 'thumbnail', 'featured' ),
+			'css'         => array( 'css', 'code' ),
+			'custom'      => array( 'code', 'custom' ),
+			'analytic'    => array( 'code', 'head' ),
+			'tracking'    => array( 'code', 'head' ),
+			'pixel'       => array( 'code', 'head' ),
+			'price'       => array( 'pricing', 'price' ),
+			'discount'    => array( 'coupon' ),
+			'revert'      => array( 'revert', 'restore' ),
+			'restore'     => array( 'revert', 'restore' ),
+			'log'         => array( 'log', 'error' ),
+			'debug'       => array( 'error', 'log' ),
+		);
+
+		/** Spellings of the same word: each counts as the word itself. */
+		const SEARCH_VARIANTS = array(
+			'price'    => array( 'pricing' ),
+			'pricing'  => array( 'price' ),
+			'optimise' => array( 'optimiz', 'optimis' ),
+			'optimize' => array( 'optimiz', 'optimis' ),
+			'colour'   => array( 'color' ),
+			'color'    => array( 'colour' ),
+			'categor'  => array( 'category', 'categori' ),
+			'category' => array( 'categori' ),
+			'tag'      => array( 'term' ),
+		);
+
+		/** Verbs that ask for a delete: without one, deleting methods rank last. */
+		const DELETE_WORDS = array( 'delete', 'remove', 'erase', 'trash', 'drop', 'clear', 'purge', 'uninstall', 'destroy', 'wipe', 'forget', 'rid' );
+
+		/** A slight lead for the classes most queries are about, when none is named. */
+		const CLASS_PRIOR = array(
+			'Page'     => 1.2,
+			'Post'     => 1.1,
+			'Template' => 1.05,
+		);
+
+		/**
+		 * Other names a class goes by, as people would write them. Its own name,
+		 * slug and label are added in class_intents(); these are the rest.
+		 */
+		const CLASS_ALIASES = array(
+			'Module'       => array( 'module studio', 'studio', 'snippet', 'code snippet', 'php snippet', 'custom code', 'code module' ),
+			'Seo'          => array( 'search engine', 'sitemap', 'redirect', 'robots', 'open graph', 'structured data', 'schema markup', 'faq schema', 'article schema', 'schema', 'json ld', 'jsonld', 'meta title', 'meta description', 'meta tag', 'canonical', 'permalink', '404', '404s', 'not found page', 'noindex', 'no index', 'indexing', 'crawl', 'crawler', 'block search engine', 'google search' ),
+			'Store'        => array( 'shop', 'woocommerce', 'woo', 'product', 'ecommerce', 'cart', 'checkout', 'coupon', 'discount', 'shipping', 'payment', 'catalog', 'price', 'product price', 'sku', 'stock', 'inventory' ),
+			'CustomFields' => array( 'acf', 'custom field', 'meta field', 'field group' ),
+			'Cpt'          => array( 'post type', 'custom post type', 'taxonomy', 'content model', 'content type', 'category', 'tag', 'term', 'list of tag' ),
+			'ThemeBuilder' => array( 'theme builder', 'template', 'header', 'footer', '404 template', '404 page template', 'archive template', 'missing template' ),
+			'Template'     => array( 'header', 'footer' ),
+			'Media'        => array( 'image', 'photo', 'picture', 'media library', 'attachment' ),
+			'DesignSystem' => array( 'design system', 'design token', 'css variable', 'global style', 'palette', 'color', 'colour', 'brand color', 'theme color', 'typography', 'heading font', 'font of heading', 'font size', 'font family', 'token', 'dark mode', 'globally', 'global css', 'button style' ),
+			'Platform'     => array( 'site setting', 'site code', 'tagline', 'front page setting', 'homepage setting', 'site wide', 'sitewide', 'analytic', 'google analytic', 'tracking code', 'tracking', 'pixel', 'gtag', 'ga', 'ga4', 'ga script', 'google tag', 'tag manager', 'gtm', 'meta pixel', 'hotjar', 'menu', 'footer menu', 'header menu', 'nav menu', 'navigation menu', 'whole site', 'entire site', 'site head', 'set the homepage', 'set homepage', 'change homepage', 'front page' ),
+			'Performance'  => array( 'speed', 'lazy load', 'page speed', 'webp', 'avif', 'compress', 'compress image', 'optimise image', 'optimize image', 'convert image', 'image optimisation', 'image optimization', 'restore original image', 'original image', 'unoptimised', 'lighthouse', 'minify', 'minification', 'defer', 'code placement', 'css to footer', 'js to footer', 'critical css', 'section css' ),
+			'Forms'        => array( 'form', 'contact form', 'submission', 'form entry', 'lead', 'enquiry' ),
+			'ErrorLog'     => array( 'error log', 'php error', 'debug log', 'fatal error', 'critical error', 'white screen', 'site broken', 'site crash', 'crash', 'not working' ),
+			'Memory'       => array( 'memory', 'remember', 'design md', 'note for later' ),
+			'Audit'        => array( 'launch', 'go live', 'ready to launch', 'pre launch', 'checklist', 'site audit' ),
+			'UiChemyTeam'  => array( 'bug report', 'feature request', 'report bug', 'request feature', 'uichemy team', 'feedback', 'submit feedback', 'report a bug' ),
+			'ReadSkill'    => array( 'skill', 'read skill' ),
+			'CodeFile'     => array( 'code file', 'theme file', 'wasm' ),
+			'CustomFont'   => array( 'custom font', 'font', 'webfont', 'font file', 'upload font', 'brand font', 'google font', 'woff', 'woff2', 'ttf', 'otf' ),
+			'Dynamic'      => array( 'dynamic', 'twig', 'loop', 'dynamic tag', 'bind', 'bind field', 'listing', 'grid', 'latest post', 'post grid', 'post listing', 'query loop' ),
+			'DescribeSite' => array( 'describe site', 'site overview', 'site schema', 'plugin', 'installed plugin', 'what is on' ),
+			'Page'         => array( 'landing page' ),
+			'Post'         => array( 'blog', 'article', 'blog post' ),
+		);
+
+		/**
+		 * The query's words in order: lowercase, camelCase split ("ModuleStudio" is
+		 * "module studio"), nothing but letters and digits.
+		 *
+		 * @param string $raw Query as typed.
+		 * @return array<int,string>
+		 */
+		private static function query_tokens( $raw ) {
+			$raw = preg_replace( '/([a-z0-9])([A-Z])/', '$1 $2', (string) $raw );
+			$raw = preg_replace( '/([A-Z]+)([A-Z][a-z])/', '$1 $2', (string) $raw );
+			return preg_split( '/[^a-z0-9]+/', strtolower( (string) $raw ), -1, PREG_SPLIT_NO_EMPTY );
+		}
+
+		/**
+		 * Crude stem: "pages" and "page" compare equal.
+		 *
+		 * @param string $word Lowercase word.
+		 * @return string
+		 */
+		private static function stem( $word ) {
+			if ( strlen( $word ) <= 3 ) {
+				return $word;
+			}
+			if ( preg_match( '/ies$/', $word ) ) {
+				return substr( $word, 0, -3 ) . 'y';
+			}
+			if ( preg_match( '/(ss|us|is)$/', $word ) ) {
+				return $word;
+			}
+			return (string) preg_replace( '/s$/', '', $word );
+		}
+
+		/**
+		 * A class label without the product prefix ("UiChemy Builder: Module Studio").
+		 *
+		 * @param string $label Label.
+		 * @return string
+		 */
+		private static function plain_label( $label ) {
+			return (string) preg_replace( '/^UiChemy(?: Builder| Team)?:\s*/i', '', (string) $label );
+		}
+
+		/**
+		 * Methods the query names as one word, in any case: "updatePermalinks",
+		 * "listredirects", or one letter off for a long name ("updatePermalink").
+		 *
+		 * @param string $raw     Query as typed.
+		 * @param array  $modules Catalog modules.
+		 * @return array{methods:array<string,int>, words:array<int,string>} "Class::fn" => edits, and the words that named them.
+		 */
+		private static function named_methods( $raw, array $modules ) {
+			$methods = array();
+			$words   = array();
+			foreach ( preg_split( '/[^A-Za-z0-9_]+/', (string) $raw, -1, PREG_SPLIT_NO_EMPTY ) as $word ) {
+				$lower = strtolower( $word );
+				// Only a word that could be a name: long, and not an everyday word.
+				if ( strlen( $lower ) < 6 || ! preg_match( '/[a-z][A-Z]|^[a-z]+$/', $word ) ) {
+					continue;
+				}
+				foreach ( $modules as $module ) {
+					foreach ( $module['fns'] as $fn ) {
+						$name = strtolower( (string) $fn['fn'] );
+						// A plain word is a name only when the method's name has more than
+						// one part (listRedirects), so "update" is not update().
+						if ( ! preg_match( '/[a-z][A-Z]/', (string) $fn['fn'] ) && ! preg_match( '/[a-z][A-Z]/', $word ) ) {
+							continue;
+						}
+						$distance = $name === $lower ? 0 : ( strlen( $lower ) >= 9 ? self::edit_distance( $lower, $name ) : 9 );
+						if ( $distance <= 1 ) {
+							$key             = $module['module'] . '::' . $fn['fn'];
+							$methods[ $key ] = min( $distance, $methods[ $key ] ?? 9 );
+							$words[]         = $word;
+						}
+					}
+				}
+			}
+			return array(
+				'methods' => $methods,
+				'words'   => array_values( array_unique( $words ) ),
+			);
+		}
+
+		/**
+		 * The classes the query names, in the order it names them, each with the
+		 * words that named it: "Module SEO" is Module then Seo, and "ModuleStudio",
+		 * "module studio", "studio" or "moduel" are all Module. Longer names win
+		 * ("theme builder" is ThemeBuilder, not a theme and a builder).
+		 *
+		 * @param array<int,string>  $tokens  Query words.
+		 * @param array              $modules Catalog modules.
+		 * @param array<string,bool> $vocab   Words the docs use: a real word is never read as a typo.
+		 * @return array<string,array<int,string>> Class => words.
+		 */
+		private static function class_intents( array $tokens, array $modules, array $vocab ) {
+			$names     = array();
+			$own_names = array();
+			foreach ( $modules as $module ) {
+				$class = $module['module'];
+				foreach ( array( implode( ' ', self::query_tokens( $class ) ), str_replace( '-', ' ', (string) $module['slug'] ) ) as $own ) {
+					$own_names[ implode( ' ', array_map( array( __CLASS__, 'stem' ), preg_split( '/\s+/', trim( $own ), -1, PREG_SPLIT_NO_EMPTY ) ) ) ][] = $class;
+				}
+				$phrases = array_merge(
+					array(
+						implode( ' ', self::query_tokens( $class ) ),
+						str_replace( '-', ' ', (string) $module['slug'] ),
+						implode( ' ', self::query_tokens( self::plain_label( $module['label'] ) ) ),
+					),
+					self::CLASS_ALIASES[ $class ] ?? array()
+				);
+				foreach ( $phrases as $phrase ) {
+					$words = array_map( array( __CLASS__, 'stem' ), preg_split( '/\s+/', trim( $phrase ), -1, PREG_SPLIT_NO_EMPTY ) );
+					if ( ! $words ) {
+						continue;
+					}
+					$names[ implode( ' ', $words ) ][] = $class;
+					// "modulestudio" and "themebuilder", typed as one word.
+					if ( count( $words ) > 1 ) {
+						$names[ implode( '', $words ) ][] = $class;
+					}
+				}
+			}
+
+			$stems   = array_map( array( __CLASS__, 'stem' ), $tokens );
+			$intents = array();
+			$count   = count( $stems );
+			for ( $i = 0; $i < $count; $i++ ) {
+				for ( $len = min( 3, $count - $i ); $len >= 1; $len-- ) {
+					$phrase  = implode( ' ', array_slice( $stems, $i, $len ) );
+					$classes = $names[ $phrase ] ?? null;
+					// One word, one letter off a one-word name ("moduel", "templat").
+					if ( null === $classes && 1 === $len && strlen( $phrase ) >= 5 && ! self::known_prefix( $phrase, $vocab ) ) {
+						foreach ( $names as $name => $named ) {
+							if ( false === strpos( $name, ' ' ) && self::edit_distance( $phrase, $name ) <= 1 ) {
+								$classes = $named;
+								break;
+							}
+						}
+					}
+					if ( null === $classes ) {
+						continue;
+					}
+					// "template" names Template; ThemeBuilder only goes by it too.
+					$classes = array_values( array_unique( $classes ) );
+					if ( count( $classes ) > 1 && isset( $own_names[ $phrase ] ) ) {
+						$classes = array_values( array_intersect( $classes, $own_names[ $phrase ] ) );
+					}
+					foreach ( $classes as $class ) {
+						if ( ! isset( $intents[ $class ] ) ) {
+							$intents[ $class ] = array_slice( $tokens, $i, $len );
+						}
+					}
+					$i += $len - 1;
+					break;
+				}
+			}
+			return $intents;
+		}
+
+		/**
+		 * Order the hits: methods of the classes the query names come first, in the
+		 * order it names them, best match first and otherwise in the class's own
+		 * order; methods elsewhere that match the rest of the query follow.
+		 *
+		 * @param array             $hits    Hits.
+		 * @param array             $intents Class => words.
+		 * @param array<int,string> $rest    Query terms that name no class.
+		 * @param array             $modules Catalog modules (for each class's own name).
+		 * @param int               $limit   Results wanted.
+		 * @return array
+		 */
+		private static function rank_hits( array $hits, array $intents, array $rest, array $modules, $limit ) {
+			$limit = max( 1, (int) $limit );
+			$by_score = static function ( $a, $b ) {
+				return array( $b['score'], $a['order'] ) <=> array( $a['score'], $b['order'] );
+			};
+			if ( ! $intents ) {
+				// With no class named, pages and posts are where most content lives.
+				foreach ( $hits as $i => $hit ) {
+					$hits[ $i ]['score'] *= self::CLASS_PRIOR[ $hit['class'] ] ?? 1.0;
+				}
+				usort( $hits, $by_score );
+				return $hits;
+			}
+
+			// Inside a class, every word but the named classes' own names ranks its
+			// methods: "redirects" picks Seo, then listRedirects() over auditPageSeo().
+			$own = array();
+			foreach ( $modules as $module ) {
+				if ( isset( $intents[ $module['module'] ] ) ) {
+					$own['*'] = ( $own['*'] ?? array() ) + array_flip(
+						array_map(
+							array( __CLASS__, 'stem' ),
+							array_merge(
+								self::query_tokens( $module['module'] ),
+								self::query_tokens( (string) $module['slug'] ),
+								self::query_tokens( self::plain_label( $module['label'] ) )
+							)
+						)
+					);
+				}
+			}
+			$named = array();
+			$other = array();
+			foreach ( $hits as $hit ) {
+				if ( isset( $intents[ $hit['class'] ] ) ) {
+					$hit['inside'] = 0.0;
+					// "pages" in "header only on blog pages" named Page; it says nothing
+					// about which Template method is wanted.
+					foreach ( $hit['contrib'] as $term => $value ) {
+						if ( ! isset( $own['*'][ $term ] ) ) {
+							$hit['inside'] += $value;
+						}
+					}
+					$hit['last']              = 'delete' === $hit['kind'] && $hit['delete_penalised'] ? 1 : 0;
+					$named[ $hit['class'] ][] = $hit;
+				} elseif ( ! $rest || $hit['rest'] > 0 ) {
+					$other[] = $hit;
+				}
+			}
+			usort( $other, $by_score );
+
+			$in_class = static function ( $a, $b ) {
+				return array( $a['last'], $b['inside'], $a['order'] ) <=> array( $b['last'], $a['inside'], $b['order'] );
+			};
+			// A class's methods that match the rest of the query come first; with
+			// nothing else to go on, the class keeps its own order (its first
+			// method is where to start); the ones that match nothing wait at the end.
+			$lists = array();
+			$tails = array();
+			foreach ( array_keys( $intents ) as $class ) {
+				$list = $named[ $class ] ?? array();
+				usort( $list, $in_class );
+				$any  = array_filter( $list, static fn( $h ) => $h['inside'] > 0 && ! $h['last'] );
+				if ( $any ) {
+					$tails[ $class ] = array_values( array_filter( $list, static fn( $h ) => $h['inside'] <= 0 || $h['last'] ) );
+					$list            = array_values( $any );
+				} else {
+					$tails[ $class ] = array_values( array_filter( $list, static fn( $h ) => $h['last'] ) );
+					$list            = array_values( array_filter( $list, static fn( $h ) => ! $h['last'] ) );
+				}
+				$lists[ $class ] = $list;
+			}
+
+			// Several classes share the room in the order the query names them, so
+			// "Module SEO" shows both and Module first.
+			$ordered = array();
+			$share   = max( 1, (int) ceil( $limit / max( 1, count( $lists ) ) ) );
+			foreach ( $lists as $list ) {
+				$ordered = array_merge( $ordered, array_slice( $list, 0, $share ) );
+			}
+			foreach ( $lists as $list ) {
+				$ordered = array_merge( $ordered, array_slice( $list, $share ) );
+			}
+			$ordered = array_merge( $ordered, $other );
+			foreach ( $tails as $tail ) {
+				$ordered = array_merge( $ordered, $tail );
+			}
+			return $ordered;
+		}
+
+		/**
+		 * Does any known word start with the term (or the term with it)?
+		 *
+		 * @param string             $term  Term.
+		 * @param array<string,bool> $vocab Known words.
+		 * @return bool
+		 */
+		private static function known_prefix( $term, array $vocab ) {
+			if ( isset( $vocab[ $term ] ) ) {
+				return true;
+			}
+			foreach ( $vocab as $word => $unused ) {
+				if ( 0 === strpos( (string) $word, $term ) ) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * Known words a typo may stand for: one edit away, two for long words.
+		 *
+		 * @param string            $term  Term (not a known word).
+		 * @param array<int,string> $vocab Known words.
+		 * @return array<int,string>
+		 */
+		private static function near_words( $term, array $vocab ) {
+			$length = strlen( $term );
+			if ( $length < 4 ) {
+				return array();
+			}
+			$max  = $length >= 8 ? 2 : 1;
+			$near = array();
+			foreach ( $vocab as $word ) {
+				$word = (string) $word;
+				if ( abs( strlen( $word ) - $length ) > $max || strlen( $word ) < 4 ) {
+					continue;
+				}
+				$distance = self::edit_distance( $term, $word );
+				if ( $distance <= $max ) {
+					$near[ $word ] = $distance;
+				}
+			}
+			asort( $near );
+			return array_slice( array_keys( $near ), 0, 5 );
+		}
+
+		/**
+		 * Edits between two words, a swap of neighbours counting as one ("moduel").
+		 *
+		 * @param string $a Word.
+		 * @param string $b Word.
+		 * @return int
+		 */
+		private static function edit_distance( $a, $b ) {
+			$la = strlen( $a );
+			$lb = strlen( $b );
+			if ( abs( $la - $lb ) > 2 ) {
+				return 3;
+			}
+			$d = array();
+			for ( $i = 0; $i <= $la; $i++ ) {
+				$d[ $i ][0] = $i;
+			}
+			for ( $j = 0; $j <= $lb; $j++ ) {
+				$d[0][ $j ] = $j;
+			}
+			for ( $i = 1; $i <= $la; $i++ ) {
+				for ( $j = 1; $j <= $lb; $j++ ) {
+					$cost       = $a[ $i - 1 ] === $b[ $j - 1 ] ? 0 : 1;
+					$d[ $i ][ $j ] = min( $d[ $i - 1 ][ $j ] + 1, $d[ $i ][ $j - 1 ] + 1, $d[ $i - 1 ][ $j - 1 ] + $cost );
+					if ( $i > 1 && $j > 1 && $a[ $i - 1 ] === $b[ $j - 2 ] && $a[ $i - 2 ] === $b[ $j - 1 ] ) {
+						$d[ $i ][ $j ] = min( $d[ $i ][ $j ], $d[ $i - 2 ][ $j - 2 ] + 1 );
+					}
+				}
+			}
+			return $d[ $la ][ $lb ];
 		}
 
 		/**
@@ -566,12 +1297,7 @@ if ( ! class_exists( 'UiChemy_Code_Mode' ) ) {
 		private static function words( $text ) {
 			$text  = preg_replace( '/([a-z0-9])([A-Z])/', '$1 $2', (string) $text );
 			$words = preg_split( '/[^a-z0-9]+/', strtolower( (string) $text ), -1, PREG_SPLIT_NO_EMPTY );
-			foreach ( $words as $i => $word ) {
-				if ( strlen( $word ) > 3 ) {
-					$words[ $i ] = preg_replace( '/(ies|es|s)$/', '', $word );
-				}
-			}
-			return array_values( array_unique( $words ) );
+			return array_values( array_unique( array_map( array( __CLASS__, 'stem' ), $words ) ) );
 		}
 
 		/**

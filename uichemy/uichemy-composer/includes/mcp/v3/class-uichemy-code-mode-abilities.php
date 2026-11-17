@@ -88,10 +88,15 @@ if ( ! class_exists( 'UiChemy_Code_Mode_Abilities' ) ) {
 			$specs = array(
 				self::INSTRUCTIONS => array(
 					'label'       => 'UiChemy Code Mode: get instructions',
-					'description' => 'Call this first, once. Returns how to write a script for UiChemy Code Mode (steps, an example, rules and limits), then what UiChemy is and how it builds WordPress sites here, with every UiChemy class and method.',
+					'description' => 'Call this first, once. Returns how to write a script for UiChemy Code Mode (steps, an example, rules and limits), then what UiChemy is and how it builds WordPress sites here, with every UiChemy class and method. Pass `section` ("Memory", "Code files") for a section given in short, in full.',
 					'input'       => array(
 						'type'       => 'object',
-						'properties' => new stdClass(),
+						'properties' => array(
+							'section' => array(
+								'type'        => 'string',
+								'description' => 'One section in full, by its heading: "Code files", "Memory" or "Store". Leave it out for the whole briefing.',
+							),
+						),
 					),
 					'callback'    => array( 'UiChemy_MCP_Server_V3', 'handle_get_instructions' ),
 					'readonly'    => true,

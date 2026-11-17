@@ -67,6 +67,8 @@ if ( ! function_exists( 'uichemy_uninstall_cleanup_site' ) ) {
 		foreach ( array( 'uich_forms_db_version', 'uich_atomic_global_width_class_id' ) as $option ) {
 			delete_option( $option );
 		}
+		// SMTP's cached Gmail access token (encrypted) is a transient, not a `uichemy_` option.
+		delete_transient( 'uichemy_smtp_gmail_access' );
 		// Each admin's own MCP context (Settings > MCP) lives on their user.
 		delete_metadata( 'user', 0, 'uichemy_mcp_user_context', '', true );
 		// Intentionally NOT removed: pre-rename legacy options (uich_chat_*,

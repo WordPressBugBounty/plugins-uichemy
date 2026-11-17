@@ -58,6 +58,9 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		const SERVER_NAME    = 'UiChemy WordPress MCP v2';
 		const SERVER_VERSION = '2.0.0';
 		const REST_NAMESPACE = 'uichemy/v2';
+
+		/** User meta holding the one relay session a sessionless client reuses (prime_mcp_request()). */
+		const RELAY_SESSION_META = 'uichemy_mcp_relay_session';
 		const REST_ROUTE     = 'mcp';
 
 		/**
@@ -136,8 +139,19 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 				return;
 			}
 
-			$session_id = $session_manager::create_session( $user_id );
+			// One relay session per user, reused while it lasts. A new one on every
+			// request filled the adapter's per-user limit (32, oldest dropped first)
+			// within minutes and pushed out the sessions of clients that keep one,
+			// whose next call then failed with "Invalid or expired session".
+			$relay = (string) get_user_meta( $user_id, self::RELAY_SESSION_META, true );
+			if ( '' !== $relay && is_array( $session_manager::get_session( $user_id, $relay ) ) ) {
+				$request->set_header( 'Mcp-Session-Id', $relay );
+				return;
+			}
+
+			$session_id = $session_manager::create_session( $user_id, array( 'uichemy_relay' => true ) );
 			if ( is_string( $session_id ) && '' !== $session_id ) {
+				update_user_meta( $user_id, self::RELAY_SESSION_META, $session_id );
 				$request->set_header( 'Mcp-Session-Id', $session_id );
 			}
 		}

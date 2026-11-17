@@ -164,8 +164,16 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V3' ) ) {
 			$specs = array(
 				array(
 					'name'        => 'get_instructions',
-					'description' => 'Call this first, once. Returns how to write a script for this server (steps, an example, rules and limits), then what UiChemy is and how it builds WordPress sites.',
-					'inputSchema' => array( 'type' => 'object' ),
+					'description' => 'Call this first, once. Returns how to write a script for this server (steps, an example, rules and limits), then what UiChemy is and how it builds WordPress sites. A few sections are given in short; pass `section` (e.g. "Memory" or "Code files") for one of them in full.',
+					'inputSchema' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'section' => array(
+								'type'        => 'string',
+								'description' => 'One section in full, by its heading: "Code files", "Memory" or "Store". Leave it out for the whole briefing.',
+							),
+						),
+					),
 					'handler'     => array( __CLASS__, 'handle_get_instructions' ),
 					'annotations' => $read_only,
 				),
@@ -240,10 +248,12 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V3' ) ) {
 		}
 
 		/**
+		 * @param array $arguments { section?: string }.
 		 * @return array
 		 */
-		public static function handle_get_instructions() {
-			return UiChemy_Code_Mode::instructions();
+		public static function handle_get_instructions( $arguments = array() ) {
+			$arguments = is_array( $arguments ) ? $arguments : array();
+			return UiChemy_Code_Mode::instructions( isset( $arguments['section'] ) && is_scalar( $arguments['section'] ) ? (string) $arguments['section'] : '' );
 		}
 
 		/**

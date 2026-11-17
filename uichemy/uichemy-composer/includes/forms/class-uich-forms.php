@@ -349,9 +349,11 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 				'email2'      => sanitize_email( (string) $request->get_param( 'email2' ) ),
 				'webhook'     => esc_url_raw( (string) $request->get_param( 'webhook' ) ),
 			);
-			$all              = get_post_meta( $post_id, self::CONFIG_META, true );
-			$all              = is_array( $all ) ? $all : array();
-			$all[ $form_key ] = $cfg;
+			$all = get_post_meta( $post_id, self::CONFIG_META, true );
+			$all = is_array( $all ) ? $all : array();
+			// Merge: the Form tab sends its five fields only, and must not wipe the
+			// subject / success message / store an AI set with forms > configure.
+			$all[ $form_key ] = array_merge( isset( $all[ $form_key ] ) && is_array( $all[ $form_key ] ) ? $all[ $form_key ] : array(), $cfg );
 			update_post_meta( $post_id, self::CONFIG_META, $all );
 			return new WP_REST_Response( array( 'ok' => true ), 200 );
 		}
@@ -663,9 +665,26 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			// (composer always emits it for a configured form) we honour it exactly — an
 			// empty value means the author turned BOTH actions off, so nothing runs. Only
 			// a totally absent field (legacy / hand-authored forms) falls back to the default.
-			$actions = isset( $params['_uich_actions'] )
-				? array_filter( array_map( 'trim', explode( ',', (string) $params['_uich_actions'] ) ) )
-				: array( 'save_db', 'email' );
+			// Sensitive settings come from server-side config (not page source).
+			$cfg = self::get_config( $post_id, $form_key );
+			// A form in a header / footer template is configured on the template,
+			// while _uich_post_id is the page it was submitted from. Fall back to
+			// the template's settings - only a theme-builder template, so the field
+			// cannot point a submission at any other post's recipients.
+			$config_id = isset( $params['_uich_config_id'] ) ? (int) $params['_uich_config_id'] : 0;
+			if ( empty( $cfg ) && $config_id && class_exists( 'UiChemy_Template_CPT' ) && UiChemy_Template_CPT::POST_TYPE === get_post_type( $config_id ) ) {
+				$cfg = self::get_config( $config_id, $form_key );
+			}
+
+			// The markup's data-atom-actions wins; a form without it takes "store" from its
+			// config (forms > configure), and saves + emails by default.
+			if ( isset( $params['_uich_actions'] ) ) {
+				$actions = array_filter( array_map( 'trim', explode( ',', (string) $params['_uich_actions'] ) ) );
+			} elseif ( isset( $cfg['store'] ) && ! $cfg['store'] ) {
+				$actions = array( 'email' );
+			} else {
+				$actions = array( 'save_db', 'email' );
+			}
 
 			$submission_id = 0;
 			if ( in_array( 'save_db', $actions, true ) ) {
@@ -721,20 +740,13 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 				);
 			}
 
-			// Sensitive settings come from server-side config (not page source).
-			$cfg = self::get_config( $post_id, $form_key );
-			// A form in a header / footer template is configured on the template,
-			// while _uich_post_id is the page it was submitted from. Fall back to
-			// the template's settings - only a theme-builder template, so the field
-			// cannot point a submission at any other post's recipients.
-			$config_id = isset( $params['_uich_config_id'] ) ? (int) $params['_uich_config_id'] : 0;
-			if ( empty( $cfg ) && $config_id && class_exists( 'UiChemy_Template_CPT' ) && UiChemy_Template_CPT::POST_TYPE === get_post_type( $config_id ) ) {
-				$cfg = self::get_config( $config_id, $form_key );
-			}
-
+			$opts = array();
 			if ( in_array( 'email', $actions, true ) ) {
 				$opts  = array(
-					'subject' => isset( $params['_uich_subject'] ) ? sanitize_text_field( $params['_uich_subject'] ) : '',
+					// The markup's data-atom-subject first, then the config's (forms > configure).
+					'subject' => isset( $params['_uich_subject'] ) && '' !== $params['_uich_subject']
+						? sanitize_text_field( $params['_uich_subject'] )
+						: ( ! empty( $cfg['subject'] ) ? (string) $cfg['subject'] : '' ),
 					'to'      => ! empty( $cfg['email_to'] ) ? $cfg['email_to'] : '',
 					'from'    => ! empty( $cfg['email_from'] ) ? $cfg['email_from'] : '',
 					'reply'   => ! empty( $cfg['email_reply'] ) ? $cfg['email_reply'] : '',
@@ -748,7 +760,8 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			}
 
 			if ( ! empty( $cfg['email2'] ) ) {
-				$ok2   = self::send_email( $form_key, $values, $post_id, array( 'to' => $cfg['email2'] ) );
+				// The same email as the main notification (subject, From name, Reply-To), to a second address.
+				$ok2   = self::send_email( $form_key, $values, $post_id, array_merge( $opts, array( 'to' => $cfg['email2'] ) ) );
 				$log[] = array(
 					'name'   => 'email2',
 					'label'  => __( 'Email 2', 'uichemy' ),
@@ -779,9 +792,13 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			 */
 			do_action( 'uich_form_submitted', $submission_id, $values, $params );
 
-			$success_msg = ( isset( $params['_uich_success'] ) && '' !== $params['_uich_success'] )
-				? sanitize_text_field( $params['_uich_success'] )
-				: __( 'Thank you! Your submission has been received.', 'uichemy' );
+			if ( isset( $params['_uich_success'] ) && '' !== $params['_uich_success'] ) {
+				$success_msg = sanitize_text_field( $params['_uich_success'] );
+			} elseif ( ! empty( $cfg['success_message'] ) ) {
+				$success_msg = (string) $cfg['success_message'];
+			} else {
+				$success_msg = __( 'Thank you! Your submission has been received.', 'uichemy' );
+			}
 			$response    = array(
 				'success' => true,
 				'message' => $success_msg,

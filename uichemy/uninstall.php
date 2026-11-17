@@ -150,5 +150,8 @@ if ( is_multisite() ) {
 // is always removed. User meta is shared by every site of a network, so once is enough.
 delete_metadata( 'user', 0, 'uich_bf_banner_bfcm2026_dismissed', '', true );
 
+// The relay MCP session each user's sessionless client reuses (UiChemy_MCP_Server_V2::RELAY_SESSION_META).
+delete_metadata( 'user', 0, 'uichemy_mcp_relay_session', '', true );
+
 // Builder, SEO, chat and every `uichemy_*` option (this deletes the setting read above, so it runs last).
 require_once __DIR__ . '/uichemy-composer/uninstall.php';

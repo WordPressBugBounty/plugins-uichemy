@@ -3,7 +3,7 @@
  * Plugin Name:       UiChemy - Convert Figma, Prompts and AI Builds to Elementor, Gutenberg and Bricks
  * Plugin URI:        https://uichemy.com
  * Description:       Convert Figma Design to 100% Editable WordPress websites in Elementor Website Builder and Gutenberg aka WordPress Block Editor.
- * Version:           5.6.0
+ * Version:           5.6.1
  * Author:            POSIMYTH
  * Author URI:        https://posimyth.com
  * License:           GPLv3
@@ -23,7 +23,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'UICH_VERSION', '5.6.0' );
+define( 'UICH_VERSION', '5.6.1' );
 define( 'UICH_FILE', __FILE__ );
 define( 'UICH_PATH', plugin_dir_path( __FILE__ ) );
 define( 'UICH_URL', plugins_url( '/', __FILE__ ) );
@@ -78,3 +78,11 @@ require UICH_PATH . 'composer-builder/includes/class-uich-cb-loader.php';
  * mid-flight is unreliable.
  */
 require UICH_PATH . 'includes/fields/class-uich-fields-loader.php';
+
+/**
+ * SMTP (Settings > SMTP). Its phpmailer_init hook reads the settings only when
+ * mail is sent, and does nothing until SMTP is switched on.
+ */
+require UICH_PATH . 'includes/smtp/class-uich-smtp-secret.php';
+require UICH_PATH . 'includes/smtp/class-uich-smtp.php';
+Uich_SMTP::init();

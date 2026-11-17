@@ -1360,8 +1360,8 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					array(
 						'name'                     => 'configure',
 						// Called with only post_id and form_key it reads (Code Mode runs it as a read).
-						'readonly_unless'          => array( 'email_to', 'subject', 'success_message', 'store' ),
-						'description'              => 'Set where a form delivers. Without a recipient a form still stores submissions but emails nobody - the usual reason a built contact form looks broken. Call with just post_id and form_key to read the current config.',
+						'readonly_unless'          => array( 'email_to', 'subject', 'success_message', 'store', 'from_name', 'reply_to', 'cc', 'webhook' ),
+						'description'              => 'Set where a form delivers and how its notification email looks: recipient, subject, From name, Reply-to, a second recipient (cc), a webhook, the success message, and whether submissions are stored. Without email_to the notification goes to the site admin email. Call with just post_id and form_key to read the current config. The same settings as the builder\'s Form tab; data-atom-subject / data-atom-success / data-atom-actions on the form markup take precedence over subject / success_message / store. Mail goes through wp_mail(), so if it does not arrive, the site needs SMTP (UiChemy > Settings > SMTP).',
 						'action_parameters_schema' => array(
 							'type'       => 'object',
 							'properties' => array(
@@ -1371,6 +1371,10 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 								'subject'         => array( 'type' => 'string', 'description' => 'Notification subject line.' ),
 								'success_message' => array( 'type' => 'string', 'description' => 'Shown to the visitor after a successful submit.' ),
 								'store'           => array( 'type' => 'boolean', 'description' => 'Keep submissions in the database as well as emailing them.' ),
+								'from_name'       => array( 'type' => 'string', 'description' => 'Name the notification email is sent from. The address stays the site\'s (or the SMTP account\'s).' ),
+								'reply_to'        => array( 'type' => 'string', 'description' => 'Reply-To address for the notification email.' ),
+								'cc'              => array( 'type' => 'string', 'description' => 'A second recipient, sent its own copy of the notification.' ),
+								'webhook'         => array( 'type' => 'string', 'description' => 'http(s) URL each submission is POSTed to as JSON (Zapier, Make, n8n). Empty string removes it.' ),
 							),
 							'required'   => array( 'post_id', 'form_key' ),
 						),

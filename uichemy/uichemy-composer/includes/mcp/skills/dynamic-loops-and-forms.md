@@ -132,10 +132,22 @@ Optional per-form settings, as `data-atom-*` attributes on the `<form>`:
 | `data-atom-success="Thanks — we'll be in touch."` | Inline success message shown after submit. |
 | `data-atom-redirect="/thank-you"` | Redirect to a URL on success (instead of / in addition to the message). |
 | `data-atom-subject="New enquiry from {{ site.name }}"` | Subject line for the notification email. |
+| `data-atom-actions="save_db,email"` | What a submit does: `save_db` keeps it under Form Submissions, `email` sends the notification. Leave one out to skip it. |
 
-**Sensitive config is NOT put in page source.** Email recipients and webhook URLs are stored server-side (post meta), keyed by post + form key — never as attributes on the form. If the user wants those set, do it through the form's config, not by writing them into the HTML.
+**Sensitive config is NOT put in page source.** Email recipients and webhook URLs are stored server-side (post meta), keyed by post + form key — never as attributes on the form. Set them with `uichemy-composer/forms` → `configure` (Code Mode: `Forms::configure()`), the same settings as the builder's Form tab:
+
+- `email_to` — who gets the notification. Left empty, it goes to the site admin email. Set it whenever the user names an address.
+- `from_name` — the name the email comes from (the address stays the site's or the SMTP account's).
+- `reply_to` — the Reply-To address.
+- `cc` — a second recipient, sent its own copy.
+- `webhook` — an http(s) URL each submission is POSTed to as JSON (Zapier, Make, n8n).
+- `subject`, `success_message`, `store` — used when the markup has no `data-atom-subject` / `data-atom-success` / `data-atom-actions`; those attributes win.
+
+Call `configure` with just `post_id` and `form_key` to read what is set. The `form_key` is the `data-atom-form` value, lowercased.
 
 Submissions are saved to the database and are viewable in the UiChemy Forms dashboard.
+
+**Email goes out through `wp_mail()`.** On many hosts that mail is never delivered or lands in spam. If the user says form emails do not arrive, read the latest one with `get-submission`: an `email` entry in its `actions_log` marked `success` means WordPress handed the mail off, so the problem is delivery. Point them to UiChemy > Settings > SMTP (Custom SMTP or Gmail) and its Send test email, rather than changing the form.
 
 ---
 
