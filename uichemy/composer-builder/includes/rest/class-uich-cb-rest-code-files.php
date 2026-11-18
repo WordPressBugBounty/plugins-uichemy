@@ -8,8 +8,9 @@
  * Reading takes the list rather than a page id: the editor knows which files
  * the page references from the code it is holding, including edits not saved
  * yet, so it asks for exactly those. Reading needs `edit_posts` (the files are
- * public URLs anyway); writing needs `unfiltered_html`, the same right the
- * site-wide code needs, because one file can be loaded on every page.
+ * public URLs anyway); writing needs the same right the site-wide code needs
+ * (an administrator, UiChemy_Composer_Manager::can_edit_site_code()), because
+ * one file can be loaded on every page.
  *
  * @package Uichemy
  * @subpackage Uichemy/composer-builder

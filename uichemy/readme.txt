@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.6.1
+Stable tag: 5.7.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -271,6 +271,13 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.7.0 = 18 November 2026
+- Added: Introducing Page Caching: cut server response time on every page.
+- Added: AI assistants can test, check and clear the page cache.
+- Improved: Performance settings split into Optimise and Cache.
+- Fixed: Site-wide code and styles editable only by administrators.
+- Fixed: Various minor bugs and design improvements.
 
 = 5.6.1 = 17 November 2026
 - Added: SMTP settings to send site emails through your server or Gmail.

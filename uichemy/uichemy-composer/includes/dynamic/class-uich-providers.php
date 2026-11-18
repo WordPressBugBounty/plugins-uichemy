@@ -63,6 +63,15 @@ if ( ! class_exists( 'Uich_Provider' ) ) {
 				return null;
 			}
 
+			// Request values (query, form post, referrer) differ between logged-out
+			// visitors, so a page that reads them must not be saved by the page
+			// cache. The URL is the cache key itself, so it is safe. cart / user /
+			// order are empty for every anonymous visitor without a cart or login
+			// cookie, and those visitors never get cached pages.
+			if ( 'request' === $this->uich_kind() && in_array( $name, array( 'get', 'post', 'referrer' ), true ) ) {
+				do_action( 'uichemy/cache/varies', 'request', $name, $args );
+			}
+
 			return $this->uich_get( $name, $args );
 		}
 

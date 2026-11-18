@@ -238,6 +238,9 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 
 				/* ── Date & time ────────────────────────────────────────────── */
 				case 'day_of_week':
+					// The page now depends on when or who is visiting: the page cache
+					// must not save it (UiChemy_Cache_Rules listens).
+					do_action( 'uichemy/cache/varies', 'day_of_week' );
 					// ISO-8601: 1 = Monday … 7 = Sunday, read in site time so the
 					// rule means the day the SITE is having, not the server.
 					$want = absint( isset( $rule['value'] ) ? $rule['value'] : 0 );
@@ -258,9 +261,11 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 					return $user && in_array( $role, (array) $user->roles, true );
 
 				case 'os':
+					do_action( 'uichemy/cache/varies', 'os' );
 					return self::ua_matches( 'os', isset( $rule['value'] ) ? $rule['value'] : '' );
 
 				case 'browser':
+					do_action( 'uichemy/cache/varies', 'browser' );
 					return self::ua_matches( 'browser', isset( $rule['value'] ) ? $rule['value'] : '' );
 			}
 

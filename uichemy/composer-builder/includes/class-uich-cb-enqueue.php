@@ -273,8 +273,8 @@ if ( ! class_exists( 'Uich_CB_Enqueue' ) ) {
 		 * the same global (`isPro`, `builder`, `contentOnly`, …) and treats an
 		 * absent key the way it did before this global existed here.
 		 *
-		 * `canEditSiteCode` mirrors the save handler's own gate (it refuses
-		 * anyone without `unfiltered_html`), so the panel can say "view only"
+		 * `canEditSiteCode` mirrors the save handler's own gate (administrators
+		 * only, UiChemy_Composer_Manager::can_edit_site_code()), so the panel can say "view only"
 		 * instead of reporting a save the server is about to refuse.
 		 *
 		 * @param int $post_id Post being edited.
@@ -299,7 +299,7 @@ if ( ! class_exists( 'Uich_CB_Enqueue' ) ) {
 					'siteCode'        => UiChemy_Composer_Manager::get_site_custom_code_option(),
 					'ajaxUrl'         => admin_url( 'admin-ajax.php' ),
 					'ajaxNonce'       => wp_create_nonce( UiChemy_Composer_Manager::EDITOR_AJAX_NONCE_ACTION ),
-					'canEditSiteCode' => current_user_can( 'unfiltered_html' ),
+					'canEditSiteCode' => UiChemy_Composer_Manager::can_edit_site_code(),
 					'postId'          => (int) $post_id,
 					'builder'         => 'uichemy',
 					'gsapTimeline'    => $gsap_timeline,

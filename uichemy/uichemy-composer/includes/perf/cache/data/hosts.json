@@ -1,0 +1,513 @@
+{
+  "version": 1,
+  "source": "docs/page-cache research HOSTS.md, 2026-10-03. Only grade A signals switch mode automatically; B and C give a suggestion.",
+  "hosts": [
+    {
+      "id": "kinsta",
+      "name": "Kinsta",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "ttl": "24 hours",
+      "signals": [
+        {
+          "type": "header",
+          "name": "ki-cache-type",
+          "grade": "A"
+        },
+        {
+          "type": "header",
+          "name": "ki-cf-cache-status",
+          "grade": "A"
+        },
+        {
+          "type": "header",
+          "name": "x-kinsta-cache",
+          "grade": "B"
+        },
+        {
+          "type": "constant",
+          "name": "KINSTAMU_VERSION",
+          "grade": "B"
+        }
+      ],
+      "hit_headers": {
+        "x-kinsta-cache": "hit",
+        "ki-cf-cache-status": "hit"
+      },
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/kinsta",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "wpengine",
+      "name": "WP Engine",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "ttl": "10 minutes",
+      "signals": [
+        {
+          "type": "header",
+          "name": "x-cache-group",
+          "grade": "A"
+        },
+        {
+          "type": "header",
+          "name": "x-pass-why",
+          "grade": "A"
+        },
+        {
+          "type": "class",
+          "name": "WpeCommon",
+          "grade": "A"
+        }
+      ],
+      "hit_headers": {
+        "x-cache": "hit"
+      },
+      "purge": {
+        "method": "static_call",
+        "class": "WpeCommon",
+        "function": "purge_varnish_cache",
+        "grade": "A"
+      },
+      "docs": "host/wpengine",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "siteground",
+      "name": "SiteGround",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "ttl": "12 hours",
+      "signals": [
+        {
+          "type": "header",
+          "name": "x-proxy-cache",
+          "grade": "A"
+        }
+      ],
+      "hit_headers": {
+        "x-proxy-cache": "hit"
+      },
+      "purge": {
+        "method": "function",
+        "function": "sg_cachepress_purge_cache",
+        "note": "SiteGround Optimizer's own purge (verify on a SiteGround site).",
+        "requires": "the SiteGround Optimizer plugin is active"
+      },
+      "docs": "host/siteground",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "cloudways",
+      "name": "Cloudways",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "ttl": "4 hours",
+      "signals": [
+        {
+          "type": "header",
+          "name": "x-varnish",
+          "grade": "C"
+        }
+      ],
+      "hit_headers": {
+        "x-cache": "hit"
+      },
+      "purge": {
+        "method": "action",
+        "action": "breeze_clear_varnish",
+        "note": "Breeze's Varnish purge; only when Breeze is active (verify on Cloudways).",
+        "requires": "the Breeze plugin is active"
+      },
+      "docs": "host/cloudways",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "litespeed",
+      "name": "LiteSpeed",
+      "caches_pages": false,
+      "behaviour": "coexist",
+      "note": "Hostinger, A2 / hosting.com. The server caches pages only through the LiteSpeed Cache plugin; that plugin is detected separately.",
+      "signals": [
+        {
+          "type": "header",
+          "name": "x-litespeed-cache",
+          "grade": "C"
+        },
+        {
+          "type": "server_software",
+          "match": "litespeed",
+          "grade": "B"
+        }
+      ],
+      "hit_headers": {
+        "x-litespeed-cache": "hit"
+      },
+      "purge": {
+        "method": "header",
+        "header": "X-LiteSpeed-Purge",
+        "note": "LiteSpeed Web Server purges on this response header; needs no plugin (verify on LiteSpeed)."
+      },
+      "docs": "host/litespeed",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "bluehost",
+      "name": "Bluehost",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "signals": [
+        {
+          "type": "header",
+          "name": "x-endurance-cache-level",
+          "grade": "C"
+        }
+      ],
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/bluehost",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "godaddy",
+      "name": "GoDaddy Managed WordPress",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "signals": [],
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/godaddy",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "rocketnet",
+      "name": "Rocket.net",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "signals": [],
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/rocketnet",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "pressable",
+      "name": "Pressable",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "note": "WordPress.com may send the same x-ac header [C].",
+      "signals": [
+        {
+          "type": "header",
+          "name": "x-ac",
+          "grade": "A"
+        }
+      ],
+      "hit_headers": {
+        "x-ac": "hit"
+      },
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/pressable",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "wpcom",
+      "name": "WordPress.com",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "signals": [],
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/wpcom",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "flywheel",
+      "name": "Flywheel",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "signals": [],
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/flywheel",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "pantheon",
+      "name": "Pantheon",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "signals": [
+        {
+          "type": "header",
+          "name": "x-pantheon-styx-hostname",
+          "grade": "A"
+        }
+      ],
+      "hit_headers": {
+        "x-cache": "hit"
+      },
+      "purge": {
+        "method": "function",
+        "function": "pantheon_wp_clear_edge_all",
+        "note": "Pantheon MU plugin edge purge (verify on Pantheon).",
+        "requires": "Pantheon's platform plugin is active"
+      },
+      "docs": "host/pantheon",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "elementor_hosting",
+      "name": "Elementor Hosting",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "signals": [],
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/elementor-hosting",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "nexcess",
+      "name": "Nexcess",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "note": "Detected through its advanced-cache.php drop-in (foreign drop-in rule), not by header.",
+      "signals": [],
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/nexcess",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "dreamhost",
+      "name": "DreamHost",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "ttl": "1 hour",
+      "signals": [
+        {
+          "type": "header",
+          "name": "x-cache-status",
+          "grade": "A"
+        }
+      ],
+      "hit_headers": {
+        "x-cache-status": "hit"
+      },
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/dreamhost",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "inmotion",
+      "name": "InMotion",
+      "caches_pages": false,
+      "behaviour": "coexist",
+      "signals": [],
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/inmotion",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "vps",
+      "name": "Plain VPS",
+      "caches_pages": false,
+      "behaviour": "run",
+      "signals": [],
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/vps",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "spinupwp",
+      "name": "SpinupWP",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "signals": [
+        {
+          "type": "header",
+          "name": "fastcgi-cache",
+          "grade": "A"
+        }
+      ],
+      "hit_headers": {
+        "fastcgi-cache": "hit"
+      },
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/spinupwp",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "gridpane",
+      "name": "GridPane",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "signals": [
+        {
+          "type": "header",
+          "name": "x-grid-cache",
+          "grade": "B"
+        },
+        {
+          "type": "header",
+          "name": "x-grid-srcache-fetch",
+          "grade": "B"
+        }
+      ],
+      "hit_headers": {
+        "x-grid-cache": "hit",
+        "x-grid-srcache-fetch": "hit"
+      },
+      "purge": {
+        "method": "action",
+        "action": "rt_nginx_helper_purge_all",
+        "note": "nginx-helper purge; only when it is active (verify on GridPane).",
+        "requires": "the Nginx Helper plugin is active"
+      },
+      "docs": "host/gridpane",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "runcloud",
+      "name": "RunCloud",
+      "caches_pages": true,
+      "behaviour": "stand_down",
+      "signals": [],
+      "purge": {
+        "method": "action",
+        "action": "rt_nginx_helper_purge_all",
+        "note": "nginx-helper purge; only when it is active (verify on RunCloud).",
+        "requires": "the Nginx Helper plugin is active"
+      },
+      "docs": "host/runcloud",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "cloudflare",
+      "name": "Cloudflare",
+      "caches_pages": false,
+      "behaviour": "coexist",
+      "edge": true,
+      "note": "cf-cache-status proves Cloudflare is in front, not that it caches HTML.",
+      "signals": [
+        {
+          "type": "header",
+          "name": "cf-cache-status",
+          "grade": "A"
+        }
+      ],
+      "hit_headers": {
+        "cf-cache-status": "hit"
+      },
+      "purge": {
+        "method": "none"
+      },
+      "docs": "host/cloudflare",
+      "verified_on": "2026-10-03"
+    }
+  ],
+  "cache_plugins": [
+    {
+      "id": "litespeed-cache",
+      "name": "LiteSpeed Cache",
+      "slug": "litespeed-cache",
+      "needs_server": "litespeed"
+    },
+    {
+      "id": "wp-rocket",
+      "name": "WP Rocket",
+      "slug": "wp-rocket"
+    },
+    {
+      "id": "w3-total-cache",
+      "name": "W3 Total Cache",
+      "slug": "w3-total-cache"
+    },
+    {
+      "id": "wp-super-cache",
+      "name": "WP Super Cache",
+      "slug": "wp-super-cache"
+    },
+    {
+      "id": "wp-fastest-cache",
+      "name": "WP Fastest Cache",
+      "slug": "wp-fastest-cache"
+    },
+    {
+      "id": "breeze",
+      "name": "Breeze",
+      "slug": "breeze"
+    },
+    {
+      "id": "sg-cachepress",
+      "name": "SiteGround Speed Optimizer",
+      "slug": "sg-cachepress"
+    },
+    {
+      "id": "cache-enabler",
+      "name": "Cache Enabler",
+      "slug": "cache-enabler"
+    },
+    {
+      "id": "comet-cache",
+      "name": "Comet Cache",
+      "slug": "comet-cache"
+    },
+    {
+      "id": "hummingbird",
+      "name": "Hummingbird",
+      "slug": "hummingbird-performance"
+    },
+    {
+      "id": "wp-optimize",
+      "name": "WP-Optimize",
+      "slug": "wp-optimize"
+    },
+    {
+      "id": "nitropack",
+      "name": "NitroPack",
+      "slug": "nitropack"
+    },
+    {
+      "id": "flying-press",
+      "name": "FlyingPress",
+      "slug": "flying-press"
+    },
+    {
+      "id": "swift-performance",
+      "name": "Swift Performance",
+      "slug": "swift-performance-lite"
+    },
+    {
+      "id": "wp-compress",
+      "name": "WP Compress",
+      "slug": "wp-compress-image-optimizer"
+    },
+    {
+      "id": "speed-booster-pack",
+      "name": "Speed Booster Pack",
+      "slug": "speed-booster-pack"
+    }
+  ]
+}

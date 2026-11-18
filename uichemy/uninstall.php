@@ -153,5 +153,19 @@ delete_metadata( 'user', 0, 'uich_bf_banner_bfcm2026_dismissed', '', true );
 // The relay MCP session each user's sessionless client reuses (UiChemy_MCP_Server_V2::RELAY_SESSION_META).
 delete_metadata( 'user', 0, 'uichemy_mcp_relay_session', '', true );
 
+$uich_cache_dir = __DIR__ . '/uichemy-composer/includes/perf/cache/';
+if ( ! is_multisite() && file_exists( $uich_cache_dir . 'class-uichemy-cache-files.php' ) ) {
+	require_once $uich_cache_dir . 'advanced-cache.php';
+	require_once $uich_cache_dir . 'class-uichemy-cache-host.php';
+	require_once $uich_cache_dir . 'class-uichemy-cache-settings.php';
+	require_once $uich_cache_dir . 'class-uichemy-cache-files.php';
+	UiChemy_Cache_Files::teardown();
+	foreach ( array( 'uichemy_cache_settings', 'uichemy_cache_state', 'uichemy_cache_detect', 'uichemy_cache_last_test', 'uichemy_cache_diag', 'uichemy_cache_error', 'uichemy_cache_reapply', 'uichemy_cache_host_purge', 'uichemy_cache_cf', 'uichemy_cache_preload' ) as $uich_option ) {
+		delete_option( $uich_option );
+	}
+	delete_post_meta_by_key( '_uichemy_cache_disabled' );
+}
+unset( $uich_cache_dir, $uich_option );
+
 // Builder, SEO, chat and every `uichemy_*` option (this deletes the setting read above, so it runs last).
 require_once __DIR__ . '/uichemy-composer/uninstall.php';

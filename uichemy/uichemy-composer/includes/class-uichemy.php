@@ -223,6 +223,17 @@ class UiChemy {
 		require_once UICHEMY_PATH . 'includes/dynamic/dynamic-tags/class-uich-dynamic-tags.php';
 		require_once UICHEMY_PATH . 'includes/perf/class-uichemy-runwith.php';
 		require_once UICHEMY_PATH . 'includes/perf/class-uichemy-fast-load.php';
+		// Page cache: host detection, settings, drop-in lifecycle, clearing.
+		require_once UICHEMY_PATH . 'includes/perf/cache/advanced-cache.php';
+		require_once UICHEMY_PATH . 'includes/perf/cache/class-uichemy-cache-host.php';
+		require_once UICHEMY_PATH . 'includes/perf/cache/class-uichemy-cache-settings.php';
+		require_once UICHEMY_PATH . 'includes/perf/cache/class-uichemy-cache-files.php';
+		require_once UICHEMY_PATH . 'includes/perf/cache/class-uichemy-cache.php';
+		require_once UICHEMY_PATH . 'includes/perf/cache/class-uichemy-cache-ai.php';
+		require_once UICHEMY_PATH . 'includes/perf/cache/class-uichemy-cache-rules.php';
+		require_once UICHEMY_PATH . 'includes/perf/cache/class-uichemy-cache-clear.php';
+		require_once UICHEMY_PATH . 'includes/perf/cache/class-uichemy-cache-host-purge.php';
+		require_once UICHEMY_PATH . 'includes/perf/cache/class-uichemy-cache-ui.php';
 		require_once UICHEMY_PATH . 'includes/forms/class-uich-forms-db.php';
 		require_once UICHEMY_PATH . 'includes/forms/class-uich-forms.php';
 		// Serves form submissions to the React dashboard's "Form Submissions" screen.
@@ -231,6 +242,17 @@ class UiChemy {
 		Uich_Dynamic::init();
 		Uich_DD_Enqueue::init();
 		UiChemy_Fast_Load::init();
+		// Page cache. Right after an update the old drop-in's engine may be the
+		// one loaded; then only refresh it, and use the cache from the next request.
+		if ( UiChemy_Cache::engine_ok() ) {
+			UiChemy_Cache::init();
+			UiChemy_Cache_Rules::init();
+			UiChemy_Cache_Clear::init();
+			UiChemy_Cache_Host_Purge::init();
+			UiChemy_Cache_Ui::init();
+		} else {
+			UiChemy_Cache::init_outdated();
+		}
 		Uich_Forms_DB::maybe_upgrade();
 		Uich_Forms::init();
 		Uich_Forms_Dashboard::init();

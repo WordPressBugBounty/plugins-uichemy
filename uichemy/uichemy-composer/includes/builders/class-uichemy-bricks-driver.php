@@ -608,6 +608,7 @@ if ( ! class_exists( 'UiChemy_Bricks_Driver' ) ) {
 		 */
 		public function after_write( $post_id ) {
 			$post_id = absint( $post_id );
+			$this->written( $post_id );
 
 			if ( class_exists( '\Bricks\Assets_Files' ) && method_exists( '\Bricks\Assets_Files', 'generate_post_css_file' ) ) {
 				try {

@@ -111,6 +111,12 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 			if ( class_exists( '\Uich_Composer_Migration' ) ) {
 				\Uich_Composer_Migration::schedule_on_activation();
 			}
+
+			// Page cache: deactivation removed its files; put them back on the next
+			// admin request if an administrator had turned the cache on.
+			if ( get_option( 'uichemy_cache_settings', false ) ) {
+				update_option( 'uichemy_cache_reapply', 1, false );
+			}
 		}
 
 		/**
@@ -126,6 +132,12 @@ if ( ! class_exists( 'Uich_Uichemy' ) ) {
 			// their rewrite rules now; otherwise their URLs fall through to the home page with a 200.
 			if ( class_exists( '\Uich_Fields_Register', false ) ) {
 				\Uich_Fields_Register::get_instance()->unregister_all();
+			}
+
+			// Page cache: remove our drop-in, our WP_CACHE line, the cache folder
+			// and cron events. Settings stay for when UiChemy is activated again.
+			if ( class_exists( '\UiChemy_Cache_Files' ) ) {
+				\UiChemy_Cache_Files::teardown();
 			}
 		}
 

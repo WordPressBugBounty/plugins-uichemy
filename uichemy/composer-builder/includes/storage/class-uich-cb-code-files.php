@@ -14,8 +14,8 @@
  * or a file — the Code tab edits what exists.
  *
  * Files are site-level, not the page's: one stylesheet can serve many pages. So
- * writing one needs the same right the site-wide code does (`unfiltered_html`),
- * not only the right to edit this page.
+ * writing one needs the same right the site-wide code does (an administrator,
+ * see can_write()), not only the right to edit this page.
  *
  * @package Uichemy
  * @subpackage Uichemy/composer-builder
@@ -138,7 +138,14 @@ if ( ! class_exists( 'Uich_CB_Code_Files' ) ) {
 		 * @return bool
 		 */
 		public static function can_write() {
-			return current_user_can( 'unfiltered_html' );
+			// These files are loaded site-wide (head/footer code and templates point at
+			// them), so changing one is changing site-wide code: administrators only,
+			// the same gate as the site-wide code itself. `unfiltered_html` alone is held
+			// by Editors on a single-site install.
+			if ( method_exists( 'UiChemy_Composer_Manager', 'can_edit_site_code' ) ) {
+				return UiChemy_Composer_Manager::can_edit_site_code();
+			}
+			return current_user_can( 'manage_options' ) && current_user_can( 'unfiltered_html' );
 		}
 
 		/**

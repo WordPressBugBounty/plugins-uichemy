@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: UiChemy - Convert Figma, Prompts and AI Builds to Elementor, Gutenberg and Bricks 5.6.1\n"
+"Project-Id-Version: UiChemy - Convert Figma, Prompts and AI Builds to Elementor, Gutenberg and Bricks 5.7.0\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/uichemy\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-17T07:03:49+00:00\n"
+"POT-Creation-Date: 2026-11-18T12:56:25+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: uichemy\n"
@@ -321,7 +321,7 @@ msgstr ""
 #: new-dashboard/build/index.js:54
 #: new-dashboard/src/uichemy-composer/admin/components.jsx:51
 #: new-dashboard/src/uichemy-composer/admin/screens/FontsSettings.jsx:354
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:232
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:246
 #: new-dashboard/src/uichemy-composer/admin/screens/RoleManager.jsx:317
 #: new-dashboard/src/uichemy-composer/admin/screens/settings-layout.jsx:88
 #: new-dashboard/src/uichemy-composer/admin/screens/settings-mcp.jsx:296
@@ -400,7 +400,7 @@ msgid "Header with menu"
 msgstr ""
 
 #: composer-builder/includes/library/class-uich-cb-library.php:62
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:796
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:797
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:336
 #: composer-builder/build/915.cf34b45d.js:1
 #: composer-builder/build/editor.js:8
@@ -561,7 +561,7 @@ msgid "Footer with links"
 msgstr ""
 
 #: composer-builder/includes/library/class-uich-cb-library.php:3133
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:798
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:799
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:337
 #: composer-builder/build/250.81b7974b.js:1
 #: composer-builder/build/915.cf34b45d.js:1
@@ -812,7 +812,7 @@ msgstr ""
 msgid "%s (copy)"
 msgstr ""
 
-#: composer-builder/includes/rest/class-uich-cb-rest-code-files.php:91
+#: composer-builder/includes/rest/class-uich-cb-rest-code-files.php:92
 msgid "Only an administrator can change the site's code files."
 msgstr ""
 
@@ -885,7 +885,7 @@ msgid "You are not allowed to edit this document."
 msgstr ""
 
 #: composer-builder/includes/rest/class-uich-cb-rest-page.php:652
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:814
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:815
 #: composer-builder/build/editor.js:38
 #: composer-builder/src/editor/shell/sidebar/Sidebar.jsx:491
 #: composer-builder/src/editor/shell/topbar/page-templates.js:27
@@ -913,23 +913,23 @@ msgstr ""
 msgid "You are not allowed to edit content."
 msgstr ""
 
-#: composer-builder/includes/storage/class-uich-cb-code-files.php:247
+#: composer-builder/includes/storage/class-uich-cb-code-files.php:254
 msgid "That is not a .css or .js file in the code folder."
 msgstr ""
 
-#: composer-builder/includes/storage/class-uich-cb-code-files.php:252
+#: composer-builder/includes/storage/class-uich-cb-code-files.php:259
 msgid "That file does not exist in the code folder."
 msgstr ""
 
-#: composer-builder/includes/storage/class-uich-cb-code-files.php:257
+#: composer-builder/includes/storage/class-uich-cb-code-files.php:264
 msgid "The file is too large to save from the editor."
 msgstr ""
 
-#: composer-builder/includes/storage/class-uich-cb-code-files.php:264
+#: composer-builder/includes/storage/class-uich-cb-code-files.php:271
 msgid "This file changed since it was opened. Reopen it to get the current version."
 msgstr ""
 
-#: composer-builder/includes/storage/class-uich-cb-code-files.php:270
+#: composer-builder/includes/storage/class-uich-cb-code-files.php:277
 msgid "The file could not be written."
 msgstr ""
 
@@ -1101,7 +1101,7 @@ msgstr ""
 #: uichemy-composer/includes/admin/class-uichemy-admin-menu.php:119
 #: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:120
 #: uichemy-composer/includes/blocks/class-uichemy-gutenberg-composer.php:100
-#: uichemy-composer/includes/mcp/v2/class-uichemy-abilities.php:1529
+#: uichemy-composer/includes/mcp/v2/class-uichemy-abilities.php:1584
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:146
 msgid "UiChemy"
 msgstr ""
@@ -2363,7 +2363,7 @@ msgstr ""
 
 #: includes/fields/content-types/class-uich-fields-field-groups-render.php:3252
 #: includes/fields/content-types/class-uich-fields-field-groups-render.php:3259
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:472
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:473
 #: composer-builder/build/editor.js:27
 #: composer-builder/build/editor.js:28
 #: composer-builder/build/editor.js:34
@@ -4138,6 +4138,9 @@ msgid "Request Feature"
 msgstr ""
 
 #: includes/smtp/class-uich-smtp.php:181
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:78
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:79
 msgid "another plugin"
 msgstr ""
 
@@ -4641,7 +4644,7 @@ msgid "Animation %d"
 msgstr ""
 
 #: includes/webpage/class-uich-webpage-import.php:11648
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:507
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:508
 #: composer-builder/build/944.370fced8.js:1
 #: composer-builder/build/editor.js:64
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:54
@@ -4862,30 +4865,30 @@ msgstr ""
 msgid "This is a UiChemy Pro feature."
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:400
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:401
 msgid "AI Data Sending"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:401
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:402
 msgid "Add class, then press Enter"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:402
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:403
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:70
 msgid "Align Items"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:403
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:404
 msgid "Applied Classes"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:404
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:405
 msgid "Attach image"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:405
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:406
 #: composer-builder/build/editor.js:60
 #: composer-builder/build/editor.js:61
 #: composer-builder/build/editor.js:64
@@ -4902,27 +4905,27 @@ msgstr ""
 msgid "Background"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:406
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:407
 msgid "Background Color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:407
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:408
 msgid "Before </body> on the entire site"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:408
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:409
 msgid "Before </body> on this page only"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:409
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:410
 msgid "Before </head> on the entire site"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:410
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:411
 msgid "Before </head> on this page only"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:411
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:412
 #: composer-builder/build/editor.js:64
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:58
 #: new-dashboard/build/composer.js:29
@@ -4931,23 +4934,23 @@ msgstr ""
 msgid "Border"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:412
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:413
 msgid "Border Color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:413
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:414
 msgid "Border Radius"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:414
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:415
 msgid "Border Type"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:415
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:416
 msgid "Border Width"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:416
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:417
 #: composer-builder/build/editor.js:34
 #: composer-builder/src/editor/shell/inspector/panel/Field.jsx:341
 #: new-dashboard/build/composer.js:14
@@ -4956,18 +4959,18 @@ msgstr ""
 msgid "Bottom"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:417
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:418
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:38
 msgid "Box Sizing"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:418
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:419
 msgid "Change Image"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:419
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:420
 #: uichemy-composer/includes/admin/widgets/class-uichemy-composer-widget.php:762
 #: composer-builder/build/editor.js:34
 #: composer-builder/build/editor.js:66
@@ -4980,27 +4983,27 @@ msgstr ""
 msgid "Chat"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:420
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:421
 msgid "Choose global background color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:421
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:422
 msgid "Choose global color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:422
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:423
 msgid "Choose global text color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:423
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:424
 msgid "Classes on this element"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:424
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:425
 msgid "Clear element selection"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:425
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:426
 #: composer-builder/build/editor.js:27
 #: composer-builder/build/editor.js:61
 #: composer-builder/build/editor.js:66
@@ -5014,18 +5017,18 @@ msgstr ""
 msgid "Code"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:426
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:427
 msgid "Code groups"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:427
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:428
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:73
 msgid "Column Gap"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:428
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:429
 #: composer-builder/build/245.f8bd32cd.js:1
 #: composer-builder/build/250.81b7974b.js:1
 #: composer-builder/build/523.56ca15df.js:2
@@ -5062,19 +5065,19 @@ msgstr ""
 msgid "Copy"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:429
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:430
 msgid "Custom Attributes"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:430
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:431
 msgid "Dashed"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:431
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:432
 msgid "Direct Editor"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:432
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:433
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/857.d17c940b.js:29
 #: new-dashboard/build/composer.js:14
@@ -5083,73 +5086,73 @@ msgstr ""
 msgid "Display"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:433
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:434
 msgid "Example: data-id|123 || aria-label|Read more"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:434
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:435
 msgid "Dotted"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:435
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:436
 msgid "Double"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:436
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:437
 msgid "Elementor Globals Editor"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:437
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:438
 msgid "Elementor globals snapshot"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:438
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:439
 msgid "Entire Site"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:439
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:440
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:67
 msgid "Flex Direction"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:440
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:441
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:68
 msgid "Flex Wrap"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:441
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:442
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:7
 msgid "Font Family"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:442
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:443
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:13
 msgid "Font Size"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:443
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:444
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:20
 msgid "Font Style"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:444
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:445
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:14
 msgid "Font Weight"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:445
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:446
 #: composer-builder/build/250.81b7974b.js:1
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/715.0f6df232.js:2
@@ -5168,11 +5171,11 @@ msgstr ""
 msgid "Format"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:446
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:447
 msgid "Gap"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:447
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:448
 #: composer-builder/build/250.81b7974b.js:1
 #: composer-builder/build/523.56ca15df.js:5
 #: composer-builder/build/944.370fced8.js:1
@@ -5195,33 +5198,33 @@ msgstr ""
 msgid "Globals"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:448
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:449
 msgid "Grid Column"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:449
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:450
 msgid "Grid Row"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:450
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:451
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:80
 msgid "Grid Template Columns"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:451
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:452
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:81
 msgid "Grid Template Rows"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:452
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:453
 msgid "Groove"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:453
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:454
 #: composer-builder/build/editor.js:34
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:14
@@ -5235,11 +5238,11 @@ msgstr ""
 msgid "Height"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:454
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:455
 msgid "Hover Off"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:455
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:456
 #: composer-builder/build/editor.js:8
 #: composer-builder/build/editor.js:15
 #: composer-builder/build/editor.js:34
@@ -5278,22 +5281,22 @@ msgstr ""
 msgid "Image"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:456
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:457
 msgid "Image URL"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:457
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:458
 msgid "Inspect Element"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:458
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:459
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:69
 msgid "Justify Content"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:459
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:460
 #: composer-builder/build/226.ece72db7.js:2
 #: composer-builder/build/editor.js:8
 #: composer-builder/build/editor.js:50
@@ -5312,7 +5315,7 @@ msgstr ""
 msgid "Layers"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:460
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:461
 #: composer-builder/build/editor.js:15
 #: composer-builder/build/editor.js:17
 #: composer-builder/build/editor.js:62
@@ -5331,7 +5334,7 @@ msgstr ""
 msgid "Layout"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:461
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:462
 #: composer-builder/build/editor.js:34
 #: composer-builder/src/editor/shell/inspector/panel/Field.jsx:341
 #: new-dashboard/build/857.d17c940b.js:29
@@ -5342,21 +5345,21 @@ msgstr ""
 msgid "Left"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:462
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:463
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:16
 msgid "Letter Spacing"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:463
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:464
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:15
 msgid "Line Height"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:464
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:465
 #: composer-builder/build/editor.js:61
 #: composer-builder/src/editor/shell/inspector/panel/ContentPanel.jsx:144
 #: new-dashboard/build/857.d17c940b.js:29
@@ -5366,11 +5369,11 @@ msgstr ""
 msgid "Link URL"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:465
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:466
 msgid "Link values together"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:466
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:467
 #: composer-builder/build/editor.js:34
 #: composer-builder/build/editor.js:64
 #: new-dashboard/build/composer.js:14
@@ -5381,23 +5384,23 @@ msgstr ""
 msgid "Margin"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:467
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:468
 msgid "Max Height"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:468
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:469
 msgid "Max Width"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:469
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:470
 msgid "Min Height"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:470
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:471
 msgid "Min Width"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:471
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:472
 #: composer-builder/build/editor.js:72
 #: new-dashboard/build/857.d17c940b.js:29
 #: new-dashboard/build/fields-editor.js:3
@@ -5407,7 +5410,7 @@ msgstr ""
 msgid "No image selected"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:473
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:474
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:26
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1975
@@ -5415,14 +5418,14 @@ msgstr ""
 msgid "Open in new tab"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:474
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:475
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:56
 msgid "Overflow"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:475
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:476
 #: composer-builder/build/944.370fced8.js:1
 #: composer-builder/build/editor.js:34
 #: composer-builder/build/editor.js:61
@@ -5443,7 +5446,7 @@ msgstr ""
 msgid "Padding"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:476
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:477
 #: uichemy-composer/includes/forms/class-uich-forms-admin.php:49
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:228
 #: composer-builder/build/226.ece72db7.js:2
@@ -5469,19 +5472,19 @@ msgstr ""
 msgid "Page"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:477
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:478
 msgid "Pick an element from the left list to edit its text and link settings."
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:478
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:479
 msgid "Pick element"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:479
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:480
 msgid "Pick element for AI targeting"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:480
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:481
 #: composer-builder/build/editor.js:28
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/857.d17c940b.js:29
@@ -5496,35 +5499,35 @@ msgstr ""
 msgid "Position"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:481
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:482
 msgid "Read-only · synced with Elementor Site Settings"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:482
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:483
 msgid "Remove global background color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:483
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:484
 msgid "Remove global text color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:484
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:485
 msgid "Remove inline background color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:485
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:486
 msgid "Remove inline color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:486
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:487
 msgid "Remove inline text color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:487
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:488
 msgid "Reset Style"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:488
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:489
 #: composer-builder/build/editor.js:34
 #: composer-builder/src/editor/shell/inspector/panel/Field.jsx:341
 #: new-dashboard/build/composer.js:14
@@ -5533,54 +5536,54 @@ msgstr ""
 msgid "Right"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:489
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:490
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:72
 msgid "Row Gap"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:490
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:491
 msgid "SVG Code"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:491
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:492
 msgid "UiChemy Composer tabs"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:492
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:493
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:26
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:1800
 msgid "SVG URL"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:493
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:494
 msgid "SVG mode"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:494
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:495
 msgid "Select an element first"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:495
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:496
 msgid "Selected image preview"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:496
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:497
 #: new-dashboard/build/index.js:44
 #: new-dashboard/src/uichemy-composer/admin/screens/settings-smtp.jsx:383
 msgid "Send"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:497
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:498
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:26
 #: new-dashboard/src/uichemy-composer/composer-inspector.jsx:96
 msgid "Solid"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:498
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:499
 #: composer-builder/build/editor.js:61
 #: composer-builder/build/editor.js:64
 #: composer-builder/src/editor/shell/inspector/panel/InspectorPanel.jsx:56
@@ -5592,11 +5595,11 @@ msgstr ""
 msgid "Spacing"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:499
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:500
 msgid "Target"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:500
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:501
 #: uichemy-composer/includes/admin/widgets/class-uichemy-composer-widget.php:117
 #: uichemy-composer/includes/admin/widgets/class-uichemy-composer-widget.php:264
 #: composer-builder/build/editor.js:8
@@ -5625,32 +5628,32 @@ msgstr ""
 msgid "Text"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:501
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:502
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:18
 msgid "Text Align"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:502
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:503
 msgid "Text Color"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:503
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:504
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:22
 msgid "Text Decoration"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:504
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:505
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:21
 msgid "Text Transform"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:505
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:506
 #: composer-builder/build/editor.js:34
 #: composer-builder/src/editor/shell/inspector/panel/Field.jsx:341
 #: new-dashboard/build/857.d17c940b.js:29
@@ -5661,19 +5664,19 @@ msgstr ""
 msgid "Top"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:506
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:507
 msgid "Type a prompt..."
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:508
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:509
 msgid "Composer tabs"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:509
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:510
 msgid "Unselect class"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:510
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:511
 #: composer-builder/build/editor.js:34
 #: composer-builder/build/editor.js:61
 #: new-dashboard/build/composer.js:14
@@ -5692,28 +5695,28 @@ msgstr ""
 msgid "Width"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:511
+#: uichemy-composer/includes/admin/class-uichemy-composer-enqueue.php:512
 #: composer-builder/build/editor.js:34
 #: new-dashboard/build/composer.js:14
 #: new-dashboard/src/uichemy-composer/composer-schema.jsx:55
 msgid "Z-Index"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:5995
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:6021
 msgid "Nothing to show yet."
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10015
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10028
 msgid "This is a sample post created by UiChemy to preview the single post template."
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10537
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10550
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:970
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:1068
 msgid "Edit Header"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10538
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10551
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:970
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:1068
 msgid "Edit Footer"
@@ -6432,7 +6435,7 @@ msgstr ""
 msgid "Composer: alt / title / placeholder"
 msgstr ""
 
-#: uichemy-composer/includes/mcp/v2/class-uichemy-abilities.php:1530
+#: uichemy-composer/includes/mcp/v2/class-uichemy-abilities.php:1585
 msgid "UiChemy pipeline: Figma-to-HTML conversion, design-system globals, and full WordPress site building. Call uichemy-composer/instructions first for the build order."
 msgstr ""
 
@@ -6446,6 +6449,91 @@ msgstr ""
 
 #: uichemy-composer/includes/model/class-uich-model-provider.php:314
 msgid "A field's key is its identity in the owning plugin's own storage and is never changed."
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:263
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:101
+msgid "Cache"
+msgstr ""
+
+#. translators: %s: host name
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:271
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:423
+#, php-format
+msgid "Cached by %s"
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:272
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:436
+msgid "Cached"
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:272
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:429
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:433
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:442
+msgid "Not cached yet"
+msgstr ""
+
+#. translators: %s: page cache status, e.g. "Cached"
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:278
+#, php-format
+msgid "This page: %s"
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:285
+msgid "Clear this page"
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:294
+msgid "Clear all cache"
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:302
+msgid "Cache settings"
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:331
+msgid "Sorry, you are not allowed to do that."
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:397
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:481
+#: new-dashboard/build/index.js:11
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/dashboard/tabs.js:96
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:189
+msgid "Performance"
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:408
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:488
+msgid "Don't cache this page"
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:409
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:492
+msgid "Turn on if this page shows different content to each visitor."
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:410
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:499
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:507
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:614
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:102
+msgid "Page cache"
+msgstr ""
+
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:426
+msgid "Page cache is off"
+msgstr ""
+
+#. translators: %s: reason, e.g. "it contains a booking form"
+#: uichemy-composer/includes/perf/cache/class-uichemy-cache-ui.php:440
+#, php-format
+msgid "Not cached: %s"
 msgstr ""
 
 #: uichemy-composer/includes/perf/class-uichemy-fast-load.php:102
@@ -6464,7 +6552,7 @@ msgstr ""
 #: composer-builder/build/editor.js:60
 #: new-dashboard/build/composer.js:25
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:94
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:99
 #: new-dashboard/src/uichemy-composer/composer-assets.jsx:171
 msgid "Images"
 msgstr ""
@@ -6557,7 +6645,7 @@ msgstr ""
 #: composer-builder/build/944.370fced8.js:1
 #: new-dashboard/build/944.819b7476.js:1
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:93
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:98
 #: new-dashboard/src/uichemy-composer/composer-theme-style.js:52
 msgid "Fonts"
 msgstr ""
@@ -6695,7 +6783,7 @@ msgstr ""
 
 #: uichemy-composer/includes/perf/class-uichemy-fast-load.php:682
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:183
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:195
 msgid "Performance Optimization"
 msgstr ""
 
@@ -8081,7 +8169,7 @@ msgid "Single"
 msgstr ""
 
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:216
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:802
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:803
 #: composer-builder/build/915.cf34b45d.js:1
 #: composer-builder/build/editor.js:38
 #: composer-builder/src/editor/shell/topbar/page-templates.js:17
@@ -8110,7 +8198,7 @@ msgid "Order Received"
 msgstr ""
 
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:224
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:810
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:811
 #: composer-builder/build/915.cf34b45d.js:1
 #: composer-builder/build/editor.js:38
 #: composer-builder/src/editor/shell/topbar/page-templates.js:21
@@ -8169,11 +8257,11 @@ msgstr ""
 msgid "The template could not be saved as a Composer Builder document."
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:800
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:801
 msgid "Single Post or Page"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:804
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:805
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:398
 #: composer-builder/build/915.cf34b45d.js:1
 #: new-dashboard/build/index.js:24
@@ -8183,7 +8271,7 @@ msgstr ""
 msgid "Single Product"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:806
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:807
 #: composer-builder/build/915.cf34b45d.js:1
 #: new-dashboard/build/index.js:24
 #: new-dashboard/build/index.js:36
@@ -8192,12 +8280,12 @@ msgstr ""
 msgid "Products Archive"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:808
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:809
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:400
 msgid "Order Received / Thank You"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:812
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:813
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:402
 #: composer-builder/build/915.cf34b45d.js:1
 #: composer-builder/build/editor.js:26
@@ -9051,6 +9139,7 @@ msgstr ""
 #: new-dashboard/build/index.js:11
 #: new-dashboard/build/index.js:13
 #: new-dashboard/build/index.js:43
+#: new-dashboard/build/index.js:52
 #: new-dashboard/build/index.js:56
 #: new-dashboard/build/seo-editor.js:4
 #: new-dashboard/src/components/MCPConfigTabs.jsx:297
@@ -9063,6 +9152,7 @@ msgstr ""
 #: new-dashboard/src/screens/wizard/ConnectScreen.jsx:53
 #: new-dashboard/src/seo/panel/SeoPanel.jsx:1036
 #: new-dashboard/src/seo/ui.jsx:361
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:606
 #: new-dashboard/src/uichemy-composer/admin/screens/settings-smtp.jsx:330
 #: new-dashboard/src/uichemy-composer/composer-code.jsx:326
 #: new-dashboard/src/uichemy-composer/composer-globals-workspace.jsx:478
@@ -9740,6 +9830,10 @@ msgstr ""
 #: new-dashboard/build/composer.js:5
 #: new-dashboard/build/fields-editor.js:1
 #: new-dashboard/build/index.js:5
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:355
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:722
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:741
 #: new-dashboard/src/uichemy-composer/composer-deps.jsx:387
 #: new-dashboard/src/uichemy-composer/composer-deps.jsx:388
 #, js-format
@@ -10059,8 +10153,10 @@ msgstr ""
 #: new-dashboard/build/857.d17c940b.js:24
 #: new-dashboard/build/composer.js:16
 #: new-dashboard/build/composer.js:32
+#: new-dashboard/build/index.js:52
 #: new-dashboard/build/index.js:56
 #: new-dashboard/src/seo/screens.jsx:743
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:66
 #: new-dashboard/src/uichemy-composer/composer-motion-timeline-panel.jsx:1074
 #: new-dashboard/src/uichemy-composer/composer-motion.jsx:121
 #: new-dashboard/src/uichemy-fields/components/CptForm.jsx:341
@@ -10074,9 +10170,11 @@ msgstr ""
 #: new-dashboard/build/composer.js:16
 #: new-dashboard/build/composer.js:32
 #: new-dashboard/build/index.js:47
+#: new-dashboard/build/index.js:52
 #: new-dashboard/build/seo-editor.js:4
 #: new-dashboard/src/seo/panel/SeoPanel.jsx:653
 #: new-dashboard/src/uichemy-composer/admin/screens/FontsSettings.jsx:70
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:93
 #: new-dashboard/src/uichemy-composer/composer-motion-timeline-panel.jsx:1074
 #: new-dashboard/src/uichemy-composer/composer-motion.jsx:121
 msgid "Off"
@@ -13165,12 +13263,14 @@ msgstr ""
 
 #: composer-builder/build/editor.js:11
 #: composer-builder/build/editor.js:12
+#: new-dashboard/build/index.js:52
 #: new-dashboard/build/index.js:56
 #: new-dashboard/build/seo-editor.js:3
 #: new-dashboard/build/seo-editor.js:4
 #: new-dashboard/src/seo/panel/SeoPanel.jsx:139
 #: new-dashboard/src/seo/panel/SeoPanel.jsx:568
 #: new-dashboard/src/seo/SeoScreen.jsx:710
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:101
 msgid "Automatic"
 msgstr ""
 
@@ -13807,7 +13907,7 @@ msgstr ""
 #: new-dashboard/src/seo/panel/SeoPanel.jsx:827
 #: new-dashboard/src/seo/screens.jsx:614
 #: new-dashboard/src/seo/ui.jsx:184
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:232
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:246
 #: new-dashboard/src/uichemy-composer/admin/screens/RoleManager.jsx:317
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:399
 #: new-dashboard/src/uichemy-composer/composer-toolbar.jsx:166
@@ -17075,6 +17175,7 @@ msgstr ""
 #: new-dashboard/build/index.js:56
 #: new-dashboard/src/seo/ui.jsx:386
 #: new-dashboard/src/uichemy-composer/admin/screens/ImageBulkOptimizeDialog.jsx:386
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:508
 #: new-dashboard/src/uichemy-composer/admin/screens/settings-smtp.jsx:168
 #: new-dashboard/src/uichemy-composer/composer-variables.jsx:1291
 #: new-dashboard/src/uichemy-fields-editor/fields.jsx:686
@@ -18296,6 +18397,8 @@ msgstr ""
 
 #: composer-builder/build/editor.js:38
 #: composer-builder/src/editor/shell/history/revisions-client.js:136
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:38
 msgid "just now"
 msgstr ""
 
@@ -19797,7 +19900,7 @@ msgstr ""
 #: new-dashboard/build/index.js:54
 #: new-dashboard/build/index.js:56
 #: new-dashboard/src/seo/screens.jsx:471
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:231
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:245
 #: new-dashboard/src/uichemy-composer/admin/screens/RoleManager.jsx:314
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:398
 #: new-dashboard/src/uichemy-composer/composer-jsonld.jsx:281
@@ -23354,6 +23457,8 @@ msgstr ""
 #. translators: %d: number of minutes
 #: composer-builder/build/editor.js:97
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:42
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:39
 #, js-format
 msgid "%d min ago"
 msgstr ""
@@ -23361,6 +23466,8 @@ msgstr ""
 #. translators: %d: number of hours
 #: composer-builder/build/editor.js:98
 #: composer-builder/src/editor/shell/history/HistoryPanel.jsx:45
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:40
 #, js-format
 msgid "%d h ago"
 msgstr ""
@@ -24020,13 +24127,17 @@ msgstr ""
 
 #: composer-builder/src/editor/shell/agent/CliConnect.jsx:86
 #: new-dashboard/build/index.js:10
+#: new-dashboard/build/index.js:52
 #: new-dashboard/src/screens/dashboard/McpSetup.jsx:137
 #: new-dashboard/src/screens/dashboard/panels.jsx:207
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:439
 msgid "Connected"
 msgstr ""
 
 #: composer-builder/src/editor/shell/agent/CliConnect.jsx:86
 #: new-dashboard/build/index.js:14
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:470
 #: new-dashboard/src/uichemy-webpage/screens/LoginScreen.jsx:80
 msgid "Connecting…"
 msgstr ""
@@ -24034,11 +24145,13 @@ msgstr ""
 #: composer-builder/src/editor/shell/agent/CliConnect.jsx:86
 #: new-dashboard/build/index.js:10
 #: new-dashboard/build/index.js:44
+#: new-dashboard/build/index.js:52
 #: new-dashboard/build/index.js:56
 #: new-dashboard/build/index.js:58
 #: new-dashboard/src/App.jsx:842
 #: new-dashboard/src/components/WizardShell.jsx:8
 #: new-dashboard/src/screens/dashboard/SetupFlow.jsx:47
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:470
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:149
 msgid "Connect"
 msgstr ""
@@ -28609,6 +28722,8 @@ msgid "General"
 msgstr ""
 
 #: new-dashboard/build/857.d17c940b.js:29
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:704
 #: new-dashboard/src/uichemy-fields/components/GroupFieldsForm.jsx:1041
 msgid "Rules"
 msgstr ""
@@ -30358,6 +30473,15 @@ msgstr ""
 msgid "Add tag"
 msgstr ""
 
+#: new-dashboard/build/index.js:8
+msgid "Enter"
+msgstr ""
+
+#: new-dashboard/build/index.js:8
+#, js-format
+msgid "to add “%s”"
+msgstr ""
+
 #: new-dashboard/build/index.js:10
 #: new-dashboard/build/index.js:13
 #: new-dashboard/build/index.js:56
@@ -31294,14 +31418,6 @@ msgstr ""
 #: new-dashboard/src/dashboard/tabs.js:40
 #: new-dashboard/src/uichemy-composer/admin/screens/ThemeBuilderCanvas.jsx:194
 msgid "Manage"
-msgstr ""
-
-#: new-dashboard/build/index.js:11
-#: new-dashboard/build/index.js:52
-#: new-dashboard/src/dashboard/tabs.js:96
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:154
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:177
-msgid "Performance"
 msgstr ""
 
 #: new-dashboard/build/index.js:11
@@ -33177,7 +33293,7 @@ msgstr ""
 #: new-dashboard/build/index.js:52
 #: new-dashboard/build/index.js:54
 #: new-dashboard/src/uichemy-composer/admin/screens/FontsSettings.jsx:335
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:227
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:241
 #: new-dashboard/src/uichemy-composer/admin/screens/RoleManager.jsx:307
 #: new-dashboard/src/uichemy-composer/admin/screens/settings-mcp.jsx:253
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:394
@@ -33442,6 +33558,8 @@ msgid "Connected as %s"
 msgstr ""
 
 #: new-dashboard/build/index.js:44
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:440
 #: new-dashboard/src/uichemy-composer/admin/screens/settings-smtp.jsx:354
 #: new-dashboard/src/uichemy-webpage/index.jsx:101
 msgid "Disconnect"
@@ -33564,6 +33682,10 @@ msgid "Connect and sign in with the values above. Nothing is sent or saved"
 msgstr ""
 
 #: new-dashboard/build/index.js:44
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:390
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:626
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:652
 #: new-dashboard/src/uichemy-composer/admin/screens/settings-smtp.jsx:320
 msgid "Testing…"
 msgstr ""
@@ -33887,7 +34009,7 @@ msgstr ""
 
 #: new-dashboard/build/index.js:47
 #: new-dashboard/build/index.js:53
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:229
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:243
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:396
 #, js-format
 msgid "%d unsaved change"
@@ -33900,7 +34022,7 @@ msgstr[1] ""
 #: new-dashboard/build/index.js:56
 #: new-dashboard/src/seo/screens.jsx:92
 #: new-dashboard/src/seo/ui.jsx:152
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:235
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:249
 #: new-dashboard/src/uichemy-composer/admin/screens/Settings.jsx:402
 msgid "Settings saved"
 msgstr ""
@@ -34600,53 +34722,919 @@ msgid "Restore originals"
 msgstr ""
 
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:44
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:92
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:41
+#, js-format
+msgid "%d days ago"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:50
+msgid "Working. Your home page loaded in {cached_ms} ms from the cache, compared with {uncached_ms} ms without it."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:51
+msgid "Working. {host} served your home page from its cache."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:52
+msgid "Your home page wasn't cached: {reason_label}. {reason_fix}"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:53
+msgid "UiChemy couldn't visit your own site to run the test. This usually means a firewall or a password-protected staging site. The cache may still work; check it in a private browser window."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:54
+msgid "The test didn't finish. Try again, and if it fails twice, use Ask AI to check the details."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:108
+msgid "UiChemy caches pages itself, even if your host has a cache too."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:109
+msgid "UiChemy stays out of the way and only clears your host's cache when you save."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:111
+msgid "Detected {host}. UiChemy checks your hosting and picks the safe option."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:112
+msgid "UiChemy checks your hosting and picks the safe option."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:170
+msgid "Cache hits and misses per day"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:170
+msgid "Cache hits and misses per hour"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:196
+#, js-format
+msgid "%s hit"
+msgid_plural "%s hits"
+msgstr[0] ""
+msgstr[1] ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:197
+#, js-format
+msgid "%s miss"
+msgid_plural "%s misses"
+msgstr[0] ""
+msgstr[1] ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:207
+msgid "Hit: served from cache"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:208
+msgid "Miss: built fresh, then saved"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:212
+msgid "Period"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:212
+msgid "Hits"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:212
+msgid "Misses"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:257
+msgid "Usage"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:258
+msgid "How often visitors got a ready-made copy."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:262
+msgid "Chart range"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:265
+msgid "24 hours"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:265
+msgid "14 days"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:270
+msgid "Cache hit rate"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:272
+#, js-format
+msgid "%1$s hits and %2$s misses in the last 14 days"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:273
+msgid "No visits counted yet. Numbers appear as visitors arrive."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:279
+msgid "Saved pages"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:280
+#, js-format
+msgid "%1$s page, %2$s"
+msgid_plural "%1$s pages, %2$s"
+msgstr[0] ""
+msgstr[1] ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:284
+#, js-format
+msgid "%d%% of the limit"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:286
+msgid "Limit: {limit}"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:287
+msgid "Oldest pages are removed first"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:292
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:654
+msgid "Clearing…"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:292
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:654
+msgid "Clear cache"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:352
+msgid "No matching page. Paths start with /, like /members/*"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:353
+msgid "Search pages or type a path, like /members/*"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:354
+msgid "Pages and paths to never cache"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:378
+msgid "The check failed. Try again."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:382
+msgid "Cached. Visitors get the saved copy."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:383
+msgid "Not cached yet. It will be saved on the next visit."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:384
+msgid "Not cached: {reason_label}."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:389
+msgid "Page address"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:390
+msgid "Test"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:423
+msgid "This site runs behind Cloudflare. Connect it to clear Cloudflare's copy as well."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:424
+msgid "Clear Cloudflare's copy whenever UiChemy clears a page."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:426
+msgid "Cloudflare"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:435
+msgid "Connected to {zone}"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:431
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:436
+msgid "Pages UiChemy clears are cleared at Cloudflare too."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:437
+msgid "Token ending in {last4}"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:440
+#: new-dashboard/src/uichemy-webpage/index.jsx:101
+msgid "Disconnecting…"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:444
+msgid "API token"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:445
+msgid "Needs only the Zone → Cache Purge permission."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:466
+msgid "Paste your Cloudflare API token"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:467
+msgid "Cloudflare API token"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:469
+msgid "Opens Cloudflare in a new tab"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:469
+msgid "Create token"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:472
+msgid "Couldn't connect to Cloudflare"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:429
+msgid "Clear Cloudflare with UiChemy"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:501
+msgid "Couldn't load the page cache. Reload the page to try again."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:62
+msgid "Your host"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:67
+msgid "UiChemy is caching pages for logged-out visitors."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:71
+msgid "Handled by {host}"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:73
+msgid "{host} already caches your pages, so UiChemy's cache stays off to avoid conflicts. UiChemy clears the {host} cache when you save a page."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:74
+msgid "{host} already caches your pages, so UiChemy's cache stays off to avoid conflicts. {host} clears its own cache; UiChemy can't do it for you on this host."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:78
+msgid "Handled by {plugin}"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:79
+msgid "{plugin} is already caching your pages. To use UiChemy's cache instead, turn off page caching in {plugin} first."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:83
+msgid "Not available"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:84
+msgid "Page cache can't run on this site: {reason}"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:84
+msgid "this is a multisite network."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:84
+msgid "the cache folder isn't writable."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:88
+msgid "One step left"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:89
+msgid "UiChemy can't edit wp-config.php on this server. Add the line shown below to finish turning the cache on."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:94
+msgid "Pages are built fresh for every visitor."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:575
+msgid "Cache cleared, including the {host} cache."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:575
+msgid "Cache cleared. Pages rebuild as visitors arrive."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:576
+msgid "The cache couldn't be cleared because the cache folder isn't writable. Ask your host to make wp-content/uichemy writable by WordPress."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:588
+msgid "Not available on multisite"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:588
+msgid "UiChemy's page cache works on single WordPress sites only. Use your host's cache or a multisite-ready cache plugin."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:591
+msgid "Another cache plugin is active"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:592
+msgid "{plugin} is already set up to cache pages. Two page caches can show visitors old content, so UiChemy's cache stays off. To use UiChemy instead, deactivate {plugin} and then turn UiChemy's cache on."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:592
+msgid "Another plugin is already caching pages. Two page caches can show visitors old content, so UiChemy's cache stays off."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:596
+msgid "Page cache can't save files"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:597
+msgid "WordPress can't write to {folder}. Pages are still served normally, just without the cache. Ask your host to make this folder writable by WordPress."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:598
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:607
+msgid "Check again"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:602
+msgid "One manual step"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:603
+msgid "UiChemy can't edit wp-config.php on this server. Add this line above the line that says \"That's all, stop editing!\", then check again."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:606
+msgid "Copy the line"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:611
+msgid "That value wasn't saved"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:615
+msgid "Saves a ready-made copy of each page so visitors get it without waiting for WordPress."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:620
+msgid "Cache pages"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:621
+msgid "Turn it on and UiChemy checks your hosting, sets it up and tests your home page."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:626
+msgid "Turning off…"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:626
+msgid "Turning on…"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:634
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:636
+msgid "Who caches your pages"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:102
+msgid "UiChemy cache"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:103
+msgid "My host's cache"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:643
+msgid "Your host already caches pages"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:643
+msgid "Running two caches can show visitors old content. Keep this only if your host's support told you to."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:646
+msgid "Test and clear"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:646
+msgid "Test cache"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:648
+msgid "Last test {time_ago}: {result}"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:648
+msgid "not cached"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:648
+msgid "didn't finish"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:648
+msgid "working"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:649
+msgid "Loads your home page as a logged-out visitor, twice, and times it."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:652
+msgid "Run test"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:661
+msgid "The cache is full"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:662
+msgid "The cache reached its limit of {limit}. The oldest pages are being removed automatically. If this happens often, your site may have many pages with unusual addresses."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:666
+msgid "Clear the {host} cache yourself"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:668
+msgid "{host} caches your pages, but doesn't let plugins clear that cache. After big changes, clear it from your {host} dashboard. Small edits refresh on their own within {host_ttl}."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:669
+msgid "{host} caches your pages, but doesn't let plugins clear that cache. After big changes, clear it from your {host} dashboard."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:677
+msgid "Freshness"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:677
+msgid "Clearing only removes saved copies. Pages rebuild the next time someone visits."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:678
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:680
+msgid "Refresh pages every"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:678
+msgid "Forms use security tokens that WordPress expires after 12 to 24 hours, so 10 hours is the longest we allow."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:116
+msgid "2 hours"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:117
+msgid "6 hours"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:118
+msgid "10 hours (recommended)"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:687
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:689
+msgid "When content changes, clear"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:122
+msgid "The changed page and related pages"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:122
+msgid "A new post clears itself, the home page, its categories and the blog page. Recommended."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:123
+msgid "The whole cache"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:123
+msgid "Simplest. Use it if pages show content from many other pages."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:704
+msgid "Logged-in users, carts and the plugins listed below are already handled."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:706
+msgid "Never cache these pages"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:707
+msgid "Pick a page or type a path. A * at the end covers everything under it."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:711
+msgid "Skip visitors with these cookies"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:712
+msgid "Visitors carrying one of these cookies always get a fresh page."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:717
+msgid "Use letters, numbers, - and _ only"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:720
+msgid "Type a cookie name, like my_plugin_session"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:721
+msgid "Cookies that skip the cache"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:728
+msgid "Ignore tracking parameters"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:729
+msgid "Links with \"?utm_source=newsletter\" don't change the page, so they get the cached copy."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:363
+msgid "Campaign tags (Google Analytics)"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:736
+msgid "Use letters, numbers, - _ . and an optional * at the end"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:739
+msgid "Search or type a parameter, like fbclid or utm_*"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:740
+msgid "Parameters to ignore"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:748
+msgid "Restore defaults"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:754
+msgid "Some pages change on phones"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:755
+msgid "Your theme or a plugin shows different HTML on phones, so those pages aren't cached yet. Turn on the separate copy below to cache them."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:760
+msgid "Separate copy for mobile"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:761
+msgid "Turn this on only if your theme or another plugin shows different HTML on phones."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:767
+msgid "Test a page"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:768
+msgid "Is this page cached?"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:768
+msgid "Enter an address on your site to see whether visitors get the saved copy, and why not if they don't."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:771
+msgid "Preload"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:771
+msgid "UiChemy visits your pages itself, as a logged-out visitor, so real visitors find them already cached."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:774
+msgid "Preload pages"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:776
+msgid "Re-caches cleared and expiring pages in the background, so visitors always get a cached copy."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:777
+msgid "{done} of {total} pages rebuilt. Your site works normally while this runs."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:782
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:784
+msgid "Preload speed"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:782
+msgid "Faster finishes sooner, but puts more load on your server."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:127
+msgid "Gentle: 4 pages a minute"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:128
+msgid "Normal: 12 pages a minute (recommended)"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:129
+msgid "Fast: 30 pages a minute"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:796
+msgid "Plugins handled automatically"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:796
+msgid "UiChemy found these and applies safe rules for them. You don't need to do anything."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:135
+msgid "Cart, checkout and account pages are never cached. Visitors with items in their cart always get a fresh page. Product pages clear when stock or price changes."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:136
+msgid "Checkout and purchase confirmation pages are never cached. Visitors with items in their cart always get a fresh page."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:137
+msgid "Checkout, customer dashboard and account pages are never cached."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:138
+msgid "Pages with a booking form from {plugin} are never cached, so availability is always current."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:139
+msgid "Pages with a Gravity Forms form are never cached, as Gravity Forms recommends."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:140
+msgid "Pages with forms are cached and refreshed within 10 hours, so form security tokens stay valid."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:141
+msgid "Pages with a payment form are never cached."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:142
+msgid "Account, login, checkout and member-only pages from {plugin} are never cached."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:143
+msgid "Visitors arriving through an affiliate link always get a fresh page, so the referral is recorded."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:144
+msgid "Each language is cached separately using its own address. Pages that change language without changing the address aren't cached."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/PageCache.jsx:145
+msgid "No change needed. Consent banners work with cached pages."
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:96
+msgid "Optimise"
+msgstr ""
+
+#: new-dashboard/build/index.js:52
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:46
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:97
 msgid "Optimizations"
 msgstr ""
 
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:152
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:162
 msgid "Performance pages"
 msgstr ""
 
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:183
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:195
 msgid "Speeds up Composer pages for visitors. Logged-in admins see the normal page."
 msgstr ""
 
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:186
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:198
 msgid "Enable Performance Optimization"
 msgstr ""
 
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:187
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:199
 msgid "Turns every optimization below on or off."
 msgstr ""
 
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:49
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:51
 msgid "Elementor Optimisations"
 msgstr ""
 
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:50
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:52
 msgid "Only on pages built with Composer widgets alone."
 msgstr ""
 
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:54
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:56
 msgid "WooCommerce"
 msgstr ""
 
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:55
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:57
 msgid "Only on pages that show nothing from WooCommerce: never on shop, product, cart, checkout or account pages."
 msgstr ""
 
 #: new-dashboard/build/index.js:52
-#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:205
+#: new-dashboard/src/uichemy-composer/admin/screens/Performance.jsx:217
 msgid "Synced with Elementor:"
 msgstr ""
 
@@ -38327,10 +39315,6 @@ msgstr ""
 
 #: new-dashboard/src/uichemy-webpage/index.jsx:93
 msgid "Account connected"
-msgstr ""
-
-#: new-dashboard/src/uichemy-webpage/index.jsx:101
-msgid "Disconnecting…"
 msgstr ""
 
 #: uichemy-composer/assets/blocks/uichemy-composer/index.js:785

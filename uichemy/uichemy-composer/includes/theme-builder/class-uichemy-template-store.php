@@ -333,6 +333,7 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 				return false;
 			}
 			update_post_meta( $post_id, UiChemy_Template_CPT::META_CONDITIONS, self::sanitize_conditions( $conditions ) );
+			self::changed();
 			return true;
 		}
 
@@ -824,6 +825,21 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 			if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->files_manager ) ) {
 				\Elementor\Plugin::$instance->files_manager->clear_cache();
 			}
+			self::changed();
+		}
+
+		/**
+		 * Which template shows where just changed: every cached page may carry
+		 * the old header or footer, so the page cache clears everything.
+		 *
+		 * @return void
+		 */
+		private static function changed() {
+			/**
+			 * Fires after a Theme Builder template is created, activated,
+			 * deactivated, deleted or has its conditions changed.
+			 */
+			do_action( 'uichemy/theme_builder/changed' );
 		}
 	}
 }

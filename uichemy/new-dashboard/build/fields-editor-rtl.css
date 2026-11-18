@@ -4669,7 +4669,8 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
   gap: var(--uc-space-4);
   width: 100%;
   min-height: var(--uc-input-h, var(--uc-control-h-md));
-  padding: var(--uc-space-4) var(--uc-space-8);
+  /* Same inset on every side, and the same gap between pills, so pills sit evenly. */
+  padding: var(--uc-space-4);
   box-sizing: border-box;
   font-family: var(--uc-font-sans);
   --uich-ff: var(--uc-font-sans);
@@ -4684,7 +4685,7 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
 }
 .sG8i2AKt656r9kdIRhPR:hover:not(:focus-within) { box-shadow: inset 0 0 0 1px var(--uc-text-subtle), var(--uc-shadow-input); }
 .sG8i2AKt656r9kdIRhPR:has(.jPpldC2W869OWB3Qi7iE:focus-visible) { outline: 2px solid var(--uc-ring); outline-offset: -2px; }
-.kyzpjDxK04uEFH0OXFan { min-height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: var(--uc-space-3) var(--uc-space-6); }
+.kyzpjDxK04uEFH0OXFan { min-height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); padding: var(--uc-space-3); gap: var(--uc-space-3); }
 .DgKAk2c65Ltr3nMvn9_b { color: var(--uc-text-subtle); background: var(--uc-surface-sunken); box-shadow: inset 0 0 0 1px var(--uc-border); cursor: not-allowed; }
 
 .Vpha_gjWolO_6QIAxpA1 { flex: none; display: grid; place-items: center; margin-left: var(--uc-space-2); color: var(--uc-text-subtle); }
@@ -4708,6 +4709,9 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
   color: inherit;
 }
 .jPpldC2W869OWB3Qi7iE[class]:focus { box-shadow: none; outline: none; }
+/* With no pills yet, the text keeps the same indent as a plain Input. */
+.sG8i2AKt656r9kdIRhPR:not(:has(.hRxupUJSBLxIlTY07TF9)) .jPpldC2W869OWB3Qi7iE[class] { padding-right: var(--uc-space-6); }
+.kyzpjDxK04uEFH0OXFan:not(:has(.hRxupUJSBLxIlTY07TF9)) .jPpldC2W869OWB3Qi7iE[class] { padding-right: var(--uc-space-5, 5px); }
 .jPpldC2W869OWB3Qi7iE[class]::-moz-placeholder { color: var(--uc-text-subtle); }
 .jPpldC2W869OWB3Qi7iE[class]::placeholder { color: var(--uc-text-subtle); }
 .jPpldC2W869OWB3Qi7iE[class]:disabled { cursor: not-allowed; background: transparent; }
@@ -4729,6 +4733,64 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
 .DLdW_O2d4P1EMBWNaceT { display: flex; flex-wrap: wrap; align-items: center; gap: var(--uc-space-4); }
 .zaPIIqmmCwSjCoj9QksH { margin-left: var(--uc-space-2); font-size: var(--uc-text-xs); color: var(--uc-text-muted); }
 
+
+/* Dropdown mode (menu): an autocomplete list portalled and anchored under the
+   box (Radix Popover), styled like the Select menu (overlay surface, hairline, shadow-4, sm radius rows). */
+.VxXffboGrzT8vh5OAEZw {
+  box-sizing: border-box;
+  width: var(--radix-popover-trigger-width);
+  z-index: var(--uc-z-dropdown, 50);
+  padding: var(--uc-space-4);
+  /* Solid: --uc-surface-overlay is a translucent tint inside the admin island. */
+  background: var(--uc-surface-raised);
+  border: 1px solid var(--uc-border);
+  border-radius: var(--uc-radius-md);
+  box-shadow: var(--uc-shadow-4);
+  animation: RA3UcdBqw0Cjt5T3t6bn var(--uc-dur-enter, 160ms) var(--uc-ease-emphasized, ease-out);
+}
+.WJ7TcAtHR_496M3GymXZ { margin: 0; padding: 0; list-style: none; max-height: min(232px, calc(var(--radix-popover-content-available-height, 232px) - 48px)); overflow-y: auto; }
+.SaOAfKfYWlyEJr4KFwI9 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--uc-space-12);
+  min-height: var(--uc-control-h-md);
+  padding: var(--uc-space-4) var(--uc-space-10);
+  border-radius: var(--uc-radius-sm);
+  font-size: var(--uc-text-base);
+  color: var(--uc-text);
+  cursor: pointer;
+}
+.DxTZRkhH9O2bdPD_6E33 .SaOAfKfYWlyEJr4KFwI9 { min-height: var(--uc-control-h-sm); font-size: var(--uc-text-sm); }
+.SaOAfKfYWlyEJr4KFwI9[data-active] { background: var(--uc-surface-hover, var(--uc-surface-control)); color: var(--uc-text-strong); }
+.MwgBbIkSQhfkbAoADXIi { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.Zy3neg3qeOZsN1XtRAG7 { flex: none; max-width: 55%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--uc-text-xs); color: var(--uc-text-subtle); }
+
+/* The one-line "what Enter does" note: quiet, never a button. */
+.Ar107KAlnanJKaSumr3F {
+  display: flex;
+  align-items: center;
+  gap: var(--uc-space-6);
+  padding: var(--uc-space-6) var(--uc-space-10);
+  font-size: var(--uc-text-xs);
+  color: var(--uc-text-muted);
+}
+.WJ7TcAtHR_496M3GymXZ + .Ar107KAlnanJKaSumr3F { margin-top: var(--uc-space-4); border-top: 1px solid var(--uc-border-subtle); }
+.Ar107KAlnanJKaSumr3F > span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.kfDDYM2MLzD3jSHlR5HQ {
+  flex: none;
+  padding: 0 var(--uc-space-4);
+  border-radius: var(--uc-radius-xs, 4px);
+  box-shadow: inset 0 0 0 1px var(--uc-border-strong);
+  font-family: inherit;
+  --uich-ff: inherit;
+  font-size: var(--uc-text-2xs, 10px);
+  line-height: 16px;
+  color: var(--uc-text-muted);
+}
+
+@keyframes RA3UcdBqw0Cjt5T3t6bn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .VxXffboGrzT8vh5OAEZw { animation: none; } }
 
 /* System-colour focus remains visible when shadows and fills are suppressed. */
 @media (forced-colors: active) {

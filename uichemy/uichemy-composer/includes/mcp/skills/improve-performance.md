@@ -1,6 +1,6 @@
 # UiChemy Improve Performance
 
-Three parts: **A** operates the Performance settings through their tools, **B** keeps generated pages fast, **C** optimises images and Google Fonts (UiChemy Pro).
+Four parts: **A** operates the Performance settings through their tools, **B** keeps generated pages fast, **C** optimises images and Google Fonts (UiChemy Pro), **D** runs the page cache.
 
 ## A. Performance operations (tools only)
 
@@ -19,6 +19,7 @@ Route by intent:
 | Change where one section prints its CSS or JS | `set-post-sections-code-placement` (`post_id`, `section_index`, `type`: `css` or `js`, `placement`) |
 <!-- /mode -->
 | Optimise images, or change how Google Fonts load | Part **C** below (UiChemy Pro) |
+| Cache pages, check or clear the cache, see how it is doing | Part **D** below |
 
 Rules:
 - Call `list-performance-settings` to learn the setting names, their `type` (`toggle`, `choice`, `number`, `list`) and their state; a choice lists its `choices`. Map the user's words to one of them; if none fits, ask. Never invent a name, and never use `set-performance-setting` just to read a state.
@@ -119,6 +120,45 @@ Changes how Google Fonts `<link>` tags load on the front end, from any theme, pl
 ### Custom fonts
 
 The site's own font files (woff2, woff, ttf, otf) are `uichemy-composer/custom-font`, not this ability: `request-upload` → run its curl line → `add` with the returned attachment IDs (required, or the font never appears in the admin or the pickers). Its `@font-face` prints on every page by itself; only add the preload `<link>` tags it returns, before `</head>`, for fonts used above the fold.
+
+## D. Page cache (tools only)
+
+The dashboard splits Performance into two sections, and the tools follow the same split: **Optimise** (part A's settings, plus fonts and images in part C) and **Cache** (this part). The Cache section is one screen, Performance > Cache > Page cache, and it saves every change as it is made. The tools behind it are in `uichemy-composer/performance`: `get-cache-settings`, `set-cache-settings`, `cache-status`, `cache-test`, `cache-clear`. Same rule as part A: read the schema first, never edit files or options directly.
+
+Route by intent:
+
+| The user wants to | Tool |
+|---|---|
+| See whether the cache is on, who caches, and how it is doing | `get-cache-settings` |
+| Turn the cache on | `set-cache-settings` with `{"mode":"auto"}` (the screen's switch). Then `cache-test`. |
+| Turn the cache off | `set-cache-settings` with `{"mode":"off"}` |
+| Force UiChemy's cache, or leave it to the host | `set-cache-settings` with `{"mode":"uichemy"}` or `{"mode":"host"}` |
+| Change refresh time, what is cleared on a change, exclusions, tracking parameters, mobile copy, preload | `set-cache-settings`, only the keys to change |
+| Know whether the cache is working | `cache-test` |
+| Know why one page is not cached | `cache-status` (URL or post ID) |
+| Empty the cache | `cache-clear` (`page`, `urls` or `all`) |
+
+What `get-cache-settings` and `set-cache-settings` return, and how to read it:
+
+- `status.state` says who caches pages: `on` (UiChemy), `host` (the host's own cache, e.g. Kinsta, WP Engine; `evidence` says why), `other_plugin`, `needs_setup` (one line for wp-config.php is in `config_line`; give it to the user), `off` or `unavailable`. The cache is off by default (`mode` is `off`, and `status.configured` stays `false` until it has been turned on once). Never turn it on unless the user asks.
+- Turning it on is `mode`, not a separate flag: `auto` lets UiChemy choose between itself and the host. On a managed host, "My host's cache" is normal and correct; don't push the user to UiChemy's cache.
+- `status.usage` (only while `state` is `on`) is what the dashboard's Usage charts show: `total` has `hits` (visits served from the saved copy), `misses` (pages built fresh and saved: the first visit after a change, a clear or the refresh time) and `rate` (percent of those visits served from the cache) for the last 14 days; `daily` (14 buckets) and `hourly` (24 buckets) hold `{l, h, m}` rows. `pages`, `bytes` and `limit_bytes` (500 MB) say how full the cache is; past the limit the oldest pages are removed. Report these numbers as returned; they count only visits to cacheable pages: logged-in visitors, excluded pages, 404s and files such as robots.txt are not counted.
+- A low `rate` is normal on a new site, right after a clear, and on low-traffic sites (each page is built once per refresh). If it stays low on a busy site, run `cache-status` on a few pages and report the reasons; common ones are pages with query strings, cookies, or a plugin rule.
+
+Work in this order:
+
+1. **Check the state.** `get-cache-settings`.
+2. **Test.** `cache-test` loads the home page twice as a logged-out visitor. Report the result and both timings as returned.
+3. **Explain.** For "why isn't this page cached?" call `cache-status` with the URL or post ID and give the `reason` label, explanation and fix in your own words. Logged-in users never get cached pages, so the user's own browser always shows the live page; suggest a private window.
+4. **Suggest exclusions.** If a page shows different content per visitor and is still cached, suggest adding it under `exclude_paths` ("/members/*") or turning on "Don't cache this page" in its page settings. Change settings only when the user asks.
+5. **Clear** with `cache-clear` after changes made outside WordPress. Saving content already clears the right pages.
+
+Never:
+- try to turn off built-in safety rules or plugin rules (logged-in users, carts, checkouts, booking and member pages). You can add exclusions, not remove these. If asked, say: "Built-in safety rules can't be turned off, because they stop personal pages from being shown to other visitors. You can add exclusions, but not remove these."
+- offer caching for logged-in users ("UiChemy never caches pages for logged-in users.").
+- overwrite another plugin's cache files; if another plugin owns page caching, the user deactivates it first.
+- ask for or repeat the Cloudflare token; only its last four characters are ever shown.
+- promise a PageSpeed score. A page cache mainly cuts server response time.
 
 ## Tests (final page, logged out, browser in the foreground)
 

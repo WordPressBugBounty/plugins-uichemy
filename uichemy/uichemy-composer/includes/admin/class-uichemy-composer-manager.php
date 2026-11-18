@@ -3869,11 +3869,37 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		private static function sanitize_custom_code( $value ) {
 			$value = is_string( $value ) ? $value : '';
 
-			if ( current_user_can( 'unfiltered_html' ) ) {
+			// Site-wide code runs on every page, for every visitor and administrator,
+			// so raw markup needs an administrator: `unfiltered_html` alone is held by
+			// Editors on a single-site install, and would let one plant a script that
+			// takes over an administrator's session.
+			if ( current_user_can( 'manage_options' ) && current_user_can( 'unfiltered_html' ) ) {
 				return $value;
 			}
 
 			return wp_kses_post( $value );
+		}
+
+		/**
+		 * May the current user change the site-wide head / footer code and the
+		 * site-level script dependencies?
+		 *
+		 * Both print on every front-end page, so this is administrator-only:
+		 * `manage_options` and `unfiltered_html` (super admins only on multisite;
+		 * nobody when DISALLOW_UNFILTERED_HTML is defined). `unfiltered_html` alone is
+		 * not enough, because Editors hold it on a default single-site install. A
+		 * content-only role (Pro Role Manager) is refused as well.
+		 *
+		 * @return bool
+		 */
+		public static function can_edit_site_code() {
+			if ( ! current_user_can( 'manage_options' ) || ! current_user_can( 'unfiltered_html' ) ) {
+				return false;
+			}
+			if ( class_exists( 'UiChemy_Roles' ) && ( UiChemy_Roles::is_content_only() || ! UiChemy_Roles::can_edit() ) ) {
+				return false;
+			}
+			return true;
 		}
 
 		/**
@@ -7777,22 +7803,15 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		public function ajax_save_site_custom_code() {
 			check_ajax_referer( self::EDITOR_AJAX_NONCE_ACTION, 'nonce' );
 
-			// Site-wide head/footer code is administrator territory, matching
-			// WordPress core's own `unfiltered_html` gate. On multisite this is
-			// limited to super admins; when DISALLOW_UNFILTERED_HTML is defined
-			// nobody qualifies. Lower roles that can build pages should use the
+			// Site-wide head/footer code runs on every page: administrators only
+			// (see can_edit_site_code()). Lower roles that build pages use the
 			// per-widget HTML/CSS panels and the structured dependencies picker,
 			// which generate escaped tags programmatically.
-			if ( ! current_user_can( 'unfiltered_html' ) ) {
-				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
-			}
-			// A content-only role (Pro Role Manager) has no code or global-design access. Editors keep
-			// `unfiltered_html`, so that capability alone must not let one rewrite site-wide code.
-			if ( class_exists( 'UiChemy_Roles' ) && ( UiChemy_Roles::is_content_only() || ! UiChemy_Roles::can_edit() ) ) {
+			if ( ! self::can_edit_site_code() ) {
 				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 			}
 
-			// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized immediately below via self::update_site_custom_code_option() → self::sanitize_custom_code(), which is capability-scoped: only unfiltered_html users store raw markup, everyone else is passed through wp_kses_post().
+			// phpcs:disable WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Sanitized immediately below via self::update_site_custom_code_option() → self::sanitize_custom_code(), which is capability-scoped: only administrators with unfiltered_html store raw markup, everyone else is passed through wp_kses_post().
 			$head   = isset( $_POST['head'] ) ? wp_unslash( $_POST['head'] ) : '';
 			$footer = isset( $_POST['footer'] ) ? wp_unslash( $_POST['footer'] ) : '';
 			// The head the editor last knew the server had. When the stored head has
@@ -7863,15 +7882,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			// Site-level deps emit external <script src>/<link> tags on every page.
 			// Adding those is equivalent to arbitrary code insertion, so the save is
-			// gated on `unfiltered_html` — the same capability WordPress core uses
-			// for raw markup (administrators on single-site; super admins only on
-			// multisite; nobody when DISALLOW_UNFILTERED_HTML is defined). Reading
-			// the list stays at edit_posts so lower roles can still see what is set.
-			if ( ! current_user_can( 'unfiltered_html' ) ) {
-				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
-			}
-			// Content-only roles have no code access, whatever `unfiltered_html` they hold.
-			if ( class_exists( 'UiChemy_Roles' ) && ( UiChemy_Roles::is_content_only() || ! UiChemy_Roles::can_edit() ) ) {
+			// administrator-only, like the site-wide code (see can_edit_site_code()).
+			// Reading the list stays at edit_posts so lower roles can still see what is set.
+			if ( ! self::can_edit_site_code() ) {
 				wp_send_json_error( array( 'message' => 'Unauthorized' ), 403 );
 			}
 

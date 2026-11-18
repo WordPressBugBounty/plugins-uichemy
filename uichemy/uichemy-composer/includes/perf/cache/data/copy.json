@@ -1,0 +1,688 @@
+{
+  "meta": {
+    "product": "UiChemy Composer",
+    "feature": "Page cache",
+    "version": "draft-1",
+    "date": "2026-10-03",
+    "status": "Approved for development. Use these strings as written.",
+    "rules": [
+      "Sentence case everywhere. No Title Case, no ALL CAPS.",
+      "Plain English. Say what happens, not how the system is built.",
+      "Placeholders use {curly_braces}. Never translate or rename placeholders.",
+      "Wrap every string in the plugin text domain for translation.",
+      "Never use the words 'blazing', 'lightning', 'ultimate', 'magic', or a promised score.",
+      "Errors say what went wrong and what to do next. No apologies."
+    ]
+  },
+  "navigation": {
+    "menu_item": "Performance",
+    "section_title": "Page cache",
+    "section_intro": "Saves a ready-made copy of each page so visitors get it without waiting for WordPress to build it. Logged-in users, carts, checkouts and forms are always handled safely.",
+    "pro_badge": "Pro"
+  },
+  "status_card": {
+    "title": "Cache status",
+    "states": {
+      "on": {
+        "label": "On",
+        "text": "UiChemy is caching pages for logged-out visitors.",
+        "detail": "{count} pages cached · {size} used"
+      },
+      "host": {
+        "label": "Handled by {host}",
+        "text": "{host} already caches your pages, so UiChemy's cache is off to avoid conflicts. UiChemy clears the {host} cache when you save a page.",
+        "text_no_purge": "{host} already caches your pages, so UiChemy's cache is off to avoid conflicts. {host} clears its own cache; UiChemy can't do it for you on this host."
+      },
+      "other_plugin": {
+        "label": "Handled by {plugin}",
+        "text": "{plugin} is already caching your pages. To use UiChemy's cache instead, turn off page caching in {plugin} first."
+      },
+      "off": {
+        "label": "Off",
+        "text": "Pages are built fresh for every visitor."
+      },
+      "unavailable": {
+        "label": "Not available",
+        "text": "Page cache can't run on this site: {reason}"
+      },
+      "needs_setup": {
+        "label": "One step left",
+        "text": "UiChemy can't edit wp-config.php on this server. Add the line below to turn the cache on."
+      }
+    },
+    "last_test": "Last test: {result}, {time_ago}",
+    "never_tested": "Not tested yet"
+  },
+  "controls": [
+    {
+      "id": "C01",
+      "key": "cache.mode",
+      "plan": "Free",
+      "location": "Performance → Page cache",
+      "visibility": "Always visible",
+      "type": "switch, then a select",
+      "label": "Cache pages",
+      "choices": [
+        {
+          "value": "auto",
+          "label": "Automatic",
+          "hint": "UiChemy checks your hosting and picks the safe option."
+        },
+        {
+          "value": "uichemy",
+          "label": "UiChemy cache",
+          "hint": "Cache pages with UiChemy, even if your host has its own cache."
+        },
+        {
+          "value": "host",
+          "label": "My host's cache",
+          "hint": "Keep UiChemy's cache off. UiChemy still clears your host's cache when you save."
+        },
+        {
+          "value": "off",
+          "label": "Off (the switch)",
+          "hint": "Don't cache pages."
+        }
+      ],
+      "default": "off",
+      "help": "Turn it on and UiChemy checks your hosting, sets it up and tests your home page.",
+      "tooltip": "A page cache saves the finished HTML of a page. The next visitor gets that copy straight away, without WordPress loading your theme, plugins and database.",
+      "warning_on_uichemy_with_host": "Your host already caches pages. Running two caches can show visitors old content. Continue only if your host's support has told you to.",
+      "ai_description": "Selects who caches full pages. 'auto' resolves to 'uichemy' when no host or plugin page cache is detected with grade A evidence, otherwise to 'host'.",
+      "select_label": "Who caches your pages"
+    },
+    {
+      "id": "C02",
+      "key": "cache.lifespan",
+      "plan": "Free",
+      "location": "Performance → Page cache",
+      "visibility": "Always visible",
+      "type": "select",
+      "label": "Refresh pages every",
+      "choices": [
+        {
+          "value": "2h",
+          "label": "2 hours"
+        },
+        {
+          "value": "6h",
+          "label": "6 hours"
+        },
+        {
+          "value": "10h",
+          "label": "10 hours (recommended)"
+        }
+      ],
+      "default": "10h",
+      "help": "Forms use security tokens that WordPress expires after 12 to 24 hours, so 10 hours is the longest we allow.",
+      "tooltip": "Forms on your pages use security tokens that WordPress expires after 12 to 24 hours. Refreshing within 10 hours keeps every form working. A shorter time only helps if your pages show time-based content, such as a countdown or a 'latest posts' list from another site.",
+      "ai_description": "Maximum age of a cached page. Hard maximum 10h; values above are rejected with 'invalid_value'."
+    },
+    {
+      "id": "C03",
+      "key": "cache.mobile_separate",
+      "plan": "Free",
+      "location": "Performance → Page cache → Advanced",
+      "visibility": "Advanced, collapsed",
+      "type": "toggle",
+      "label": "Separate copy for mobile",
+      "default": false,
+      "help": "Turn this on only if your theme or another plugin shows different HTML on phones.",
+      "tooltip": "Pages built with UiChemy use the same HTML on every device and adapt with CSS, so one copy is enough. Some themes and plugins send different HTML to phones; for those, keep a separate mobile copy.",
+      "ai_description": "Adds device class (mobile/desktop) to the cache key. Doubles stored files."
+    },
+    {
+      "id": "C04",
+      "key": "cache.exclude_pages",
+      "plan": "Free",
+      "location": "Performance → Page cache → Advanced",
+      "visibility": "Advanced, collapsed",
+      "type": "tag field: pages (shown as their paths) and paths",
+      "label": "Never cache these pages",
+      "placeholder": "Search pages or type a path, like /members/*",
+      "default": [],
+      "help": "Pick a page or type a path. A * at the end covers everything under it.",
+      "tooltip": "Type a path starting with /. Use * at the end to include everything under it, for example /courses/*. Full web addresses and other wildcards aren't accepted.",
+      "validation_error": "Enter a path that starts with /, such as /members/ or /members/*.",
+      "ai_description": "List of post IDs and path prefixes. Prefix match only; trailing * allowed; no regex."
+    },
+    {
+      "id": "C05",
+      "key": "cache.page_override",
+      "plan": "Free",
+      "location": "Editor → Page settings → Performance",
+      "visibility": "In page settings for users who can edit the page",
+      "type": "toggle",
+      "label": "Don't cache this page",
+      "default": false,
+      "help": "Turn on if this page shows different content to each visitor.",
+      "tooltip": "Use for pages with a booking calendar, live stock, a members-only area, or anything personal. UiChemy already detects most of these automatically.",
+      "auto_detected_note": "Not cached automatically: {reason}",
+      "ai_description": "Per-post override stored as post meta through the performance policy service. Requires edit_post on that post."
+    },
+    {
+      "id": "C06",
+      "key": "cache.exclude_cookies",
+      "plan": "Free",
+      "location": "Performance → Page cache → Advanced",
+      "visibility": "Advanced, collapsed",
+      "type": "tag field",
+      "label": "Skip visitors with these cookies",
+      "placeholder": "Type a cookie name, like my_plugin_session",
+      "default": [],
+      "help": "Visitors carrying one of these cookies always get a fresh page.",
+      "tooltip": "Login, cart, password and comment cookies are already handled, along with cookies from WooCommerce, Easy Digital Downloads and the other plugins listed under Detected plugins.",
+      "validation_error": "Use letters, numbers, dashes and underscores only.",
+      "ai_description": "Additional cookie-name prefixes that force BYPASS. Cannot remove built-in or rule-pack cookies."
+    },
+    {
+      "id": "C07",
+      "key": "cache.ignored_params",
+      "plan": "Free",
+      "location": "Performance → Page cache → Advanced",
+      "visibility": "Advanced, collapsed",
+      "type": "tag field with suggestions",
+      "label": "Ignore tracking parameters",
+      "default": [
+        "utm_*",
+        "gclid",
+        "fbclid",
+        "msclkid",
+        "mc_cid",
+        "mc_eid",
+        "_ga"
+      ],
+      "help": "Links with \"?utm_source=newsletter\" don't change the page, so they get the cached copy.",
+      "tooltip": "Tracking links add text such as ?utm_source=newsletter to the address. These don't change the page, so UiChemy serves the normal cached copy. Your analytics still sees the parameters, because they stay in the browser address.",
+      "reset_label": "Restore defaults",
+      "ai_description": "Query parameter names (trailing * allowed) that are ignored when reading the cache. Requests with these parameters never write cache entries."
+    },
+    {
+      "id": "C08",
+      "key": "cache.clear_mode",
+      "plan": "Free",
+      "location": "Performance → Page cache → Advanced",
+      "visibility": "Advanced, collapsed",
+      "type": "radio",
+      "label": "When content changes, clear",
+      "choices": [
+        {
+          "value": "smart",
+          "label": "The changed page and related pages",
+          "hint": "For example, a new post clears itself, the home page, its categories and the blog page."
+        },
+        {
+          "value": "all",
+          "label": "The whole cache",
+          "hint": "Simplest. Use if pages show content from many other pages."
+        }
+      ],
+      "default": "smart",
+      "help": "Menus, headers, footers, templates and global styles always clear the whole cache.",
+      "tooltip": "Clearing only removes the saved copies. Pages are rebuilt the next time someone visits, or by preload if you have Pro.",
+      "ai_description": "Invalidation strategy for post-level changes. Global changes always invalidate all."
+    },
+    {
+      "id": "C10",
+      "key": "cache.preload.enabled",
+      "plan": "Pro",
+      "location": "Performance → Page cache → Preload",
+      "visibility": "Always visible (locked for Free)",
+      "type": "toggle",
+      "label": "Preload pages",
+      "default": true,
+      "help": "Re-caches cleared and expiring pages in the background, so visitors always get a cached copy.",
+      "tooltip": "UiChemy visits your pages itself, as a logged-out visitor. After a clear it rebuilds the cleared pages; between clears it rebuilds pages shortly before they expire, and the phone copy too when that is on.",
+      "locked_text": "Preload is part of UiChemy Pro. Without it, pages rebuild when the first visitor arrives.",
+      "ai_description": "Enables background warming of cleared URLs, then sitemap URLs after a full clear."
+    },
+    {
+      "id": "C11",
+      "key": "cache.preload.speed",
+      "plan": "Pro",
+      "location": "Performance → Page cache → Preload",
+      "visibility": "Shown when C10 is on",
+      "type": "select",
+      "label": "Preload speed",
+      "choices": [
+        {
+          "value": "gentle",
+          "label": "Gentle: 4 pages a minute",
+          "hint": "For small shared hosting plans."
+        },
+        {
+          "value": "normal",
+          "label": "Normal: 12 pages a minute (recommended)"
+        },
+        {
+          "value": "fast",
+          "label": "Fast: 30 pages a minute",
+          "hint": "For VPS and dedicated servers."
+        }
+      ],
+      "default": "normal",
+      "help": "Faster finishes sooner, but puts more load on your server.",
+      "tooltip": "Each preloaded page uses the same server work as one visitor. A 1,000-page site takes about 85 minutes at Normal speed.",
+      "ai_description": "Maximum warm requests per minute. Adaptive back-off halves the rate when median build time doubles."
+    },
+    {
+      "id": "C12",
+      "key": "cache.cloudflare",
+      "plan": "Pro",
+      "location": "Performance → Page cache → Cloudflare",
+      "visibility": "Always visible (locked for Free); expanded when Cloudflare is detected",
+      "type": "secret input + two buttons",
+      "label": "API token",
+      "placeholder": "Paste your Cloudflare API token",
+      "button": "Connect",
+      "default": "",
+      "help": "Needs only the Zone → Cache Purge permission.",
+      "tooltip": "In Cloudflare, go to My Profile → API Tokens → Create Token, and give it only the Zone → Cache Purge permission for this site. UiChemy stores the token on your server and never shows it again.",
+      "detected_note": "This site runs behind Cloudflare.",
+      "connected": "Connected to {zone}. Cloudflare is cleared along with UiChemy's cache.",
+      "disconnect": "Disconnect",
+      "masked_value": "Token ending in {last4}",
+      "locked_text": "Cloudflare clearing is part of UiChemy Pro.",
+      "ai_description": "Write-only secret. Reads return masked value and connection status only.",
+      "button_secondary": "Create token"
+    }
+  ],
+  "cdn_note": {
+    "text": "Media CDN settings (D01–D04) keep the copy already written in ui-review/controls.csv. Only change: D01–D04 become Pro, and saving or turning off the CDN clears the page cache.",
+    "cdn_change_notice": "CDN settings changed. The page cache was cleared so pages use the new addresses."
+  },
+  "actions": [
+    {
+      "id": "A01",
+      "label": "Clear cache",
+      "location": "Performance → Page cache; admin bar",
+      "confirm": null,
+      "success": "Cache cleared. Pages will rebuild as visitors arrive.",
+      "success_with_preload": "Cache cleared. Preload is rebuilding {count} pages.",
+      "success_with_host": "Cache cleared, including the {host} cache.",
+      "error": "The cache couldn't be cleared because the cache folder isn't writable. Ask your host to make wp-content/uichemy writable by WordPress."
+    },
+    {
+      "id": "A02",
+      "label": "Clear this page",
+      "location": "Admin bar, on the front end",
+      "success": "This page was cleared from the cache."
+    },
+    {
+      "id": "A03",
+      "label": "Run test",
+      "location": "Performance → Page cache",
+      "running": "Testing your home page as a logged-out visitor…",
+      "pass": "Working. Your home page loaded in {cached_ms} ms from the cache, compared with {uncached_ms} ms without it.",
+      "pass_host": "Working. {host} served your home page from its cache.",
+      "fail_bypass": "Your home page wasn't cached: {reason_label}. {reason_fix}",
+      "fail_no_loopback": "UiChemy couldn't visit your own site to run the test. This usually means a firewall or a password-protected staging site. The cache may still work; check it in a private browser window.",
+      "fail_unknown": "The test didn't finish. Try again, and if it fails twice, use Ask AI to check the details."
+    },
+    {
+      "id": "A04",
+      "label": "Test",
+      "location": "Performance → Page cache → Page status; editor page settings",
+      "result_hit": "Cached. Visitors get the saved copy.",
+      "result_miss": "Not cached yet. It will be saved on the next visit.",
+      "result_bypass": "Not cached: {reason_label}."
+    }
+  ],
+  "detected_plugins": {
+    "title": "Detected plugins",
+    "intro": "UiChemy found these plugins and applies safe rules for them automatically.",
+    "empty": "No plugins that need special handling were found.",
+    "packs": [
+      {
+        "plugin": "WooCommerce",
+        "line": "Cart, checkout and account pages are never cached. Visitors with items in their cart always get a fresh page. Product pages clear when stock or price changes."
+      },
+      {
+        "plugin": "Easy Digital Downloads",
+        "line": "Checkout and purchase confirmation pages are never cached. Visitors with items in their cart always get a fresh page."
+      },
+      {
+        "plugin": "SureCart",
+        "line": "Checkout, customer dashboard and account pages are never cached."
+      },
+      {
+        "plugin": "Booking plugins",
+        "line": "Pages with a booking form from {plugin} are never cached, so availability is always current."
+      },
+      {
+        "plugin": "Gravity Forms",
+        "line": "Pages with a Gravity Forms form are never cached, as Gravity Forms recommends."
+      },
+      {
+        "plugin": "Other form plugins",
+        "line": "Pages with forms are cached and refreshed within 10 hours, so form security tokens stay valid."
+      },
+      {
+        "plugin": "Payment forms",
+        "line": "Pages with a payment form are never cached."
+      },
+      {
+        "plugin": "Membership and course plugins",
+        "line": "Account, login, checkout and member-only pages from {plugin} are never cached."
+      },
+      {
+        "plugin": "AffiliateWP",
+        "line": "Visitors arriving through an affiliate link always get a fresh page, so the referral is recorded."
+      },
+      {
+        "plugin": "Multilingual plugins",
+        "line": "Each language is cached separately using its own address. Pages that change language without changing the address aren't cached."
+      },
+      {
+        "plugin": "Cookie consent plugins",
+        "line": "No change needed. Consent banners work with cached pages."
+      }
+    ]
+  },
+  "editor": {
+    "panel_title": "Performance",
+    "page_status_label": "Page cache",
+    "page_status_values": {
+      "cached": "Cached",
+      "not_cached_yet": "Not cached yet",
+      "excluded": "Not cached: {reason_label}",
+      "host": "Cached by {host}",
+      "off": "Page cache is off"
+    },
+    "save_toast": "Saved. The cached copy of this page was cleared."
+  },
+  "admin_bar": {
+    "menu_title": "Cache",
+    "item_clear_page": "Clear this page",
+    "item_clear_all": "Clear all cache",
+    "item_status": "This page: {status}",
+    "item_settings": "Cache settings"
+  },
+  "notices": [
+    {
+      "id": "N01",
+      "type": "warning",
+      "when": "Another plugin's advanced-cache.php is present",
+      "title": "Another cache plugin is active",
+      "body": "{plugin} is already set up to cache pages. Two page caches can show visitors old content, so UiChemy's cache stays off. To use UiChemy instead, deactivate {plugin} and then turn UiChemy's cache on.",
+      "body_unknown": "Another plugin has already set up page caching on this site, so UiChemy's cache stays off.",
+      "button": "Open plugins"
+    },
+    {
+      "id": "N02",
+      "type": "info",
+      "when": "wp-config.php is not writable",
+      "title": "One manual step needed",
+      "body": "UiChemy can't edit wp-config.php on this server. Add this line above the line that says \"That's all, stop editing!\", then click Check again.",
+      "code": "define( 'WP_CACHE', true ); // Added for UiChemy page cache",
+      "button": "Check again",
+      "button_copy": "Copy line"
+    },
+    {
+      "id": "N03",
+      "type": "info",
+      "when": "Host page cache detected on first visit",
+      "title": "{host} already caches your pages",
+      "body": "UiChemy will leave page caching to {host} and clear the {host} cache when you save pages. You don't need to change anything.",
+      "button": "OK"
+    },
+    {
+      "id": "N04",
+      "type": "error",
+      "when": "Cache folder not writable",
+      "title": "Page cache can't save files",
+      "body": "WordPress can't write to {folder}. Pages are still served normally, just without the cache. Ask your host to make this folder writable by WordPress.",
+      "button": "Check again"
+    },
+    {
+      "id": "N05",
+      "type": "warning",
+      "when": "Cache size limit reached",
+      "title": "Cache is full",
+      "body": "The cache reached its limit of {limit}. The oldest pages are being removed automatically. If this happens often, your site may have many pages with unusual addresses; Ask AI can check why.",
+      "button": "Ask AI"
+    },
+    {
+      "id": "N06",
+      "type": "warning",
+      "when": "Multisite",
+      "title": "Not available on multisite",
+      "body": "UiChemy's page cache works on single WordPress sites only. Use your host's cache or a multisite-ready cache plugin.",
+      "button": null
+    },
+    {
+      "id": "N07",
+      "type": "error",
+      "when": "Cloudflare connection failed",
+      "title": "Couldn't connect to Cloudflare",
+      "body_invalid_token": "Cloudflare rejected the token. Check that you copied all of it.",
+      "body_permission": "The token doesn't have permission to clear the cache. Create a token with Zone → Cache Purge for this site.",
+      "body_zone": "This token can't access the Cloudflare zone for {domain}. Check that the token covers this site.",
+      "body_network": "UiChemy couldn't reach Cloudflare from your server. Try again in a few minutes.",
+      "button": "Try again",
+      "body_zone_other": "The token works, but it covers {zones}, not {domain}. Create a token for {domain}.",
+      "body_local": "Cloudflare can't sit in front of a local site ({domain}). Connect it on your live site."
+    },
+    {
+      "id": "N08",
+      "type": "warning",
+      "when": "Host cache detected but cannot be cleared by UiChemy",
+      "title": "Clear the {host} cache yourself",
+      "body": "{host} caches your pages, but doesn't let plugins clear that cache. After big changes, clear it from your {host} dashboard. Small edits refresh on their own within {host_ttl}.",
+      "body_no_ttl": "{host} caches your pages, but doesn't let plugins clear that cache. After big changes, clear it from your {host} dashboard."
+    },
+    {
+      "id": "N09",
+      "type": "success",
+      "when": "Shown under \"Test cache\" after a test that passed",
+      "title": "Page cache is on",
+      "body": "Your home page now loads in {cached_ms} ms from the cache, compared with {uncached_ms} ms before.",
+      "button": "View settings"
+    },
+    {
+      "id": "N10",
+      "type": "info",
+      "when": "Preload running",
+      "title": "Preloading pages",
+      "body": "{done} of {total} pages rebuilt. Your site works normally while this runs."
+    }
+  ],
+  "reasons": [
+    {
+      "code": "logged_in",
+      "label": "you're logged in",
+      "explanation": "Logged-in users always get a fresh page, so they see their own account details and the admin bar.",
+      "fix": "Check the page in a private browser window to see what visitors get."
+    },
+    {
+      "code": "cookie",
+      "label": "the visitor has a {cookie} cookie",
+      "explanation": "This cookie means the page may be personal, for example a cart or a session from {plugin}.",
+      "fix": "Nothing to fix. Visitors without this cookie get the cached page."
+    },
+    {
+      "code": "query_string",
+      "label": "the address contains ?{param}",
+      "explanation": "Addresses with extra parameters can show different content, so they're built fresh each time.",
+      "fix": "If {param} is only for tracking, add it under Ignore these link parameters."
+    },
+    {
+      "code": "method",
+      "label": "it's a form submission",
+      "explanation": "Only normal page views are cached. Form submissions always go to WordPress.",
+      "fix": "Nothing to fix."
+    },
+    {
+      "code": "excluded_page",
+      "label": "you excluded it",
+      "explanation": "This page is in \"Never cache these pages\", or \"Don't cache this page\" is on.",
+      "fix": "Remove it from the list if it should be cached."
+    },
+    {
+      "code": "rule_pack",
+      "label": "{plugin} needs it fresh",
+      "explanation": "{plugin} shows personal or live content on this page.",
+      "fix": "Nothing to fix. This protects your visitors."
+    },
+    {
+      "code": "blocked_content",
+      "label": "it contains a {component}",
+      "explanation": "Pages with a {component} must always be current, so they aren't cached.",
+      "fix": "If the {component} doesn't change between visitors, you can move it to its own page so the rest of the site stays cached."
+    },
+    {
+      "code": "donotcache",
+      "label": "a plugin asked not to cache it",
+      "explanation": "{plugin} told WordPress this page must not be cached.",
+      "fix": "Nothing to fix. Contact {plugin} if you think this page should be cached."
+    },
+    {
+      "code": "sets_cookie",
+      "label": "the page sets a cookie",
+      "explanation": "A page that sets a cookie is usually personal, so saving it could show one visitor's data to another.",
+      "fix": "Ask AI to find which plugin sets {cookie}."
+    },
+    {
+      "code": "private_header",
+      "label": "the page is marked private",
+      "explanation": "WordPress or a plugin sent a header saying this page must not be stored.",
+      "fix": "Nothing to fix unless the page should be public."
+    },
+    {
+      "code": "status",
+      "label": "the page returned an error ({status})",
+      "explanation": "Only working pages are cached. Error and redirect pages are always built fresh.",
+      "fix": "Fix the error and the page will be cached on the next visit."
+    },
+    {
+      "code": "not_html",
+      "label": "it isn't a web page",
+      "explanation": "Files, feeds and data responses aren't cached.",
+      "fix": "Nothing to fix."
+    },
+    {
+      "code": "password",
+      "label": "it's password protected",
+      "explanation": "Password-protected content is never cached.",
+      "fix": "Nothing to fix."
+    },
+    {
+      "code": "preview",
+      "label": "it's a preview",
+      "explanation": "Previews and editor views are never cached.",
+      "fix": "Nothing to fix."
+    },
+    {
+      "code": "search",
+      "label": "it's a search results page",
+      "explanation": "Search results depend on what each visitor types, so they're built fresh.",
+      "fix": "Nothing to fix."
+    },
+    {
+      "code": "system_path",
+      "label": "it's a WordPress system address",
+      "explanation": "Admin, login, REST API, AJAX and cron addresses are never cached.",
+      "fix": "Nothing to fix."
+    },
+    {
+      "code": "host_mismatch",
+      "label": "it was requested with a different domain",
+      "explanation": "UiChemy only saves pages requested with your site address, {site_host}.",
+      "fix": "If this site uses more than one domain, Ask AI to check your settings."
+    },
+    {
+      "code": "cache_off",
+      "label": "the page cache is off",
+      "explanation": "Page cache is set to Off.",
+      "fix": "Turn it on in Performance → Page cache."
+    },
+    {
+      "code": "host_handles",
+      "label": "{host} handles caching",
+      "explanation": "{host} caches this page, not UiChemy.",
+      "fix": "Nothing to fix."
+    },
+    {
+      "code": "storage",
+      "label": "the cache folder isn't writable",
+      "explanation": "WordPress can't save files to {folder}.",
+      "fix": "Ask your host to make the folder writable by WordPress."
+    },
+    {
+      "code": "size_limit",
+      "label": "the cache is full",
+      "explanation": "The cache reached its size limit and is removing older pages.",
+      "fix": "Ask AI to check whether unusual addresses are filling the cache."
+    },
+    {
+      "code": "busy",
+      "label": "it's being saved right now",
+      "explanation": "Another visitor's request is saving this page at this moment.",
+      "fix": "Nothing to fix. The next visit gets the cached copy."
+    },
+    {
+      "code": "multisite",
+      "label": "this is a multisite network",
+      "explanation": "UiChemy's page cache works on single sites only.",
+      "fix": "Use your host's cache."
+    },
+    {
+      "code": "not_canonical",
+      "label": "this isn't the page's own address",
+      "explanation": "WordPress showed this page at a different spelling of its address, such as capital letters. Only the page's own address is cached, so clearing always reaches it.",
+      "fix": "Nothing to fix. Visitors who use the page's own address get the cached copy."
+    },
+    {
+      "code": "vary",
+      "label": "the page changes per visitor",
+      "explanation": "The page told browsers it differs by {detail}, so one shared copy could be wrong for someone.",
+      "fix": "If the page is the same for everyone, turn off the setting in your theme or plugin that sends this header."
+    },
+    {
+      "code": "device",
+      "label": "the page changes on phones",
+      "explanation": "Your theme or a plugin shows different HTML on phones, and the cache keeps one copy for every device.",
+      "fix": "Turn on \"Separate copy for mobile\" in Performance → Page cache."
+    }
+  ],
+  "ai": {
+    "ability_descriptions": {
+      "cache-status": "Shows whether a page is cached, by UiChemy or by the host, and why not if it isn't. Accepts a URL on this site or a post ID.",
+      "cache-test": "Requests the home page twice as a logged-out visitor and reports which cache served it and how long it took.",
+      "cache-clear": "Clears cached pages: one page, a list of pages on this site, or everything. Also clears the host and Cloudflare cache when connected.",
+      "capabilities": "Includes the detected host, whether it caches pages, the evidence for that, and the recommended page cache setting."
+    },
+    "refusals": {
+      "safety_rule": "Built-in safety rules can't be turned off, because they stop personal pages from being shown to other visitors. You can add exclusions, but not remove these.",
+      "logged_in_cache": "UiChemy never caches pages for logged-in users.",
+      "foreign_dropin": "Another plugin owns page caching on this site. Deactivate it first; UiChemy won't overwrite its files.",
+      "token_read": "The Cloudflare token can't be read back. Only its last four characters are shown."
+    }
+  },
+  "ui_extra": {
+    "note": "Small labels the screen needs that the approved copy did not list. Added 2026-10-06 during K10; review with the copy owner.",
+    "loading": "Loading…",
+    "more_info": "More information",
+    "search_pages": "Search pages",
+    "remove": "Remove %s",
+    "page_address": "Page address",
+    "copied": "Copied",
+    "your_host": "Your host",
+    "another_plugin": "another plugin",
+    "test_short_pass": "Working",
+    "test_short_bypass": "Not cached",
+    "test_short_fail": "Didn't finish",
+    "time_just_now": "just now",
+    "time_minutes": "%d min ago",
+    "time_hours": "%d h ago",
+    "time_days": "%d days ago",
+    "unavailable_multisite": "this is a multisite network",
+    "unavailable_storage": "the cache folder isn't writable",
+    "advanced": "Advanced",
+    "save": "Save changes",
+    "saving": "Saving…",
+    "saved": "Saved",
+    "save_failed": "Save failed",
+    "editor_meta_box_title": "Performance"
+  }
+}

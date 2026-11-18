@@ -90,10 +90,27 @@ if ( ! class_exists( 'UiChemy_Builder_Driver_Base' ) ) {
 		/**
 		 * {@inheritDoc}
 		 *
-		 * Default: nothing to invalidate.
+		 * Default: nothing to invalidate in the builder; tell the page cache.
 		 */
 		public function after_write( $post_id ) {
-			unset( $post_id );
+			$this->written( $post_id );
+		}
+
+		/**
+		 * Announce a section write. Every driver's after_write() calls this, so
+		 * the page cache clears the post whichever path wrote it (front-end
+		 * editor, MCP, section ops) - Bricks writes never fire save_post.
+		 *
+		 * @param int $post_id Post written.
+		 * @return void
+		 */
+		protected function written( $post_id ) {
+			/**
+			 * Fires after Composer sections were written to a post.
+			 *
+			 * @param int $post_id Post ID.
+			 */
+			do_action( 'uichemy/builder/after_write', absint( $post_id ) );
 		}
 
 		/**

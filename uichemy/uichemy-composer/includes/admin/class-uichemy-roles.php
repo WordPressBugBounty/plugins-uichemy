@@ -167,11 +167,22 @@ if ( ! class_exists( 'UiChemy_Roles' ) ) {
 
 			$level = self::access_for_user( $user );
 
-			// Full Access = every feature surface, unconditionally. The per-feature
-			// toggles are not consulted for a full role (they are a Custom-only
-			// concept), so full always grants theme builder / design system / AI chat.
+			// Full Access = every feature surface. The per-feature toggles are not
+			// consulted for a full role (they are a Custom-only concept), so a role
+			// an administrator SET to Full gets theme builder / design system / AI chat.
+			//
+			// A role that is only Full by default (no Role Manager choice saved, which
+			// is every role in Free) may build pages but not change site-wide styles,
+			// templates or AI chat: those apply to every page, and the default would
+			// otherwise hand them to Contributors and Authors.
 			if ( 'full' === $level ) {
-				return true;
+				$settings = self::get_settings();
+				foreach ( (array) $user->roles as $role_slug ) {
+					if ( isset( $settings[ $role_slug ]['access'] ) && 'full' === $settings[ $role_slug ]['access'] ) {
+						return true;
+					}
+				}
+				return false;
 			}
 
 			// Anything below Custom (content-only / no-access) never reaches a feature

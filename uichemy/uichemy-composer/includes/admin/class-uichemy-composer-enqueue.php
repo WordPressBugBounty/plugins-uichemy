@@ -193,6 +193,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 					'ajaxNonce'      => wp_create_nonce( \UiChemy_Composer_Manager::EDITOR_AJAX_NONCE_ACTION ),
 					'siteCode'       => \UiChemy_Composer_Manager::get_site_custom_code_option(),
+					'canEditSiteCode' => \UiChemy_Composer_Manager::can_edit_site_code(),
 					'wpAgent'        => $wp_agent_config,
 					'panelHtml'      => $panel_html,
 					'isPro'          => uichemy_is_pro(),
@@ -718,6 +719,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 					'ajaxNonce'      => wp_create_nonce( \UiChemy_Composer_Manager::EDITOR_AJAX_NONCE_ACTION ),
 					'siteCode'       => \UiChemy_Composer_Manager::get_site_custom_code_option(),
+					'canEditSiteCode' => \UiChemy_Composer_Manager::can_edit_site_code(),
 					'wpAgent'        => $wp_agent_config,
 					'panelHtml'      => $panel_html,
 					'isPro'          => uichemy_is_pro(),
@@ -1381,6 +1383,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'noAccess'    => $access['noAccess'],
 					'features'    => $access['features'],
 					'siteCode'   => \UiChemy_Composer_Manager::get_site_custom_code_option(),
+					'canEditSiteCode' => \UiChemy_Composer_Manager::can_edit_site_code(),
 					'kitGlobals' => $kit_globals,
 					// SitePanes' saveSharedSiteCustomCodeDebounced() (composer-elementor.jsx)
 					// posts here to persist Site Code edits. Without these the editor
@@ -1620,6 +1623,7 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'ajaxUrl'        => admin_url( 'admin-ajax.php' ),
 					'ajaxNonce'      => wp_create_nonce( \UiChemy_Composer_Manager::EDITOR_AJAX_NONCE_ACTION ),
 					'siteCode'       => \UiChemy_Composer_Manager::get_site_custom_code_option(),
+					'canEditSiteCode' => \UiChemy_Composer_Manager::can_edit_site_code(),
 					'wpAgent'        => $wp_agent_config,
 					'panelHtml'      => $panel_html,
 					'editorMode'     => $this->editor_mode(),

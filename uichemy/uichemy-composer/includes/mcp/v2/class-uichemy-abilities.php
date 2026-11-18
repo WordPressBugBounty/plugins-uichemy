@@ -903,6 +903,61 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 					),
 				),
 				array(
+					'name'                     => 'get-cache-settings',
+					'description'              => 'Page cache settings and status (the dashboard\'s Performance > Cache > Page cache screen shows exactly this). "status.state" is on | off | host (the host caches pages) | other_plugin | needs_setup (wp-config.php needs one line, given in "config_line") | unavailable. "status.configured" is false until the cache has been turned on once. While UiChemy caches (state "on") "status.usage" has the traffic counts: total {hits, misses, rate} for 14 days, "daily" (14 buckets) and "hourly" (24 buckets) of {l: label, h: visits served from the cache, m: pages built fresh and saved (the first visit after a change, a clear or the refresh time)}, plus "pages", "bytes" and "limit_bytes" (the cache keeps up to 500 MB; the oldest pages go first). Settings: mode (auto | uichemy | host | off; default off), lifespan (2h | 6h | 10h, max 10h), mobile_separate, exclude_pages (post IDs), exclude_paths ("/members/" exact or "/members/*" prefix), exclude_cookies (name prefixes), ignored_params (tracking parameters, trailing * allowed), clear_mode (smart | all), preload_enabled and preload_speed (gentle | normal | fast, Pro).',
+					'action_parameters_schema' => array(
+						'type'       => 'object',
+						'properties' => new stdClass(),
+						'required'   => array(),
+					),
+				),
+				array(
+					'name'                     => 'set-cache-settings',
+					'description'              => 'Change page cache settings; same validation as the dashboard. Pass only the keys to change. The dashboard\'s on/off switch is "mode": {"mode":"auto"} turns the cache on (it chooses between UiChemy and the host), {"mode":"off"} turns it off; every other change saves on its own. Turning the cache on writes the drop-in and may add one line to wp-config.php. Built-in safety rules (logged-in users, carts, checkouts, plugin rules) cannot be switched off: you can add exclusions, not remove these. UiChemy never caches pages for logged-in users.',
+					'action_parameters_schema' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'changes' => array( 'type' => 'object', 'description' => 'Settings to change, e.g. {"mode":"auto"} or {"exclude_paths":["/members/*"]}.' ),
+						),
+						'required'   => array( 'changes' ),
+					),
+				),
+				array(
+					'name'                     => 'cache-status',
+					'description'              => 'Shows whether a page is cached, by UiChemy or by the host, and why not if it isn\'t. Accepts a URL on this site or a post ID. "result" is HIT, MISS or BYPASS; "reason" has code, label, explanation and fix.',
+					'action_parameters_schema' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'url'     => array( 'type' => 'string', 'description' => 'Address on this site (absolute, or a path starting with /).' ),
+							'post_id' => $post_id,
+						),
+						'required'   => array(),
+					),
+				),
+				array(
+					'name'                     => 'cache-test',
+					'description'              => 'Requests the home page twice as a logged-out visitor and reports which cache served it and how long it took. Also re-runs host detection.',
+					'action_parameters_schema' => array(
+						'type'       => 'object',
+						'properties' => new stdClass(),
+						'required'   => array(),
+					),
+				),
+				array(
+					'name'                     => 'cache-clear',
+					'description'              => 'Clears cached pages: one page, a list of pages on this site, or everything. Also clears the host and Cloudflare cache when connected.',
+					'action_parameters_schema' => array(
+						'type'       => 'object',
+						'properties' => array(
+							'scope'   => array( 'type' => 'string', 'enum' => array( 'page', 'urls', 'all' ), 'description' => '"page" (url or post_id), "urls" (list) or "all".' ),
+							'url'     => array( 'type' => 'string', 'description' => 'For scope "page".' ),
+							'post_id' => $post_id,
+							'urls'    => array( 'type' => 'array', 'items' => array( 'type' => 'string' ), 'description' => 'For scope "urls".' ),
+						),
+						'required'   => array( 'scope' ),
+					),
+				),
+				array(
 					'name'                     => 'get-post-sections-code-placement',
 					'description'              => 'Table of where every section of a post prints its CSS and JS: one row per section with section_index, element_id, label, css, js (each "before-head-end" = before </head> or "before-body-end" = before </body>) and css_is_default / js_is_default. By default the first three sections\' CSS and JS are before-head-end; later sections\' CSS and JS are before-body-end. Read this before changing a placement.',
 					'action_parameters_schema' => array(
@@ -1675,7 +1730,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 						: 'Page-speed settings for UiChemy pages (the Performance screen in the dashboard) and where a section\'s CSS and JS are printed.',
 					array(
 						'type'        => 'object',
-						'description' => self::contract() . ' SETTINGS: "list-performance-settings" lists every setting with its state ("performance-optimization" is the master switch; the others are individual optimizations); "set-performance-setting" changes one, a toggle with state "enable" or "disable", anything else with "value". '
+						'description' => self::contract() . ' The dashboard groups Performance as Optimise (the settings below, Google Fonts and image optimisation) and Cache (the page cache actions). SETTINGS: "list-performance-settings" lists every setting with its state ("performance-optimization" is the master switch; the others are individual optimizations); "set-performance-setting" changes one, a toggle with state "enable" or "disable", anything else with "value". PAGE CACHE: "get-cache-settings" reads settings and status; "set-cache-settings" changes them; "cache-status" says whether a URL or post is cached and why not; "cache-test" tests the home page as a logged-out visitor; "cache-clear" clears one page, a list or everything. '
 							. ( self::composer_mode()
 								? 'A Composer Builder page is one document: its css prints before </head> and its js before </body>, so there is no per-section placement to set.'
 								: 'PLACEMENT: "get-post-sections-code-placement" shows where every section of a post prints its CSS and JS; "set-post-sections-code-placement" moves one section\'s CSS or JS to "before-head-end" (before </head>), "before-body-end" (before </body>) or "default". Defaults: the first three sections\' CSS and JS are before-head-end; later sections\' CSS and JS are before-body-end.' )

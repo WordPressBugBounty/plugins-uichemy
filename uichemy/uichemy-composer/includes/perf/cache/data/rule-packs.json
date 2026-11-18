@@ -1,0 +1,266 @@
+{
+  "version": 1,
+  "source": "docs/page-cache research DYNAMIC-PLUGINS.md sections 8-10, 2026-10-03. Detection is by active plugin folder. Cookies for all of these are in the drop-in's built-in safety list. Packs left out until verified on a real install: SureCart, Tutor LMS, LearnDash lessons/topics/quizzes, multilingual cookie rules, payment forms.",
+  "packs": [
+    {
+      "id": "woocommerce",
+      "name": "WooCommerce",
+      "panel": "WooCommerce",
+      "slugs": [
+        "woocommerce"
+      ],
+      "page_ids": [
+        "wc:cart",
+        "wc:checkout",
+        "wc:myaccount"
+      ],
+      "shortcodes": [
+        "woocommerce_cart",
+        "woocommerce_checkout",
+        "woocommerce_my_account"
+      ],
+      "blocks": [
+        "woocommerce/cart",
+        "woocommerce/checkout"
+      ],
+      "component": "cart or checkout",
+      "grade": "A",
+      "docs": "plugin/woocommerce",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "edd",
+      "name": "Easy Digital Downloads",
+      "panel": "Easy Digital Downloads",
+      "slugs": [
+        "easy-digital-downloads",
+        "easy-digital-downloads-pro"
+      ],
+      "page_ids": [
+        "edd:purchase_page",
+        "edd:success_page"
+      ],
+      "paths": [
+        {
+          "p": "/checkout/",
+          "prefix": false
+        },
+        {
+          "p": "/purchase-confirmation/",
+          "prefix": false
+        },
+        {
+          "p": "/cart/",
+          "prefix": false
+        }
+      ],
+      "grade": "A",
+      "docs": "plugin/easy-digital-downloads",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "bookingpress",
+      "name": "BookingPress",
+      "panel": "Booking plugins",
+      "slugs": [
+        "bookingpress-appointment-booking"
+      ],
+      "own_components": true,
+      "component": "booking form",
+      "grade": "B",
+      "docs": "plugin/booking",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "amelia",
+      "name": "Amelia",
+      "panel": "Booking plugins",
+      "slugs": [
+        "ameliabooking"
+      ],
+      "own_components": true,
+      "component": "booking form",
+      "grade": "B",
+      "docs": "plugin/booking",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "bookly",
+      "name": "Bookly",
+      "panel": "Booking plugins",
+      "slugs": [
+        "bookly-responsive-appointment-booking-tool"
+      ],
+      "own_components": true,
+      "component": "booking form",
+      "grade": "B",
+      "docs": "plugin/booking",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "ssa",
+      "name": "Simply Schedule Appointments",
+      "panel": "Booking plugins",
+      "slugs": [
+        "simply-schedule-appointments"
+      ],
+      "own_components": true,
+      "component": "booking form",
+      "grade": "B",
+      "docs": "plugin/booking",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "gravityforms",
+      "name": "Gravity Forms",
+      "panel": "Gravity Forms",
+      "slugs": [
+        "gravityforms"
+      ],
+      "shortcodes": [
+        "gravityform"
+      ],
+      "blocks": [
+        "gravityforms/form"
+      ],
+      "own_components": true,
+      "component": "Gravity Forms form",
+      "grade": "A",
+      "docs": "plugin/gravity-forms",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "other_forms",
+      "name": "Form plugins",
+      "panel": "Other form plugins",
+      "slugs": [
+        "contact-form-7",
+        "wpforms-lite",
+        "wpforms",
+        "fluentform",
+        "elementor-pro"
+      ],
+      "grade": "A",
+      "docs": "plugin/forms",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "memberpress",
+      "name": "MemberPress",
+      "panel": "Membership and course plugins",
+      "slugs": [
+        "memberpress"
+      ],
+      "paths": [
+        {
+          "p": "/thank-you",
+          "prefix": false
+        },
+        {
+          "p": "/account",
+          "prefix": false
+        },
+        {
+          "p": "/login",
+          "prefix": false
+        },
+        {
+          "p": "/register",
+          "prefix": false
+        },
+        {
+          "p": "/unauthorized",
+          "prefix": false
+        },
+        {
+          "p": "/mepr",
+          "prefix": true
+        }
+      ],
+      "grade": "A",
+      "docs": "plugin/membership",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "pmpro",
+      "name": "Paid Memberships Pro",
+      "panel": "Membership and course plugins",
+      "slugs": [
+        "paid-memberships-pro"
+      ],
+      "paths": [
+        {
+          "p": "/membership-account/",
+          "prefix": true
+        },
+        {
+          "p": "/login/",
+          "prefix": false
+        }
+      ],
+      "grade": "A",
+      "docs": "plugin/membership",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "learndash",
+      "name": "LearnDash",
+      "panel": "Membership and course plugins",
+      "slugs": [
+        "sfwd-lms"
+      ],
+      "paths": [
+        {
+          "p": "/courses/",
+          "prefix": true
+        }
+      ],
+      "grade": "A",
+      "docs": "plugin/courses",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "rcp",
+      "name": "Restrict Content Pro",
+      "panel": "Membership and course plugins",
+      "slugs": [
+        "restrict-content-pro",
+        "restrict-content"
+      ],
+      "shortcodes": [
+        "login_form"
+      ],
+      "component": "login form",
+      "grade": "A",
+      "docs": "plugin/membership",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "affiliatewp",
+      "name": "AffiliateWP",
+      "panel": "AffiliateWP",
+      "slugs": [
+        "affiliate-wp"
+      ],
+      "unignore_params": [
+        "ref"
+      ],
+      "grade": "A",
+      "docs": "plugin/affiliatewp",
+      "verified_on": "2026-10-03"
+    },
+    {
+      "id": "consent",
+      "name": "Cookie consent",
+      "panel": "Cookie consent plugins",
+      "slugs": [
+        "complianz-gdpr",
+        "cookie-law-info",
+        "cookiebot"
+      ],
+      "grade": "A",
+      "docs": "plugin/cookie-consent",
+      "verified_on": "2026-10-03"
+    }
+  ]
+}

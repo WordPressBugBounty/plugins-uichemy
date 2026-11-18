@@ -716,6 +716,23 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 					}
 					return UiChemy_Fast_Load::mcp_set( $params );
 
+				case 'get_cache_settings':
+				case 'set_cache_settings':
+				case 'cache_status':
+				case 'cache_test':
+				case 'cache_clear':
+					if ( ! class_exists( 'UiChemy_Cache_Ai' ) ) {
+						return new WP_Error( 'uich_mcp_error', 'Page cache is not available.' );
+					}
+					$map = array(
+						'get_cache_settings' => 'get_settings',
+						'set_cache_settings' => 'set_settings',
+						'cache_status'       => 'cache_status',
+						'cache_test'         => 'cache_test',
+						'cache_clear'        => 'cache_clear',
+					);
+					return call_user_func( array( 'UiChemy_Cache_Ai', $map[ $action ] ), $params );
+
 				case 'get_post_sections_code_placement':
 					if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 						return new WP_Error( 'uich_mcp_error', 'Composer manager class not found.' );
@@ -755,7 +772,7 @@ if ( ! class_exists( 'UiChemy_MCP_V2_Router' ) ) {
 		 * @return string
 		 */
 		private static function performance_action_list() {
-			$names = array( 'list-performance-settings', 'set-performance-setting', 'get-post-sections-code-placement', 'set-post-sections-code-placement' );
+			$names = array( 'list-performance-settings', 'set-performance-setting', 'get-cache-settings', 'set-cache-settings', 'cache-status', 'cache-test', 'cache-clear', 'get-post-sections-code-placement', 'set-post-sections-code-placement' );
 			if ( class_exists( 'UiChemy_Abilities' ) && method_exists( 'UiChemy_Abilities', 'performance_extra_actions' ) ) {
 				$names = array_merge( $names, wp_list_pluck( UiChemy_Abilities::performance_extra_actions(), 'name' ) );
 			}

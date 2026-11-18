@@ -662,6 +662,7 @@ if ( ! class_exists( 'UiChemy_Elementor_Driver' ) ) {
 		 */
 		public function after_write( $post_id ) {
 			delete_post_meta( absint( $post_id ), '_elementor_element_cache' );
+			$this->written( $post_id );
 
 			if ( $this->is_available() && isset( \Elementor\Plugin::$instance->files_manager ) ) {
 				\Elementor\Plugin::$instance->files_manager->clear_cache();
