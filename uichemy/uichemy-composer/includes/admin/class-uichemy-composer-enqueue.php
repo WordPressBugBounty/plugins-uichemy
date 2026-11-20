@@ -613,8 +613,36 @@ if ( ! class_exists( 'UiChemy_Composer_Enqueue' ) ) {
 					'runtime'     => ( class_exists( 'UiChemy_Composer_Renderer' ) && method_exists( 'UiChemy_Composer_Renderer', 'runtime_urls' ) )
 						? UiChemy_Composer_Renderer::runtime_urls()
 						: array( 'gsap' => array(), 'three' => '' ),
+					// Whether the preview iframe may run the section's JS and
+					// third-party assets. Same rule as the front end.
+					'canRunCode'  => self::block_preview_can_run_code(),
 				)
 			);
+		}
+
+		/**
+		 * May the block editor preview run section JS / 3rd-party assets?
+		 *
+		 * The front end prints a block's JS only when the post's author may publish
+		 * code (Uich_Dynamic::author_trusted()). The preview follows the same rule,
+		 * and additionally needs the person viewing it to hold `unfiltered_html`.
+		 *
+		 * @return bool
+		 */
+		private static function block_preview_can_run_code() {
+			if ( ! current_user_can( 'unfiltered_html' ) ) {
+				return false;
+			}
+			$post    = get_post();
+			$post_id = $post instanceof \WP_Post ? (int) $post->ID : 0;
+			if ( ! $post_id ) {
+				return true;
+			}
+			if ( class_exists( 'Uich_Dynamic' ) && method_exists( 'Uich_Dynamic', 'author_trusted' ) ) {
+				return Uich_Dynamic::author_trusted( $post_id );
+			}
+			$author = (int) $post->post_author;
+			return $author > 0 && user_can( $author, 'unfiltered_html' );
 		}
 
 		/**

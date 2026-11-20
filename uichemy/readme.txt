@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.7.0
+Stable tag: 5.8.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -271,6 +271,14 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.8.0 = 20 November 2026
+- Added: Sync with Astro (Beta) dashboard screen, with UiChemy Pro.
+- Improved: Dashboard layout on phones and tablets.
+- Improved: Custom Fields migration keeps every field value intact.
+- Fixed: Page code, SEO saves and image imports follow user roles.
+- Fixed: Shop page design not showing at the shop address.
+- Fixed: Various minor bugs and design improvements.
 
 = 5.7.0 = 18 November 2026
 - Added: Introducing Page Caching: cut server response time on every page.

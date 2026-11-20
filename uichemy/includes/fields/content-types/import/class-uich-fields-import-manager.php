@@ -349,11 +349,15 @@ class Uich_Fields_Import_Manager {
 		}
 
 		$job['values']['written']   += $out['written'];
+		$job['values']['altered']    = ( isset( $job['values']['altered'] ) ? (int) $job['values']['altered'] : 0 ) + $out['altered'];
 		$job['values']['skipped']   += $out['skipped'];
 		$job['values']['unchanged'] += $out['unchanged'];
 		$job['values']['failed']    += $out['failed'];
 		if ( $out['errors'] && count( $job['errors'] ) < 50 ) {
 			$job['errors'] = array_merge( $job['errors'], $out['errors'] );
+		}
+		if ( $out['notes'] && count( $job['warnings'] ) < 50 ) {
+			$job['warnings'] = array_merge( $job['warnings'], $out['notes'] );
 		}
 
 		if ( $out['failed'] > 0 ) {
@@ -674,16 +678,41 @@ class Uich_Fields_Import_Manager {
 			'warnings'    => array(),
 		);
 
+		// Post types this run will be able to attach a taxonomy to: registered now, or created by the run.
+		$run_post_types = array();
+		foreach ( $post_types as $p ) {
+			if ( ! empty( $p['data']['post_type_key'] ) ) {
+				$run_post_types[] = (string) $p['data']['post_type_key'];
+			}
+		}
+
 		// Definition warnings are surfaced the same way group warnings are. Without this the adapters'
 		// per-item warnings were built and then dropped, so a degraded advanced setting was invisible.
 		foreach ( $taxonomies as $t ) {
 			$t_warnings           = isset( $t['warnings'] ) ? (array) $t['warnings'] : array();
 			$t_key                = isset( $t['data']['taxonomy_key'] ) ? $t['data']['taxonomy_key'] : '';
+			// save_taxonomy() refuses a post type that does not exist, so say so here instead of failing mid-run.
+			$t_orphan = array();
+			foreach ( isset( $t['data']['object_type'] ) ? (array) $t['data']['object_type'] : array() as $ot ) {
+				$ot = sanitize_key( (string) $ot );
+				if ( '' !== $ot && ! post_type_exists( $ot ) && ! in_array( $ot, $run_post_types, true ) ) {
+					$t_orphan[] = $ot;
+				}
+			}
+			if ( $t_orphan ) {
+				$t_warnings[] = sprintf(
+					/* translators: 1: taxonomy key, 2: comma-separated post type keys */
+					__( '"%1$s" is attached to post type(s) %2$s, which do not exist on this site and are not part of this migration, so this taxonomy will fail to import. Register the post type, or remove it from the taxonomy in the source, then scan again.', 'uichemy' ),
+					$t_key,
+					implode( ', ', $t_orphan )
+				);
+			}
 			$t_info               = self::key_conflict_info( 'taxonomy', $t_key );
 			$plan['taxonomies'][] = array(
 				'key'               => $t_key,
 				'label'             => isset( $t['data']['label'] ) ? $t['data']['label'] : '',
 				'conflict'          => $t_info['reason'],
+				'conflict_code'     => isset( $t_info['code'] ) ? $t_info['code'] : '',
 				'suggested_key'     => $t_info['suggested_key'],
 				'source_registered' => self::registered_by_source( $source, 'taxonomy', $t_key, (int) $t['source_id'] ),
 				'warnings'          => $t_warnings,
@@ -698,6 +727,7 @@ class Uich_Fields_Import_Manager {
 				'key'               => $p_key,
 				'label'             => isset( $p['data']['label'] ) ? $p['data']['label'] : '',
 				'conflict'          => $p_info['reason'],
+				'conflict_code'     => isset( $p_info['code'] ) ? $p_info['code'] : '',
 				'suggested_key'     => $p_info['suggested_key'],
 				'source_registered' => self::registered_by_source( $source, 'cpt', $p_key, (int) $p['source_id'] ),
 				'warnings'          => $p_warnings,
@@ -730,6 +760,7 @@ class Uich_Fields_Import_Manager {
 
 		// A key the source still registers would be registered twice, so the run switches the source off.
 		$plan['disable_source_required'] = false;
+		$plan['disable_source_notice']   = '';
 		$still                           = array();
 		foreach ( array( 'post_types' => 'cpt', 'taxonomies' => 'taxonomy' ) as $bucket => $kind ) {
 			foreach ( $plan[ $bucket ] as $item ) {
@@ -743,7 +774,10 @@ class Uich_Fields_Import_Manager {
 		}
 		if ( $still ) {
 			$plan['disable_source_required'] = true;
-			$plan['warnings'][]              = self::forced_disable_notice( $still, true );
+			// Also returned on its own so the dashboard can show it once, as information, instead of
+			// beside every key and again in the warnings list.
+			$plan['disable_source_notice'] = self::forced_disable_notice( $still, true );
+			$plan['warnings'][]            = $plan['disable_source_notice'];
 		}
 
 		// Source-level notes last: they explain the limits of the adapter itself, and must show even
@@ -802,6 +836,7 @@ class Uich_Fields_Import_Manager {
 			),
 			'values'     => array(
 				'written'   => 0,
+				'altered'   => 0,
 				'skipped'   => 0,
 				'unchanged' => 0,
 				'failed'    => 0,
@@ -1027,10 +1062,12 @@ class Uich_Fields_Import_Manager {
 				if ( $args['import_values'] ) {
 					$v                              = self::import_values( $source, $g );
 					$report['values']['written']   += $v['written'];
+					$report['values']['altered']   += $v['altered'];
 					$report['values']['skipped']   += $v['skipped'];
 					$report['values']['unchanged'] += $v['unchanged'];
 					$report['values']['failed']    += $v['failed'];
 					$report['errors']               = array_merge( $report['errors'], $v['errors'] );
+					$report['warnings']             = array_merge( $report['warnings'], $v['notes'] );
 				}
 			}
 
@@ -1063,10 +1100,12 @@ class Uich_Fields_Import_Manager {
 	private static function import_values( $source, $group ) {
 		$out    = array(
 			'written'   => 0,
+			'altered'   => 0,
 			'skipped'   => 0,
 			'unchanged' => 0,
 			'failed'    => 0,
 			'errors'    => array(),
+			'notes'     => array(),
 		);
 		$fields = isset( $group['data']['fields'] ) ? $group['data']['fields'] : array();
 		if ( ! $fields ) {
@@ -1078,11 +1117,15 @@ class Uich_Fields_Import_Manager {
 			foreach ( $ids as $object_id ) {
 				$one                  = self::copy_object_values( $source, $fields, $object_type, (int) $object_id );
 				$out['written']      += $one['written'];
+				$out['altered']      += $one['altered'];
 				$out['skipped']      += $one['skipped'];
 				$out['unchanged']    += $one['unchanged'];
 				$out['failed']       += $one['failed'];
 				if ( $one['errors'] && count( $out['errors'] ) < 20 ) {
 					$out['errors'] = array_slice( array_merge( $out['errors'], $one['errors'] ), 0, 20 );
+				}
+				if ( $one['notes'] && count( $out['notes'] ) < 20 ) {
+					$out['notes'] = array_slice( array_merge( $out['notes'], $one['notes'] ), 0, 20 );
 				}
 			}
 		}
@@ -1833,6 +1876,7 @@ class Uich_Fields_Import_Manager {
 			),
 			'values'    => array(
 				'written'   => 0,
+				'altered'   => 0,
 				'skipped'   => 0,
 				'unchanged' => 0,
 				'failed'    => 0,
@@ -2055,10 +2099,12 @@ class Uich_Fields_Import_Manager {
 	private static function copy_object_values( $source, $fields, $object_type, $object_id ) {
 		$out     = array(
 			'written'   => 0,
+			'altered'   => 0,
 			'skipped'   => 0,
 			'unchanged' => 0,
 			'failed'    => 0,
 			'errors'    => array(),
+			'notes'     => array(),
 		);
 		$context = 'post' === $object_type ? (int) $object_id : $object_type . '_' . (int) $object_id;
 
@@ -2096,6 +2142,20 @@ class Uich_Fields_Import_Manager {
 			$now = metadata_exists( $target['type'], $target['id'], $target['meta_key'] ) ? get_metadata( $target['type'], $target['id'], $target['meta_key'], true ) : null;
 
 			if ( $ok ) {
+				// Stored, but not as sent: the field's own rules changed it (tags stripped, a number clamped
+				// to min/max). Counted apart from "written" so the result screen does not call it a clean copy.
+				if ( self::value_was_altered( $target['info']['field'], $value, $now ) ) {
+					++$out['altered'];
+					$out['notes'][] = sprintf(
+						/* translators: 1: field name, 2: object type (post, term, user, comment), 3: object id, 4: field type */
+						__( 'value %1$s on %2$s %3$d was saved changed: the %4$s field\'s rules altered it, so the stored value differs from the source. Check it before removing the source.', 'uichemy' ),
+						$field['name'],
+						$object_type,
+						(int) $object_id,
+						isset( $target['info']['field']['type'] ) ? (string) $target['info']['field']['type'] : ''
+					);
+					continue;
+				}
 				// update_metadata() compares strictly, so an int against the string the database returns
 				// counts as a change; compare the stored form before and after instead.
 				if ( $had && self::same_value( $prev, $now ) ) {
@@ -2111,15 +2171,80 @@ class Uich_Fields_Import_Manager {
 			}
 			++$out['failed'];
 			$out['errors'][] = sprintf(
-				/* translators: 1: field name, 2: object type (post, term, user, comment), 3: object id */
-				__( 'value %1$s on %2$s %3$d was not saved: the save was refused (field type unavailable on this plan, no permission, or a write error).', 'uichemy' ),
+				/* translators: 1: field name, 2: object type (post, term, user, comment), 3: object id, 4: reason */
+				__( 'value %1$s on %2$s %3$d was not saved: %4$s', 'uichemy' ),
 				$field['name'],
 				$object_type,
-				(int) $object_id
+				(int) $object_id,
+				self::refusal_reason( $target['info'], $value )
 			);
 		}
 
 		return $out;
+	}
+
+	/**
+	 * Whether a stored scalar differs from the source value it was saved from.
+	 *
+	 * Only types whose sanitizing should keep the value as is are checked; image, date, link and the like are
+	 * reshaped on purpose and would always differ.
+	 *
+	 * @param array $field  Target field config.
+	 * @param mixed $sent   Source value handed to the save.
+	 * @param mixed $stored Value read back after the save.
+	 * @return bool
+	 */
+	private static function value_was_altered( $field, $sent, $stored ) {
+		$type = is_array( $field ) && isset( $field['type'] ) ? (string) $field['type'] : '';
+		if ( ! in_array( $type, array( 'text', 'textarea', 'wysiwyg', 'email', 'url', 'number', 'range' ), true ) ) {
+			return false;
+		}
+		if ( ! is_scalar( $sent ) || ( null !== $stored && ! is_scalar( $stored ) ) ) {
+			return false;
+		}
+		if ( 'number' === $type || 'range' === $type ) {
+			if ( ! is_numeric( $sent ) || ! is_numeric( $stored ) ) {
+				return false;
+			}
+			return (string) ( $sent + 0 ) !== (string) ( $stored + 0 );
+		}
+		// Line endings and outer whitespace are not content.
+		$norm = static function ( $v ) {
+			return trim( str_replace( array( "\r\n", "\r" ), "\n", (string) $v ) );
+		};
+		return $norm( $sent ) !== $norm( $stored );
+	}
+
+	/**
+	 * The real reason uich_save_field_value() refused a value, checked in the same order it checks.
+	 *
+	 * @param array $info  Result of uich_maybe_get_field_info().
+	 * @param mixed $value Source value.
+	 * @return string
+	 */
+	private static function refusal_reason( $info, $value ) {
+		$field = isset( $info['field'] ) && is_array( $info['field'] ) ? $info['field'] : array();
+		$type  = isset( $field['type'] ) ? (string) $field['type'] : '';
+		if ( ! uich_current_user_can_edit_object(
+			array(
+				'type' => $info['object_type'],
+				'id'   => $info['object_id'],
+			)
+		) ) {
+			return __( 'you do not have permission to edit this item.', 'uichemy' );
+		}
+		if ( function_exists( 'uich_fields_type_allowed' ) && ! uich_fields_type_allowed( $type ) ) {
+			/* translators: %s: field type */
+			return sprintf( __( 'the %s field type needs UiChemy Pro.', 'uichemy' ), $type );
+		}
+		if ( class_exists( 'Uich_Fields_Field_Groups_Render' ) ) {
+			$clean  = Uich_Fields_Field_Groups_Render::get_instance()->sanitize_value_for_field( uich_page_link_ids_to_permalinks( $value, $field ), $field );
+			$reason = uich_field_value_rejection( $value, $clean, $field );
+			if ( '' !== $reason ) {
+				return $reason;
+			}
+		}
+		return __( 'the database write failed.', 'uichemy' );
 	}
 
 	/**
@@ -2447,7 +2572,7 @@ class Uich_Fields_Import_Manager {
 	 *
 	 * @param string $kind 'cpt' or 'taxonomy'.
 	 * @param string $key  Source key.
-	 * @return array{reason:string,suggested_key:string}
+	 * @return array{reason:string,suggested_key:string,code?:string} `code` is "source_registered" when the source plugin itself still holds the key.
 	 */
 	private static function key_conflict_info( $kind, $key ) {
 		$key  = (string) $key;
@@ -2494,6 +2619,7 @@ class Uich_Fields_Import_Manager {
 			return array(
 				'reason'        => __( 'Still registered by the source plugin. Its definition will be disabled when the migration runs.', 'uichemy' ),
 				'suggested_key' => '',
+				'code'          => 'source_registered',
 			);
 		}
 		return $none;

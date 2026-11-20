@@ -539,7 +539,14 @@
 	function PreviewFrame( props ) {
 		var settings = props.settings || {};
 		var html = useDynamicResolvedHtml( settings );
+		// Section JS, 3rd-party assets and page code run only when the server says
+		// this post's code may run (see block_preview_can_run_code()), as on the front end.
+		var canRunCode = !! ( window.uichUiChemyBlockCfg && window.uichUiChemyBlockCfg.canRunCode );
 		var css = decodeCodeEntities( settings.raw_css || '' );
+		if ( ! canRunCode ) {
+			css = css.replace( /<\/style/gi, '< /style' );
+			settings = Object.assign( {}, settings, { raw_js: '', raw_deps_standard: '' } );
+		}
 		var js = decodeCodeEntities( String( settings.raw_js || '' ) ).replace( /<\/(script)/gi, '<\\/$1' );
 
 		var ref = useRef( null );
@@ -549,7 +556,7 @@
 		var heightRef = useRef( height );
 
 		var deps = buildDepTags( settings.raw_deps_standard );
-		var pageCode = pageCodeFor( settings );
+		var pageCode = canRunCode ? pageCodeFor( settings ) : { head: '', foot: '' };
 		var runtime = runtimeTagsFor( js );
 		// Front-end wrapper classes and script id, so page CSS and the section's JS find this section.
 		var uid = String( props.uid || '' ).replace( /[^a-z0-9_-]/gi, '' );

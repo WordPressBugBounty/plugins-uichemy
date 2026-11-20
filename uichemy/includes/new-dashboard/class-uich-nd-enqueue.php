@@ -379,7 +379,35 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 					'chat'      => 'https://uichemy.com/chat',
 					'community' => 'https://store.posimyth.com/helpdesk',
 				),
+				// Sync with Astro: filled by Pro's Uich_Hatch_Bridge, else `requiresPro`.
+				'hatch'      => self::hatch_payload(),
 			);
+		}
+
+		/**
+		 * The `hatch` key of the boot payload (Sync with Astro). Non-admins get
+		 * `adminOnly`, since the runtime answers manage_options users only.
+		 *
+		 * @return array
+		 */
+		private static function hatch_payload() {
+			if ( ! class_exists( 'Uich_Hatch_Bridge' ) ) {
+				return array(
+					'available'    => false,
+					'standalone'   => false,
+					'buildMissing' => false,
+					'requiresPro'  => true,
+				);
+			}
+			if ( ! current_user_can( 'manage_options' ) ) {
+				return array(
+					'available'    => false,
+					'standalone'   => false,
+					'buildMissing' => false,
+					'adminOnly'    => true,
+				);
+			}
+			return Uich_Hatch_Bridge::boot_payload();
 		}
 	}
 }

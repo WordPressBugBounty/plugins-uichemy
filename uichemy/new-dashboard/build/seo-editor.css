@@ -2547,10 +2547,21 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
 }
 .uq4TMme0YSl0cC3N117P .CPG8glEWSydwX17GvWHA { position: static; flex: none; }
 
+/* Phones: the title line, then the sentence at full width, then the action.
+   The close button sits in the top corner instead of taking a line of its own. */
 @media (max-width: 560px) {
-  .uq4TMme0YSl0cC3N117P { flex-wrap: wrap; }
-  .uq4TMme0YSl0cC3N117P .zcGujxyF0PiWyrJQHmWY { flex-basis: calc(100% - 40px); }
-  .uq4TMme0YSl0cC3N117P .lp6B7_SPG8Zt5iNXvuKc { white-space: normal; }
+  .uq4TMme0YSl0cC3N117P {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: var(--uc-space-4);
+    padding: var(--uc-space-10) var(--uc-space-40) var(--uc-space-8) var(--uc-space-12);
+  }
+  .uq4TMme0YSl0cC3N117P .zcGujxyF0PiWyrJQHmWY { flex: 1 1 100%; flex-direction: column; align-items: flex-start; gap: var(--uc-space-4); }
+  .uq4TMme0YSl0cC3N117P .zipddIiCYKTyK3F4tF0V { flex-wrap: wrap; }
+  .uq4TMme0YSl0cC3N117P .QmXrnxKFe_hSvaLxJiwk { white-space: normal; }
+  .uq4TMme0YSl0cC3N117P .lp6B7_SPG8Zt5iNXvuKc { white-space: normal; overflow: visible; }
+  .uq4TMme0YSl0cC3N117P .ZtIlpLVeD_5kr8NsQ0wy { margin-left: calc(var(--uc-space-8) * -1); }
+  .uq4TMme0YSl0cC3N117P .CPG8glEWSydwX17GvWHA { position: absolute; top: var(--uc-space-6); right: var(--uc-space-6); }
 }
 
 /* StatCard, KPI tile on uc- tokens. */

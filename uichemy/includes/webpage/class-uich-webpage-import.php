@@ -13755,8 +13755,16 @@ class Uich_Webpage_Import {
 
 		// Permalinks embed the shop page slug, so a changed shop page leaves
 		// every product URL pointing at the old base until rules are rebuilt.
+		//
+		// Rebuilt on the NEXT request, the way WooCommerce does when its Shop page
+		// setting is saved. WooCommerce registered the products archive at the start
+		// of THIS request, from the previous Shop page, so flushing here wrote that
+		// page's address back: on a re-import the previous Shop page has just been
+		// renamed to *-archived-N, and the store's shop moved there while /shop-page/
+		// became a plain page with no products (measured on a store re-imported three
+		// times: the products archive answered at /shop-page-archived-295/).
 		if ( isset( $report['set']['woocommerce_shop_page_id'] ) || in_array( 'woocommerce_shop_page_id', $repaired, true ) ) {
-			flush_rewrite_rules( false );
+			update_option( 'woocommerce_queue_flush_rewrite_rules', 'yes' );
 		}
 
 		return $report;

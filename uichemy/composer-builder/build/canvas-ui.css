@@ -1058,6 +1058,9 @@ body[data-theme="light"],
 .uich-tw .max-h-\[380px\] {
   max-height: 380px;
 }
+.uich-tw .max-h-\[40\%\] {
+  max-height: 40%;
+}
 .uich-tw .max-h-\[52vh\] {
   max-height: 52vh;
 }
@@ -1186,9 +1189,6 @@ body[data-theme="light"],
 }
 .uich-tw .w-\[300px\] {
   width: 300px;
-}
-.uich-tw .w-\[320px\] {
-  width: 320px;
 }
 .uich-tw .w-\[34\%\] {
   width: 34%;
@@ -3011,8 +3011,20 @@ body[data-theme="light"],
   }
 }
 @media (min-width: 1280px) {
+  .uich-tw .xl\:max-h-none {
+    max-height: none;
+  }
+  .uich-tw .xl\:w-\[320px\] {
+    width: 320px;
+  }
   .uich-tw .xl\:grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .uich-tw .xl\:flex-row {
+    flex-direction: row;
+  }
+  .uich-tw .xl\:flex-nowrap {
+    flex-wrap: nowrap;
   }
 }
 .uich-tw .\[\&\:\:-webkit-scrollbar\]\:hidden::-webkit-scrollbar {

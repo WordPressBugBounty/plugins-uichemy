@@ -2341,14 +2341,15 @@ JS
 			$fdefault    = isset( $field['default_value'] ) ? $field['default_value'] : '';
 			$has_default = is_array( $fdefault ) ? ! empty( $fdefault ) : ( '' !== (string) $fdefault );
 			if ( $has_default ) {
-				update_metadata( $object_type, (int) $object_id, $meta_key, $value );
+				update_metadata( $object_type, (int) $object_id, $meta_key, wp_slash( $value ) );
 			} else {
 				delete_metadata( $object_type, (int) $object_id, $meta_key );
 			}
 			return true;
 		}
 
-		update_metadata( $object_type, (int) $object_id, $meta_key, $value );
+		// update_metadata() unslashes, and the save loop already unslashed: slash once so backslashes survive.
+		update_metadata( $object_type, (int) $object_id, $meta_key, wp_slash( $value ) );
 		return true;
 	}
 
@@ -5963,7 +5964,10 @@ JS
 		if ( 'textarea' === $type ) {
 			// Preserve line breaks — sanitize_text_field() (the sanitize_deep fallback) would collapse every newline
 			// to a space, losing all multi-line formatting on save.
-			return is_string( $raw ) ? sanitize_textarea_field( $raw ) : '';
+			if ( ! is_string( $raw ) ) {
+				return '';
+			}
+			return function_exists( 'uich_sanitize_textarea_value' ) ? uich_sanitize_textarea_value( $raw ) : sanitize_textarea_field( $raw );
 		}
 		if ( 'url' === $type ) {
 			// esc_url_raw() enforces a protocol allowlist, so a `javascript:` (or `data:`) URI is stripped at save.

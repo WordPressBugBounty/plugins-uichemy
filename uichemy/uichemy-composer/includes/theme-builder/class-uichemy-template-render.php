@@ -37,6 +37,13 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 		private static $rendering = array();
 
 		/**
+		 * Page documents pushed by enter_post_content() (0 = nothing pushed), innermost last.
+		 *
+		 * @var int[]
+		 */
+		private static $content_docs = array();
+
+		/**
 		 * The template being rendered right now, or 0 outside one.
 		 *
 		 * @return int
@@ -53,6 +60,13 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 		 */
 		public static function enter_post_content( $content ) {
 			self::$rendering[] = 0;
+			// The page's own blocks are judged by the page's author, not the template's
+			// (Uich_Dynamic::author_trusted()).
+			$doc = class_exists( 'Uich_Dynamic' ) && method_exists( 'Uich_Dynamic', 'push_document' ) ? (int) get_the_ID() : 0;
+			if ( $doc ) {
+				Uich_Dynamic::push_document( $doc );
+			}
+			self::$content_docs[] = $doc;
 			return $content;
 		}
 
@@ -65,8 +79,20 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 		public static function leave_post_content( $content ) {
 			if ( self::$rendering && 0 === end( self::$rendering ) ) {
 				array_pop( self::$rendering );
+				self::pop_content_doc();
 			}
 			return $content;
+		}
+
+		/**
+		 * Undo the document enter_post_content() pushed, if any.
+		 *
+		 * @return void
+		 */
+		private static function pop_content_doc() {
+			if ( self::$content_docs && array_pop( self::$content_docs ) ) {
+				Uich_Dynamic::pop_document();
+			}
 		}
 
 		/**
@@ -536,6 +562,11 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				$id = UiChemy_Template_Resolver::resolve( 'search' );
 			} elseif ( self::is_woo_product_archive() ) {
 				$id = UiChemy_Template_Resolver::resolve( 'product_archive' );
+				if ( ! $id ) {
+					// No Product Archive template: the Shop page's own UiChemy design, when
+					// it has one. See designed_shop_page().
+					$id = self::designed_shop_page();
+				}
 			} elseif ( is_archive() || is_home() ) {
 				// Any post/term archive: category, tag, taxonomy, author, date,
 				// post-type archive, and the blog posts index.
@@ -705,6 +736,7 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				// Drop any post-content marker left open, then this template.
 				while ( self::$rendering && 0 === end( self::$rendering ) ) {
 					array_pop( self::$rendering );
+					self::pop_content_doc();
 				}
 				array_pop( self::$rendering );
 				if ( ! self::$rendering ) {
@@ -837,6 +869,54 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 				return false;
 			}
 			return (bool) is_order_received_page();
+		}
+
+		/**
+		 * The WooCommerce Shop page, when it carries a UiChemy design to show at the
+		 * shop's address.
+		 *
+		 * WooCommerce never shows its Shop page's own content: at that address it
+		 * renders the products archive. An imported store whose shop design is a page
+		 * ("Shop Page", built with UiChemy and set as the Shop page) showed WooCommerce's
+		 * default product grid instead of the design (measured on two stores, on
+		 * WordPress and on the headless frontend alike). The design runs its own
+		 * product queries, so it is shown as is on the shop's first page; a Product
+		 * Archive template, when there is one, still wins, and later pages, product
+		 * categories and tags keep the archive.
+		 *
+		 * @return int Shop page ID, or 0.
+		 */
+		private static function designed_shop_page() {
+			if ( ! function_exists( 'is_shop' ) || ! function_exists( 'wc_get_page_id' ) || ! is_shop() || is_paged() ) {
+				return 0;
+			}
+			$shop = (int) wc_get_page_id( 'shop' );
+			if ( $shop <= 0 || 'page' !== get_post_type( $shop ) || 'publish' !== get_post_status( $shop ) || post_password_required( $shop ) ) {
+				return 0;
+			}
+			if ( 'builder' !== get_post_meta( $shop, '_elementor_edit_mode', true ) ) {
+				return 0;
+			}
+			$data = (string) get_post_meta( $shop, '_elementor_data', true );
+			if ( false === strpos( $data, '"widgetType":"uichemy-builder"' ) ) {
+				return 0;
+			}
+			// Only a design that lists the products itself replaces the archive. A UiChemy
+			// section used as a banner above WooCommerce's own grid keeps that grid.
+			return self::design_lists_products( $data ) ? $shop : 0;
+		}
+
+		/**
+		 * Whether a design runs its own product query (a get_products() loop, or a
+		 * query on the product post type).
+		 *
+		 * @param string $data Elementor data JSON.
+		 * @return bool
+		 */
+		private static function design_lists_products( $data ) {
+			$data = stripslashes( (string) $data );
+			return false !== strpos( $data, 'get_products' )
+				|| 1 === preg_match( '/post_type\W{0,8}product\b/', $data );
 		}
 
 		/**

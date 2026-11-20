@@ -17,7 +17,7 @@
  * `feature_{slug}`, so they save through the same Settings pipeline as every
  * other toggle. A key absent from storage means ON, so a site that used a
  * feature before switches existed never loses it. A feature marked
- * `default_off` (Custom Fields, Module Studio) starts OFF on a new site
+ * `default_off` (Custom Fields, Module Studio, Sync with Astro) starts OFF on a new site
  * instead: activation writes its switch as off unless the site already has
  * data for it (uich_feature_seed_defaults()). Its dashboard tab stays either
  * way and, while off, offers to switch it on.
@@ -69,6 +69,14 @@ if ( ! function_exists( 'uich_features' ) ) {
 				'label'       => 'Module Studio',
 				'description' => 'Modules: PHP, CSS, JS and HTML placed site-wide or by condition, or small features of their own. Turn off if you manage custom code with another plugin.',
 				'default_off' => true,
+			),
+			'sync_astro'    => array(
+				'label'          => 'Sync with Astro',
+				'description'    => 'A headless Astro frontend for this site (UiChemy Pro). While off, none of its code loads.',
+				'default_off'    => true,
+				// New in 5.6.2, so an updated site starts with it off too: with no stored
+				// switch it is on only for a site already using it (see uich_feature_stored()).
+				'off_until_used' => true,
 			),
 		);
 	}
@@ -133,7 +141,12 @@ if ( ! function_exists( 'uich_feature_stored' ) ) {
 
 		$settings = get_option( 'uichemy_settings', array() );
 		$key      = uich_feature_setting_key( $slug );
-		return ! is_array( $settings ) || ! array_key_exists( $key, $settings ) || ! empty( $settings[ $key ] );
+		if ( is_array( $settings ) && array_key_exists( $key, $settings ) ) {
+			return ! empty( $settings[ $key ] );
+		}
+		// Never chosen: on, except an `off_until_used` feature, which is on only where it is in use.
+		$features = uich_features();
+		return empty( $features[ $slug ]['off_until_used'] ) || uich_feature_in_use( $slug );
 	}
 }
 
@@ -259,10 +272,30 @@ if ( ! function_exists( 'uich_feature_in_use' ) ) {
 		switch ( $slug ) {
 			case 'custom_fields':
 				// Any definition (post type, taxonomy, field group, options page), even trashed.
-				return (bool) $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = %s LIMIT 1", 'uich_content_types' ) );
+				if ( $wpdb->get_var( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_type = %s LIMIT 1", 'uich_content_types' ) ) ) {
+					return true;
+				}
+				// Definitions now live as JSON files, so a site can have them and no rows at all. Same path as
+				// Uich_Fields_Model_Paths::site_dir(), which is not loaded while the feature is off.
+				$dir = untrailingslashit( wp_normalize_path( (string) apply_filters( 'uich_fields_model_dir', WP_CONTENT_DIR . '/uichemy-fields' ) ) )
+					. '/sites/' . max( 1, (int) get_current_blog_id() );
+				foreach ( array( 'post-types', 'taxonomies', 'field-groups' ) as $sub ) {
+					if ( glob( $dir . '/' . $sub . '/*.json' ) ) {
+						return true;
+					}
+				}
+				return false;
 			case 'module_studio':
 				// Created the first time Module Studio stores a module.
 				return '' !== (string) get_option( 'uichemy_module_studio_code_dir', '' );
+			case 'sync_astro':
+				// Pro's opt-in record, its older signals (wizard done, frontend URL saved) or a deploy under way.
+				foreach ( array( 'uich_sync_astro_enabled', 'hatch_setup_wizard_completed', 'hatch_frontend_url', 'uich_hatch_deploy_pending' ) as $option ) {
+					if ( get_option( $option ) ) {
+						return true;
+					}
+				}
+				return false;
 		}
 		return false;
 	}

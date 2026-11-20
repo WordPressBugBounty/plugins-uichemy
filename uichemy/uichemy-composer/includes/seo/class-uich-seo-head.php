@@ -932,11 +932,13 @@ if ( ! class_exists( 'Uich_SEO_Head' ) ) {
 			$lift  = static function ( $caps, $cap ) {
 				return 'unfiltered_html' === $cap ? array( 'exist' ) : $caps;
 			};
+			$trust = self::editor_trust_mark( $post_id );
 			add_filter( 'map_meta_cap', $lift, PHP_INT_MAX, 2 );
 			try {
 				$saved = $driver->save_sections( $post_id, $sections, 'content' );
 			} finally {
 				remove_filter( 'map_meta_cap', $lift, PHP_INT_MAX );
+				self::restore_editor_trust_mark( $post_id, $trust );
 			}
 			if ( is_wp_error( $saved ) ) {
 				return $saved;
@@ -949,6 +951,43 @@ if ( ! class_exists( 'Uich_SEO_Head' ) ) {
 			}
 			unset( self::$pages[ $post_id ], self::$trusted[ $post_id ] );
 			return true;
+		}
+
+		/**
+		 * The page's editor-trust mark (Uich_Dynamic::UNTRUSTED_EDIT_META) before an
+		 * SEO save: null when the page has none.
+		 *
+		 * @param int $post_id Post id.
+		 * @return mixed|null
+		 */
+		private static function editor_trust_mark( $post_id ) {
+			if ( ! class_exists( 'Uich_Dynamic' ) || ! defined( 'Uich_Dynamic::UNTRUSTED_EDIT_META' ) ) {
+				return null;
+			}
+			return metadata_exists( 'post', $post_id, Uich_Dynamic::UNTRUSTED_EDIT_META )
+				? get_post_meta( $post_id, Uich_Dynamic::UNTRUSTED_EDIT_META, true )
+				: null;
+		}
+
+		/**
+		 * An SEO save adds only escaped tags, no markup from the user, so it must not
+		 * change who the page's code is trusted as. The lifted save may have rewritten
+		 * the mark (as if the user held `unfiltered_html`); put back exactly what was
+		 * there before.
+		 *
+		 * @param int        $post_id Post id.
+		 * @param mixed|null $mark    Value from editor_trust_mark().
+		 * @return void
+		 */
+		private static function restore_editor_trust_mark( $post_id, $mark ) {
+			if ( ! class_exists( 'Uich_Dynamic' ) || ! defined( 'Uich_Dynamic::UNTRUSTED_EDIT_META' ) ) {
+				return;
+			}
+			if ( null === $mark ) {
+				delete_post_meta( $post_id, Uich_Dynamic::UNTRUSTED_EDIT_META );
+			} else {
+				update_post_meta( $post_id, Uich_Dynamic::UNTRUSTED_EDIT_META, $mark );
+			}
 		}
 
 		/**
@@ -986,11 +1025,13 @@ if ( ! class_exists( 'Uich_SEO_Head' ) ) {
 				$lift = static function ( $caps, $cap ) {
 					return 'unfiltered_html' === $cap ? array( 'exist' ) : $caps;
 				};
+				$trust = self::editor_trust_mark( $post_id );
 				add_filter( 'map_meta_cap', $lift, PHP_INT_MAX, 2 );
 				try {
 					$saved = Uich_CB_Content::save_cb_content( $post_id, $document );
 				} finally {
 					remove_filter( 'map_meta_cap', $lift, PHP_INT_MAX );
+					self::restore_editor_trust_mark( $post_id, $trust );
 				}
 				if ( ! $saved || is_wp_error( $saved ) ) {
 					return is_wp_error( $saved ) ? $saved : new WP_Error( 'uich_seo_save_failed', __( 'The page head code could not be saved.', 'uichemy' ) );

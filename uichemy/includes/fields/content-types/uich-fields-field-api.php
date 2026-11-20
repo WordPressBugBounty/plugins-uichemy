@@ -1011,18 +1011,21 @@ function uich_get_stored_value( $meta_key, $object_type, $object_id, $default = 
  * @return bool
  */
 function uich_update_stored_value( $meta_key, $value, $object_type, $object_id ) {
+	// The meta functions wp_unslash() what they are given, and the value here is already unslashed, so a
+	// backslash in it (a Windows path, a regex) would be lost. update_option() does not unslash: no slashing there.
+	$slashed = wp_slash( $value );
 	switch ( $object_type ) {
 		case 'user':
-			return $object_id ? (bool) update_user_meta( (int) $object_id, $meta_key, $value ) : false;
+			return $object_id ? (bool) update_user_meta( (int) $object_id, $meta_key, $slashed ) : false;
 		case 'term':
-			return $object_id ? (bool) update_term_meta( (int) $object_id, $meta_key, $value ) : false;
+			return $object_id ? (bool) update_term_meta( (int) $object_id, $meta_key, $slashed ) : false;
 		case 'option':
 			// autoload=false: field values are read on demand via uich_field_value(), not on every page load.
 			return update_option( $meta_key, $value, false );
 		case 'comment':
-			return $object_id ? (bool) update_comment_meta( (int) $object_id, $meta_key, $value ) : false;
+			return $object_id ? (bool) update_comment_meta( (int) $object_id, $meta_key, $slashed ) : false;
 		default:
-			return (bool) update_post_meta( (int) $object_id, $meta_key, $value );
+			return (bool) update_post_meta( (int) $object_id, $meta_key, $slashed );
 	}
 }
 
@@ -2989,6 +2992,24 @@ function uich_field_choice_keys( $field ) {
 }
 
 /**
+ * Sanitize a textarea value.
+ *
+ * A user who may post unfiltered HTML (the same trust WordPress gives post content) keeps the text
+ * byte for byte: tags, indentation, backslashes and `%xx` sequences. sanitize_textarea_field() would
+ * strip all of them, and on a large value with a <style>/<script> block its regex hits the PCRE
+ * backtrack limit and returns ''. Everyone else keeps the plain-text sanitizing.
+ *
+ * @param mixed $value Incoming value.
+ * @return string
+ */
+function uich_sanitize_textarea_value( $value ) {
+	if ( ! is_scalar( $value ) ) {
+		return '';
+	}
+	return current_user_can( 'unfiltered_html' ) ? (string) $value : sanitize_textarea_field( (string) $value );
+}
+
+/**
  * Sanitize a group-field meta value written through core (e.g.
  *
  * @param mixed  $value    Incoming value.
@@ -3032,7 +3053,7 @@ function uich_sanitize_registered_field_meta_value( $value, $sanitize, $field = 
 		case 'wysiwyg':
 			return wp_kses_post( (string) $value );
 		case 'textarea':
-			return sanitize_textarea_field( (string) $value );
+			return uich_sanitize_textarea_value( $value );
 		case 'number':
 			if ( ! is_numeric( $value ) ) {
 				return '';

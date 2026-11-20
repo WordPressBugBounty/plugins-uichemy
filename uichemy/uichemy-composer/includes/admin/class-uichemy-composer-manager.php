@@ -2946,6 +2946,12 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return $result;
 			}
 
+			// Adding to the Media Library needs `upload_files`, as in core. A signed-in
+			// user without it keeps the original URLs. No user (cron, WP-CLI) is unchanged.
+			if ( get_current_user_id() && ! current_user_can( 'upload_files' ) ) {
+				return $result;
+			}
+
 			$needs_dom = ( '' !== trim( $html ) ) && (
 				false !== stripos( $html, '<img' )
 				|| false !== stripos( $html, 'srcset=' )
@@ -3345,6 +3351,11 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			$svg_mime_filter = null;
+			// SVG needs `unfiltered_html`, like the dedicated upload endpoint.
+			if ( 'image/svg+xml' === $image_mime && get_current_user_id() && ! current_user_can( 'unfiltered_html' ) ) {
+				wp_delete_file( $temp_file );
+				return new \WP_Error( 'uich_sideload_svg_not_allowed', __( 'SVG files need the unfiltered_html capability.', 'uichemy' ) );
+			}
 			if ( 'image/svg+xml' === $image_mime ) {
 				$svg_mime_filter = array( __CLASS__, 'mcp_allow_svg_upload_mimes' );
 				add_filter( 'upload_mimes', $svg_mime_filter, 99 );
