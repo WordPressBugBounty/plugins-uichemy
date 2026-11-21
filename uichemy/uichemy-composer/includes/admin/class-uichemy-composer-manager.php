@@ -6112,7 +6112,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			if ( $updated ) {
-				$all[ $form_key ] = $current;
+				// Security audit A04-C1: see Uich_Forms::delivery_trusted().
+				$current['trusted'] = current_user_can( 'unfiltered_html' );
+				$all[ $form_key ]   = $current;
 				update_post_meta( $post_id, Uich_Forms::CONFIG_META, $all );
 			}
 

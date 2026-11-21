@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.8.0
+Stable tag: 5.8.1
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -271,6 +271,12 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.8.1 = 21 November 2026
+- Improved: Publish to Astro is now the name of the tab and its screen.
+- Fixed: Form emails and webhooks follow user roles.
+- Fixed: Deleting UiChemy also removes saved SMTP passwords.
+- Fixed: Various minor bugs and design improvements.
 
 = 5.8.0 = 20 November 2026
 - Added: Sync with Astro (Beta) dashboard screen, with UiChemy Pro.

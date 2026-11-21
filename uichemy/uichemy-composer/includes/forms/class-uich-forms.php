@@ -169,8 +169,12 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 					// handler can enforce them server-side (the browser check alone is bypassable).
 					// Always sent, even with no rules, so a submission WITHOUT a valid
 					// one can be refused: leaving the field out skipped every check (I-02).
-					$schema      = self::extract_schema( $m[2] );
-					$schema_json = wp_json_encode( $schema );
+					$schema = self::extract_schema( $m[2] );
+					// The form's actions and subject are signed with the schema (security audit
+					// A04-C1); the plain hidden fields below stay for older runtimes.
+					$schema['actions'] = preg_match( '/data-atom-actions\s*=\s*["\']([^"\']*)["\']/i', $attrs, $sa ) ? $sa[1] : null;
+					$schema['subject'] = preg_match( '/data-atom-subject\s*=\s*["\']([^"\']*)["\']/i', $attrs, $ss ) ? $ss[1] : '';
+					$schema_json       = wp_json_encode( $schema );
 					$hidden     .= '<input type="hidden" name="' . self::SCHEMA_FIELD . '" value="' . esc_attr( $schema_json ) . '">';
 					$hidden     .= '<input type="hidden" name="' . self::SCHEMA_FIELD . '_sig" value="' . esc_attr( self::sign_schema( $schema_json, $form_key, $wid, $pid ) ) . '">';
 
@@ -326,6 +330,27 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			return isset( $all[ $form_key ] ) ? $all[ $form_key ] : array();
 		}
 
+		/**
+		 * May this form's own recipients and webhook be used? (Security audit A04-C1.)
+		 *
+		 * The submit route is public, so whoever set the recipients decides where any
+		 * visitor's submission is mailed or posted. That is only honoured when the settings
+		 * were saved by a user trusted with raw HTML (administrators, and editors on a single
+		 * site). Settings saved by a Contributor or Author are ignored: the mail goes to the
+		 * site's admin address and no webhook runs. Settings saved before this check existed
+		 * carry no flag and are honoured once the page is published, as before.
+		 *
+		 * @param array $cfg     The form's stored settings.
+		 * @param int   $post_id Post the settings belong to.
+		 * @return bool
+		 */
+		public static function delivery_trusted( $cfg, $post_id ) {
+			if ( isset( $cfg['trusted'] ) ) {
+				return (bool) $cfg['trusted'];
+			}
+			return 'publish' === get_post_status( (int) $post_id );
+		}
+
 		public static function config_route( $request ) {
 			$post_id  = (int) $request->get_param( 'post_id' );
 			$form_key = sanitize_key( (string) $request->get_param( 'form_key' ) );
@@ -348,6 +373,9 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 				'email_reply' => sanitize_email( (string) $request->get_param( 'email_reply' ) ),
 				'email2'      => sanitize_email( (string) $request->get_param( 'email2' ) ),
 				'webhook'     => esc_url_raw( (string) $request->get_param( 'webhook' ) ),
+				// Security audit A04-C1: who may send this form's mail to an address of their
+				// choosing, or post it to a webhook. See delivery_trusted().
+				'trusted'     => current_user_can( 'unfiltered_html' ),
 			);
 			$all = get_post_meta( $post_id, self::CONFIG_META, true );
 			$all = is_array( $all ) ? $all : array();
@@ -666,14 +694,32 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			// empty value means the author turned BOTH actions off, so nothing runs. Only
 			// a totally absent field (legacy / hand-authored forms) falls back to the default.
 			// Sensitive settings come from server-side config (not page source).
-			$cfg = self::get_config( $post_id, $form_key );
+			$cfg       = self::get_config( $post_id, $form_key );
+			$cfg_owner = $post_id;
 			// A form in a header / footer template is configured on the template,
 			// while _uich_post_id is the page it was submitted from. Fall back to
 			// the template's settings - only a theme-builder template, so the field
 			// cannot point a submission at any other post's recipients.
 			$config_id = isset( $params['_uich_config_id'] ) ? (int) $params['_uich_config_id'] : 0;
 			if ( empty( $cfg ) && $config_id && class_exists( 'UiChemy_Template_CPT' ) && UiChemy_Template_CPT::POST_TYPE === get_post_type( $config_id ) ) {
-				$cfg = self::get_config( $config_id, $form_key );
+				$cfg       = self::get_config( $config_id, $form_key );
+				$cfg_owner = $config_id;
+			}
+			// Recipients and webhook only from trusted settings (security audit A04-C1).
+			if ( ! self::delivery_trusted( $cfg, $cfg_owner ) ) {
+				unset( $cfg['email_to'], $cfg['email2'], $cfg['webhook'] );
+			}
+
+			// Actions and subject from the signed schema when the page carries them there
+			// (security audit A04-C1), so a visitor cannot switch off saving or pick the
+			// subject. A page cached before this change has them only as plain fields.
+			if ( is_array( $schema ) && array_key_exists( 'actions', $schema ) ) {
+				if ( null === $schema['actions'] ) {
+					unset( $params['_uich_actions'] );
+				} else {
+					$params['_uich_actions'] = (string) $schema['actions'];
+				}
+				$params['_uich_subject'] = isset( $schema['subject'] ) ? (string) $schema['subject'] : '';
 			}
 
 			// The markup's data-atom-actions wins; a form without it takes "store" from its

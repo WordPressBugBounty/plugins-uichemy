@@ -135,15 +135,56 @@ if ( ! function_exists( 'uichemy_uninstall_rmdir' ) ) {
 	}
 }
 
+if ( ! function_exists( 'uichemy_uninstall_smtp_secrets_site' ) ) {
+
+	/**
+	 * Remove the stored SMTP secrets of the CURRENT site.
+	 *
+	 * Runs on every uninstall, whatever "Delete all data on uninstall" says, because a mail password
+	 * should not outlive the plugin. Only the secrets go: the SMTP password, the Gmail client secret and
+	 * refresh token, the cached Gmail access token and the key they were encrypted with. Host, port,
+	 * login and From settings stay, so a reinstall only asks for the password again. SMTP is switched
+	 * off, so a reinstall sends through WordPress's own mail until the password is entered.
+	 *
+	 * @return void
+	 */
+	function uichemy_uninstall_smtp_secrets_site() {
+		$smtp = get_option( 'uichemy_smtp', null );
+		if ( is_array( $smtp ) ) {
+			$had_secret = false;
+			if ( isset( $smtp['custom'] ) && is_array( $smtp['custom'] ) && '' !== (string) ( $smtp['custom']['password'] ?? '' ) ) {
+				$smtp['custom']['password'] = '';
+				$had_secret                 = true;
+			}
+			if ( isset( $smtp['gmail'] ) && is_array( $smtp['gmail'] ) ) {
+				foreach ( array( 'client_secret', 'refresh_token' ) as $key ) {
+					if ( '' !== (string) ( $smtp['gmail'][ $key ] ?? '' ) ) {
+						$smtp['gmail'][ $key ] = '';
+						$had_secret            = true;
+					}
+				}
+			}
+			if ( $had_secret ) {
+				$smtp['enabled'] = false;
+				update_option( 'uichemy_smtp', $smtp, false );
+			}
+		}
+		delete_option( 'uichemy_secret_key' );
+		delete_transient( 'uichemy_smtp_gmail_access' );
+	}
+}
+
 if ( is_multisite() ) {
 	$uichemy_site_ids = get_sites( array( 'fields' => 'ids', 'number' => 0 ) );
 	foreach ( $uichemy_site_ids as $uichemy_site_id ) {
 		switch_to_blog( (int) $uichemy_site_id );
 		uichemy_uninstall_fields_site();
+		uichemy_uninstall_smtp_secrets_site(); // Always, not only with "Delete all data".
 		restore_current_blog();
 	}
 } else {
 	uichemy_uninstall_fields_site();
+	uichemy_uninstall_smtp_secrets_site(); // Always, not only with "Delete all data".
 }
 
 // Black Friday banner dismissal flags (Uich_Bf_Banner::META_KEY). Only a UI state, not user data, so it
