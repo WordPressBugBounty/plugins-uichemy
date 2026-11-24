@@ -68,7 +68,7 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V3' ) ) {
 		 * Hook server registration onto the MCP Adapter.
 		 */
 		public static function init() {
-			add_action( 'mcp_adapter_init', array( __CLASS__, 'register_mcp_server' ) );
+			add_action( 'uichemy_mcp_adapter_init', array( __CLASS__, 'register_mcp_server' ) );
 			add_filter( 'rest_pre_dispatch', array( __CLASS__, 'prime_request' ), 10, 3 );
 		}
 

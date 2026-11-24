@@ -177,7 +177,17 @@ if ( ! class_exists( 'Uich_Elementor_Import_Images' ) ) {
 				'tmp_name' => $tmp,
 			);
 
-			$attachment_id = media_handle_sideload( $file_array, 0 );
+			if ( class_exists( 'Uich_Api' ) && preg_match( '/\.svg$/i', (string) $file_array['name'] ) ) {
+				// SVG is allowed for this sideload only, and scrubbed first.
+				Uich_Api::sanitize_svg_file( $tmp );
+				$attachment_id = Uich_Api::run_with_svg_upload(
+					function () use ( $file_array ) {
+						return media_handle_sideload( $file_array, 0 );
+					}
+				);
+			} else {
+				$attachment_id = media_handle_sideload( $file_array, 0 );
+			}
 			if ( is_wp_error( $attachment_id ) ) {
 				// error_log("Upload failed for: " . $url);
 				@unlink( $file_array['tmp_name'] );

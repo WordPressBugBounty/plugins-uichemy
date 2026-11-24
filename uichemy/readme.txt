@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.8.2
+Stable tag: 5.8.3
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -271,6 +271,16 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.8.3 = 24 November 2026
+- Added: Quick feedback form when deactivating UiChemy.
+- Added: Upgrade to Pro for Free accounts in AI Website Creator.
+- Added: Light, dark and system themes for the UiChemy dashboard.
+- Fixed: MCP and Figma plugin connections failing with a critical error.
+- Fixed: Installing UiChemy Pro from the dashboard failing on new sites.
+- Fixed: Elementor Pro header and footer missing on UiChemy Canvas pages.
+- Fixed: Error messages showing code instead of readable text.
+- Fixed: Various minor bugs and design improvements.
 
 = 5.8.2 = 23 November 2026
 - Improved: AI keeps CSS shared by sections in one place on the page.

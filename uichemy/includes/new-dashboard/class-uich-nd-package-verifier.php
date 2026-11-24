@@ -171,6 +171,11 @@ if ( ! class_exists( 'Uich_ND_Package_Verifier' ) ) {
 				return new WP_Error( 'uichemy_pro_hash_mismatch', __( 'The downloaded UiChemy Pro package is not the signed release (checksum differs), so it was not installed.', 'uichemy' ) );
 			}
 
+			// wp_tempnam() lives in wp-admin/includes/file.php, which WordPress does not
+			// load for REST requests, so on a fresh site the call would be undefined.
+			if ( ! function_exists( 'wp_tempnam' ) ) {
+				require_once ABSPATH . 'wp-admin/includes/file.php';
+			}
 			$tmp = wp_tempnam( 'uichemy-pro-' );
 			if ( ! $tmp ) {
 				return new WP_Error( 'uichemy_pro_tmp_failed', __( 'Could not create a temporary file for the UiChemy Pro download.', 'uichemy' ) );

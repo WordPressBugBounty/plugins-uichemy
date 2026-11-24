@@ -280,7 +280,7 @@ if ( ! class_exists( 'Uich_ND_Api' ) ) {
 					'appPassword' => Uich_ND_App_Password::get_dashboard_state(),
 					'localEnv'    => Uich_ND_Settings::get_local_env_state(),
 					'uichemy'     => Uich_ND_Settings::detect_uichemy(),
-					'uichemyPro'  => Uich_ND_Settings::detect_uichemy_pro(),
+					'uichemyPro'  => Uich_ND_Settings::detect_uichemy_pro( false ), // cached only: never block the dashboard on the app.
 					'site'        => array(
 						'name'       => get_bloginfo( 'name' ),
 						'url'        => get_option( 'siteurl' ),

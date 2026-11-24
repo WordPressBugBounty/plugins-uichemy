@@ -1088,15 +1088,21 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 				return;
 			}
 
-			// Dequeue and deregister jquery-migrate
-			wp_dequeue_script( 'jquery-migrate' );
-			wp_deregister_script( 'jquery-migrate' );
-
 			$wp_scripts = wp_scripts();
-			if ( isset( $wp_scripts->registered['jquery'] ) && ! empty( $wp_scripts->registered['jquery']->deps ) ) {
-				$wp_scripts->registered['jquery']->deps = array_values(
-					array_diff( $wp_scripts->registered['jquery']->deps, array( 'jquery-migrate' ) )
-				);
+
+			// Cut jquery -> jquery-migrate, then drop jquery-migrate unless another queued
+			// script still depends on it (then the edge goes back and it stays).
+			$jquery_deps = isset( $wp_scripts->registered['jquery'] ) ? (array) $wp_scripts->registered['jquery']->deps : null;
+			if ( null !== $jquery_deps ) {
+				$wp_scripts->registered['jquery']->deps = array_values( array_diff( $jquery_deps, array( 'jquery-migrate' ) ) );
+			}
+			if ( self::queued_script_needs( 'jquery-migrate', $wp_scripts ) ) {
+				if ( null !== $jquery_deps ) {
+					$wp_scripts->registered['jquery']->deps = $jquery_deps;
+				}
+			} else {
+				wp_dequeue_script( 'jquery-migrate' );
+				wp_deregister_script( 'jquery-migrate' );
 			}
 
 			// Dequeue and deregister jQuery UI Core (core.min.js), only on a page made of

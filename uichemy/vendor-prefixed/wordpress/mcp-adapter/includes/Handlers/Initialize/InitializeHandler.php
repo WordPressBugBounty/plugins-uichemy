@@ -95,6 +95,6 @@ class InitializeHandler {
 		 * @param \UiChemy\Deps\WP\McpSchema\Common\Protocol\DTO\InitializeResult $result The initialize result DTO.
 		 * @param \UiChemy\Deps\WP\MCP\Core\McpServer                             $server The MCP server instance.
 		 */
-		return apply_filters( 'mcp_adapter_initialize_response', $result, $this->mcp );
+		return apply_filters( 'uichemy_mcp_adapter_initialize_response', $result, $this->mcp );
 	}
 }

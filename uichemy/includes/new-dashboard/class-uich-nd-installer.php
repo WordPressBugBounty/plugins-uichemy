@@ -651,7 +651,7 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 					? __( 'UiChemy Pro is installed. Finish activating it in WP-Admin.', 'uichemy' )
 					: __( 'UiChemy Pro is installed. Click to activate it in WP-Admin.', 'uichemy' ),
 				'activate_url' => self::activation_url( $file ),
-				'uichemyPro'   => Uich_ND_Settings::detect_uichemy_pro(),
+				'uichemyPro'   => Uich_ND_Settings::detect_uichemy_pro( false ), // cached only.
 			);
 		}
 
@@ -676,7 +676,7 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 				'action'     => $action,
 				'plugin'     => 'uichemy-pro',
 				'message'    => $message,
-				'uichemyPro' => Uich_ND_Settings::detect_uichemy_pro(),
+				'uichemyPro' => Uich_ND_Settings::detect_uichemy_pro( false ), // cached only.
 			);
 		}
 

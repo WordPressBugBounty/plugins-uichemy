@@ -3263,7 +3263,7 @@ function uich_fields_can_store_reference( $kind, $id ) {
  */
 function uich_fields_guard_reference_write( $check, $object_id, $meta_key, $meta_value, $extra = null ) {
 	static $busy = false;
-	if ( null !== $check || $busy || ! is_user_logged_in() ) {
+	if ( null !== $check || $busy ) {
 		return $check;
 	}
 	if ( ! preg_match( '/^(add|update)_(post|term|user|comment)_metadata$/', (string) current_filter(), $m ) ) {
@@ -3273,6 +3273,22 @@ function uich_fields_guard_reference_write( $check, $object_id, $meta_key, $meta
 	$field     = uich_fields_reference_meta_field( $meta_type, (string) $meta_key );
 	$kind      = $field ? uich_fields_reference_kind( $field ) : '';
 	if ( '' === $kind ) {
+		return $check;
+	}
+
+	/*
+	 * Ask who the user is only now, and only once WordPress has settled it.
+	 *
+	 * Core writes user meta while it is still working out the current user: an
+	 * Application Password login records its "last used" time with
+	 * update_user_meta() from inside determine_current_user. Calling
+	 * is_user_logged_in() there restarts that login, which writes the meta again,
+	 * and the request dies of infinite recursion (a 500 on every REST call made
+	 * with an Application Password, MCP included). A write made before the user is
+	 * known has no logged-in user yet, which this guard already leaves alone.
+	 */
+	global $current_user;
+	if ( ! ( $current_user instanceof WP_User ) || ! is_user_logged_in() ) {
 		return $check;
 	}
 

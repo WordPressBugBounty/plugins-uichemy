@@ -615,15 +615,24 @@ body[data-theme="light"],
 }
 
 /* =============================================================================
-   3. SURFACE, CONTENT DARK (future). Token change only; no component rebuild.
+   3. SURFACE, CONTENT DARK. Token change only; no component rebuild.
       Slightly lighter than chrome so content sits "above" the fixed chrome.
    ========================================================================== */
-.uc-content[data-theme="dark"] {
+/* `body.uich-nd-dark`: the dashboard is in dark mode (lib/theme.js), so its pop-ups,
+   which portal to <body>, use the same dark content tokens. Menus/selects that are
+   always dark (`.uc-pop-dark`) keep their own look. Screens that open a nested
+   `.uc-content` island (Form Submissions stats, Role Manager rows) follow it too,
+   unless they pin `data-theme="light"`. */
+.uc-content[data-theme="dark"],
+[data-theme="dark"] .uc-content:not([data-theme="light"]),
+body.uich-nd-dark .uc-portal:not(.uc-pop-dark):not([data-theme="light"]) {
+  color-scheme: dark;
   --uc-surface-sunken:  #151515;
   --uc-surface-base:    #1C1C1C;
   --uc-surface-raised:  #242424;
   --uc-surface-overlay: #2A2A2A;
   --uc-surface-control: rgba(255, 255, 255, 0.05);  /* subtle lift, blends on dark */
+  --uc-surface-hover: rgba(255, 255, 255, 0.08);
   /* Muted neutral buttons use the secondary control recipe on dark surfaces. */
   --uc-button-soft-neutral-bg: var(--uc-surface-control);
   --uc-button-soft-neutral-shadow: var(--uc-shadow-raised);
@@ -631,7 +640,8 @@ body[data-theme="light"],
   --uc-text-strong: #F5F5F5;
   --uc-text:        #E5E5E5;
   --uc-text-muted:  #A3A3A3;
-  --uc-text-subtle: #737373;
+  --uc-text-subtle: #939393;
+  --uc-brand-on: var(--uc-inverse-fg);
 
   /* inverse flips to light-on-dark so the B&W primary stays high-contrast */
   --uc-inverse-bg: #F5F5F5;
@@ -849,9 +859,11 @@ body[data-theme="light"],
   --uc-toolbar-shadow: var(--uc-shadow-4);
 }
 
+.uc-content[data-theme="dark"],
+[data-theme="dark"] .uc-content:not([data-theme="light"]),
+body.uich-nd-dark .uc-portal:not([data-theme="light"]),
 .uc-pop-dark {
-
-  /* Pill tabs inside a dark pop-up (e.g. the model picker's CLI | WP Connectors
+  /* Pill tabs on a dark surface (e.g. the model picker's CLI | WP Connectors
      strip). `.uc-portal` above pins the track to the light #F2F2F2, which
      beats anything inherited from a dark panel, so re-point it to the dark
      sunken well + hairline here. */
@@ -987,7 +999,7 @@ body[data-theme="light"],
 
 /* ---- Variant: solid ------------------------------------------------------- */
 .nx448XS4JGEoBYKJ_Xeh {
-  color: var(--uc-brand-on);
+  color: var(--uc-button-solid-label, var(--uc-brand-on));
   background: var(--_fill, var(--uc-brand));
   background-image: var(--uc-sheen);
   box-shadow: var(--_shadow, var(--uc-shadow-control-brand));
@@ -1095,7 +1107,7 @@ body[data-theme="light"],
    2px blue box-shadow) at 0,1,1, which out-ranks the variant colours and
    shadows above (0,1,0). Re-assert them for anchors so a link button looks
    exactly like the button it is in every state. */
-a.nx448XS4JGEoBYKJ_Xeh:is(:hover, :focus, :active, :visited) { color: var(--uc-brand-on); }
+a.nx448XS4JGEoBYKJ_Xeh:is(:hover, :focus, :active, :visited) { color: var(--uc-button-solid-label, var(--uc-brand-on)); }
 a.nx448XS4JGEoBYKJ_Xeh.P6iUGKQ9CuUmhTY4IDx4:is(:hover, :focus, :active, :visited) { color: var(--uc-inverse-fg); }
 a.lSxxR32yQ7uBGKoReA0d:is(:hover, :focus, :active, :visited),
 a.uEkFBKngy5ABC8BavrlF:is(:hover, :focus, :active, :visited) { color: var(--_fg, var(--uc-brand-fg)); }
@@ -1117,7 +1129,7 @@ a.ZShdqkg6btw_9kcxTgYx:focus { box-shadow: none; }
   border-radius: 50%;
   border: 2px solid currentColor;
   border-top-color: transparent;
-  color: var(--uc-brand-on);
+  color: var(--uc-button-solid-label, var(--uc-brand-on));
   animation: qUXtsmRZhV0_Rb8A9qFD 0.6s linear infinite;
 }
 .lSxxR32yQ7uBGKoReA0d .rtWcge6eoBiDmFoHo4gD, .uEkFBKngy5ABC8BavrlF .rtWcge6eoBiDmFoHo4gD, .ZShdqkg6btw_9kcxTgYx .rtWcge6eoBiDmFoHo4gD { color: var(--uc-text); }
@@ -2167,6 +2179,7 @@ button.YrBwlMYp6KZPkbSefsXF:focus-visible {
   transition: stroke-dasharray var(--uc-dur-slow) var(--uc-ease-emphasized);
 }
 .MjcQR6cz_38Cj1Dw93_s { color: var(--uc-success-fg); }
+.unCYk6qaZv4IXQGuIk5I { color: var(--uc-danger-fg); }
 .vVTeHnjnh7tWQGbo7xpk { flex: 1; min-width: 0; display: flex; overflow: hidden; }
 .q89u_ytvNrsZtJlYTErM {
   display: block;
@@ -8578,9 +8591,6 @@ body.uichemy-frontend-editor .media-modal {
 .uich-tw .h-\[1px\] {
   height: 1px;
 }
-.uich-tw .h-\[320px\] {
-  height: 320px;
-}
 .uich-tw .h-\[70vh\] {
   height: 70vh;
 }
@@ -8617,9 +8627,6 @@ body.uichemy-frontend-editor .media-modal {
 .uich-tw .max-h-\[380px\] {
   max-height: 380px;
 }
-.uich-tw .max-h-\[40\%\] {
-  max-height: 40%;
-}
 .uich-tw .max-h-\[52vh\] {
   max-height: 52vh;
 }
@@ -8634,9 +8641,6 @@ body.uichemy-frontend-editor .media-modal {
 }
 .uich-tw .min-h-8 {
   min-height: 32px;
-}
-.uich-tw .min-h-\[420px\] {
-  min-height: 420px;
 }
 .uich-tw .min-h-\[520px\] {
   min-height: 520px;
@@ -8709,9 +8713,6 @@ body.uichemy-frontend-editor .media-modal {
 }
 .uich-tw .w-60 {
   width: 240px;
-}
-.uich-tw .w-64 {
-  width: 256px;
 }
 .uich-tw .w-7 {
   width: 28px;
@@ -8878,6 +8879,9 @@ body.uichemy-frontend-editor .media-modal {
 }
 .uich-tw .grow {
   flex-grow: 1;
+}
+.uich-tw .table-fixed {
+  table-layout: fixed;
 }
 .uich-tw .border-collapse {
   border-collapse: collapse;
@@ -9121,6 +9125,9 @@ body.uichemy-frontend-editor .media-modal {
 }
 .uich-tw .whitespace-pre-wrap {
   white-space: pre-wrap;
+}
+.uich-tw .break-words {
+  overflow-wrap: break-word;
 }
 .uich-tw .break-all {
   word-break: break-all;
@@ -10604,17 +10611,8 @@ body.uichemy-frontend-editor .media-modal {
   }
 }
 @media (min-width: 1280px) {
-  .uich-tw .xl\:max-h-none {
-    max-height: none;
-  }
-  .uich-tw .xl\:w-\[320px\] {
-    width: 320px;
-  }
   .uich-tw .xl\:grid-cols-3 {
     grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-  .uich-tw .xl\:flex-row {
-    flex-direction: row;
   }
   .uich-tw .xl\:flex-nowrap {
     flex-wrap: nowrap;

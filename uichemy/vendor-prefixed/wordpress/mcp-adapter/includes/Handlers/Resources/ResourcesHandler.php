@@ -63,9 +63,9 @@ class ResourcesHandler {
 		 * @param \UiChemy\Deps\WP\MCP\Core\McpServer                             $server    The MCP server instance.
 		 */
 		$resources = $this->validate_filtered_list(
-			apply_filters( 'mcp_adapter_resources_list', $resources, $this->mcp ),
+			apply_filters( 'uichemy_mcp_adapter_resources_list', $resources, $this->mcp ),
 			$resources,
-			'mcp_adapter_resources_list',
+			'uichemy_mcp_adapter_resources_list',
 			$this->mcp->get_error_handler()
 		);
 
@@ -135,7 +135,7 @@ class ResourcesHandler {
 			 * @param \UiChemy\Deps\WP\MCP\Domain\Resources\McpResource $mcp_resource The MCP resource instance.
 			 * @param \UiChemy\Deps\WP\MCP\Core\McpServer               $server       The MCP server instance.
 			 */
-			$request_params = apply_filters( 'mcp_adapter_pre_resource_read', $request_params, $uri, $mcp_resource, $this->mcp );
+			$request_params = apply_filters( 'uichemy_mcp_adapter_pre_resource_read', $request_params, $uri, $mcp_resource, $this->mcp );
 
 			// Allow pre-filter to short-circuit execution by returning WP_Error.
 			if ( is_wp_error( $request_params ) ) {
@@ -158,7 +158,7 @@ class ResourcesHandler {
 			 * @param \UiChemy\Deps\WP\MCP\Domain\Resources\McpResource $mcp_resource The MCP resource instance.
 			 * @param \UiChemy\Deps\WP\MCP\Core\McpServer               $server       The MCP server instance.
 			 */
-			$contents = apply_filters( 'mcp_adapter_resource_read_result', $contents, $request_params, $uri, $mcp_resource, $this->mcp );
+			$contents = apply_filters( 'uichemy_mcp_adapter_resource_read_result', $contents, $request_params, $uri, $mcp_resource, $this->mcp );
 
 			// Handle WP_Error objects returned by McpResource execution.
 			if ( is_wp_error( $contents ) ) {

@@ -9,8 +9,9 @@
  * the site's own, set to show where their display conditions say (Entire
  * Website, these pages…), and a Canvas page that dropped them read as a bug —
  * the header set for the whole site was missing from the page and from the
- * builder's canvas. UiChemy_Locations::do_location() prints the template that
- * applies here, or nothing. Not on a template itself: a header must not be
+ * builder's canvas. UiChemy_Locations::do_site_location() prints the template
+ * that applies here (UiChemy's, else an Elementor Pro Theme Builder one), or
+ * nothing. Not on a template itself: a header must not be
  * drawn around the header being edited.
  *
  * @package Uichemy
@@ -36,7 +37,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 $uich_cb_locations = class_exists( 'UiChemy_Locations' )
 	&& ! is_singular( Uich_CB_Post_Types::TEMPLATE );
 if ( $uich_cb_locations ) {
-	UiChemy_Locations::do_location( 'header' );
+	UiChemy_Locations::do_site_location( 'header' );
 }
 ?>
 <main id="content" class="uich-template-main">
@@ -49,7 +50,7 @@ if ( $uich_cb_locations ) {
 </main>
 <?php
 if ( $uich_cb_locations ) {
-	UiChemy_Locations::do_location( 'footer' );
+	UiChemy_Locations::do_site_location( 'footer' );
 }
 wp_footer();
 ?>

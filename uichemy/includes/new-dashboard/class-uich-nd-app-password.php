@@ -136,13 +136,43 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 		}
 
 		/**
-		 * Site-level override: intentionally overrides a security plugin's
-		 * `false`, but only for a user who opted in, and the per-user filter
-		 * below still has to agree. Their site-wide setting is left alone.
+		 * True when Application Passwords are supported on this site (HTTPS or
+		 * local) but something has switched them off: Wordfence's own toggle, or
+		 * an earlier filter callback (typically a security plugin) returning
+		 * false. Our override never undoes that decision.
+		 *
+		 * Cheap on purpose: it runs inside the availability filters during auth.
+		 */
+		public static function is_disabled_by_security_plugin( $available = null ) {
+			if ( class_exists( 'wfConfig' ) && wfConfig::get( 'loginSec_disableApplicationPasswords' ) ) {
+				return true;
+			}
+			$supported = function_exists( 'wp_is_application_passwords_supported' )
+				? (bool) wp_is_application_passwords_supported()
+				: ( is_ssl() || 'local' === wp_get_environment_type() );
+			if ( ! $supported ) {
+				return false; // Core's HTTPS rule, not a security plugin — the override may apply.
+			}
+			if ( null === $available ) {
+				$available = self::is_native_site_available();
+			}
+			return ! $available;
+		}
+
+		/**
+		 * Site-level override for sites where core withholds Application
+		 * Passwords only because of its HTTPS rule (e.g. plain-HTTP local dev),
+		 * and only for a user who opted in. A security plugin's `false` is
+		 * respected, never overridden.
+		 *
+		 * @param bool $available Whether core would offer Application Passwords.
 		 */
 		public static function filter_force_available( $available ) {
 			if ( $available ) {
 				return true;
+			}
+			if ( self::is_disabled_by_security_plugin( false ) ) {
+				return false;
 			}
 			$user_id = self::resolve_requesting_user_id();
 			if ( $user_id > 0 && self::is_user_force_enabled( $user_id ) ) {
@@ -151,13 +181,15 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 			return false;
 		}
 
+		/**
+		 * Core only reaches this filter once the site-level check passed, and
+		 * its default here is true — so a `false` came from another callback
+		 * (a security plugin). Respect it.
+		 *
+		 * @param bool    $available Whether core would offer them to this user.
+		 * @param WP_User $user      The user.
+		 */
 		public static function filter_force_available_for_user( $available, $user ) {
-			if ( $available ) {
-				return true;
-			}
-			if ( $user instanceof WP_User && $user->exists() && self::is_user_force_enabled( $user->ID ) ) {
-				return true;
-			}
 			return (bool) $available;
 		}
 
@@ -182,13 +214,18 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 			$native_available = self::is_native_site_available();
 			$native_for_user  = $native_available && self::is_native_available_for_user( $user );
 			$force_enabled    = $user ? self::is_user_force_enabled( $user->ID ) : false;
+			$security_blocked = self::is_disabled_by_security_plugin();
 
 			return array(
 				'available'        => $available,
 				'availableForUser' => $available_for_user,
 				'nativeAvailable'  => $native_available,
 				'forceEnabled'     => $force_enabled,
-				'canForceEnable'   => ! $native_for_user && ! $force_enabled,
+				'canForceEnable'   => ! $native_for_user && ! $force_enabled && ! $security_blocked,
+				'securityBlocked'  => $security_blocked,
+				'securityMessage'  => $security_blocked
+					? __( 'Application Passwords are disabled by a security plugin on this site. UiChemy will not override that setting. Enable Application Passwords in your security plugin, then try again.', 'uichemy' )
+					: '',
 				'canForceDisable'  => $force_enabled,
 				'disabledReason'   => self::get_disabled_reason( $user ),
 				'wordfenceUrl'     => admin_url( 'admin.php?page=WordfenceOptions' ),
@@ -226,8 +263,10 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 				&& ! wp_is_application_passwords_available_for_user( $user ) ) {
 				wp_send_json_error(
 					array(
-						'code'    => 'user_blocked',
-						'message' => __( 'Application Passwords are disabled for this user. Enable them, then try again.', 'uichemy' ),
+						'code'    => self::is_disabled_by_security_plugin() ? 'security_blocked' : 'user_blocked',
+						'message' => self::is_disabled_by_security_plugin()
+							? __( 'Application Passwords are disabled by a security plugin on this site. Enable them in that plugin, then try again.', 'uichemy' )
+							: __( 'Application Passwords are disabled for this user. Enable them, then try again.', 'uichemy' ),
 					),
 					400
 				);
@@ -420,6 +459,8 @@ if ( ! class_exists( 'Uich_ND_App_Password' ) ) {
 		 * the real filter chain with the identity resolved as it will be at
 		 * auth time, so a later-priority callback shows up here rather than as
 		 * a working dashboard and a failing connection.
+		 *
+		 * @param WP_User $user The user to check.
 		 */
 		private static function verify_force_effective( $user ) {
 			if ( ! ( $user instanceof WP_User ) || ! $user->exists() ) {

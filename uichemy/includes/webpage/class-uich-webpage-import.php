@@ -13073,7 +13073,17 @@ class Uich_Webpage_Import {
 			'tmp_name' => $tmp,
 		);
 
-		$id = media_handle_sideload( $file, 0 );
+		if ( class_exists( 'Uich_Api' ) && preg_match( '/\.svg$/i', $name ) ) {
+			// SVG is allowed for this sideload only, and scrubbed first.
+			Uich_Api::sanitize_svg_file( $tmp );
+			$id = Uich_Api::run_with_svg_upload(
+				function () use ( $file ) {
+					return media_handle_sideload( $file, 0 );
+				}
+			);
+		} else {
+			$id = media_handle_sideload( $file, 0 );
+		}
 		if ( is_wp_error( $id ) ) {
 			wp_delete_file( $tmp );
 			return false;

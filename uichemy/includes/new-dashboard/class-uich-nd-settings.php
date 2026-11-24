@@ -42,8 +42,12 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		 */
 		const MODES = array( 'figma', 'compose', 'scratch' );
 
+		/** WP-Cron hook that refreshes the versions cache in the background. */
+		const VERSIONS_REFRESH_HOOK = 'uich_nd_refresh_versions';
+
 		public static function boot() {
-			// No hooks yet. REST routes for read/write live in Uich_ND_Api.
+			// REST routes for read/write live in Uich_ND_Api.
+			add_action( self::VERSIONS_REFRESH_HOOK, array( __CLASS__, 'refresh_managed_versions' ) );
 		}
 
 		public static function get_builder() {
@@ -191,23 +195,35 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 
 		/**
 		 * Raw fetch of the full /api/plugins/versions payload from the UiChemy app
-		 * (UICH_WEBPAGE_APP_URL), with NO persistent cache — memoized only within
-		 * the current request so repeated reads on one page load don't refetch.
-		 * This is what makes a "check every time" read possible (see
-		 * get_uichemy_latest).
+		 * (UICH_WEBPAGE_APP_URL). Memoized within the request and cached in a
+		 * transient: a successful payload for 30 minutes, a failure marker for
+		 * 5 minutes so an unreachable app isn't re-hit (4s timeout) on every
+		 * admin request.
 		 *
 		 * Older builds call the UiChemy API's /plugins/versions instead, which is
 		 * left unchanged (its own hardcoded Pro release) for sites not yet updated.
 		 *
+		 * @param bool $force Skip the cache and fetch again (the background refresh).
 		 * @return array  slug => array (e.g. [ 'latest_version' => '1.2.3' ]).
 		 */
-		private static function fetch_managed_versions_raw() {
+		private static function fetch_managed_versions_raw( $force = false ) {
 			static $memo = null;
-			if ( is_array( $memo ) ) {
+			if ( is_array( $memo ) && ! $force ) {
+				return $memo;
+			}
+			if ( $force ) {
+				delete_transient( 'uich_nd_managed_versions' );
+			}
+
+			$cache_key = 'uich_nd_managed_versions';
+			$cached    = get_transient( $cache_key );
+			if ( is_array( $cached ) ) {
+				$memo = isset( $cached['data'] ) && is_array( $cached['data'] ) ? $cached['data'] : array();
 				return $memo;
 			}
 
 			$result = array();
+			$ok     = false;
 
 			$base = defined( 'UICH_WEBPAGE_APP_URL' ) ? UICH_WEBPAGE_APP_URL : 'https://app.uichemy.com';
 			$url  = rtrim( $base, '/' ) . '/api/plugins/versions';
@@ -215,7 +231,7 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 			$response = wp_remote_get(
 				$url,
 				array(
-					'timeout' => 10,
+					'timeout' => 4,
 					'headers' => array( 'Accept' => 'application/json' ),
 				)
 			);
@@ -226,9 +242,20 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 					$decoded = json_decode( wp_remote_retrieve_body( $response ), true );
 					if ( isset( $decoded['data'] ) && is_array( $decoded['data'] ) ) {
 						$result = $decoded['data'];
+						$ok     = true;
 					}
 				}
 			}
+
+			// Failure marker: empty data, short TTL.
+			set_transient(
+				$cache_key,
+				array(
+					'ok'   => $ok,
+					'data' => $result,
+				),
+				$ok ? 30 * MINUTE_IN_SECONDS : 5 * MINUTE_IN_SECONDS
+			);
 
 			$memo = $result;
 			return $result;
@@ -236,16 +263,83 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 
 		/**
 		 * Latest versions of every managed plugin (uichemy + the wp.org-hosted
-		 * elementor / uichemy / nexter / wp), read fresh from the UiChemy app.
-		 * There's NO WP-side persistent cache — the app already Redis-caches the
-		 * wp.org lookups (~1 hr), so a WP transient would only add duplicate
-		 * staleness.
-		 * Memoized per request via fetch_managed_versions_raw().
+		 * elementor / uichemy / nexter / wp), read from the UiChemy app.
+		 * Cached via fetch_managed_versions_raw() (30-min transient, 5 min on
+		 * failure; memoized per request).
 		 *
 		 * @return array  slug => array (e.g. [ 'latest_version' => '1.2.3' ]).
 		 */
 		public static function get_managed_versions() {
 			return self::fetch_managed_versions_raw();
+		}
+
+		/**
+		 * The cached versions payload, WITHOUT a remote call. For page loads (the dashboard boot data,
+		 * its /state route, the Pro update check): QA saw the first dashboard load wait ~15 s on a slow
+		 * app because the uncached fetch ran inline. When nothing is cached yet this returns an empty
+		 * array and queues refresh_managed_versions() on WP-Cron, which runs in a separate background
+		 * request; the next load reads the result from the transient.
+		 *
+		 * @return array slug => array.
+		 */
+		public static function cached_managed_versions() {
+			$cached = get_transient( 'uich_nd_managed_versions' );
+			if ( is_array( $cached ) ) {
+				return isset( $cached['data'] ) && is_array( $cached['data'] ) ? $cached['data'] : array();
+			}
+			self::schedule_versions_refresh();
+			// No WP-Cron (DISABLE_WP_CRON) or a blocked loopback leaves the event unrun, so the cache never
+			// filled (QA). Then refresh at the end of this request, after the response is sent.
+			$next = wp_next_scheduled( self::VERSIONS_REFRESH_HOOK );
+			if ( ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) || ( $next && $next < time() - MINUTE_IN_SECONDS ) ) {
+				self::refresh_after_response();
+			}
+			return array();
+		}
+
+		/** Run one refresh on shutdown, after the response has been flushed to the browser where the server allows it. */
+		private static function refresh_after_response() {
+			static $queued = false;
+			if ( $queued || get_transient( 'uich_nd_versions_lock' ) ) {
+				return;
+			}
+			$queued = true;
+			set_transient( 'uich_nd_versions_lock', 1, MINUTE_IN_SECONDS );
+			add_action(
+				'shutdown',
+				function () {
+					if ( function_exists( 'fastcgi_finish_request' ) ) {
+						fastcgi_finish_request();
+					} elseif ( function_exists( 'litespeed_finish_request' ) ) {
+						litespeed_finish_request();
+					}
+					wp_clear_scheduled_hook( self::VERSIONS_REFRESH_HOOK );
+					self::refresh_managed_versions();
+					delete_transient( 'uich_nd_versions_lock' );
+				},
+				PHP_INT_MAX
+			);
+		}
+
+		/** Queue one background refresh (deduplicated) and nudge WP-Cron without waiting for it. */
+		public static function schedule_versions_refresh() {
+			if ( ! wp_next_scheduled( self::VERSIONS_REFRESH_HOOK ) ) {
+				wp_schedule_single_event( time(), self::VERSIONS_REFRESH_HOOK );
+			}
+			// WordPress spawns cron once per request at wp_loaded, before this event existed;
+			// spawn_cron() is a non-blocking loopback (0.01 s timeout) and has its own lock.
+			if ( function_exists( 'spawn_cron' ) && ! wp_doing_cron() && ! ( defined( 'DISABLE_WP_CRON' ) && DISABLE_WP_CRON ) ) {
+				spawn_cron();
+			}
+		}
+
+		/**
+		 * WP-Cron callback: fetch the payload from the app (the one remote call), cache it, and let
+		 * listeners react (UiChemy Pro re-applies its update notice with the fresh data).
+		 */
+		public static function refresh_managed_versions() {
+			self::fetch_managed_versions_raw( true );
+			do_action( 'uich_nd_versions_refreshed' );
 		}
 
 		/**
@@ -256,7 +350,8 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		 * @return string
 		 */
 		public static function get_managed_latest( $slug ) {
-			$all = self::get_managed_versions();
+			// Cached only (status routes call this on every load); callers fall back to wp.org data when empty.
+			$all = self::cached_managed_versions();
 			if ( isset( $all[ $slug ]['latest_version'] ) && '' !== (string) $all[ $slug ]['latest_version'] ) {
 				return (string) $all[ $slug ]['latest_version'];
 			}
@@ -284,8 +379,8 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		 * Latest published UiChemy Pro release (version + zip URL), from the app's
 		 * `uichemy_pro` entry. Pro is not on wordpress.org, so that entry is the only
 		 * place its version and package live: it is the newest release uploaded in
-		 * the app's admin Downloads page, read fresh here (no persistent cache) so a
-		 * release reflects immediately.
+		 * the app's admin Downloads page, read via the cached versions payload (a
+		 * new release shows up within 30 minutes).
 		 *
 		 * The version is reported through detect_uichemy_pro() for display; the
 		 * package itself is fetched through the app's /api/plugins/uichemy-pro/download
@@ -297,10 +392,11 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		 * Uich_ND_Package_Verifier checks before installing; null when the release
 		 * is unsigned.
 		 *
+		 * @param bool $remote False: cached value only, never a remote call (page loads).
 		 * @return array { version:string, zip_url:string, package:array|null }  Empty strings on failure.
 		 */
-		public static function get_uichemy_pro_latest() {
-			$all = self::fetch_managed_versions_raw();
+		public static function get_uichemy_pro_latest( $remote = true ) {
+			$all = $remote ? self::fetch_managed_versions_raw() : self::cached_managed_versions();
 			$p   = isset( $all['uichemy_pro'] ) && is_array( $all['uichemy_pro'] ) ? $all['uichemy_pro'] : array();
 			return array(
 				'version' => isset( $p['latest_version'] ) ? (string) $p['latest_version'] : '',
@@ -445,11 +541,12 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		 * plugin it does not need. `installed` / `active` describe the plugin
 		 * itself, which is what the install button needs to pick its next step.
 		 *
+		 * @param bool $remote False: cached latest version only, never a remote call (page loads).
 		 * @return array { installed:bool, active:bool, is_pro:bool, file:string,
 		 *                 version:string, latest_version:string, update_available:bool,
 		 *                 zip_configured:bool }
 		 */
-		public static function detect_uichemy_pro() {
+		public static function detect_uichemy_pro( $remote = true ) {
 			if ( ! function_exists( 'is_plugin_active' ) ) {
 				require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			}
@@ -477,7 +574,8 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 			// the state.
 			$latest = '';
 			if ( '' !== $file ) {
-				$pro_latest = self::get_uichemy_pro_latest();
+				// Page loads pass $remote = false: cached value only, refreshed in the background.
+				$pro_latest = self::get_uichemy_pro_latest( $remote );
 				$latest     = (string) $pro_latest['version'];
 			}
 			$update_available = ( '' !== $latest && '' !== $version )

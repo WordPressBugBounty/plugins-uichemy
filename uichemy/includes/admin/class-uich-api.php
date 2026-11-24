@@ -72,8 +72,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		 * @since   1.0.0
 		 */
 		public function __construct() {
-			add_filter( 'rest_pre_serve_request', array( $this, 'uiche_rest_send_cors_headers' ) );
-			add_filter( 'upload_mimes', array( $this, 'add_svg_to_upload_mimes' ) );
+			add_filter( 'rest_allowed_cors_headers', array( $this, 'uiche_rest_send_cors_headers' ), 10, 2 );
 			add_filter( 'http_request_timeout', array( $this, 'uich_modify_http_request_default_timeout' ), 10 );
 
 			add_action( 'wp_ajax_uich_select_user', array( $this, 'uich_select_user' ) );
@@ -200,13 +199,73 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		}
 
 		/**
-		 * Upload mimes Type
+		 * Upload_mimes callback: allow SVG for users with the import cap. Never
+		 * hooked globally — UiChemy import flows add it around their own
+		 * sideload only (see run_with_svg_upload()).
+		 *
+		 * @param array $mimes Allowed mime types.
+		 * @return array
 		 */
-		public function add_svg_to_upload_mimes( $mimes ) {
-			if ( current_user_can( 'import' ) ) {
+		public static function add_svg_to_upload_mimes( $mimes ) {
+			if ( is_array( $mimes ) && current_user_can( 'import' ) ) {
 				$mimes['svg'] = 'image/svg+xml';
 			}
 			return $mimes;
+		}
+
+		/**
+		 * Run $callback with SVG temporarily allowed (import cap only).
+		 *
+		 * @param callable $callback Sideload/upload work.
+		 * @return mixed Callback result.
+		 */
+		public static function run_with_svg_upload( $callback ) {
+			add_filter( 'upload_mimes', array( __CLASS__, 'add_svg_to_upload_mimes' ), 99 );
+			try {
+				return call_user_func( $callback );
+			} finally {
+				remove_filter( 'upload_mimes', array( __CLASS__, 'add_svg_to_upload_mimes' ), 99 );
+			}
+		}
+
+		/**
+		 * Strip script/XSS vectors from SVG bytes (Composer's sanitizer).
+		 * Non-SVG content is returned unchanged.
+		 *
+		 * @param string $content File bytes.
+		 * @return string
+		 */
+		public static function sanitize_svg_content( $content ) {
+			$content = (string) $content;
+			if ( false === stripos( $content, '<svg' ) ) {
+				return $content;
+			}
+			if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
+				$file = dirname( __DIR__, 2 ) . '/uichemy-composer/includes/mcp/shared/class-uichemy-composer-upload.php';
+				if ( file_exists( $file ) ) {
+					require_once $file;
+				}
+			}
+			if ( method_exists( 'UiChemy_Composer_Upload', 'sanitize_svg_bytes' ) ) {
+				return UiChemy_Composer_Upload::sanitize_svg_bytes( $content );
+			}
+			return $content;
+		}
+
+		/**
+		 * Sanitize an on-disk SVG temp file in place (no-op for other files).
+		 *
+		 * @param string $path Temp file path.
+		 * @return void
+		 */
+		public static function sanitize_svg_file( $path ) {
+			if ( ! is_string( $path ) || '' === $path || ! is_readable( $path ) ) {
+				return;
+			}
+			$raw = file_get_contents( $path ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_get_contents_file_get_contents -- local temp file.
+			if ( is_string( $raw ) && false !== stripos( $raw, '<svg' ) ) {
+				file_put_contents( $path, self::sanitize_svg_content( $raw ) ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- local temp file.
+			}
 		}
 
 		/**
@@ -619,7 +678,6 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			global $wp_version;
 
 			$elementor = $this->uich_build_plugin_status( 'elementor' );
-			$uichemy   = $this->uich_build_plugin_status( 'uichemy' );
 
 			// Elementor Pro is premium — we never offer install, only report.
 			$elementor_pro_file = 'elementor-pro/elementor-pro.php';
@@ -644,7 +702,6 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				'wp'            => array(
 					'version' => $wp_version,
 				),
-				'uichemy'       => $uichemy,
 				'elementor'     => array_merge(
 					$elementor,
 					array(
@@ -748,7 +805,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				return $empty;
 			}
 
-			$p = Uich_ND_Settings::detect_uichemy_pro();
+			$p = Uich_ND_Settings::detect_uichemy_pro( false ); // cached only: a status call never waits on the app.
 
 			return array(
 				'slug'             => 'uichemy_pro',
@@ -2117,32 +2174,49 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		}
 
 		/**
-		 * Filter to allow "token" header in Requests.
+		 * Rest_allowed_cors_headers filter: add Authorization and Content-Type to
+		 * WP's allowed list for UiChemy routes, keeping WP's own entries
+		 * (X-WP-Nonce etc.).
 		 *
 		 * @since 1.0.0
 		 *
-		 * @param mixed $value The value to check and return.
+		 * @param string[]             $allow_headers Allowed headers.
+		 * @param WP_REST_Request|null $request       Current request (WP 6.3+).
+		 * @return string[]
 		 */
-		public function uiche_rest_send_cors_headers( $value ) {
-			$origin     = get_http_origin();
-			$requesturi = ( isset( $_SERVER['REQUEST_URI'] ) && ! empty( $_SERVER['REQUEST_URI'] ) ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
-
-			// In case of non-pretty REST URLs
-			$rest_route_str = '';
-			if ( isset( $_GET['rest_route'] ) && ! empty( $_GET['rest_route'] ) ) {  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
-				// Sanitize GET param
-				$rest_route_str = sanitize_text_field( wp_unslash( $_GET['rest_route'] ) );  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Authorized admin REST/AJAX handler; nonce/capability enforced at entry.
+		public function uiche_rest_send_cors_headers( $allow_headers, $request = null ) {
+			if ( ! is_array( $allow_headers ) || empty( get_http_origin() ) ) {
+				return $allow_headers;
 			}
 
-			if ( ! empty( $origin )
-				&& ( ( preg_match( '/\/wp-json\/uichemy\/v/', wp_parse_url( $requesturi, PHP_URL_PATH ) ) === 1 )
-				|| ( preg_match( '/^\/uichemy\/v/', $rest_route_str ) === 1 ) )
-			) {
-				// WP REST Takes care of Access-Control-Allow-Origin
-				header( 'Access-Control-Allow-Headers: Authorization, Content-Type' );
+			if ( $request instanceof WP_REST_Request ) {
+				$is_uichemy = ( 1 === preg_match( '#^/uichemy/v#', (string) $request->get_route() ) );
+			} else {
+				$requesturi = ( isset( $_SERVER['REQUEST_URI'] ) && ! empty( $_SERVER['REQUEST_URI'] ) ) ? sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) : '';
+
+				// In case of non-pretty REST URLs
+				$rest_route_str = '';
+				if ( isset( $_GET['rest_route'] ) && ! empty( $_GET['rest_route'] ) ) {  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only route match for CORS headers.
+					$rest_route_str = sanitize_text_field( wp_unslash( $_GET['rest_route'] ) );  // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only route match for CORS headers.
+				}
+
+				$is_uichemy = ( 1 === preg_match( '/\/wp-json\/uichemy\/v/', (string) wp_parse_url( $requesturi, PHP_URL_PATH ) ) )
+					|| ( 1 === preg_match( '/^\/uichemy\/v/', $rest_route_str ) );
 			}
 
-			return $value;
+			if ( ! $is_uichemy ) {
+				return $allow_headers;
+			}
+
+			$lower = array_map( 'strtolower', $allow_headers );
+			foreach ( array( 'Authorization', 'Content-Type' ) as $header ) {
+				if ( ! in_array( strtolower( $header ), $lower, true ) ) {
+					$allow_headers[] = $header;
+					$lower[]         = strtolower( $header );
+				}
+			}
+
+			return $allow_headers;
 		}
 
 		/**

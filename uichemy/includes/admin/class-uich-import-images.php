@@ -128,15 +128,30 @@ if ( ! class_exists( 'Uich_Import_Images' ) ) {
 				return false;
 			}
 
-			// Check what the bytes really are, not only what the name says.
-			if ( ! self::content_matches_name( $file_name, $file_content ) ) {
-				return false;
+			$is_svg = class_exists( 'Uich_Api' ) && preg_match( '/\\.svg$/i', $file_name );
+			if ( $is_svg ) {
+				// SVG is allowed for this upload only, and scrubbed first.
+				$file_content = Uich_Api::sanitize_svg_content( $file_content );
+				add_filter( 'upload_mimes', array( 'Uich_Api', 'add_svg_to_upload_mimes' ), 99 );
 			}
+			try {
+				// Check what the bytes really are, not only what the name says.
+				if ( ! self::content_matches_name( $file_name, $file_content ) ) {
+					return false;
+				}
 
-			// Upload the file content to WordPress
-			$upload_data = wp_upload_bits( $file_name, null, $file_content );
-			if ( ! empty( $upload_data['error'] ) || empty( $upload_data['file'] ) ) {
-				return false;
+				// Upload the file content to WordPress
+				$upload_data = wp_upload_bits( $file_name, null, $file_content );
+				if ( ! empty( $upload_data['error'] ) || empty( $upload_data['file'] ) ) {
+					return false;
+				}
+
+				// Read the type while SVG is still allowed.
+				$file_info = wp_check_filetype( $upload_data['file'] );
+			} finally {
+				if ( $is_svg ) {
+					remove_filter( 'upload_mimes', array( 'Uich_Api', 'add_svg_to_upload_mimes' ), 99 );
+				}
 			}
 
 			// Prepare attachment post data
@@ -146,7 +161,6 @@ if ( ! class_exists( 'Uich_Import_Images' ) ) {
 			);
 
 			// Set the MIME type if available
-			$file_info = wp_check_filetype( $upload_data['file'] );
 			if ( ! empty( $file_info['type'] ) ) {
 				$post_image['post_mime_type'] = $file_info['type'];
 			} else {

@@ -115,13 +115,13 @@ UiChemy_Usage_Guide::init();
  * The MCP endpoint: /wp-json/uichemy/v2/mcp, the discover / inspect / execute
  * gateway (UiChemy_MCP_Server_V2). It is the only MCP surface UiChemy serves.
  *
- * The bundled mcp-adapter fires shared, non-namespaced hooks
- * ('mcp_adapter_init', 'mcp_adapter_default_server_config',
- * 'mcp_adapter_create_default_server'), which is why running two copies used to
- * collide. Isolation is handled at the listener level instead: both server
- * classes type-guard their $adapter argument against the scoped McpAdapter, so a
- * foreign adapter firing the shared hook can never register our servers onto the
- * wrong instance — and vice versa.
+ * The bundled mcp-adapter is patched after every Strauss run
+ * (scripts/patch-mcp-adapter.php) so the hooks that pass its prefixed objects
+ * carry a `uichemy_` prefix: 'uichemy_mcp_adapter_init',
+ * 'uichemy_mcp_adapter_tool_call_result', and so on. A shared hook name would
+ * hand UiChemy\Deps\WP\MCP\Core\McpAdapter to another plugin's listener that
+ * type-hints \WP\MCP\Core\McpAdapter, and that TypeError breaks every REST
+ * request. Both server classes still type-guard their $adapter argument.
  *
  * MERGED BUILD: these servers now run on UiChemy's single Strauss-prefixed
  * adapter copy (UiChemy\Deps\WP\MCP\) instead of a second UiChemy-prefixed one.
@@ -139,33 +139,23 @@ if ( is_readable( $uichemy_mcp_autoload ) ) {
 		require_once plugin_dir_path( __FILE__ ) . 'v2/class-uichemy-mcp-server-v2.php';
 
 		/*
-		 * Drop OUR copy's default server before it is built.
-		 *
-		 * McpAdapter::init() hooks its own DefaultServerFactory::create onto
-		 * 'mcp_adapter_init' at priority 10, and that factory resolves the adapter
-		 * through its own scoped singleton — it does not check whether the route is
-		 * already taken. With two adapter copies on the site both would register
-		 * REST routes at /wp-json/mcp/mcp-adapter-default-server and clash.
-		 *
-		 * Removing the callback at priority 1 (before 10 runs) targets ONLY the
-		 * UiChemy-scoped factory: UiChemy's is a different class and therefore a
-		 * different callable, so its default server — and the shared
-		 * `mcp-adapter/*` abilities it registers — are left intact. Filtering
-		 * 'mcp_adapter_create_default_server' instead would have hit every copy,
-		 * since that hook is un-namespaced.
+		 * Drop our copy's default server before it is built: McpAdapter::init()
+		 * hooks DefaultServerFactory::create onto 'uichemy_mcp_adapter_init' at
+		 * priority 10. UiChemy serves only its own v2/v3 servers, and another
+		 * adapter copy on the site may already own /wp-json/mcp/mcp-adapter-default-server.
 		 */
 		add_action(
-			'mcp_adapter_init',
+			'uichemy_mcp_adapter_init',
 			function () {
 				remove_action(
-					'mcp_adapter_init',
+					'uichemy_mcp_adapter_init',
 					array( \UiChemy\Deps\WP\MCP\Servers\DefaultServerFactory::class, 'create' )
 				);
 			},
 			1
 		);
 
-		// Guarantee the adapter initializes so 'mcp_adapter_init' fires.
+		// Guarantee the adapter initializes so 'uichemy_mcp_adapter_init' fires.
 		\UiChemy\Deps\WP\MCP\Core\McpAdapter::instance();
 
 		UiChemy_MCP_Server_V2::init();

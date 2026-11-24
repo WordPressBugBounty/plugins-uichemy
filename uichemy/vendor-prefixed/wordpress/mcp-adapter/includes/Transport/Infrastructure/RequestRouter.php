@@ -289,7 +289,7 @@ class RequestRouter {
 			// Filter argument keys to exclude sensitive-looking ones.
 			$safe_keys = array();
 			foreach ( array_keys( $params['arguments'] ) as $arg_key ) {
-				if ( McpObservabilityHelperTrait::is_sensitive_key( (string) $arg_key ) ) {
+				if ( \UiChemy\Deps\WP\MCP\Infrastructure\Observability\ErrorLogMcpObservabilityHandler::is_sensitive_key( (string) $arg_key ) ) {
 					$safe_keys[] = '[REDACTED]';
 				} else {
 					$safe_keys[] = $arg_key;

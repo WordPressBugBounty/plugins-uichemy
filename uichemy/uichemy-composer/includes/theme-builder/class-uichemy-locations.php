@@ -937,6 +937,33 @@ if ( ! class_exists( 'UiChemy_Locations' ) ) {
 		}
 
 		/**
+		 * Print the site's header or footer on a page that has no theme around it
+		 * (the UiChemy Canvas page template), and report whether anything printed.
+		 *
+		 * A UiChemy template for the location comes first. When there is none and
+		 * Elementor Pro owns `elementor_theme_do_location()`, Pro's own Theme
+		 * Builder header / footer is printed instead, the same one the theme would
+		 * show on any other page. Without that fallback a Canvas page dropped an
+		 * Elementor Pro header set for the entire site while UiChemy was active,
+		 * and it came back the moment UiChemy was deactivated.
+		 *
+		 * @param string $location 'header' or 'footer'.
+		 * @return bool
+		 */
+		public static function do_site_location( $location ) {
+			if ( self::do_location( $location ) ) {
+				return true;
+			}
+			if ( ! in_array( $location, array( 'header', 'footer' ), true ) ) {
+				return false;
+			}
+			if ( function_exists( 'elementor_theme_do_location' ) && ! self::owns_do_location() ) {
+				return (bool) elementor_theme_do_location( $location );
+			}
+			return false;
+		}
+
+		/**
 		 * On the Composer Builder's canvas, tag a header / footer so the canvas
 		 * can offer "Edit Header" / "Edit Footer" on hover.
 		 *

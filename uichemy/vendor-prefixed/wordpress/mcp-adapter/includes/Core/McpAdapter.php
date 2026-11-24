@@ -90,7 +90,7 @@ final class McpAdapter {
 		 *
 		 * @param \UiChemy\Deps\WP\MCP\Core\McpAdapter $adapter The MCP Adapter singleton instance.
 		 */
-		do_action( 'mcp_adapter_init', $this );
+		do_action( 'uichemy_mcp_adapter_init', $this );
 		$this->register_wp_cli_commands();
 		self::$initialized = true;
 	}
@@ -119,7 +119,7 @@ final class McpAdapter {
 		add_action( 'wp_abilities_api_categories_init', array( $this, 'register_default_category' ) );
 		add_action( 'wp_abilities_api_init', array( $this, 'register_default_abilities' ) );
 
-		add_action( 'mcp_adapter_init', array( DefaultServerFactory::class, 'create' ) );
+		add_action( 'uichemy_mcp_adapter_init', array( DefaultServerFactory::class, 'create' ) );
 	}
 
 	/**
@@ -223,16 +223,16 @@ final class McpAdapter {
 			);
 		}
 
-		if ( ! doing_action( 'mcp_adapter_init' ) ) {
+		if ( ! doing_action( 'uichemy_mcp_adapter_init' ) ) {
 			_doing_it_wrong(
 				__FUNCTION__,
-				esc_html__( 'MCP Servers must be created during the "mcp_adapter_init" action. Hook into "mcp_adapter_init" to register your server.', 'mcp-adapter' ),
+				esc_html__( 'MCP Servers must be created during the "uichemy_mcp_adapter_init" action. Hook into "uichemy_mcp_adapter_init" to register your server.', 'mcp-adapter' ),
 				'0.1.0'
 			);
 
 			return new WP_Error(
 				'invalid_timing',
-				esc_html__( 'MCP Server creation must be done during mcp_adapter_init action.', 'mcp-adapter' )
+				esc_html__( 'MCP Server creation must be done during uichemy_mcp_adapter_init action.', 'mcp-adapter' )
 			);
 		}
 

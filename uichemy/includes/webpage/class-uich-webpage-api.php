@@ -316,6 +316,18 @@ class Uich_Webpage_Api {
 			)
 		);
 
+		// The connected account's plan, so the project list can offer Upgrade instead of Import
+		// to a Free account.
+		register_rest_route(
+			'uichemy/v2/webpage',
+			'/capacity',
+			array(
+				'methods'             => 'GET',
+				'callback'            => array( $this, 'rest_get_capacity' ),
+				'permission_callback' => array( $this, 'check_permission' ),
+			)
+		);
+
 		// Proxy endpoint for project-replacement-elementor (Elementor replacement).
 		register_rest_route(
 			'uichemy/v2/webpage',
@@ -374,6 +386,33 @@ class Uich_Webpage_Api {
 		}
 
 		return new WP_REST_Response( $response );
+	}
+
+	/**
+	 * REST API callback: the connected account's plan.
+	 *
+	 * `purchased` is false only when the app answers and the account has no paid plan. When the
+	 * app can't be reached, or no account is connected, it is true, so a network problem never
+	 * stops a paying customer from importing.
+	 *
+	 * @return WP_REST_Response
+	 */
+	public function rest_get_capacity() {
+		$plan = array(
+			'plan'      => '',
+			'purchased' => true,
+		);
+		if ( class_exists( 'Uich_ND_Auth' ) && method_exists( 'Uich_ND_Auth', 'get_capacity_plan' ) && Uich_ND_Auth::is_authed() ) {
+			$plan = Uich_ND_Auth::get_capacity_plan();
+		}
+
+		return new WP_REST_Response(
+			array(
+				'plan'       => (string) $plan['plan'],
+				'purchased'  => (bool) $plan['purchased'],
+				'upgradeUrl' => esc_url_raw( (string) apply_filters( 'uichemy_webpage_upgrade_url', 'https://app.uichemy.com/pricing?plan=designer&duration=monthly' ) ),
+			)
+		);
 	}
 
 	/**
@@ -553,6 +592,7 @@ class Uich_Webpage_Api {
 			$data          = $response->get_error_data();
 			if ( is_array( $data ) && isset( $data['response'] ) ) {
 				$job['error_detail'] = $data['response'];
+				$job['error_code']   = $this->upstream_error_code( $data['response'] );
 			}
 		} else {
 			$job['status'] = 'complete';
@@ -599,9 +639,30 @@ class Uich_Webpage_Api {
 			if ( ! empty( $job['error_detail'] ) ) {
 				$out['errorDetail'] = $this->sanitize_error_detail_for_response( $job['error_detail'] );
 			}
+			if ( ! empty( $job['error_code'] ) ) {
+				$out['errorCode'] = $job['error_code'];
+			}
 		}
 
 		return new WP_REST_Response( $out );
+	}
+
+	/**
+	 * The plan or permission code from a refused import, so the dashboard can show the
+	 * right next step (Upgrade, or ask the project owner) instead of a raw API error.
+	 *
+	 * @param string $raw Raw upstream response body.
+	 * @return string 'plan_required', 'permission_required' or ''.
+	 */
+	protected function upstream_error_code( $raw ) {
+		if ( ! is_string( $raw ) || '' === $raw ) {
+			return '';
+		}
+		$decoded = json_decode( $raw, true );
+		if ( ! is_array( $decoded ) || empty( $decoded['code'] ) || ! is_string( $decoded['code'] ) ) {
+			return '';
+		}
+		return in_array( $decoded['code'], array( 'plan_required', 'permission_required' ), true ) ? $decoded['code'] : '';
 	}
 
 	/**

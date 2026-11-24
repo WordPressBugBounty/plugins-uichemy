@@ -85,8 +85,8 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		 * Hook server registration onto the MCP Adapter.
 		 */
 		public static function init() {
-			add_action( 'mcp_adapter_init', array( __CLASS__, 'register_mcp_server' ) );
-			add_filter( 'mcp_adapter_tool_call_result', array( __CLASS__, 'unwrap_resource_result' ), 10, 5 );
+			add_action( 'uichemy_mcp_adapter_init', array( __CLASS__, 'register_mcp_server' ) );
+			add_filter( 'uichemy_mcp_adapter_tool_call_result', array( __CLASS__, 'unwrap_resource_result' ), 10, 5 );
 			add_filter( 'rest_pre_dispatch', array( __CLASS__, 'ensure_relay_session' ), 10, 3 );
 		}
 
@@ -171,8 +171,7 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		 * resource path: one JSON encode by the transport, which the client decodes,
 		 * so the model gets the real document.
 		 *
-		 * Only applies to our own v2 server. The filter name is un-namespaced and
-		 * therefore shared with every other mcp-adapter copy on the site.
+		 * Only applies to our own v2 server.
 		 *
 		 * @param mixed  $result    Raw tool result.
 		 * @param array  $args      Tool arguments.
@@ -215,9 +214,8 @@ if ( ! class_exists( 'UiChemy_MCP_Server_V2' ) ) {
 		/**
 		 * Register the v2 server on our scoped adapter instance.
 		 *
-		 * `mcp_adapter_init` is un-namespaced and therefore fired by every
-		 * mcp-adapter copy on the site, so the instanceof guard is what keeps us from
-		 * registering onto a foreign adapter.
+		 * `uichemy_mcp_adapter_init` is fired only by our bundled adapter (see
+		 * scripts/patch-mcp-adapter.php); the instanceof guard stays as a backstop.
 		 *
 		 * @param \UiChemy\Deps\WP\MCP\Core\McpAdapter $adapter The MCP Adapter instance.
 		 */
