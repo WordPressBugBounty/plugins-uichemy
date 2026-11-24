@@ -54,15 +54,13 @@ if ( interface_exists( 'PHPMailer\\PHPMailer\\OAuthTokenProvider' ) && ! class_e
 		 * @return string '' when Google refuses (PHPMailer then reports the auth failure).
 		 */
 		public static function access_token() {
-			$cached = get_transient( self::CACHE );
-			if ( is_string( $cached ) && '' !== $cached ) {
-				$plain = Uich_SMTP_Secret::decrypt( $cached );
-				if ( '' !== $plain ) {
-					return $plain;
-				}
+			$s = Uich_SMTP::settings();
+			// A cached token counts only for the account it was issued to.
+			$plain = Uich_SMTP::cached_gmail_access( $s['gmail'] );
+			if ( '' !== $plain ) {
+				return $plain;
 			}
 
-			$s       = Uich_SMTP::settings();
 			$refresh = Uich_SMTP_Secret::decrypt( $s['gmail']['refresh_token'] );
 			$secret  = Uich_SMTP_Secret::decrypt( $s['gmail']['client_secret'] );
 			if ( '' === $refresh || '' === $s['gmail']['client_id'] || '' === $secret ) {
@@ -89,7 +87,7 @@ if ( interface_exists( 'PHPMailer\\PHPMailer\\OAuthTokenProvider' ) && ! class_e
 				return '';
 			}
 			$ttl = isset( $body['expires_in'] ) ? max( 60, (int) $body['expires_in'] - 120 ) : 3000;
-			set_transient( self::CACHE, Uich_SMTP_Secret::encrypt( (string) $body['access_token'] ), $ttl );
+			Uich_SMTP::cache_gmail_access( (string) $body['access_token'], $ttl, $s['gmail'] );
 			return (string) $body['access_token'];
 		}
 	}

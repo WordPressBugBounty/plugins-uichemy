@@ -79,6 +79,9 @@ if ( ! class_exists( 'Uich_CB_Visibility' ) ) {
 			add_filter( 'get_previous_post_where', array( __CLASS__, 'filter_adjacent' ), 20 );
 			add_filter( 'get_next_post_where', array( __CLASS__, 'filter_adjacent' ), 20 );
 			add_filter( 'rest_request_before_callbacks', array( __CLASS__, 'filter_rest_item' ), 20, 3 );
+			// Comments belong to their post: a hidden post's comments are hidden too.
+			add_action( 'pre_get_comments', array( __CLASS__, 'filter_comment_query' ), 20 );
+			add_filter( 'comment_feed_where', array( __CLASS__, 'filter_comment_feed' ), 20 );
 		}
 
 		/* ─────────────────────────────────────────────────────────────────
@@ -355,6 +358,43 @@ if ( ! class_exists( 'Uich_CB_Visibility' ) ) {
 		}
 
 		/**
+		 * pre_get_comments: leave out the comments of hidden posts, in every
+		 * front-end comment query (comment lists, widgets, the REST collection).
+		 *
+		 * @param WP_Comment_Query $query Comment query.
+		 * @return void
+		 */
+		public static function filter_comment_query( $query ) {
+			if ( ! $query instanceof WP_Comment_Query || ! self::applies() ) {
+				return;
+			}
+			$hidden = self::hidden_ids();
+			if ( ! $hidden ) {
+				return;
+			}
+			$not_in = isset( $query->query_vars['post__not_in'] ) ? (array) $query->query_vars['post__not_in'] : array();
+			$query->query_vars['post__not_in'] = array_values( array_unique( array_merge( array_map( 'absint', $not_in ), $hidden ) ) );
+		}
+
+		/**
+		 * comment_feed_where: the comment feeds leave out hidden posts' comments.
+		 *
+		 * @param string $where WHERE clause.
+		 * @return string
+		 */
+		public static function filter_comment_feed( $where ) {
+			if ( ! self::applies() ) {
+				return $where;
+			}
+			$hidden = self::hidden_ids();
+			if ( ! $hidden ) {
+				return $where;
+			}
+			global $wpdb;
+			return $where . " AND {$wpdb->comments}.comment_post_ID NOT IN (" . implode( ',', array_map( 'absint', $hidden ) ) . ')';
+		}
+
+		/**
 		 * rest_request_before_callbacks: a single REST item (wp/v2/<base>/<id>)
 		 * is read with get_post(), not a query, so a hidden post is answered as
 		 * the missing post it is for this visitor. Refused here, before the
@@ -368,6 +408,14 @@ if ( ! class_exists( 'Uich_CB_Visibility' ) ) {
 		 */
 		public static function filter_rest_item( $response, $handler, $request ) {
 			if ( is_wp_error( $response ) || ! $request instanceof WP_REST_Request ) {
+				return $response;
+			}
+			// A single comment is answered like its post.
+			if ( preg_match( '#^/wp/v2/comments/(\d+)(?:/|$)#', $request->get_route(), $c ) ) {
+				$comment = get_comment( (int) $c[1] );
+				if ( $comment && self::is_hidden( (int) $comment->comment_post_ID ) ) {
+					return new WP_Error( 'rest_comment_invalid_id', __( 'Invalid comment ID.', 'uichemy' ), array( 'status' => 404 ) );
+				}
 				return $response;
 			}
 			if ( ! preg_match( '#^/wp/v2/[^/]+/(\d+)(?:/|$)#', $request->get_route(), $m ) ) {

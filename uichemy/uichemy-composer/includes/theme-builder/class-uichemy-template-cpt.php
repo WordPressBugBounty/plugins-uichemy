@@ -171,6 +171,84 @@ if ( ! class_exists( 'UiChemy_Template_CPT' ) ) {
 			);
 
 			self::register_meta();
+
+			// Templates render only where their own location, status and conditions
+			// put them. Their own URL, feed and core REST route are for the people
+			// who build them (editor canvases, previews, the block editor).
+			add_filter( 'posts_pre_query', array( __CLASS__, 'limit_direct_query' ), 10, 2 );
+			add_filter( 'rest_request_before_callbacks', array( __CLASS__, 'limit_rest_read' ), 10, 3 );
+		}
+
+		/**
+		 * Whether the current user builds templates (the template capability).
+		 *
+		 * @param int $post_id Optional template ID, for the per-post check.
+		 * @return bool
+		 */
+		public static function current_user_can_build( $post_id = 0 ) {
+			if ( $post_id ) {
+				return current_user_can( 'edit_post', (int) $post_id );
+			}
+			$object = get_post_type_object( self::POST_TYPE );
+			return $object && current_user_can( $object->cap->edit_posts );
+		}
+
+		/**
+		 * posts_pre_query: a front-end main query for templates - a template's own
+		 * URL, a listing of the post type, or its feed - finds nothing for someone
+		 * who cannot build templates, so it answers 404 like any missing post.
+		 * Queries the site runs itself (resolving and rendering templates) are
+		 * not main queries and are left alone.
+		 *
+		 * @param array|null $posts Posts, or null to run the query.
+		 * @param WP_Query   $query Query.
+		 * @return array|null
+		 */
+		public static function limit_direct_query( $posts, $query ) {
+			if ( null !== $posts || is_admin() || ! $query instanceof WP_Query || ! $query->is_main_query() ) {
+				return $posts;
+			}
+			if ( ! in_array( self::POST_TYPE, (array) $query->get( 'post_type' ), true ) ) {
+				return $posts;
+			}
+			if ( self::current_user_can_build() ) {
+				return $posts;
+			}
+			return array();
+		}
+
+		/**
+		 * rest_request_before_callbacks: the core REST route of the template post
+		 * type (wp/v2/<rest_base>, its items and sub-routes) is answered only for
+		 * someone who can build templates.
+		 *
+		 * @param mixed           $response Response so far.
+		 * @param array           $handler  Route handler.
+		 * @param WP_REST_Request $request  Request.
+		 * @return mixed
+		 */
+		public static function limit_rest_read( $response, $handler, $request ) {
+			if ( is_wp_error( $response ) || ! $request instanceof WP_REST_Request ) {
+				return $response;
+			}
+			$object = get_post_type_object( self::POST_TYPE );
+			if ( ! $object ) {
+				return $response;
+			}
+			$base      = ! empty( $object->rest_base ) && is_string( $object->rest_base ) ? $object->rest_base : self::POST_TYPE;
+			$namespace = ! empty( $object->rest_namespace ) && is_string( $object->rest_namespace ) ? $object->rest_namespace : 'wp/v2';
+			if ( ! preg_match( '#^/' . preg_quote( trim( $namespace, '/' ) . '/' . $base, '#' ) . '(?:/(\d+))?(?:/|$)#', $request->get_route(), $m ) ) {
+				return $response;
+			}
+			$id = isset( $m[1] ) ? (int) $m[1] : 0;
+			if ( self::current_user_can_build( $id ) ) {
+				return $response;
+			}
+			return new WP_Error(
+				'rest_forbidden',
+				__( 'Sorry, you are not allowed to do that.', 'uichemy' ),
+				array( 'status' => rest_authorization_required_code() )
+			);
 		}
 
 		/**

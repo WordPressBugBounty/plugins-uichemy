@@ -488,6 +488,8 @@ if ( ! class_exists( 'UiChemy_Section_Ops' ) ) {
 			$payload['html'] = $prepared['html'];
 			$payload['css']  = $prepared['css'];
 
+			$duplication = self::css_duplication_notice( $prepared['css'], self::sections_css( $sections ) );
+
 			$section = $driver->new_section(
 				UiChemy_Section::settings_from_payload( $payload ),
 				array( 'area' => $area )
@@ -501,7 +503,7 @@ if ( ! class_exists( 'UiChemy_Section_Ops' ) ) {
 				return $saved;
 			}
 
-			return array(
+			$result = array(
 				'post_id'        => absint( $post_id ),
 				'builder'        => $driver->slug(),
 				'widget_id'      => (string) $section['uid'],
@@ -511,6 +513,26 @@ if ( ! class_exists( 'UiChemy_Section_Ops' ) ) {
 				'image_failures' => $prepared['failed'],
 				'message'        => sprintf( 'Section added to post %d at index %d.', absint( $post_id ), $at ),
 			);
+			if ( null !== $duplication ) {
+				$result['css_duplication'] = $duplication;
+			}
+			return $result;
+		}
+
+		/**
+		 * The stored CSS of each section, for comparison.
+		 *
+		 * @param array $sections Normalized sections.
+		 * @return array<int,string>
+		 */
+		public static function sections_css( array $sections ) {
+			$out = array();
+			foreach ( $sections as $section ) {
+				if ( is_array( $section ) && isset( $section['settings']['raw_css'] ) && is_string( $section['settings']['raw_css'] ) ) {
+					$out[] = $section['settings']['raw_css'];
+				}
+			}
+			return $out;
 		}
 
 		/**
@@ -759,6 +781,149 @@ if ( ! class_exists( 'UiChemy_Section_Ops' ) ) {
 				}
 				$sections[ $i ] = $section;
 			}
+		}
+
+		/**
+		 * Smallest repeated CSS worth telling the caller about (bytes).
+		 */
+		const CSS_DUPLICATION_MIN_BYTES = 4096;
+
+		/**
+		 * Share of a section's CSS that must repeat other sections before it is reported.
+		 */
+		const CSS_DUPLICATION_MIN_RATIO = 0.3;
+
+		/**
+		 * Advice for a write whose section CSS repeats CSS the page's other sections
+		 * already carry.
+		 *
+		 * Every section prints its own CSS, scoped to itself, so CSS that several
+		 * sections share — a framework's base and resets, theme tokens, utility
+		 * classes, an imported stylesheet cut into per-section pieces — is printed
+		 * once per section. A page imported that way carried ten copies of the same
+		 * Tailwind build (860 KB, of which about 180 KB was distinct). This only
+		 * reports it, so the caller can move the shared rules to page_css, site_css
+		 * or a code file; the CSS that is written is never changed.
+		 *
+		 * Rules are compared as whole top-level units (`selector{…}`, `@media{…}`),
+		 * comments and whitespace aside. Stored section CSS is unscoped, so the same
+		 * rule in two sections compares equal.
+		 *
+		 * @param string            $css    The section's CSS.
+		 * @param array<int,string> $others The CSS of the page's other sections.
+		 * @return array|null { duplicate_bytes, css_bytes, ratio, message }, or null when under the thresholds.
+		 */
+		public static function css_duplication_notice( $css, array $others ) {
+			$units = self::css_units( (string) $css );
+			if ( ! $units ) {
+				return null;
+			}
+
+			$seen = array();
+			foreach ( $others as $other ) {
+				foreach ( self::css_units( (string) $other ) as $unit ) {
+					$seen[ $unit ] = true;
+				}
+			}
+			if ( ! $seen ) {
+				return null;
+			}
+
+			$total = 0;
+			$dup   = 0;
+			foreach ( $units as $unit ) {
+				$len    = strlen( $unit );
+				$total += $len;
+				if ( isset( $seen[ $unit ] ) ) {
+					$dup += $len;
+				}
+			}
+			if ( $dup < self::CSS_DUPLICATION_MIN_BYTES || $total < 1 || $dup / $total < self::CSS_DUPLICATION_MIN_RATIO ) {
+				return null;
+			}
+
+			$ratio = round( $dup / $total, 2 );
+			return array(
+				'duplicate_bytes' => $dup,
+				'css_bytes'       => $total,
+				'ratio'           => $ratio,
+				'message'         => sprintf(
+					'This section repeats %1$s KB of CSS (%2$d%% of its CSS) that other sections on this page already carry. Every section prints its own copy, so shared CSS (a framework\'s base and resets, theme tokens, utility classes, an imported stylesheet) belongs ONCE: in page_before_head, or in site_before_head / a code file when the header or footer use it too. Keep only this section\'s own rules in its css. Nothing was changed; the section was saved as sent.',
+					number_format( $dup / 1024, 1 ),
+					(int) round( $ratio * 100 )
+				),
+			);
+		}
+
+		/**
+		 * Top-level CSS units (`selector{…}`, `@media{…}`, `@import …;`), comments
+		 * removed and whitespace collapsed, so equal rules compare equal. Strings and
+		 * escapes are respected. Unbalanced input yields what was parsed so far.
+		 *
+		 * @param string $css CSS.
+		 * @return array<int,string>
+		 */
+		private static function css_units( $css ) {
+			$units = array();
+			$len   = strlen( $css );
+			$buf   = '';
+			$depth = 0;
+			$quote = '';
+			for ( $i = 0; $i < $len; $i++ ) {
+				$c = $css[ $i ];
+				if ( '' !== $quote ) {
+					$buf .= $c;
+					if ( '\\' === $c && $i + 1 < $len ) {
+						$buf .= $css[ ++$i ];
+					} elseif ( $c === $quote ) {
+						$quote = '';
+					}
+					continue;
+				}
+				if ( '/' === $c && $i + 1 < $len && '*' === $css[ $i + 1 ] ) {
+					$end = strpos( $css, '*/', $i + 2 );
+					$i   = false === $end ? $len : $end + 1;
+					continue;
+				}
+				if ( '\\' === $c && $i + 1 < $len ) {
+					$buf .= $c . $css[ ++$i ];
+					continue;
+				}
+				if ( '"' === $c || "'" === $c ) {
+					$quote = $c;
+				} elseif ( '{' === $c ) {
+					++$depth;
+				} elseif ( '}' === $c && $depth > 0 ) {
+					--$depth;
+					if ( 0 === $depth ) {
+						$units[] = self::css_unit_key( $buf . $c );
+						$buf     = '';
+						continue;
+					}
+				} elseif ( ';' === $c && 0 === $depth ) {
+					$unit = self::css_unit_key( $buf . $c );
+					if ( ';' !== $unit ) {
+						$units[] = $unit;
+					}
+					$buf = '';
+					continue;
+				}
+				$buf .= $c;
+			}
+			return array_values( array_filter( $units, 'strlen' ) );
+		}
+
+		/**
+		 * Comparison form of one CSS unit: whitespace collapsed and dropped next to
+		 * `{ } ;`, and the optional `;` before `}` removed. Only used to compare.
+		 *
+		 * @param string $unit CSS unit.
+		 * @return string
+		 */
+		private static function css_unit_key( $unit ) {
+			$unit = (string) preg_replace( '/\s+/', ' ', trim( $unit ) );
+			$unit = (string) preg_replace( '/\s*([{};])\s*/', '$1', $unit );
+			return (string) preg_replace( '/;+}/', '}', $unit );
 		}
 
 		/**

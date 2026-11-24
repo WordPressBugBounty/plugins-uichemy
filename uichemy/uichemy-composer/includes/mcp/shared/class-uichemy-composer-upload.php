@@ -746,6 +746,16 @@ if ( ! class_exists( 'UiChemy_Composer_Upload' ) ) {
 			// slot is NOT spent here, it stays open for the rest of the batch.
 			UiChemy_Upload_Slots::adopt_user( $payload );
 
+			// Re-check the ability's own gate at write time, as the code-file
+			// endpoint does: a slot spans many files over its lifetime, so a
+			// demoted user or the MCP switch turned off stops the next upload.
+			$still_allowed = class_exists( 'UiChemy_Abilities' ) && method_exists( 'UiChemy_Abilities', 'permission_check' )
+				? (bool) UiChemy_Abilities::permission_check()
+				: current_user_can( 'manage_options' );
+			if ( ! $still_allowed || ! current_user_can( 'upload_files' ) ) {
+				return self::rest_error( 'forbidden', 'This user may no longer upload to the media library. Request a new upload slot.', 403 );
+			}
+
 			// Bound how many files one (possibly leaked) slot may push into the
 			// media library. A legitimate editor batch stays well under this; the
 			// short TTL plus this cap keep a leaked token's blast radius small.

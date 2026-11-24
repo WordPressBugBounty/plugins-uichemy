@@ -62,6 +62,111 @@ class Uich_Webpage_Api {
 	}
 
 	/**
+	 * Scheme, host and effective port of a URL.
+	 *
+	 * @param mixed $url URL.
+	 * @return array{scheme: string, host: string, port: int}|null Null when not an http(s) URL.
+	 */
+	public static function url_origin( $url ) {
+		if ( ! is_string( $url ) || '' === $url ) {
+			return null;
+		}
+		$parts = wp_parse_url( $url );
+		if ( ! is_array( $parts ) || empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+			return null;
+		}
+		$scheme = strtolower( $parts['scheme'] );
+		if ( 'https' !== $scheme && 'http' !== $scheme ) {
+			return null;
+		}
+		return array(
+			'scheme' => $scheme,
+			'host'   => strtolower( $parts['host'] ),
+			'port'   => isset( $parts['port'] ) ? (int) $parts['port'] : ( 'https' === $scheme ? 443 : 80 ),
+		);
+	}
+
+	/**
+	 * Whether a URL is on the configured API origin (scheme, host and port).
+	 *
+	 * An HTTPS origin accepts HTTPS only. A plain-HTTP origin (local development)
+	 * keeps working as configured, and also accepts the same host over HTTPS.
+	 *
+	 * @param mixed $url URL about to be requested with the account credential.
+	 * @return bool
+	 */
+	public static function is_api_origin_url( $url ) {
+		$want = self::url_origin( self::API_BASE_URL );
+		$got  = self::url_origin( $url );
+		if ( null === $want || null === $got || $want['host'] !== $got['host'] ) {
+			return false;
+		}
+		if ( $want['scheme'] === $got['scheme'] ) {
+			return $want['port'] === $got['port'];
+		}
+		// Configured http, URL https: allow the upgrade on the same host.
+		return 'http' === $want['scheme'] && ( 443 === $got['port'] || $want['port'] === $got['port'] );
+	}
+
+	/**
+	 * Send a request that carries the account credential.
+	 *
+	 * Redirects are followed one hop at a time. The credential is attached only
+	 * while the request is on the configured API origin; any other hop is sent
+	 * without it (and, when the API itself is a public host, through the safe
+	 * HTTP API). Same-origin redirects keep working with the credential.
+	 *
+	 * @param string       $url        URL on the API origin.
+	 * @param array        $args       wp_remote_request() arguments.
+	 * @param string|false $credential Bearer credential, or false for none.
+	 * @return array|WP_Error Final response.
+	 */
+	public static function credentialed_request( $url, array $args, $credential ) {
+		$max_hops = isset( $args['redirection'] ) ? max( 0, (int) $args['redirection'] ) : 5;
+		$headers  = isset( $args['headers'] ) && is_array( $args['headers'] ) ? $args['headers'] : array();
+		foreach ( array_keys( $headers ) as $name ) {
+			if ( 'authorization' === strtolower( (string) $name ) ) {
+				unset( $headers[ $name ] );
+			}
+		}
+		$method              = isset( $args['method'] ) ? strtoupper( (string) $args['method'] ) : 'GET';
+		$args['redirection'] = 0;
+		$api_is_public       = (bool) wp_http_validate_url( self::API_BASE_URL );
+
+		for ( $hop = 0; ; $hop++ ) {
+			$on_origin       = self::is_api_origin_url( $url );
+			$args['method']  = $method;
+			$args['headers'] = $headers;
+			if ( $on_origin && is_string( $credential ) && '' !== $credential ) {
+				$args['headers']['Authorization'] = 'Bearer ' . $credential;
+			}
+
+			$response = ( $on_origin || ! $api_is_public ) ? wp_remote_request( $url, $args ) : wp_safe_remote_request( $url, $args );
+			if ( is_wp_error( $response ) ) {
+				return $response;
+			}
+
+			$code     = (int) wp_remote_retrieve_response_code( $response );
+			$location = wp_remote_retrieve_header( $response, 'location' );
+			if ( is_array( $location ) ) {
+				$location = end( $location );
+			}
+			if ( $code < 300 || $code >= 400 || 304 === $code || ! is_string( $location ) || '' === $location ) {
+				return $response;
+			}
+			if ( $hop >= $max_hops ) {
+				return new WP_Error( 'http_request_failed', __( 'Too many redirects.', 'uichemy' ) );
+			}
+
+			$url = WP_Http::make_absolute_url( $location, $url );
+			if ( 303 === $code || ( 'POST' === $method && in_array( $code, array( 301, 302 ), true ) ) ) {
+				$method = 'GET';
+				unset( $args['body'] );
+			}
+		}
+	}
+
+	/**
 	 * Initialize API endpoints.
 	 */
 	public function init() {
@@ -94,8 +199,7 @@ class Uich_Webpage_Api {
 		$args = array(
 			'method'    => $method,
 			'headers'   => array(
-				'Authorization' => 'Bearer ' . $access_token,
-				'Content-Type'  => 'application/json',
+				'Content-Type' => 'application/json',
 			),
 			'timeout'   => (int) $timeout,
 			'sslverify' => uich_webpage_http_sslverify(),
@@ -105,7 +209,7 @@ class Uich_Webpage_Api {
 			$args['body'] = wp_json_encode( $body );
 		}
 
-		$response = wp_remote_request( $url, $args );
+		$response = self::credentialed_request( $url, $args, $access_token );
 
 		if ( is_wp_error( $response ) ) {
 			return $response;
@@ -115,8 +219,7 @@ class Uich_Webpage_Api {
 
 		// Access token likely expired — refresh once and replay the request.
 		if ( 401 === $response_code && $this->auth->refresh_access_token() ) {
-			$args['headers']['Authorization'] = 'Bearer ' . $this->auth->get_access_token();
-			$response                         = wp_remote_request( $url, $args );
+			$response = self::credentialed_request( $url, $args, $this->auth->get_access_token() );
 			if ( is_wp_error( $response ) ) {
 				return $response;
 			}

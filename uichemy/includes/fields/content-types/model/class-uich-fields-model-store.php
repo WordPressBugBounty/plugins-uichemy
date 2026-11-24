@@ -26,6 +26,11 @@ class Uich_Fields_Model_Store {
 	 */
 	const MAX_DEPTH = 32;
 
+	/**
+	 * Bump to add new guard files to existing model directories once.
+	 */
+	const GUARD_VERSION = 1;
+
 	/** Keys stripped on write: a database ID in a file makes the model non-portable between sites. */
 	const VOLATILE_KEYS = array( 'id', 'ID', 'post_id', 'ID_', 'definition_id' );
 
@@ -59,19 +64,62 @@ class Uich_Fields_Model_Store {
 			}
 		}
 
-		self::write_guards( $root );
+		self::write_guards( $root, $dirs );
 		return true;
+	}
+
+	/**
+	 * Add the access guards to a model directory that already exists (one created before the guards,
+	 * or copied in by a deployment that skips dotfiles). Never creates the directory itself.
+	 *
+	 * The root check is two stat calls; the per-directory index files are written once per GUARD_VERSION.
+	 *
+	 * @return void
+	 */
+	public static function maybe_write_guards() {
+		$root = Uich_Fields_Model_Paths::model_dir();
+		if ( ! is_dir( $root ) ) {
+			return;
+		}
+		$full = function_exists( 'uich_fields_flag' ) && self::GUARD_VERSION !== (int) uich_fields_flag( 'model_guards' );
+		if ( ! $full && file_exists( $root . '/.htaccess' ) && file_exists( $root . '/index.php' ) ) {
+			return;
+		}
+		$dirs = array();
+		if ( $full ) {
+			$dirs[] = $root . '/sites';
+			$dirs[] = Uich_Fields_Model_Paths::site_dir();
+			foreach ( array_keys( Uich_Fields_Model_Paths::kind_dirs() ) as $kind ) {
+				$dir = Uich_Fields_Model_Paths::kind_dir( $kind );
+				if ( ! is_wp_error( $dir ) ) {
+					$dirs[] = $dir;
+				}
+			}
+		}
+		self::write_guards( $root, $dirs );
+		if ( $full && wp_is_writable( $root ) ) {
+			uich_fields_flag_set( 'model_guards', self::GUARD_VERSION );
+		}
 	}
 
 	/**
 	 * Block direct HTTP access to the model directory.
 	 *
-	 * @param string $root Model root directory.
+	 * The root .htaccess denies the whole tree on Apache and LiteSpeed. nginx ignores it and needs the
+	 * rule from the comment in that file. An index.php in each directory stops a directory listing.
+	 *
+	 * @param string   $root Model root directory.
+	 * @param string[] $dirs Further existing directories that should get an index.php.
 	 */
-	private static function write_guards( $root ) {
-		$index = $root . '/index.php';
-		if ( ! file_exists( $index ) ) {
-			file_put_contents( $index, "<?php\n// Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- WP_Filesystem is not initialised this early and this is a fixed local path inside wp-content.
+	private static function write_guards( $root, $dirs = array() ) {
+		if ( ! is_dir( $root ) || ! wp_is_writable( $root ) ) {
+			return;
+		}
+		foreach ( array_unique( array_merge( array( $root ), (array) $dirs ) ) as $dir ) {
+			$index = $dir . '/index.php';
+			if ( is_dir( $dir ) && ! file_exists( $index ) ) {
+				file_put_contents( $index, "<?php\n// Silence is golden.\n" ); // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents -- WP_Filesystem is not initialised this early and this is a fixed local path inside wp-content.
+			}
 		}
 
 		$htaccess = $root . '/.htaccess';

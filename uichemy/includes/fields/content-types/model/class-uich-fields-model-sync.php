@@ -53,6 +53,8 @@ class Uich_Fields_Model_Sync {
 	 */
 	public static function init() {
 		add_action( 'admin_init', array( __CLASS__, 'maybe_migrate_from_database' ), 5 );
+		// Existing installs get the model directory's access guards on the next admin request.
+		add_action( 'admin_init', array( 'Uich_Fields_Model_Store', 'maybe_write_guards' ), 6 );
 		if ( defined( 'WP_CLI' ) && WP_CLI ) {
 			self::maybe_migrate_from_database();
 		}

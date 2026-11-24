@@ -446,6 +446,33 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		}
 
 		/**
+		 * Whether a package URL is an official wordpress.org download over HTTPS.
+		 *
+		 * The lookup result passes through filters other code can hook, so the
+		 * package location is checked before anything is installed from it.
+		 *
+		 * @param mixed  $url  Package URL.
+		 * @param string $kind 'plugin' or 'theme'.
+		 * @return bool
+		 */
+		private function uich_is_official_wporg_package( $url, $kind = 'plugin' ) {
+			if ( ! is_string( $url ) || '' === $url ) {
+				return false;
+			}
+			$parts = wp_parse_url( $url );
+			if ( ! is_array( $parts ) || empty( $parts['scheme'] ) || empty( $parts['host'] ) || empty( $parts['path'] ) ) {
+				return false;
+			}
+			if ( 'https' !== strtolower( $parts['scheme'] ) || 'downloads.wordpress.org' !== strtolower( $parts['host'] ) ) {
+				return false;
+			}
+			if ( isset( $parts['user'] ) || isset( $parts['pass'] ) || ( isset( $parts['port'] ) && 443 !== (int) $parts['port'] ) ) {
+				return false;
+			}
+			return 0 === strpos( $parts['path'], '/' . ( 'theme' === $kind ? 'theme' : 'plugin' ) . '/' );
+		}
+
+		/**
 		 * Plugins the one-click installer is allowed to install.
 		 *
 		 * `install_tpgb` takes its slug from the request, so without this
@@ -984,6 +1011,14 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				);
 			}
 
+			if ( ! $this->uich_is_official_wporg_package( $wporg['download_link'] ) ) {
+				return array(
+					'success' => false,
+					'reason'  => 'untrusted_package',
+					'message' => esc_html__( 'The plugin download does not come from wordpress.org over HTTPS, so it was not installed.', 'uichemy' ),
+				);
+			}
+
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 			require_once ABSPATH . 'wp-admin/includes/misc.php';
 			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
@@ -1067,7 +1102,7 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 					)
 				);
 
-				if ( ! is_wp_error( $api ) && ! empty( $api->download_link ) ) {
+				if ( ! is_wp_error( $api ) && ! empty( $api->download_link ) && $this->uich_is_official_wporg_package( $api->download_link, 'theme' ) ) {
 					$skin     = new WP_Ajax_Upgrader_Skin();
 					$upgrader = new Theme_Upgrader( $skin );
 					$upgrader->install( $api->download_link );
@@ -1416,6 +1451,18 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 		}
 
 		/**
+		 * Response when the caller may not edit the post an import would update.
+		 *
+		 * @return array
+		 */
+		private function uich_cannot_edit_target() {
+			return array(
+				'success' => false,
+				'message' => esc_html__( 'Sorry, you are not allowed to edit this post.', 'uichemy' ),
+			);
+		}
+
+		/**
 		 * Handle import v2
 		 *
 		 * @param WP_REST_Request $request WP_REST_Request object.
@@ -1586,6 +1633,11 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 						'success' => false,
 						'message' => esc_html__( 'Post does not exist with given ID & Type.', 'uichemy' ),
 					);
+				}
+
+				// Updating a post needs edit rights on that post.
+				if ( ! current_user_can( 'edit_post', $exist_post_id ) ) {
+					return $this->uich_cannot_edit_target();
 				}
 
 				$document = Elementor\Plugin::$instance->documents->get_doc_or_auto_save( $exist_post_id );
@@ -1771,6 +1823,11 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 						'success' => false,
 						'message' => esc_html__( 'Post does not exist with given ID & Type.', 'uichemy' ),
 					);
+				}
+
+				// Updating a post needs edit rights on that post.
+				if ( ! current_user_can( 'edit_post', $exist_post_id ) ) {
+					return $this->uich_cannot_edit_target();
 				}
 
 				// Get selected user for Import
@@ -1973,6 +2030,11 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 						'success' => false,
 						'message' => esc_html__( 'Post does not exist with given ID & Type.', 'uichemy' ),
 					);
+				}
+
+				// Updating a post needs edit rights on that post.
+				if ( ! current_user_can( 'edit_post', $exist_post_id ) ) {
+					return $this->uich_cannot_edit_target();
 				}
 
 				// Get the Selected Uer for Importing.
@@ -2372,6 +2434,10 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 				return $this->uich_response( 'Something Went Wrong', 'get body', false, '' );
 			}
 
+			if ( ! $this->uich_is_official_wporg_package( $wporg['download_link'] ) ) {
+				return $this->uich_response( 'Not Allowed', 'The plugin download does not come from wordpress.org over HTTPS, so it was not installed.', false, '' );
+			}
+
 			$upgrad = new \Plugin_Upgrader( new \Automatic_Upgrader_Skin() );
 
 			/**Install Plugin*/
@@ -2563,6 +2629,10 @@ if ( ! class_exists( 'Uich_Api' ) ) {
 			$wporg = $this->uich_lookup_wporg_info( $pluginName );
 			if ( ! $wporg || empty( $wporg['download_link'] ) ) {
 				return $this->uich_response( 'Something Went Wrong', 'get body', false, '' );
+			}
+
+			if ( ! $this->uich_is_official_wporg_package( $wporg['download_link'] ) ) {
+				return $this->uich_response( 'Not Allowed', 'The plugin download does not come from wordpress.org over HTTPS, so it was not installed.', false, '' );
 			}
 
 			$upgrad = new \Plugin_Upgrader( new \Automatic_Upgrader_Skin() );

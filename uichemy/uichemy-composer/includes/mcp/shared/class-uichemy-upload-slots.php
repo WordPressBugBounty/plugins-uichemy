@@ -210,9 +210,42 @@ if ( ! class_exists( 'UiChemy_Upload_Slots' ) ) {
 				return self::error( 'owner_mismatch', 'Upload slot "' . $slot . '" belongs to a different user.', 403 );
 			}
 
+			// A slot carries its issuer's rights only while the issuer still has
+			// them: checked on every use, not just when the slot was issued.
+			if ( ! self::issuer_allowed( $payload, $prefix ) ) {
+				return self::error( 'issuer_revoked', 'Upload slot "' . $slot . '" can no longer be used: its user may no longer upload here, or the MCP server is switched off.', 403 );
+			}
+
 			$payload['slot']              = $slot;
 			self::$validated[ $prefix ]   = $payload;
 			return $payload;
+		}
+
+		/**
+		 * May the slot's issuer still use it? The issuing account must still exist
+		 * and hold the capability every slot is issued under (the MCP abilities
+		 * are administrator-only), and the MCP server must still be on.
+		 *
+		 * Reads the issuer by id, so it never changes the current user.
+		 *
+		 * @param array  $payload Slot payload.
+		 * @param string $prefix  Transient prefix for this endpoint.
+		 * @return bool
+		 */
+		public static function issuer_allowed( $payload, $prefix ) {
+			$user    = isset( $payload['user_id'] ) ? get_userdata( (int) $payload['user_id'] ) : false;
+			$allowed = $user instanceof WP_User && user_can( $user, 'manage_options' );
+			if ( $allowed && class_exists( 'UiChemy_Composer_MCP_Server' ) && ! UiChemy_Composer_MCP_Server::is_enabled() ) {
+				$allowed = false;
+			}
+			/**
+			 * Whether an upload slot's issuer may still use it.
+			 *
+			 * @param bool   $allowed Current answer.
+			 * @param array  $payload Slot payload (user_id, expires_at, …).
+			 * @param string $prefix  Transient prefix of the endpoint.
+			 */
+			return (bool) apply_filters( 'uichemy_upload_slot_issuer_allowed', $allowed, $payload, (string) $prefix );
 		}
 
 		/**

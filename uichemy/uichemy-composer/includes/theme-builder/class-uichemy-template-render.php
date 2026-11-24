@@ -63,6 +63,10 @@ if ( ! class_exists( 'UiChemy_Template_Render' ) ) {
 			// The page's own blocks are judged by the page's author, not the template's
 			// (Uich_Dynamic::author_trusted()).
 			$doc = class_exists( 'Uich_Dynamic' ) && method_exists( 'Uich_Dynamic', 'push_document' ) ? (int) get_the_ID() : 0;
+			// Another post's content expanded by a template keeps that post as the owner.
+			if ( $doc && method_exists( 'Uich_Dynamic', 'expanding_post_content' ) && Uich_Dynamic::expanding_post_content() ) {
+				$doc = 0;
+			}
 			if ( $doc ) {
 				Uich_Dynamic::push_document( $doc );
 			}

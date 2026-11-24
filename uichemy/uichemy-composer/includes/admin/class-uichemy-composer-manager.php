@@ -100,6 +100,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// custom-code head/footer) for these users, but raw_js / raw_css are
 			// stored as plain text, so kses never sees them — we strip them here.
 			add_filter( 'elementor/document/save/data', array( $this, 'sanitize_composer_widget_code_on_save' ), 10, 2 );
+			// The same rule for `_elementor_data` written as a REST API meta field,
+			// which does not pass through Elementor's document save.
+			add_action( 'rest_api_init', array( $this, 'register_rest_meta_code_policy' ), 999 );
 
 			// Admin bar edit shortcuts for UiChemy-created Nexter header/footer templates.
 			add_action( 'admin_bar_menu', array( $this, 'add_header_footer_edit_links' ), 100 );
@@ -2111,6 +2114,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$widgets_meta   = array();
 			$image_uploads  = array();
 			$image_failures = array();
+			$kept_css       = array();
+			$duplicated     = array();
 
 			foreach ( $incoming as $index => $section_payload ) {
 				$section_payload = is_array( $section_payload ) ? $section_payload : array();
@@ -2158,12 +2163,20 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				$section    = $driver->new_section( $settings );
 				$sections[] = $section;
 
-				$widgets_meta[] = array(
+				$meta = array(
 					'index'                   => $index,
 					'label'                   => $section_label,
 					'widget_id'               => (string) $section['uid'],
 					'dynamic_globals_matches' => $prepared['dynamic_globals'],
 				);
+				// Advisory only: CSS this section repeats from the sections before it.
+				$duplication = UiChemy_Section_Ops::css_duplication_notice( $prepared['css'], $kept_css );
+				if ( null !== $duplication ) {
+					$meta['css_duplication'] = $duplication;
+					$duplicated[]            = $section_label;
+				}
+				$kept_css[]     = $prepared['css'];
+				$widgets_meta[] = $meta;
 			}
 
 			if ( empty( $sections ) ) {
@@ -2196,7 +2209,13 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					'image_uploads'  => $image_uploads,
 					'image_failures' => $image_failures,
 					'message'        => sprintf( 'New page created with %d Composer widget section(s).', count( $sections ) ),
-				)
+				),
+				$duplicated ? array(
+					'css_duplication' => array(
+						'sections' => $duplicated,
+						'message'  => sprintf( '%d section(s) repeat CSS that earlier sections on this page already carry (see each widget\'s css_duplication). Every section prints its own copy: move the shared rules ONCE to page_before_head, or to site_before_head / a code file when the header or footer use them too, and keep only each section\'s own rules in its css. Nothing was changed.', count( $duplicated ) ),
+					),
+				) : array()
 			);
 		}
 
@@ -2306,6 +2325,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return $sections;
 			}
 
+			// Advisory only: CSS this section repeats from the page's other sections.
+			$duplication = UiChemy_Section_Ops::css_duplication_notice( $css, UiChemy_Section_Ops::sections_css( $sections ) );
+
 			$settings = array(
 				'_title'   => $label,
 				'raw_html' => self::build_mcp_tagged_code_block( 'html', $html, $source, $label ),
@@ -2361,7 +2383,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					'image_failures'          => $prepared['failed'],
 					'dynamic_globals_matches' => $prepared['dynamic_globals'],
 					'message'                 => sprintf( 'Section "%1$s" appended to %2$s %3$d.', $label, self::mcp_post_noun( $post_id ), $post_id ),
-				)
+				),
+				null !== $duplication ? array( 'css_duplication' => $duplication ) : array()
 			);
 		}
 
@@ -2739,6 +2762,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 				return $sections;
 			}
 
+			// Advisory only: CSS this section repeats from the page's other sections.
+			$duplication = UiChemy_Section_Ops::css_duplication_notice( $css, UiChemy_Section_Ops::sections_css( $sections ) );
+
 			$settings = array(
 				'_title'   => $label,
 				'raw_html' => self::build_mcp_tagged_code_block( 'html', $html, $source, $label ),
@@ -2795,7 +2821,8 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 					'image_failures'          => $prepared['failed'],
 					'dynamic_globals_matches' => $prepared['dynamic_globals'],
 					'message'                 => sprintf( 'Section "%1$s" inserted at index %2$d on %3$s %4$d.', $label, $at, self::mcp_post_noun( $post_id ), $post_id ),
-				)
+				),
+				null !== $duplication ? array( 'css_duplication' => $duplication ) : array()
 			);
 		}
 
@@ -3950,6 +3977,45 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			return $data;
+		}
+
+		/**
+		 * Hook sanitize_composer_widget_code_in_meta() onto `_elementor_data` for
+		 * every post type Elementor exposes it on. Core runs only the per-type
+		 * sanitize filter when one exists (Elementor registers one), so the
+		 * generic filter alone would never run there.
+		 *
+		 * @return void
+		 */
+		public function register_rest_meta_code_policy() {
+			$callback = array( $this, 'sanitize_composer_widget_code_in_meta' );
+			add_filter( 'sanitize_post_meta__elementor_data', $callback, 20 );
+			foreach ( get_post_types_by_support( 'elementor' ) as $post_type ) {
+				add_filter( "sanitize_post_meta__elementor_data_for_{$post_type}", $callback, 20 );
+			}
+		}
+
+		/**
+		 * Apply sanitize_composer_widget_code_on_save() to `_elementor_data` stored
+		 * through a REST API request by a user without `unfiltered_html`.
+		 *
+		 * @param mixed $value Meta value (JSON string or decoded elements).
+		 * @return mixed
+		 */
+		public function sanitize_composer_widget_code_in_meta( $value ) {
+			if ( ! ( defined( 'REST_REQUEST' ) && REST_REQUEST ) || current_user_can( 'unfiltered_html' ) ) {
+				return $value;
+			}
+			$elements = is_string( $value ) ? json_decode( $value, true ) : $value;
+			if ( ! is_array( $elements ) || empty( $elements ) ) {
+				return $value;
+			}
+			$data = $this->sanitize_composer_widget_code_on_save( array( 'elements' => $elements ) );
+			if ( ! is_string( $value ) ) {
+				return $data['elements'];
+			}
+			$json = wp_json_encode( $data['elements'] );
+			return false === $json ? $value : $json;
 		}
 
 		/**

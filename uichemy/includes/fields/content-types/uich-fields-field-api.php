@@ -1931,13 +1931,69 @@ function uich_current_user_can_edit_object( $obj ) {
 // -----------------------------------------------------------------------------.
 
 /**
+ * Post types a Post Object / Relationship field is configured to reference.
+ *
+ * @param array $field Field config.
+ * @return string[]
+ */
+function uich_fields_reference_post_types( $field ) {
+	$field = is_array( $field ) ? $field : array();
+	$key   = ( isset( $field['type'] ) && 'relationship' === $field['type'] ) ? 'relationship_post_types' : 'post_object_post_types';
+	$types = isset( $field[ $key ] ) && is_array( $field[ $key ] ) ? array_map( 'sanitize_key', $field[ $key ] ) : array();
+	$types = array_values( array_filter( $types ) );
+	// A Post Object field with no types configured references posts (see its picker).
+	if ( empty( $types ) && 'post_object_post_types' === $key ) {
+		$types = array( 'post' );
+	}
+	return $types;
+}
+
+/**
+ * Whether the current viewer may receive a referenced post through a field value.
+ *
+ * A reference stores whatever ID was saved, so resolving it is not proof the viewer may see it.
+ * Published posts of a public type, or of a type the field itself is configured for, stay visible
+ * to everyone, as before. Anything else (drafts, private, scheduled or trashed posts, and posts of
+ * other non-public types) is returned only to a viewer WordPress lets read it.
+ *
+ * @param WP_Post $post  Referenced post.
+ * @param array   $field Field config.
+ * @return bool
+ */
+function uich_fields_can_view_referenced_post( $post, $field = array() ) {
+	if ( ! $post instanceof WP_Post ) {
+		return false;
+	}
+	$type_obj = get_post_type_object( $post->post_type );
+	if ( ! $type_obj ) {
+		return false;
+	}
+	$type_ok = ! empty( $type_obj->public )
+		|| in_array( $post->post_type, uich_fields_reference_post_types( $field ), true )
+		|| ( ! empty( $type_obj->cap->edit_posts ) && current_user_can( $type_obj->cap->edit_posts ) );
+
+	// get_post_status() resolves an attachment's 'inherit' to its parent's status.
+	$visible = $type_ok && ( is_post_status_viewable( get_post_status( $post ) ) || current_user_can( 'read_post', $post->ID ) );
+
+	/**
+	 * Filter whether a referenced post is returned to the current viewer.
+	 *
+	 * @param bool    $visible Whether the viewer may receive it.
+	 * @param WP_Post $post    Referenced post.
+	 * @param array   $field   Field config.
+	 */
+	return (bool) apply_filters( 'uich/reference_field_visible', $visible, $post, is_array( $field ) ? $field : array() );
+}
+
+/**
  * Normalize one post_object / relationship item to WP_Post when return format is object.
  *
  * @param mixed  $item   ID, array with ID, WP_Post, or lite array.
  * @param string $return Return format key: id|object.
- * @return mixed null when the referenced post no longer exists.
+ * @param array  $field  Field config, for the viewer check.
+ * @return mixed null when the referenced post no longer exists or the viewer may not see it.
  */
-function uich_format_post_reference_item( $item, $return ) {
+function uich_format_post_reference_item( $item, $return, $field = array() ) {
 	$id = 0;
 	if ( $item instanceof WP_Post ) {
 		$id = (int) $item->ID;
@@ -1951,10 +2007,32 @@ function uich_format_post_reference_item( $item, $return ) {
 	}
 	// Re-resolved on every read: a stored ID outlives the post, and a dangling one must not be returned.
 	$post = get_post( $id );
-	if ( ! $post ) {
+	if ( ! $post || ! uich_fields_can_view_referenced_post( $post, $field ) ) {
 		return null;
 	}
 	return ( 'id' === $return ) ? (int) $post->ID : $post;
+}
+
+/**
+ * Whether the current viewer may receive a user's full account through a User field.
+ *
+ * Users who can list users or edit this one, and the user themselves, get everything as before.
+ * Anyone else gets the public profile only (see Uich_Fields_Public_User).
+ *
+ * @param int $user_id User ID.
+ * @return bool
+ */
+function uich_fields_can_view_user_account( $user_id ) {
+	$user_id = (int) $user_id;
+	$full    = $user_id > 0 && ( get_current_user_id() === $user_id || current_user_can( 'list_users' ) || current_user_can( 'edit_user', $user_id ) );
+
+	/**
+	 * Filter whether a User field returns the full account to the current viewer.
+	 *
+	 * @param bool $full    Whether the viewer gets login, email and roles.
+	 * @param int  $user_id User ID.
+	 */
+	return (bool) apply_filters( 'uich/user_field_full_account', $full, $user_id );
 }
 
 /**
@@ -1990,16 +2068,18 @@ function uich_format_user_field_item( $item, $fmt ) {
 	if ( 'id' === $fmt ) {
 		return (int) $u->ID;
 	}
+	$full = uich_fields_can_view_user_account( $u->ID );
 	if ( 'object' === $fmt ) {
-		return $u;
+		return $full ? $u : new Uich_Fields_Public_User( $u );
 	}
 	if ( 'array' === $fmt ) {
+		// Same keys either way, so templates reading them keep working; private ones are empty.
 		return array(
 			'id'       => (int) $u->ID,
-			'username' => $u->user_login,
+			'username' => $full ? $u->user_login : '',
 			'name'     => $u->display_name,
-			'email'    => $u->user_email,
-			'roles'    => array_values( (array) $u->roles ),
+			'email'    => $full ? $u->user_email : '',
+			'roles'    => $full ? array_values( (array) $u->roles ) : array(),
 		);
 	}
 	return $item;
@@ -2125,14 +2205,14 @@ function uich_format_field_value( $value, $field ) {
 					if ( '' === $item || null === $item ) {
 						continue;
 					}
-					$resolved = uich_format_post_reference_item( $item, $return );
+					$resolved = uich_format_post_reference_item( $item, $return, $field );
 					if ( null !== $resolved ) {
 						$out[] = $resolved;
 					}
 				}
 				return $out;
 			}
-			return uich_format_post_reference_item( $value, $return );
+			return uich_format_post_reference_item( $value, $return, $field );
 		case 'relationship':
 			$return = isset( $field['relationship_return_format'] ) ? $field['relationship_return_format'] : 'object';
 			if ( ! is_array( $value ) ) {
@@ -2144,7 +2224,7 @@ function uich_format_field_value( $value, $field ) {
 				if ( '' === $item || null === $item ) {
 					continue;
 				}
-				$resolved = uich_format_post_reference_item( $item, $return );
+				$resolved = uich_format_post_reference_item( $item, $return, $field );
 				if ( null !== $resolved ) {
 					$out[] = $resolved;
 				}
@@ -3086,6 +3166,153 @@ function uich_sanitize_registered_field_meta_value( $value, $sanitize, $field = 
 }
 
 /**
+ * Kind of object a reference field stores IDs of: 'post', 'term', or '' for other fields.
+ *
+ * @param array $field Field config.
+ * @return string
+ */
+function uich_fields_reference_kind( $field ) {
+	$type = ( is_array( $field ) && isset( $field['type'] ) ) ? (string) $field['type'] : '';
+	if ( in_array( $type, array( 'post_object', 'relationship', 'image', 'file', 'gallery' ), true ) ) {
+		return 'post';
+	}
+	return 'taxonomy' === $type ? 'term' : '';
+}
+
+/**
+ * Registry of reference fields written through core's generic meta APIs.
+ *
+ * @param string     $meta_type post | user | term | comment.
+ * @param string     $meta_key  Meta key.
+ * @param array|null $field     Field config to record, or null to look one up.
+ * @return array|null Recorded field config.
+ */
+function uich_fields_reference_meta_field( $meta_type, $meta_key, $field = null ) {
+	static $map = array();
+	if ( is_array( $field ) ) {
+		$map[ $meta_type ][ $meta_key ] = $field;
+		return $field;
+	}
+	return isset( $map[ $meta_type ][ $meta_key ] ) ? $map[ $meta_type ][ $meta_key ] : null;
+}
+
+/**
+ * Object IDs held in a stored or submitted reference value (single ID, list, or legacy snapshot rows).
+ *
+ * @param mixed $value Value.
+ * @return int[]
+ */
+function uich_fields_reference_value_ids( $value ) {
+	$items = is_array( $value ) && ! isset( $value['ID'] ) && ! isset( $value['id'] ) && ! isset( $value['term_id'] ) ? $value : array( $value );
+	$ids   = array();
+	foreach ( $items as $item ) {
+		if ( is_object( $item ) ) {
+			$item = isset( $item->ID ) ? $item->ID : ( isset( $item->term_id ) ? $item->term_id : 0 );
+		} elseif ( is_array( $item ) ) {
+			$item = isset( $item['ID'] ) ? $item['ID'] : ( isset( $item['id'] ) ? $item['id'] : ( isset( $item['term_id'] ) ? $item['term_id'] : 0 ) );
+		}
+		if ( is_numeric( $item ) && (int) $item > 0 ) {
+			$ids[] = (int) $item;
+		}
+	}
+	return $ids;
+}
+
+/**
+ * Whether the current user may store a reference to an object.
+ *
+ * Posts (attachments included) need read access, terms need permission to assign them, the
+ * same rules the edit screen applies. An ID that does not resolve to an object is left to the
+ * field's own sanitizing, as before.
+ *
+ * @param string $kind post | term.
+ * @param int    $id   Object ID.
+ * @return bool
+ */
+function uich_fields_can_store_reference( $kind, $id ) {
+	$id = (int) $id;
+	if ( $id <= 0 ) {
+		return true;
+	}
+	if ( 'post' === $kind ) {
+		return ! get_post( $id ) || current_user_can( 'read_post', $id );
+	}
+	if ( 'term' === $kind ) {
+		$term = get_term( $id );
+		return ! $term || is_wp_error( $term ) || current_user_can( 'assign_term', $id );
+	}
+	return true;
+}
+
+/**
+ * Drop references the current user may not read from a reference field write made through
+ * core's generic meta APIs (REST, XML-RPC, the Custom Fields box).
+ *
+ * References already stored on the object are kept, so re-saving an object never loses a
+ * value someone else set. A single-value field whose new reference is refused keeps its
+ * stored value. Writes without a logged-in user (imports, cron, WP-CLI) are unchanged.
+ *
+ * Hooked to add_{$meta_type}_metadata and update_{$meta_type}_metadata.
+ *
+ * @param mixed  $check      Short-circuit value from earlier callbacks.
+ * @param int    $object_id  Object ID.
+ * @param string $meta_key   Meta key.
+ * @param mixed  $meta_value Sanitized value about to be written.
+ * @param mixed  $extra      $prev_value for update, $unique for add.
+ * @return mixed
+ */
+function uich_fields_guard_reference_write( $check, $object_id, $meta_key, $meta_value, $extra = null ) {
+	static $busy = false;
+	if ( null !== $check || $busy || ! is_user_logged_in() ) {
+		return $check;
+	}
+	if ( ! preg_match( '/^(add|update)_(post|term|user|comment)_metadata$/', (string) current_filter(), $m ) ) {
+		return $check;
+	}
+	$meta_type = $m[2];
+	$field     = uich_fields_reference_meta_field( $meta_type, (string) $meta_key );
+	$kind      = $field ? uich_fields_reference_kind( $field ) : '';
+	if ( '' === $kind ) {
+		return $check;
+	}
+
+	$kept    = uich_fields_reference_value_ids( get_metadata( $meta_type, (int) $object_id, $meta_key, true ) );
+	$refused = array();
+	foreach ( uich_fields_reference_value_ids( $meta_value ) as $id ) {
+		if ( ! in_array( $id, $kept, true ) && ! uich_fields_can_store_reference( $kind, $id ) ) {
+			$refused[] = $id;
+		}
+	}
+	if ( empty( $refused ) ) {
+		return $check;
+	}
+
+	if ( ! is_array( $meta_value ) ) {
+		return true; // Keep the stored value.
+	}
+	$value = array();
+	foreach ( $meta_value as $item ) {
+		$ids = uich_fields_reference_value_ids( $item );
+		if ( $ids && in_array( $ids[0], $refused, true ) ) {
+			continue;
+		}
+		$value[] = $item;
+	}
+
+	$busy   = true;
+	$result = 'add' === $m[1]
+		? add_metadata( $meta_type, (int) $object_id, $meta_key, wp_slash( $value ), (bool) $extra )
+		: update_metadata( $meta_type, (int) $object_id, $meta_key, wp_slash( $value ), $extra );
+	$busy   = false;
+	return $result;
+}
+foreach ( array( 'post', 'term', 'user', 'comment' ) as $uich_reference_meta_type ) {
+	add_filter( "add_{$uich_reference_meta_type}_metadata", 'uich_fields_guard_reference_write', 10, 5 );
+	add_filter( "update_{$uich_reference_meta_type}_metadata", 'uich_fields_guard_reference_write', 10, 5 );
+}
+unset( $uich_reference_meta_type );
+
+/**
  * Resolve which meta object types a field group targets, from its location rules.
  *
  * @param mixed $location_rules Stored location_rules (flat or nested groups of {param,operator,value}).
@@ -3245,6 +3472,10 @@ function uich_register_group_field_meta() {
 				$args = apply_filters( 'uich/register_field_meta_args', $args, $field, $meta_key, $object_type );
 
 				register_meta( $object_type, $meta_key, $args );
+
+				if ( $in_rest && '' !== uich_fields_reference_kind( $field ) ) {
+					uich_fields_reference_meta_field( $object_type, $meta_key, $field );
+				}
 			}
 		}
 	}

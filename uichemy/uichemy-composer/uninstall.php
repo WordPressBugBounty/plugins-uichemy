@@ -64,7 +64,8 @@ if ( ! function_exists( 'uichemy_uninstall_cleanup_site' ) ) {
 		foreach ( (array) $uichemy_opts as $option ) {
 			delete_option( $option );
 		}
-		foreach ( array( 'uich_forms_db_version', 'uich_atomic_global_width_class_id' ) as $option ) {
+		// The web importer's record of whether this site imported before its posts were marked.
+		foreach ( array( 'uich_forms_db_version', 'uich_atomic_global_width_class_id', 'uich_webpage_legacy_import_site' ) as $option ) {
 			delete_option( $option );
 		}
 		// SMTP's cached Gmail access token (encrypted) is a transient, not a `uichemy_` option.
@@ -105,6 +106,10 @@ if ( ! function_exists( 'uichemy_uninstall_cleanup_site' ) ) {
 
 		// Per-page chat memory the Pro chat keeps beside each post.
 		delete_post_meta_by_key( '_uichemy_chat_memory' );
+
+		// The web importer's marks on the posts and products it created or took over.
+		delete_post_meta_by_key( '_uich_webpage_imported' );
+		delete_post_meta_by_key( '_uich_webpage_import_key' );
 
 		// 5. Chat upload directory (uploads/uichemy/chat), then the parent if empty.
 		$uploads = wp_upload_dir();

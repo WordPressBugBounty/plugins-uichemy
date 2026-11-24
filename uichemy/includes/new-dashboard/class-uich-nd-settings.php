@@ -292,7 +292,12 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 		 * redirect (Uich_ND_Installer::uichemy_pro_zip_url) rather than this zip_url,
 		 * so the installer never hardcodes a host.
 		 *
-		 * @return array { version:string, zip_url:string }  Empty strings on failure.
+		 * `package` carries the signed package fields (package_sha256,
+		 * package_signature, package_key_id, package_size) that
+		 * Uich_ND_Package_Verifier checks before installing; null when the release
+		 * is unsigned.
+		 *
+		 * @return array { version:string, zip_url:string, package:array|null }  Empty strings on failure.
 		 */
 		public static function get_uichemy_pro_latest() {
 			$all = self::fetch_managed_versions_raw();
@@ -300,6 +305,7 @@ if ( ! class_exists( 'Uich_ND_Settings' ) ) {
 			return array(
 				'version' => isset( $p['latest_version'] ) ? (string) $p['latest_version'] : '',
 				'zip_url' => isset( $p['zip_url'] ) ? (string) $p['zip_url'] : '',
+				'package' => class_exists( 'Uich_ND_Package_Verifier' ) ? Uich_ND_Package_Verifier::meta_from_api( $p ) : null,
 			);
 		}
 

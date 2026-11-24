@@ -142,11 +142,16 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 			}
 
 			// The payload is what the screens actually need — tbAjax reads its
-			// nonce and ajaxUrl from it — so it loads in both places.
+			// nonce and ajaxUrl from it — so it loads in both places. The licence
+			// status is account-level: only for users who manage the site.
+			$data = UiChemy_Admin_Menu::dashboard_data();
+			if ( ! current_user_can( 'manage_options' ) && is_array( $data ) && array_key_exists( 'license', $data ) ) {
+				$data['license'] = null;
+			}
 			wp_localize_script(
 				self::HANDLE_JS,
 				'uichemyDashboard',
-				UiChemy_Admin_Menu::dashboard_data()
+				$data
 			);
 
 			// Everything below dresses OUR admin page. None of it belongs in the
@@ -299,7 +304,9 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 		 * @return string
 		 */
 		private static function account_gravatar_url( $wp_user ) {
-			$email = Uich_ND_Auth::get_account_email();
+			// The connected account belongs to the site's administrators; anyone
+			// else (a template editor in the block editor) gets their own Gravatar.
+			$email = current_user_can( 'manage_options' ) ? Uich_ND_Auth::get_account_email() : '';
 			if ( '' === $email && $wp_user ) {
 				$email = (string) $wp_user->user_email;
 			}
@@ -315,6 +322,67 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 		public static function boot_payload() {
 			$user = wp_get_current_user();
 
+			// The bundle also loads in the block editor for template editors (the
+			// Edit Condition launcher). The connected account, licence and site
+			// diagnostics are for users who manage the site; others get none of it.
+			if ( ! current_user_can( 'manage_options' ) ) {
+				$payload          = self::boot_payload_base( $user );
+				$payload['auth']  = array(
+					'isAuthed'    => false,
+					'logoutNonce' => '',
+					'licenseData' => array(
+						'data' => array(
+							'user'     => null,
+							'licenses' => array(),
+						),
+					),
+					'capacity'    => array(
+						'plan'      => '',
+						'purchased' => true,
+					),
+				);
+				$payload['state'] = array(
+					'env'         => null,
+					'connection'  => null,
+					'builders'    => Uich_ND_Settings::detect_builders(),
+					'builder'     => Uich_ND_Settings::get_builder(),
+					'mode'        => Uich_ND_Settings::get_mode(),
+					'onboarded'   => Uich_ND_Settings::is_onboarded(),
+					'appPassword' => Uich_ND_App_Password::get_dashboard_state(),
+					'localEnv'    => null,
+					'uichemy'     => Uich_ND_Settings::detect_uichemy(),
+					'uichemyPro'  => Uich_ND_Settings::detect_uichemy_pro(),
+				);
+				return $payload;
+			}
+
+			return array_merge(
+				self::boot_payload_base( $user ),
+				array(
+					'auth'  => Uich_ND_Auth::get_boot_state(),
+					'state' => array(
+						'env'         => Uich_ND_Settings::env_check(),
+						'connection'  => Uich_ND_Settings::connection_check(),
+						'builders'    => Uich_ND_Settings::detect_builders(),
+						'builder'     => Uich_ND_Settings::get_builder(),
+						'mode'        => Uich_ND_Settings::get_mode(),
+						'onboarded'   => Uich_ND_Settings::is_onboarded(),
+						'appPassword' => Uich_ND_App_Password::get_dashboard_state(),
+						'localEnv'    => Uich_ND_Settings::get_local_env_state(),
+						'uichemy'     => Uich_ND_Settings::detect_uichemy(),
+						'uichemyPro'  => Uich_ND_Settings::detect_uichemy_pro(),
+					),
+				)
+			);
+		}
+
+		/**
+		 * The boot payload's keys that every user of the bundle gets.
+		 *
+		 * @param WP_User|null $user Current user.
+		 * @return array
+		 */
+		private static function boot_payload_base( $user ) {
 			return array(
 				'mountId'    => UICH_ND_MOUNT,
 				'restRoot'   => esc_url_raw( rest_url( Uich_ND_Api::NS ) ),
@@ -360,19 +428,6 @@ if ( ! class_exists( 'Uich_ND_Enqueue' ) ) {
 					'avatar'   => $user ? esc_url( get_avatar_url( $user->ID ) ) : '',
 					'gravatar' => self::account_gravatar_url( $user ),
 					'isAdmin'  => current_user_can( 'manage_options' ),
-				),
-				'auth'       => Uich_ND_Auth::get_boot_state(),
-				'state'      => array(
-					'env'         => Uich_ND_Settings::env_check(),
-					'connection'  => Uich_ND_Settings::connection_check(),
-					'builders'    => Uich_ND_Settings::detect_builders(),
-					'builder'     => Uich_ND_Settings::get_builder(),
-					'mode'        => Uich_ND_Settings::get_mode(),
-					'onboarded'   => Uich_ND_Settings::is_onboarded(),
-					'appPassword' => Uich_ND_App_Password::get_dashboard_state(),
-					'localEnv'    => Uich_ND_Settings::get_local_env_state(),
-					'uichemy'     => Uich_ND_Settings::detect_uichemy(),
-					'uichemyPro'  => Uich_ND_Settings::detect_uichemy_pro(),
 				),
 				'urls'       => array(
 					'docs'      => 'https://uichemy.com/docs',

@@ -254,6 +254,7 @@ if ( ! class_exists( 'Uich_Functions' ) ) {
 						return array();
 					}
 				}
+				$args = self::public_meta_criteria( $args, 'post' );
 			}
 			// Pagination needs the total-pages count, so disable the no_found_rows shortcut.
 			$paged = isset( $args['paged'] ) ? max( 1, (int) $args['paged'] ) : 0;
@@ -462,6 +463,97 @@ if ( ! class_exists( 'Uich_Functions' ) ) {
 				return true;
 			}
 			return $post instanceof WP_Post && 'publish' === $post->post_status && is_post_type_viewable( $post->post_type );
+		}
+
+		/**
+		 * Query criteria an untrusted template may use: meta filters and meta
+		 * ordering on public keys only, the same rule a template's printed values
+		 * follow (Uich_Provider::meta_allowed()). Criteria naming a protected key
+		 * (underscore-prefixed, registered as protected, or blocked by the
+		 * `uich_dynamic_block_meta` filter), matching keys by pattern, or matching
+		 * a value under any key are removed, so protected meta cannot change which
+		 * items a loop lists. The rest of the query is kept.
+		 *
+		 * WooCommerce product keys whose values are shown on product pages anyway
+		 * (price, rating, stock status, SKU, sales count, featured) stay usable,
+		 * so shop loops and facet counts keep their filters and ordering. The list
+		 * is filterable via `uich_dynamic_public_meta_keys`.
+		 *
+		 * @param array  $args      Query args.
+		 * @param string $meta_type Meta type (post, term, user, comment).
+		 * @return array
+		 */
+		public static function public_meta_criteria( array $args, $meta_type = 'post' ) {
+			$listed = array();
+			if ( 'post' === $meta_type ) {
+				/**
+				 * Filter the underscore-prefixed post meta keys an untrusted template's
+				 * loop may still filter and order by.
+				 *
+				 * @param string[] $keys Meta keys.
+				 */
+				$listed = (array) apply_filters(
+					'uich_dynamic_public_meta_keys',
+					array( '_price', '_regular_price', '_sale_price', '_wc_average_rating', '_stock_status', '_sku', 'total_sales', '_featured' )
+				);
+				$listed = array_flip( array_filter( $listed, 'is_string' ) );
+			}
+			$public = static function ( $key ) use ( $meta_type, $listed ) {
+				if ( ! is_string( $key ) || '' === $key ) {
+					return false;
+				}
+				if ( apply_filters( 'uich_dynamic_block_meta', false, $key ) ) {
+					return false;
+				}
+				return isset( $listed[ $key ] ) || ! is_protected_meta( $key, $meta_type );
+			};
+
+			if ( isset( $args['meta_key'] ) ) {
+				$keys = (array) $args['meta_key'];
+				if ( ! $keys || count( array_filter( $keys, $public ) ) !== count( $keys ) ) {
+					unset( $args['meta_key'], $args['meta_value'], $args['meta_value_num'], $args['meta_compare'], $args['meta_type'] );
+				}
+			}
+			if ( ! isset( $args['meta_key'] ) ) {
+				// A value or comparison with no key would match every meta key.
+				unset( $args['meta_value'], $args['meta_value_num'], $args['meta_compare'] );
+			}
+			unset( $args['meta_compare_key'], $args['meta_type_key'] );
+
+			if ( isset( $args['meta_query'] ) ) {
+				$walk = static function ( $query ) use ( &$walk, $public ) {
+					if ( ! is_array( $query ) ) {
+						return array();
+					}
+					foreach ( $query as $i => $clause ) {
+						if ( 'relation' === $i || ! is_array( $clause ) ) {
+							continue;
+						}
+						$is_clause = isset( $clause['key'] ) || isset( $clause['value'] ) || isset( $clause['compare'] ) || isset( $clause['compare_key'] );
+						if ( ! $is_clause ) {
+							$nested = $walk( $clause );
+							if ( count( $nested ) > ( isset( $nested['relation'] ) ? 1 : 0 ) ) {
+								$query[ $i ] = $nested;
+							} else {
+								unset( $query[ $i ] );
+							}
+							continue;
+						}
+						$keys = isset( $clause['key'] ) ? (array) $clause['key'] : array();
+						if ( ! $keys || isset( $clause['compare_key'] ) || isset( $clause['type_key'] )
+							|| count( array_filter( $keys, $public ) ) !== count( $keys ) ) {
+							unset( $query[ $i ] );
+						}
+					}
+					return $query;
+				};
+				$args['meta_query'] = $walk( $args['meta_query'] ); // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_query -- Narrowed to public keys.
+				if ( count( $args['meta_query'] ) <= ( isset( $args['meta_query']['relation'] ) ? 1 : 0 ) ) {
+					unset( $args['meta_query'] );
+				}
+			}
+
+			return $args;
 		}
 
 		/**

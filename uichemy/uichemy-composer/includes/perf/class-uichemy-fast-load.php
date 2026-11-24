@@ -1073,7 +1073,13 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 		}
 
 		/**
-		 * Dequeue and deregister jquery-migrate.min.js and core.min.js (jQuery UI core) on front-end.
+		 * Dequeue and deregister jquery-migrate.min.js on the front end, and core.min.js
+		 * (jQuery UI core) when nothing on the page needs it.
+		 *
+		 * jQuery UI core stays whenever the page has any Elementor widget, or its code uses
+		 * Elementor's front-end script: that script depends on it (through jquery-ui-position),
+		 * and a script whose dependency is gone is not printed at all, so Elementor's widgets
+		 * (sliders, tabs, counters...) would stop working on the published page.
 		 *
 		 * @return void
 		 */
@@ -1093,9 +1099,56 @@ if ( ! class_exists( 'UiChemy_Fast_Load' ) ) {
 				);
 			}
 
-			// Dequeue and deregister jQuery UI Core (core.min.js)
-			wp_dequeue_script( 'jquery-ui-core' );
-			wp_deregister_script( 'jquery-ui-core' );
+			// Dequeue and deregister jQuery UI Core (core.min.js), only on a page made of
+			// Composer widgets alone whose code does not use Elementor's JS, and only when no
+			// other script still queued depends on it.
+			if ( self::composer_only_page() && ! self::$needs_elementor_js && ! self::queued_script_needs( 'jquery-ui-core', $wp_scripts ) ) {
+				wp_dequeue_script( 'jquery-ui-core' );
+				wp_deregister_script( 'jquery-ui-core' );
+			}
+		}
+
+		/**
+		 * Whether a script still queued (other than Elementor's own scripts, which are
+		 * dropped with the rest of Elementor's runtime) depends on a handle, directly or
+		 * through other scripts.
+		 *
+		 * @param string     $dep     Script handle that would be removed.
+		 * @param WP_Scripts $scripts Scripts registry.
+		 * @return bool
+		 */
+		private static function queued_script_needs( $dep, $scripts ) {
+			foreach ( (array) $scripts->queue as $handle ) {
+				if ( 0 === strpos( (string) $handle, 'elementor' ) || 'swiper' === $handle || 'share-link' === $handle ) {
+					continue;
+				}
+				if ( self::script_depends_on( (string) $handle, $dep, $scripts, array() ) ) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * Whether a script depends on a handle, directly or through its own dependencies.
+		 *
+		 * @param string     $handle  Script handle to check.
+		 * @param string     $dep     Handle looked for.
+		 * @param WP_Scripts $scripts Scripts registry.
+		 * @param array      $seen    Handles already visited.
+		 * @return bool
+		 */
+		private static function script_depends_on( $handle, $dep, $scripts, array $seen ) {
+			if ( isset( $seen[ $handle ] ) || empty( $scripts->registered[ $handle ] ) ) {
+				return false;
+			}
+			$seen[ $handle ] = true;
+			foreach ( (array) $scripts->registered[ $handle ]->deps as $parent ) {
+				if ( $parent === $dep || self::script_depends_on( (string) $parent, $dep, $scripts, $seen ) ) {
+					return true;
+				}
+			}
+			return false;
 		}
 
 		/**

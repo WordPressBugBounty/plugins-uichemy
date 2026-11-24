@@ -25,8 +25,8 @@ if ( ! class_exists( 'Uich_SEO_AI' ) ) {
 
 		const MD_META = '_uichemy_seo_md';
 
-		/** Bump when from_html() changes, so cached Markdown is rebuilt. */
-		const MD_VER = 2;
+		/** Bump when from_html() or how the body is built changes, so cached Markdown is rebuilt. */
+		const MD_VER = 3;
 
 		/** Transient holding the generated llms.txt. */
 		const LLMS_CACHE = 'uichemy_seo_llms_txt';
@@ -37,6 +37,14 @@ if ( ! class_exists( 'Uich_SEO_AI' ) ) {
 		 * @var array<int, array|null>
 		 */
 		private static $resolved = array();
+
+		/**
+		 * True while a body is built from request-specific state that must not be
+		 * stored for other visitors (see without_request_input()).
+		 *
+		 * @var bool
+		 */
+		private static $no_store = false;
 
 		/** Default Markdown template (PRD §10.2). */
 		const MD_TEMPLATE = "---\ntitle: {{ title }}\ndescription: {{ description }}\nurl: {{ url }}\nupdated: {{ date }}\n---\n\n# {{ title }}\n\n{{ content }}\n";
@@ -52,6 +60,11 @@ if ( ! class_exists( 'Uich_SEO_AI' ) ) {
 			// drops the cache so the next request rebuilds it.
 			foreach ( array( 'uichemy_seo_rebuilt', 'transition_post_status', 'deleted_post', 'update_option_' . Uich_SEO_Settings::OPTION, 'add_option_' . Uich_SEO_Settings::OPTION ) as $hook ) {
 				add_action( $hook, array( __CLASS__, 'flush_llms_cache' ) );
+			}
+			// A post's per-visitor visibility rules can change on their own (a metadata-only
+			// write with no post save), and that changes whether it may be listed.
+			foreach ( array( 'added_post_meta', 'updated_post_meta', 'deleted_post_meta' ) as $hook ) {
+				add_action( $hook, array( __CLASS__, 'maybe_flush_on_meta' ), 10, 3 );
 			}
 			add_filter( 'uichemy_seo_head_extra', array( __CLASS__, 'head_link' ), 20, 2 );
 		}
@@ -101,7 +114,7 @@ if ( ! class_exists( 'Uich_SEO_AI' ) ) {
 				wp_set_current_user( 0 );
 			}
 			if ( '/llms.txt' === $path && Uich_SEO_Settings::get( 'llms_enabled', false ) ) {
-				self::send( self::llms_txt_cached(), 'text/plain' );
+				self::send( self::without_request_input( array( __CLASS__, 'llms_txt_cached' ) ), 'text/plain' );
 			}
 			if ( Uich_SEO_Settings::get( 'md_enabled', false ) && preg_match( '#\.md$#i', $path ) && '/llms.txt' !== $path ) {
 				$base = substr( $path, 0, -3 );
@@ -109,11 +122,96 @@ if ( ! class_exists( 'Uich_SEO_AI' ) ) {
 					? (int) get_option( 'page_on_front' )
 					: url_to_postid( home_url( user_trailingslashit( $base ) ) );
 				if ( $id && self::markdown_allowed( $id ) ) {
-					self::send( self::markdown_for( $id ), 'text/markdown' );
+					self::send(
+						self::without_request_input(
+							function () use ( $id ) {
+								return self::markdown_for( $id );
+							}
+						),
+						'text/markdown'
+					);
 				}
 			}
 			if ( isset( $prev_user ) ) {
 				wp_set_current_user( $prev_user ); // Not one of our files after all: carry on as before.
+			}
+		}
+
+		/**
+		 * Build a shared file as a first-time logged-out visitor would see it.
+		 *
+		 * The body is cached and served to everyone, so nothing that belongs to the
+		 * request that happens to build it may reach it: its query string, form
+		 * fields, cookies or referrer are set aside while the callback runs and put
+		 * back afterwards. A shopping cart cannot be set aside safely, so while the
+		 * visitor has one the body is built for them but not stored for others.
+		 * Static content reads none of these, so its output is unchanged.
+		 *
+		 * @param callable $build Returns the body.
+		 * @return string
+		 */
+		public static function without_request_input( callable $build ) {
+			// phpcs:disable WordPress.Security.NonceVerification, WordPress.Security.ValidatedSanitizedInput
+			$saved = array( $_GET, $_POST, $_REQUEST, $_COOKIE );
+			$keys  = array( 'HTTP_REFERER', 'HTTP_COOKIE', 'QUERY_STRING', 'REQUEST_URI' );
+			$srv   = array();
+			foreach ( $keys as $key ) {
+				if ( array_key_exists( $key, $_SERVER ) ) {
+					$srv[ $key ] = $_SERVER[ $key ];
+				}
+			}
+			$prev_no_store = self::$no_store;
+
+			$_GET     = array();
+			$_POST    = array();
+			$_REQUEST = array();
+			$_COOKIE  = array();
+			unset( $_SERVER['HTTP_REFERER'], $_SERVER['HTTP_COOKIE'] );
+			if ( isset( $_SERVER['QUERY_STRING'] ) ) {
+				$_SERVER['QUERY_STRING'] = '';
+			}
+			if ( isset( $_SERVER['REQUEST_URI'] ) ) {
+				$uri = (string) $_SERVER['REQUEST_URI'];
+				$q   = strpos( $uri, '?' );
+				$_SERVER['REQUEST_URI'] = false === $q ? $uri : substr( $uri, 0, $q );
+			}
+			if ( self::has_cart_items() ) {
+				self::$no_store = true;
+			}
+
+			try {
+				return (string) call_user_func( $build );
+			} finally {
+				list( $_GET, $_POST, $_REQUEST, $_COOKIE ) = $saved;
+				foreach ( $keys as $key ) {
+					if ( array_key_exists( $key, $srv ) ) {
+						$_SERVER[ $key ] = $srv[ $key ];
+					} else {
+						unset( $_SERVER[ $key ] );
+					}
+				}
+				self::$no_store = $prev_no_store;
+			}
+			// phpcs:enable
+		}
+
+		/**
+		 * Does this request carry a WooCommerce cart with items in it?
+		 *
+		 * @return bool
+		 */
+		private static function has_cart_items() {
+			if ( ! function_exists( 'WC' ) ) {
+				return false;
+			}
+			$wc = WC();
+			if ( ! $wc || ! isset( $wc->cart ) || ! is_object( $wc->cart ) || ! method_exists( $wc->cart, 'is_empty' ) ) {
+				return false;
+			}
+			try {
+				return ! $wc->cart->is_empty();
+			} catch ( \Throwable $e ) {
+				return true; // Unknown: do not store.
 			}
 		}
 
@@ -141,7 +239,7 @@ if ( ! class_exists( 'Uich_SEO_AI' ) ) {
 		 */
 		private static function eligible( $id ) {
 			$post = get_post( $id );
-			if ( ! $post || 'publish' !== $post->post_status || ! empty( $post->post_password ) ) {
+			if ( ! $post || 'publish' !== $post->post_status || ! empty( $post->post_password ) || ! is_post_type_viewable( $post->post_type ) ) {
 				return false;
 			}
 			if ( self::publicly_restricted( $post ) ) {
@@ -172,6 +270,8 @@ if ( ! class_exists( 'Uich_SEO_AI' ) ) {
 				$restricted = true; // Restrict Content (Pro).
 			} elseif ( function_exists( 'wc_memberships_is_post_content_restricted' ) && wc_memberships_is_post_content_restricted( $post->ID ) ) {
 				$restricted = true; // WooCommerce Memberships.
+			} elseif ( self::native_hidden( $post->ID ) ) {
+				$restricted = true; // UiChemy's own per-post visibility rules.
 			}
 			/**
 			 * Whether a post must stay out of llms.txt and its .md file (members-only content).
@@ -180,6 +280,28 @@ if ( ! class_exists( 'Uich_SEO_AI' ) ) {
 			 * @param WP_Post $post       Post.
 			 */
 			return (bool) apply_filters( 'uichemy_seo_ai_post_restricted', $restricted, $post );
+		}
+
+		/**
+		 * Do the Native Builder's per-post visibility rules hide the post from the
+		 * current visitor? The HTML page applies them through its queries, which
+		 * these files do not run, so the same rules are evaluated here. Read fresh
+		 * rather than from the builder's per-request list, which may have been
+		 * worked out for the user the request started as.
+		 *
+		 * @param int $post_id Post id.
+		 * @return bool
+		 */
+		private static function native_hidden( $post_id ) {
+			if ( ! class_exists( 'Uich_CB_Visibility' ) || ! Uich_CB_Visibility::available() ) {
+				return false;
+			}
+			/** This filter is documented in composer-builder/includes/class-uich-cb-visibility.php */
+			if ( ! apply_filters( 'uich_cb/visibility_applies', true ) ) {
+				return false;
+			}
+			$rules = Uich_CB_Visibility::get( $post_id );
+			return ! empty( $rules ) && ! Uich_CB_Visibility::allows( $rules );
 		}
 
 		/**
@@ -240,13 +362,30 @@ if ( ! class_exists( 'Uich_SEO_AI' ) ) {
 				return $cached;
 			}
 			$body = self::llms_txt();
-			set_transient( self::LLMS_CACHE, $body, 6 * HOUR_IN_SECONDS );
+			if ( ! self::$no_store ) {
+				set_transient( self::LLMS_CACHE, $body, 6 * HOUR_IN_SECONDS );
+			}
 			return $body;
 		}
 
 		/** Drop the cached llms.txt. */
 		public static function flush_llms_cache() {
 			delete_transient( self::LLMS_CACHE );
+		}
+
+		/**
+		 * Drop the cached llms.txt when a post's visibility rules are written.
+		 *
+		 * @param int|int[] $meta_id   Meta id(s).
+		 * @param int       $object_id Post id.
+		 * @param string    $meta_key  Meta key.
+		 * @return void
+		 */
+		public static function maybe_flush_on_meta( $meta_id, $object_id, $meta_key ) {
+			$visibility = class_exists( 'Uich_CB_Visibility' ) ? Uich_CB_Visibility::META : '_uich_cb_visibility';
+			if ( $visibility === $meta_key ) {
+				self::flush_llms_cache();
+			}
 		}
 
 		/**
@@ -357,7 +496,7 @@ if ( ! class_exists( 'Uich_SEO_AI' ) ) {
 				$body = self::from_html( $html );
 				// No signature yet (the post has not been derived): nothing to key a cache on, so
 				// do not write one on every anonymous request.
-				if ( $sig ) {
+				if ( $sig && ! self::$no_store ) {
 					update_post_meta( $id, self::MD_META, array( 'sig' => $sig, 'md' => $body, 'v' => self::MD_VER ) );
 				}
 			}

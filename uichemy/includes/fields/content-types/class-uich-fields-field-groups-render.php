@@ -2262,13 +2262,16 @@ JS
 	/**
 	 * Drop submitted names the group does not declare.
 	 *
+	 * A group with no fields (or one that cannot be found) declares nothing, so nothing is writable:
+	 * its form renders no inputs, and only declared fields may be stored under its key.
+	 *
 	 * @param array $fields    Submitted name => raw value pairs.
 	 * @param array $field_map Declared top-level fields, keyed by name.
 	 * @return array
 	 */
 	private function filter_submitted_fields( array $fields, array $field_map ) {
 		if ( empty( $field_map ) ) {
-			return $fields;
+			return array();
 		}
 		return array_intersect_key( $fields, $field_map );
 	}
@@ -4186,8 +4189,10 @@ JS
 	 *
 	 * The `filters` payload round-trips through the browser, so `post_types` is attacker-controlled
 	 * by the time it comes back: a Contributor could ask for any registered type (shop_coupon titles
-	 * are WooCommerce coupon codes). A type is kept only when it is public, or when some field in an
-	 * active group is configured to search it.
+	 * are WooCommerce coupon codes). A type is kept when it is public, or when some field in an active
+	 * group is configured to search it AND the current user can work with that type (its edit_posts
+	 * capability). A field configured for a non-public type therefore still searches it for anyone who
+	 * could create such posts, but no longer exposes its titles to roles that have no access to it.
 	 *
 	 * @param string[] $requested Sanitized post type slugs.
 	 * @return string[]
@@ -4197,11 +4202,25 @@ JS
 		$configured = $this->uich_gf_configured_post_types();
 		$out        = array();
 		foreach ( $requested as $pt ) {
-			if ( post_type_exists( $pt ) && ( isset( $public[ $pt ] ) || isset( $configured[ $pt ] ) ) ) {
+			if ( ! post_type_exists( $pt ) ) {
+				continue;
+			}
+			if ( isset( $public[ $pt ] ) || ( isset( $configured[ $pt ] ) && $this->uich_gf_user_can_use_post_type( $pt ) ) ) {
 				$out[] = $pt;
 			}
 		}
 		return array_values( array_unique( $out ) );
+	}
+
+	/**
+	 * Whether the current user holds a post type's own edit_posts capability.
+	 *
+	 * @param string $post_type Post type slug.
+	 * @return bool
+	 */
+	private function uich_gf_user_can_use_post_type( $post_type ) {
+		$obj = get_post_type_object( $post_type );
+		return $obj && ! empty( $obj->cap->edit_posts ) && current_user_can( $obj->cap->edit_posts );
 	}
 
 	/**

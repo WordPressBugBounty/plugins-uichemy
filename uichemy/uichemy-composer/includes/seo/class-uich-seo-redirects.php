@@ -350,8 +350,14 @@ if ( ! class_exists( 'Uich_SEO_Redirects' ) ) {
 				foreach ( self::regex_rows() as $row ) {
 					$re = self::regex( $row->source );
 					if ( $re && @preg_match( $re, $path ) ) { // phpcs:ignore WordPress.PHP.NoSilencedErrors -- validated on save; defensive here.
+						$target = self::expand_target( $re, (string) $row->target, $path );
+						// What the request fills in may change the path and query only,
+						// never the site the rule sends visitors to.
+						if ( ! self::keeps_origin( (string) $row->target, $target ) ) {
+							continue;
+						}
 						$row         = clone $row;
-						$row->target = self::expand_target( $re, (string) $row->target, $path );
+						$row->target = $target;
 						return $row;
 					}
 				}
@@ -386,6 +392,60 @@ if ( ! class_exists( 'Uich_SEO_Redirects' ) ) {
 				},
 				$target
 			);
+		}
+
+		/**
+		 * Does a pattern row's filled-in target still go to the site its stored
+		 * target names? An external target keeps its scheme, host and port; an
+		 * internal one stays on this site. A stored target whose host itself has a
+		 * placeholder (https://$1.example.com/) may only fill in subdomain labels
+		 * in front of the fixed part.
+		 *
+		 * @param string $stored   Stored target, placeholders unfilled.
+		 * @param string $expanded The same target filled in from the request.
+		 * @return bool
+		 */
+		public static function keeps_origin( $stored, $expanded ) {
+			$stored = trim( (string) $stored );
+			if ( $stored === trim( (string) $expanded ) ) {
+				return true;
+			}
+			$to     = self::absolute( $expanded );
+			$hole   = '/\$\{\d+\}|\$\d+|\\\\\d+/';
+			$origin = '#^(https?://)([^/?\#\\\\]*)#i';
+			if ( ! preg_match( $origin, $to, $tm ) ) {
+				return false;
+			}
+			$after = (string) substr( $to, strlen( $tm[0] ) );
+			if ( '' !== $after && ! in_array( $after[0], array( '/', '?', '#' ), true ) ) {
+				return false;
+			}
+			if ( ! preg_match( $origin, $stored, $sm ) ) {
+				// Internal target: this site's origin.
+				if ( ! preg_match( $origin, home_url( '/' ), $sm ) ) {
+					return false;
+				}
+			}
+			if ( 0 !== strcasecmp( $sm[1], $tm[1] ) ) {
+				return false;
+			}
+			if ( ! preg_match( $hole, $sm[2] ) ) {
+				return 0 === strcasecmp( $sm[2], $tm[2] );
+			}
+			// A placeholder right after the host (https://new.com$1): the host is the
+			// fixed text before it, and what is filled in starts the path, query or fragment.
+			if ( preg_match( '/^(.*?)(?:\$\{\d+\}|\$\d+|\\\\\d+)$/', $sm[2], $hm ) && '' !== $hm[1] && ! preg_match( $hole, $hm[1] ) ) {
+				return 0 === strcasecmp( $hm[1], $tm[2] );
+			}
+			// A placeholder in the host: only labels in front of a fixed domain.
+			$parts = preg_split( $hole, $sm[2] );
+			$fixed = (string) end( $parts );
+			if ( '.' !== substr( $fixed, 0, 1 ) || false === strpos( substr( $fixed, 1 ), '.' ) || strlen( $tm[2] ) <= strlen( $fixed ) ) {
+				return false;
+			}
+			$labels = substr( $tm[2], 0, -strlen( $fixed ) );
+			return 0 === strcasecmp( substr( $tm[2], -strlen( $fixed ) ), $fixed )
+				&& (bool) preg_match( '/^[a-z0-9-]+(\.[a-z0-9-]+)*$/i', $labels );
 		}
 
 		/**

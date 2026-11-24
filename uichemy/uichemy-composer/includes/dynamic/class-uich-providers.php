@@ -218,6 +218,11 @@ if ( ! class_exists( 'Uich_Post_Provider' ) ) {
 					if ( post_password_required( $p ) ) {
 						return get_the_password_form( $p );
 					}
+					// Only a post this viewer may see, rendered with its own writer's trust
+					// inside the current document (Uich_Dynamic::expand_post_content()).
+					if ( class_exists( 'Uich_Dynamic' ) && method_exists( 'Uich_Dynamic', 'expand_post_content' ) ) {
+						return Uich_Dynamic::expand_post_content( $p );
+					}
 					return apply_filters( 'the_content', $p->post_content ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Intentional WordPress core integration hook (the_content) so post content renders identically to the theme.
 				case 'thumbnail':
 				case 'featured_image':

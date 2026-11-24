@@ -47,7 +47,12 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 		public static function ajax_submit() {
 			$request = new WP_REST_Request( 'POST', '/uichemy/v1/form-submit' );
 			// phpcs:ignore WordPress.Security.NonceVerification.Missing -- The handler verifies _uich_nonce itself.
-			$request->set_body_params( wp_unslash( $_POST ) );
+			$body = wp_unslash( $_POST );
+			// The admin-ajax routing key is not a form field.
+			if ( isset( $body['action'] ) && 'uich_form_submit' === $body['action'] ) {
+				unset( $body['action'] );
+			}
+			$request->set_body_params( $body );
 			$request->set_file_params( $_FILES ); // phpcs:ignore WordPress.Security.NonceVerification.Missing -- As above; files are checked in handle_uploads().
 			$response = self::handle_submit( $request );
 			wp_send_json( $response instanceof WP_REST_Response ? $response->get_data() : $response );
@@ -604,11 +609,52 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			$widget_id = isset( $params['_uich_widget_id'] ) ? sanitize_text_field( $params['_uich_widget_id'] ) : '';
 			$post_id   = isset( $params['_uich_post_id'] ) ? (int) $params['_uich_post_id'] : 0;
 
+			// The required / email rules and field list recorded when the form was rendered.
+			$schema = self::read_schema( $params, $form_key, $widget_id, $post_id );
+			if ( null === $schema ) {
+				return new WP_REST_Response(
+					array(
+						'success' => false,
+						'message' => __( 'This form is out of date. Please refresh the page and try again.', 'uichemy' ),
+					),
+					200
+				);
+			}
+
+			// The form's own fields are always accepted. Fields the rendered form did
+			// not declare (inputs a script adds, campaign / hidden fields) are accepted
+			// up to a bounded count. A schema signed before 'fields' was recorded (a page
+			// cached from an older version) has no list: any field is still accepted
+			// there, within the size limits below.
+			$allowed = isset( $schema['fields'] ) ? array_flip( array_map( 'strval', (array) $schema['fields'] ) ) : null;
+			/**
+			 * Filter the field keys a submission may carry, in addition to the form's own.
+			 * Use it for inputs a script adds to the form after the page is rendered.
+			 *
+			 * @param string[] $extra    Extra field keys.
+			 * @param string   $form_key Form key.
+			 * @param int      $post_id  Post the form is on.
+			 */
+			$extra = apply_filters( 'uich_form_extra_fields', array(), $form_key, $post_id );
+			if ( null !== $allowed && ! empty( $extra ) ) {
+				$allowed += array_flip( array_map( 'strval', (array) $extra ) );
+			}
+
+			$undeclared_max = self::undeclared_field_limit();
+			$undeclared     = 0;
+
 			// Collect real fields (skip internal _uich_* keys). Sanitize each.
 			$values = array();
 			foreach ( $params as $key => $val ) {
-				if ( 0 === strpos( $key, '_uich_' ) ) {
+				$key = (string) $key;
+				if ( 0 === strpos( $key, '_uich_' ) || ( 'rest_route' === $key && ! isset( $allowed[ $key ] ) ) ) {
 					continue;
+				}
+				if ( null !== $allowed && ! isset( $allowed[ $key ] ) ) {
+					if ( $undeclared >= $undeclared_max ) {
+						continue;
+					}
+					++$undeclared;
 				}
 				if ( is_array( $val ) ) {
 					$values[ $key ] = array_map( 'sanitize_text_field', $val );
@@ -617,6 +663,16 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 				} else {
 					$values[ $key ] = sanitize_text_field( $val );
 				}
+			}
+
+			if ( ! self::within_size_limits( $values ) ) {
+				return new WP_REST_Response(
+					array(
+						'success' => false,
+						'message' => __( 'This submission is too large. Please shorten your answers and try again.', 'uichemy' ),
+					),
+					200
+				);
 			}
 
 			// A submission whose fields are all blank is never worth storing, whatever the
@@ -633,16 +689,6 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			}
 
 			// Enforce the required / email rules recorded when the form was rendered.
-			$schema = self::read_schema( $params, $form_key, $widget_id, $post_id );
-			if ( null === $schema ) {
-				return new WP_REST_Response(
-					array(
-						'success' => false,
-						'message' => __( 'This form is out of date. Please refresh the page and try again.', 'uichemy' ),
-					),
-					200
-				);
-			}
 			$errors = self::validate_values( $values, $schema );
 
 			/**
@@ -907,27 +953,41 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 		 * Read a form's controls and record which ones are required and which are emails.
 		 *
 		 * @param string $form_html Inner HTML of the <form>.
-		 * @return array { required: string[], email: string[], files: string[] } — request keys, as PHP parses them.
+		 * @return array { required: string[], email: string[], files: string[], fields: string[] } — request keys, as PHP parses them.
 		 */
 		private static function extract_schema( $form_html ) {
 			$required = array();
 			$email    = array();
 			$files    = array();
-			if ( ! preg_match_all( '/<(input|select|textarea)\b([^>]*)>/i', (string) $form_html, $controls, PREG_SET_ORDER ) ) {
+			$fields   = array();
+			if ( ! preg_match_all( '/<(input|select|textarea|button)\b((?:[^>"\']|"[^"]*"|\'[^\']*\')*)>/i', (string) $form_html, $controls, PREG_SET_ORDER ) ) {
 				return array(
 					'required' => array(),
 					'email'    => array(),
 					'files'    => array(),
+					'fields'   => array(),
 				);
 			}
 			foreach ( $controls as $c ) {
 				$attrs = $c[2];
 				if ( ! preg_match( '/(?<![\w-])name\s*=\s*(["\'])(.*?)\1/i', $attrs, $nm ) ) {
+					// An unquoted name still submits a field: accept it, with no rules.
+					if ( preg_match( '/(?<![\w-])name\s*=\s*([^\s"\'>=`]+)/i', $attrs, $un ) ) {
+						$key = str_replace( array( ' ', '.' ), '_', preg_replace( '/\[.*$/', '', $un[1] ) );
+						if ( '' !== $key && 0 !== strpos( $key, '_uich_' ) ) {
+							$fields[ $key ] = true;
+						}
+					}
 					continue;
 				}
 				// PHP request keys drop "[...]" suffixes and turn spaces / dots into underscores.
 				$key = str_replace( array( ' ', '.' ), '_', preg_replace( '/\[.*$/', '', $nm[2] ) );
 				if ( '' === $key || 0 === strpos( $key, '_uich_' ) ) {
+					continue;
+				}
+				// Every named control the form has: only these are accepted on submit.
+				$fields[ $key ] = true;
+				if ( 'button' === strtolower( $c[1] ) ) {
 					continue;
 				}
 				$type = 'text';
@@ -952,6 +1012,7 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 				'required' => array_keys( $required ),
 				'email'    => array_keys( $email ),
 				'files'    => array_keys( $files ),
+				'fields'   => array_keys( $fields ),
 			);
 		}
 
@@ -1081,10 +1142,147 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 			return ! is_wp_error( $res ) && (int) wp_remote_retrieve_response_code( $res ) < 400;
 		}
 
+		/**
+		 * The submission limits, tunable via `uich_form_submission_limits`.
+		 *
+		 * @return array
+		 */
+		private static function submission_limits() {
+			/**
+			 * Filter the submission size limits. A limit of 0 turns that check off.
+			 * 'undeclared' is how many fields the rendered form did not declare
+			 * (for example inputs a script adds) a submission may carry.
+			 *
+			 * @param array $limits array{ fields:int, key_length:int, value_length:int, items:int, total:int, undeclared:int } (lengths in bytes).
+			 */
+			return wp_parse_args(
+				(array) apply_filters( 'uich_form_submission_limits', array() ),
+				array(
+					'fields'       => 200,
+					'key_length'   => 190,
+					'value_length' => 65535,
+					'items'        => 500,
+					'total'        => 1048576,
+					'undeclared'   => 20,
+				)
+			);
+		}
+
+		/**
+		 * How many undeclared fields a submission may carry.
+		 *
+		 * @return int
+		 */
+		private static function undeclared_field_limit() {
+			$limits = self::submission_limits();
+			return max( 0, (int) $limits['undeclared'] );
+		}
+
+		/**
+		 * Whether a submission's fields stay within the size limits.
+		 *
+		 * The limits are generous: they bound what a request can make the site
+		 * store or mail, not what a real form needs. Tunable via `uich_form_submission_limits`.
+		 *
+		 * @param array $values Sanitized field key => value.
+		 * @return bool
+		 */
+		private static function within_size_limits( $values ) {
+			$limits  = self::submission_limits();
+			$fields  = (int) $limits['fields'];
+			$key_len = (int) $limits['key_length'];
+			$val_len = (int) $limits['value_length'];
+			$items   = (int) $limits['items'];
+			$total   = (int) $limits['total'];
+
+			if ( $fields > 0 && count( $values ) > $fields ) {
+				return false;
+			}
+			$sum = 0;
+			foreach ( $values as $key => $val ) {
+				if ( $key_len > 0 && strlen( (string) $key ) > $key_len ) {
+					return false;
+				}
+				$list = is_array( $val ) ? $val : array( $val );
+				if ( $items > 0 && count( $list ) > $items ) {
+					return false;
+				}
+				foreach ( $list as $item ) {
+					$len = is_scalar( $item ) ? strlen( (string) $item ) : 0;
+					if ( $val_len > 0 && $len > $val_len ) {
+						return false;
+					}
+					$sum += $len;
+				}
+				$sum += strlen( (string) $key );
+			}
+			return ! ( $total > 0 && $sum > $total );
+		}
+
+		/**
+		 * The submitter's address, for the rate limit.
+		 *
+		 * REMOTE_ADDR by default. A forwarded client address is used only when the
+		 * request comes from a proxy the site lists as trusted, through the
+		 * UICH_FORMS_TRUSTED_PROXIES constant (comma-separated addresses, or '*'
+		 * for any) or the `uich_form_trusted_proxies` filter.
+		 *
+		 * @return string
+		 */
 		private static function client_ip() {
 			// phpcs:ignore
 			$ip = isset( $_SERVER['REMOTE_ADDR'] ) ? sanitize_text_field( wp_unslash( $_SERVER['REMOTE_ADDR'] ) ) : '';
+
+			$trusted = defined( 'UICH_FORMS_TRUSTED_PROXIES' ) ? UICH_FORMS_TRUSTED_PROXIES : array();
+			if ( is_string( $trusted ) ) {
+				$trusted = explode( ',', $trusted );
+			}
+			/**
+			 * Filter the proxy addresses whose forwarded client address is believed.
+			 * Empty by default: only REMOTE_ADDR is used. '*' trusts every proxy.
+			 *
+			 * @param string[] $trusted Proxy addresses.
+			 */
+			$trusted = array_filter( array_map( 'trim', (array) apply_filters( 'uich_form_trusted_proxies', (array) $trusted ) ) );
+			if ( '' !== $ip && ! empty( $trusted ) && ( in_array( '*', $trusted, true ) || in_array( $ip, $trusted, true ) ) ) {
+				$forwarded = self::forwarded_ip( $trusted );
+				if ( '' !== $forwarded ) {
+					$ip = $forwarded;
+				}
+			}
 			return apply_filters( 'uich_form_client_ip', $ip );
+		}
+
+		/**
+		 * The client address a trusted proxy forwarded, or ''.
+		 *
+		 * In a forwarded chain, the nearest address that is not itself a trusted
+		 * proxy is the client; with '*' every hop is trusted, so the first entry is.
+		 *
+		 * @param string[] $trusted Trusted proxy addresses.
+		 * @return string
+		 */
+		private static function forwarded_ip( $trusted ) {
+			$any = in_array( '*', $trusted, true );
+			foreach ( array( 'HTTP_CF_CONNECTING_IP', 'HTTP_X_REAL_IP', 'HTTP_X_FORWARDED_FOR' ) as $header ) {
+				if ( empty( $_SERVER[ $header ] ) ) {
+					continue;
+				}
+				// phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Each entry is validated as an IP address below.
+				$parts = array_map( 'trim', explode( ',', wp_unslash( (string) $_SERVER[ $header ] ) ) );
+				if ( ! $any ) {
+					$parts = array_reverse( $parts );
+				}
+				foreach ( $parts as $candidate ) {
+					if ( false === filter_var( $candidate, FILTER_VALIDATE_IP ) ) {
+						break;
+					}
+					if ( $any || ! in_array( $candidate, $trusted, true ) ) {
+						return $candidate;
+					}
+				}
+			}
+			return '';
 		}
 
 		/**
@@ -1137,6 +1335,39 @@ if ( ! class_exists( 'Uich_Forms' ) ) {
 				return false;
 			}
 
+			if ( ! self::within_site_rate_limit() ) {
+				return false;
+			}
+
+			set_transient( $key, $count + 1, $window );
+			return true;
+		}
+
+		/**
+		 * Site-wide submit ceiling, so the total work stays bounded even when
+		 * each request comes from a different address. Set far above real
+		 * traffic; tunable via `uich_form_site_rate_limit` (a `max` of 0 disables it).
+		 *
+		 * @return bool
+		 */
+		private static function within_site_rate_limit() {
+			$limits = apply_filters(
+				'uich_form_site_rate_limit',
+				array(
+					'window' => MINUTE_IN_SECONDS,
+					'max'    => 300,
+				)
+			);
+			$window = isset( $limits['window'] ) ? max( 1, (int) $limits['window'] ) : MINUTE_IN_SECONDS;
+			$max    = isset( $limits['max'] ) ? (int) $limits['max'] : 300;
+			if ( $max <= 0 ) {
+				return true;
+			}
+			$key   = 'uich_form_rl_site_' . (int) floor( time() / $window );
+			$count = (int) get_transient( $key );
+			if ( $count >= $max ) {
+				return false;
+			}
 			set_transient( $key, $count + 1, $window );
 			return true;
 		}

@@ -302,6 +302,9 @@ class Uich_Fields_Model_Cache {
 					'size'  => 0,
 				);
 			}
+		} else {
+			// A rebuild follows a change on disk (often a deployment), so re-check the access guards too.
+			Uich_Fields_Model_Store::maybe_write_guards();
 		}
 
 		$path    = $dir . '/' . self::INDEX_FILE;

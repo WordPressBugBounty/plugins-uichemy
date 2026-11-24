@@ -115,12 +115,40 @@ class Uich_Webpage_Import {
 	const OPTION_LIVE_JOBS = 'uich_webpage_live_import_jobs';
 
 	/**
+	 * Post meta set on every post, product and template an import creates or
+	 * takes over. A re-import only updates, archives or republishes posts that
+	 * carry it.
+	 */
+	const META_IMPORTED = '_uich_webpage_imported';
+
+	/**
+	 * Post meta: the catalogue identity (SKU or slug) an imported product or
+	 * variation was created for, so a re-import finds its own copy.
+	 */
+	const META_IMPORT_KEY = '_uich_webpage_import_key';
+
+	/**
+	 * Option: 1 when this site ran an import before imported posts were marked.
+	 * Only then may a re-import take over an unmarked post that matches by
+	 * name, as earlier versions did; on every other site it never does.
+	 */
+	const OPTION_LEGACY_IMPORT_SITE = 'uich_webpage_legacy_import_site';
+
+	/**
 	 * Seconds without a progress write after which a job is presumed dead.
 	 *
 	 * Generous on purpose: one wp_remote_get() in the fetch loop is allowed 120s,
 	 * so anything shorter would declare a merely slow download a crash.
 	 */
 	const JOB_STALL_SECONDS = 180;
+
+	/**
+	 * Set by ensure_import_theme() when the theme step was left out because the
+	 * current user may not switch themes.
+	 *
+	 * @var bool
+	 */
+	protected $theme_switch_skipped = false;
 
 	/**
 	 * Auth instance for optional Bearer token when fetching download URLs.
@@ -907,7 +935,19 @@ class Uich_Webpage_Import {
 		$params     = $request->get_json_params();
 		$theme_slug = isset( $params['theme_slug'] ) ? sanitize_key( $params['theme_slug'] ) : self::IMPORT_THEME_SLUG;
 
-		$success = $this->ensure_import_theme( $theme_slug );
+		$this->theme_switch_skipped = false;
+		$success                    = $this->ensure_import_theme( $theme_slug );
+
+		if ( $this->theme_switch_skipped ) {
+			return new WP_REST_Response(
+				array(
+					'success' => true,
+					'status'  => 'skipped',
+					'skipped' => true,
+					'message' => __( 'The theme was not changed: your account is not allowed to switch themes. The import continues with the current theme.', 'uichemy' ),
+				)
+			);
+		}
 
 		$theme     = wp_get_theme( $theme_slug );
 		$current   = wp_get_theme();
@@ -965,6 +1005,9 @@ class Uich_Webpage_Import {
 				}
 			)
 		);
+		// Same HTTPS upgrade the project download URLs get, so a plain-http link to
+		// the API host still installs over HTTPS.
+		$plugin_urls = array_values( array_unique( array_filter( array_map( array( $this, 'normalize_download_url' ), $plugin_urls ) ) ) );
 
 		$results = array();
 
@@ -1040,6 +1083,13 @@ class Uich_Webpage_Import {
 				continue;
 			}
 
+			// UiChemy Pro is never installed from a project's zip link: it goes
+			// through the signed installer, which checks the release signature.
+			if ( $this->is_uichemy_pro_zip_url( $url ) ) {
+				$results[] = $this->install_uichemy_pro_signed( $url );
+				continue;
+			}
+
 			$existing = $this->find_installed_plugin_file_for_pro_zip_url( $url, $all_plugins, $sitemap_free );
 			if ( $existing && is_plugin_active( $existing ) ) {
 				$results[] = array(
@@ -1076,16 +1126,12 @@ class Uich_Webpage_Import {
 				$filename .= '.zip';
 			}
 			$filepath     = $base_dir . '/' . sanitize_file_name( $filename );
-			$access_token = $this->auth->get_access_token();
 			$request_args = array(
 				'timeout'   => 120,
 				'sslverify' => uich_webpage_http_sslverify(),
 				'headers'   => array(),
 			);
-			if ( $access_token ) {
-				$request_args['headers']['Authorization'] = 'Bearer ' . $access_token;
-			}
-			$response = wp_remote_get( $url, $request_args );
+			$response = Uich_Webpage_Api::credentialed_request( $url, $request_args, $this->auth->get_access_token() );
 			if ( is_wp_error( $response ) ) {
 				$api = new Uich_Webpage_Api();
 				$api->report_error( 'INSTALL_PRO_PLUGIN_NETWORK_ERROR', array( 'message' => $response->get_error_message(), 'source' => 'uichemy-webpage', 'level' => 'error', 'context' => array( 'url' => $url ) ) );
@@ -1193,6 +1239,76 @@ class Uich_Webpage_Import {
 	}
 
 	/**
+	 * Does a project's pro-plugin link point at UiChemy Pro?
+	 *
+	 * Matches the app's download route (/api/plugins/uichemy-pro/download) and
+	 * release zip names (uichemy-pro-5.8.2.zip, uichemy-wp-pro-v5.8.2-abc1234.zip).
+	 * install_and_activate_plugin_from_zip() also refuses a zip whose top folder
+	 * is uichemy-pro/, in case a link with another name serves one.
+	 *
+	 * @param string $url Pro plugin zip URL.
+	 * @return bool
+	 */
+	protected function is_uichemy_pro_zip_url( $url ) {
+		$path = strtolower( rawurldecode( (string) wp_parse_url( $url, PHP_URL_PATH ) ) );
+		if ( '/api/plugins/uichemy-pro/download' === substr( rtrim( $path, '/' ), -33 ) ) {
+			return true;
+		}
+		return 1 === preg_match( '/^uichemy-(?:wp-)?pro(?:[-_.][^\/]*)?\.zip$/', basename( $path ) );
+	}
+
+	/**
+	 * Install, update or activate UiChemy Pro through Uich_ND_Installer, which
+	 * downloads the release from the UiChemy app and installs it only when its
+	 * signature, size and SHA-256 check out. The project's own link is not used.
+	 *
+	 * @param string $url The project's link, reported back as is.
+	 * @return array One download-pro-plugins result row.
+	 */
+	protected function install_uichemy_pro_signed( $url ) {
+		if ( ! class_exists( 'Uich_ND_Installer' ) ) {
+			return array(
+				'url'     => $url,
+				'success' => false,
+				'error'   => __( 'This UiChemy Pro package is not signed, so it was not installed.', 'uichemy' ),
+			);
+		}
+
+		$result = Uich_ND_Installer::install_uichemy_pro();
+		if ( is_wp_error( $result ) ) {
+			$api = new Uich_Webpage_Api();
+			$api->report_error( 'INSTALL_PRO_PLUGIN_UICHEMY_PRO_FAILED', array( 'message' => $result->get_error_message(), 'source' => 'uichemy-webpage', 'level' => 'error', 'context' => array( 'url' => $url, 'code' => $result->get_error_code() ) ) );
+			return array(
+				'url'     => $url,
+				'success' => false,
+				'error'   => $result->get_error_message(),
+			);
+		}
+
+		$action = isset( $result['action'] ) ? (string) $result['action'] : '';
+		if ( 'activate_url' === $action ) {
+			return array(
+				'url'          => $url,
+				'success'      => false,
+				'error'        => isset( $result['message'] ) ? (string) $result['message'] : '',
+				'activate_url' => isset( $result['activate_url'] ) ? (string) $result['activate_url'] : '',
+			);
+		}
+
+		$row = array(
+			'url'         => $url,
+			'success'     => true,
+			'plugin_slug' => Uich_ND_Settings::find_uichemy_pro_file(),
+		);
+		if ( 'already_active' === $action ) {
+			$row['skipped'] = 'already_active';
+		} elseif ( 'activated' === $action ) {
+			$row['skipped'] = 'activated_existing';
+		}
+		return $row;
+	}
+
+	/**
 	 * Install and activate a plugin from a local zip file.
 	 *
 	 * @param string $zip_path Full path to plugin zip file.
@@ -1204,6 +1320,12 @@ class Uich_Webpage_Import {
 		}
 		if ( ! current_user_can( 'install_plugins' ) ) {
 			return new WP_Error( 'INSTALL_PLUGIN_FORBIDDEN', __( 'Insufficient permissions.', 'uichemy' ) );
+		}
+		// Backstop for links that don't look like UiChemy Pro: a zip that unpacks
+		// to uichemy-pro/ is refused here, because only the signed installer
+		// (install_uichemy_pro_signed()) may install UiChemy Pro.
+		if ( 'uichemy-pro' === $this->zip_root_folder( $zip_path ) ) {
+			return new WP_Error( 'INSTALL_PLUGIN_UNSIGNED_UICHEMY_PRO', __( 'This UiChemy Pro package is not signed, so it was not installed.', 'uichemy' ) );
 		}
 
 		require_once ABSPATH . 'wp-admin/includes/plugin.php';
@@ -1275,6 +1397,32 @@ class Uich_Webpage_Import {
 			return;
 		}
 		$wp_filesystem->delete( $dir, true );
+	}
+
+	/**
+	 * The single top-level folder every entry of a zip sits in, lowercased, or
+	 * null when the zip can't be read or has more than one.
+	 *
+	 * @param string $zip_path Full path to plugin zip.
+	 * @return string|null
+	 */
+	protected function zip_root_folder( $zip_path ) {
+		if ( ! class_exists( 'ZipArchive' ) ) {
+			return null;
+		}
+		$zip = new ZipArchive();
+		if ( true !== $zip->open( $zip_path, ZipArchive::RDONLY ) ) {
+			return null;
+		}
+		$folders = array();
+		for ( $i = 0; $i < $zip->numFiles; $i++ ) { // phpcs:ignore WordPress.NamingConventions.ValidVariableName.UsedPropertyNotSnakeCase
+			$name = ltrim( (string) $zip->getNameIndex( $i ), '/' );
+			if ( '' !== $name ) {
+				$folders[ strtolower( strtok( $name, '/' ) ) ] = true;
+			}
+		}
+		$zip->close();
+		return 1 === count( $folders ) ? (string) key( $folders ) : null;
 	}
 
 	/**
@@ -1350,6 +1498,27 @@ class Uich_Webpage_Import {
 				&& ( strpos( $u, 'plus' ) !== false || strpos( $u, 'theplus' ) !== false || strpos( $u, 'plus-addons' ) !== false ) );
 		}
 		return false;
+	}
+
+	/**
+	 * Whether a plugin or theme package URL may be installed: HTTPS on the
+	 * wordpress.org download hosts. Sites that serve wordpress.org packages from
+	 * a mirror can add its host with the `uichemy/import/package_hosts` filter.
+	 *
+	 * Paid-plugin zips are checked separately: they come only from the
+	 * configured API origin (is_allowed_fetch_url()).
+	 *
+	 * @param mixed $url Package URL.
+	 * @return bool
+	 */
+	protected function is_trusted_package_url( $url ) {
+		$origin = Uich_Webpage_Api::url_origin( $url );
+		if ( null === $origin || 'https' !== $origin['scheme'] || 443 !== $origin['port'] ) {
+			return false;
+		}
+		$hosts = apply_filters( 'uichemy/import/package_hosts', array( 'downloads.wordpress.org', 'wordpress.org' ) );
+		$hosts = array_map( 'strtolower', array_filter( (array) $hosts, 'is_string' ) );
+		return in_array( $origin['host'], $hosts, true );
 	}
 
 	/**
@@ -1505,6 +1674,13 @@ class Uich_Webpage_Import {
 			return true;
 		}
 
+		// Changing the site's theme is its own permission. Without it the import goes
+		// on with the current theme, and the step reports that it was left out.
+		if ( ! current_user_can( 'switch_themes' ) ) {
+			$this->theme_switch_skipped = true;
+			return true;
+		}
+
 		// Installed but not active - activate it.
 		if ( $theme->exists() ) {
 			switch_theme( $theme_slug );
@@ -1546,6 +1722,11 @@ class Uich_Webpage_Import {
 		}
 
 		$theme_zip_url = $theme_info->download_link;
+		if ( ! $this->is_trusted_package_url( $theme_zip_url ) ) {
+			$api = new Uich_Webpage_Api();
+			$api->report_error( 'INSTALL_THEME_UNTRUSTED_URL', array( 'message' => 'Theme download link is not on an expected host.', 'source' => 'uichemy-webpage', 'level' => 'error', 'context' => array( 'theme_slug' => $theme_slug, 'zip_url' => $theme_zip_url ) ) );
+			return false;
+		}
 
 		// Download and install theme (same as WDesignKit).
 		global $wp_filesystem;
@@ -2166,7 +2347,7 @@ class Uich_Webpage_Import {
 	}
 
 	/**
-	 * Whether $url's host matches allowed_fetch_host(). Shared guard for every outbound
+	 * Whether $url is on the configured API origin. Shared guard for every outbound
 	 * request that attaches the UiChemy OAuth Bearer token (fetch_raw_body_from_url() for
 	 * downloadUrls, rest_download_pro_plugins() for requiredPlugins.pro zip URLs) — without
 	 * it, an admin-triggered (or attacker-influenced payload) request to an arbitrary host
@@ -2177,9 +2358,8 @@ class Uich_Webpage_Import {
 	 * @return bool
 	 */
 	protected function is_allowed_fetch_url( $url ) {
-		$host         = is_string( $url ) ? wp_parse_url( $url, PHP_URL_HOST ) : false;
-		$allowed_host = $this->allowed_fetch_host();
-		return '' !== $allowed_host && is_string( $host ) && strtolower( $host ) === $allowed_host;
+		// Full origin: scheme, host and port must match the configured API URL.
+		return Uich_Webpage_Api::is_api_origin_url( $url );
 	}
 
 	/**
@@ -2226,6 +2406,9 @@ class Uich_Webpage_Import {
 			$headers['Authorization'] = 'Bearer ' . $access_token;
 		}
 
+		// Redirects are not followed in the batch: the credential header would go
+		// with them. A redirected URL is left out of the map and the sequential
+		// path fetches it, following redirects hop by hop.
 		$queue = array();
 		foreach ( array_unique( array_filter( $urls, 'is_string' ) ) as $url ) {
 			if ( isset( $this->prefetched_bodies[ $url ] ) || ! $this->is_allowed_fetch_url( $url ) ) {
@@ -2252,7 +2435,7 @@ class Uich_Webpage_Import {
 					array(
 						'timeout'          => 120,
 						'connect_timeout'  => 10,
-						'follow_redirects' => true,
+						'follow_redirects' => false,
 						'verify'           => uich_webpage_http_sslverify() ? ABSPATH . WPINC . '/certificates/ca-bundle.crt' : false,
 					)
 				);
@@ -2263,7 +2446,8 @@ class Uich_Webpage_Import {
 				if ( ! ( $response instanceof \WpOrg\Requests\Response ) ) {
 					continue;
 				}
-				if ( (int) $response->status_code >= 400 || '' === (string) $response->body ) {
+				$status = (int) $response->status_code;
+				if ( $status < 200 || $status >= 300 || '' === (string) $response->body ) {
 					continue;
 				}
 				$this->prefetched_bodies[ $url ] = (string) $response->body;
@@ -2302,12 +2486,7 @@ class Uich_Webpage_Import {
 			'headers'   => array(),
 		);
 
-		$access_token = $this->auth->get_access_token();
-		if ( $access_token ) {
-			$args['headers']['Authorization'] = 'Bearer ' . $access_token;
-		}
-
-		$response = wp_remote_get( $url, $args );
+		$response = Uich_Webpage_Api::credentialed_request( $url, $args, $this->auth->get_access_token() );
 
 		if ( is_wp_error( $response ) ) {
 			return new WP_Error(
@@ -3414,7 +3593,7 @@ class Uich_Webpage_Import {
 		}
 
 		if ( null !== $uichemy_globals_data ) {
-			update_option( self::OPTION_UICHEMY_GLOBALS, $uichemy_globals_data, false );
+			update_option( self::OPTION_UICHEMY_GLOBALS, self::gate_site_custom_code( $uichemy_globals_data ), false );
 		}
 
 		// Computed here (fetch phase, builder-agnostic) rather than inside apply_globals_to_elementor(),
@@ -3450,6 +3629,8 @@ class Uich_Webpage_Import {
 				'requiresWooCommerce' => $requires_woocommerce,
 			)
 		);
+		// Before this import's meta is written: whether the site imported before.
+		$this->note_legacy_import_site();
 		update_option( self::OPTION_IMPORT_META, $import_meta, false );
 
 		// Keep Settings -> General in sync with whichever project was just imported,
@@ -6140,6 +6321,125 @@ class Uich_Webpage_Import {
 	}
 
 	/**
+	 * wp_insert_post() for an object the import creates, recorded as imported.
+	 *
+	 * @param array $postarr  wp_insert_post() arguments.
+	 * @param bool  $wp_error Return WP_Error on failure.
+	 * @return int|WP_Error
+	 */
+	protected function insert_import_post( $postarr, $wp_error = false ) {
+		$post_id = wp_insert_post( $postarr, $wp_error );
+		if ( ! is_wp_error( $post_id ) && $post_id ) {
+			$this->mark_imported_object( (int) $post_id );
+		}
+		return $post_id;
+	}
+
+	/**
+	 * Create a UiChemy Theme Builder template, recorded as imported.
+	 *
+	 * @param array $args Arguments for the `uichemy/theme_builder/create_template` filter.
+	 * @return mixed The filter's result.
+	 */
+	protected function create_import_template( array $args ) {
+		$result  = apply_filters( 'uichemy/theme_builder/create_template', null, $args );
+		$post_id = 0;
+		if ( is_array( $result ) && ! empty( $result['post_id'] ) ) {
+			$post_id = (int) $result['post_id'];
+		} elseif ( is_numeric( $result ) ) {
+			$post_id = (int) $result;
+		}
+		$this->mark_imported_object( $post_id );
+		return $result;
+	}
+
+	/**
+	 * Record a post as created by an import ('1'), or as an existing post a
+	 * re-import took over ('adopted'). A taken-over post keeps its own
+	 * publication state on later imports.
+	 *
+	 * @param int  $post_id Post ID.
+	 * @param bool $created Whether the import created it.
+	 * @return void
+	 */
+	protected function mark_imported_object( $post_id, $created = true ) {
+		$post_id = (int) $post_id;
+		if ( $post_id <= 0 ) {
+			return;
+		}
+		if ( $created ) {
+			update_post_meta( $post_id, self::META_IMPORTED, '1' );
+		} elseif ( ! $this->is_imported_object( $post_id ) ) {
+			update_post_meta( $post_id, self::META_IMPORTED, 'adopted' );
+		}
+	}
+
+	/**
+	 * Whether a post was created by an import (not merely taken over).
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	protected function is_created_by_import( $post_id ) {
+		$post_id = (int) $post_id;
+		return $post_id > 0 && '1' === (string) get_post_meta( $post_id, self::META_IMPORTED, true );
+	}
+
+	/**
+	 * Whether a post was created (or taken over) by an import.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	protected function is_imported_object( $post_id ) {
+		$post_id = (int) $post_id;
+		return $post_id > 0 && '' !== (string) get_post_meta( $post_id, self::META_IMPORTED, true );
+	}
+
+	/**
+	 * Whether an unmarked post may be matched by name, as earlier versions did.
+	 *
+	 * Only on a site that imported before posts were marked: its earlier import's
+	 * pages, posts and products carry no mark, and a re-import must keep updating
+	 * them rather than creating duplicates. Decided once, on the first import
+	 * that runs with marking.
+	 *
+	 * @return bool
+	 */
+	protected function may_adopt_unmarked_objects() {
+		$flag = get_option( self::OPTION_LEGACY_IMPORT_SITE, null );
+		if ( null === $flag ) {
+			$this->note_legacy_import_site();
+			$flag = get_option( self::OPTION_LEGACY_IMPORT_SITE, 0 );
+		}
+		return (bool) (int) $flag;
+	}
+
+	/**
+	 * Record, once, whether this site had imported before posts were marked.
+	 * Must run before the current import writes its own import meta.
+	 *
+	 * @return void
+	 */
+	protected function note_legacy_import_site() {
+		if ( null !== get_option( self::OPTION_LEGACY_IMPORT_SITE, null ) ) {
+			return;
+		}
+		$had_import = false !== get_option( self::OPTION_IMPORT_META, false );
+		add_option( self::OPTION_LEGACY_IMPORT_SITE, $had_import ? 1 : 0, '', false );
+	}
+
+	/**
+	 * Whether a re-import may update, archive or republish this existing post.
+	 *
+	 * @param int $post_id Post ID.
+	 * @return bool
+	 */
+	protected function may_replace_existing_object( $post_id ) {
+		return $this->is_imported_object( $post_id ) || $this->may_adopt_unmarked_objects();
+	}
+
+	/**
 	 * Move an existing imported item to draft and change its slug so the new import can publish with the canonical URL.
 	 *
 	 * @param int    $post_id   Post ID.
@@ -6156,6 +6456,16 @@ class Uich_Webpage_Import {
 			return false;
 		}
 		if ( ! current_user_can( 'edit_post', $post_id ) ) {
+			return false;
+		}
+		// Only a post an import created is archived; anything else is left as it is
+		// and the import writes a new post beside it. A Theme Builder template
+		// (header, footer, single, archive, hook) of the same title and type is the
+		// exception: it is drafted and switched off whoever made it, so it cannot
+		// render alongside the imported one. Nothing in it is changed or reused,
+		// and switching it back on restores it.
+		if ( ! in_array( $post->post_type, array( 'uichemy_template', 'nxt_builder', 'elementor_library' ), true )
+			&& ! $this->may_replace_existing_object( $post_id ) ) {
 			return false;
 		}
 		$base = $post->post_name ? $post->post_name : sanitize_title( $post->post_title );
@@ -6251,28 +6561,62 @@ class Uich_Webpage_Import {
 		 */
 		$after_reset = (bool) get_option( self::OPTION_CONTENT_RESET, false );
 
-		$existing = $this->get_published_post_by_exact_title( $page_title, $post_type );
+		// Only a page an import created is reused. Published first; otherwise an
+		// earlier run may have archived one, and reusing it keeps that page's ID
+		// and URL rather than minting a third copy.
+		$existing = $this->get_published_post_by_exact_title( $page_title, $post_type, true );
 		if ( ! $existing && ! $after_reset ) {
-			// Nothing published, but an earlier run may have archived one. Reusing
-			// it keeps that page's ID and URL rather than minting a third copy.
-			$existing = $this->get_post_by_exact_title( $page_title, $post_type );
+			$existing = $this->get_post_by_exact_title( $page_title, $post_type, true );
+		}
+		$created_by_import = $existing && $this->is_created_by_import( (int) $existing->ID );
+
+		$publish = $created_by_import;
+
+		// A site that imported before pages were marked: its published page of
+		// that title is the earlier import's page. Its status is left alone.
+		if ( ! $existing && $this->may_adopt_unmarked_objects() ) {
+			$existing = $this->get_published_post_by_exact_title( $page_title, $post_type );
+
+			// Nothing published: an earlier import may have archived its page as a
+			// draft (slug "<name>-archived-<ID>"). Reusing it keeps that page's ID
+			// rather than minting another copy, and publishes it as before.
+			if ( ! $existing && ! $after_reset ) {
+				$existing = $this->archived_draft_post_for_title( $page_title, $post_type );
+				$publish  = (bool) $existing;
+			}
+		}
+
+		// The store page WooCommerce has on record for this role (Shop, Cart, ...),
+		// when it is published under the same title: the import designs that page
+		// in place so the store keeps its address. Its status is left alone.
+		if ( ! $existing ) {
+			$existing = $this->assigned_woocommerce_page_for_title( $page_title, $post_type );
+		}
+
+		// The site's Privacy Policy page (Settings > Privacy), when its title is the
+		// same: the import designs that page in place, so the site keeps one privacy
+		// page and the setting keeps pointing at it.
+		if ( ! $existing ) {
+			$existing = $this->assigned_privacy_page_for_title( $page_title, $post_type, $after_reset );
+			$publish  = $existing && 'publish' !== $existing->post_status;
 		}
 
 		if ( $existing ) {
 			// Snapshot what is there before the import overwrites it.
 			wp_save_post_revision( $existing->ID );
 
-			$updated = wp_update_post(
-				array(
-					'ID'          => $existing->ID,
-					'post_title'  => $page_title,
-					'post_status' => 'publish',
-				),
-				true
+			$update = array(
+				'ID'         => $existing->ID,
+				'post_title' => $page_title,
 			);
+			if ( $publish ) {
+				$update['post_status'] = 'publish';
+			}
+			$updated = wp_update_post( $update, true );
 			if ( is_wp_error( $updated ) ) {
 				return $updated;
 			}
+			$this->mark_imported_object( (int) $existing->ID, false );
 
 			// A page the Composer Builder owns renders its builder document and
 			// ignores the Elementor data / post_content written next, so the
@@ -6286,7 +6630,7 @@ class Uich_Webpage_Import {
 			return (int) $existing->ID;
 		}
 
-		return wp_insert_post(
+		return $this->insert_import_post(
 			array(
 				'post_title'  => $page_title,
 				'post_name'   => sanitize_title( $page_title ),
@@ -6299,52 +6643,142 @@ class Uich_Webpage_Import {
 	}
 
 	/**
+	 * The published page WooCommerce has assigned to the store role this title
+	 * names (Shop, Cart, Checkout, My account, Terms), when its title is the same.
+	 *
+	 * @param string $page_title Page title.
+	 * @param string $post_type  Post type.
+	 * @return WP_Post|null
+	 */
+	protected function assigned_woocommerce_page_for_title( $page_title, $post_type ) {
+		if ( 'page' !== $post_type || ! class_exists( 'WooCommerce' ) || ! is_string( $page_title ) || '' === $page_title ) {
+			return null;
+		}
+		$map = $this->woocommerce_page_option_map();
+		$key = $this->normalize_nav_menu_filterlabel( $page_title );
+		if ( ! isset( $map[ $key ] ) ) {
+			return null;
+		}
+		$page = get_post( (int) get_option( $map[ $key ] ) );
+		if ( ! $page || 'page' !== $page->post_type || 'publish' !== $page->post_status ) {
+			return null;
+		}
+		return 0 === strcasecmp( trim( $page->post_title ), trim( $page_title ) ) ? $page : null;
+	}
+
+	/**
+	 * The page set as the site's Privacy Policy page, when its title is the same.
+	 *
+	 * Published, it is reused and stays published. A draft, pending or private one
+	 * is reused and published, as the import always did with a same-title page,
+	 * except after "Reset my previous content", which leaves drafts alone.
+	 *
+	 * @param string $page_title  Page title.
+	 * @param string $post_type   Post type.
+	 * @param bool   $after_reset Whether the content reset ran.
+	 * @return WP_Post|null
+	 */
+	protected function assigned_privacy_page_for_title( $page_title, $post_type, $after_reset = false ) {
+		if ( 'page' !== $post_type || ! is_string( $page_title ) || '' === $page_title ) {
+			return null;
+		}
+		$page_id = (int) get_option( 'wp_page_for_privacy_policy' );
+		$page    = $page_id > 0 ? get_post( $page_id ) : null;
+		if ( ! $page || 'page' !== $page->post_type ) {
+			return null;
+		}
+		if ( 'publish' !== $page->post_status && ( $after_reset || ! in_array( $page->post_status, array( 'draft', 'pending', 'private' ), true ) ) ) {
+			return null;
+		}
+		return 0 === strcasecmp( trim( $page->post_title ), trim( $page_title ) ) ? $page : null;
+	}
+
+	/**
+	 * A draft with this exact title that an earlier import archived (its slug was
+	 * renamed to "<name>-archived-<ID>"), or null.
+	 *
+	 * @param string $page_title Page title.
+	 * @param string $post_type  Post type.
+	 * @return WP_Post|null
+	 */
+	protected function archived_draft_post_for_title( $page_title, $post_type ) {
+		if ( ! is_string( $page_title ) || '' === $page_title || ! is_string( $post_type ) || '' === $post_type ) {
+			return null;
+		}
+		$query = new WP_Query(
+			array(
+				'post_type'              => $post_type,
+				'title'                  => $page_title,
+				'post_status'            => 'draft',
+				'posts_per_page'         => 20,
+				'orderby'                => 'ID',
+				'order'                  => 'DESC',
+				'no_found_rows'          => true,
+				'ignore_sticky_posts'    => true,
+				'update_post_term_cache' => false,
+				'update_post_meta_cache' => false,
+			)
+		);
+		foreach ( $query->posts as $post ) {
+			if ( preg_match( '/-archived-' . (int) $post->ID . '(?:-\d+)?$/', (string) $post->post_name ) ) {
+				return $post;
+			}
+		}
+		return null;
+	}
+
+	/**
 	 * Published post with this exact title, or null.
 	 *
 	 * Separate from get_post_by_exact_title(), which matches ANY status: after an
 	 * old-style re-import a site can hold both an archived draft and the live
 	 * page under one title, and the live one is the one to keep writing to.
 	 *
-	 * @param string $page_title Page title.
-	 * @param string $post_type  Post type.
+	 * @param string $page_title    Page title.
+	 * @param string $post_type     Post type.
+	 * @param bool   $imported_only Only posts recorded as imported.
 	 * @return WP_Post|null
 	 */
-	protected function get_published_post_by_exact_title( $page_title, $post_type = 'page' ) {
+	protected function get_published_post_by_exact_title( $page_title, $post_type = 'page', $imported_only = false ) {
 		if ( ! is_string( $page_title ) || '' === $page_title || ! is_string( $post_type ) || '' === $post_type ) {
 			return null;
 		}
-		$query = new WP_Query(
-			array(
-				'post_type'              => $post_type,
-				'title'                  => $page_title,
-				'post_status'            => 'publish',
-				'posts_per_page'         => 1,
-				'no_found_rows'          => true,
-				'ignore_sticky_posts'    => true,
-				'update_post_term_cache' => false,
-				'update_post_meta_cache' => false,
-			)
+		$args = array(
+			'post_type'              => $post_type,
+			'title'                  => $page_title,
+			'post_status'            => 'publish',
+			'posts_per_page'         => 1,
+			'no_found_rows'          => true,
+			'ignore_sticky_posts'    => true,
+			'update_post_term_cache' => false,
+			'update_post_meta_cache' => false,
 		);
+		if ( $imported_only ) {
+			$args['meta_key'] = self::META_IMPORTED; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		}
+		$query = new WP_Query( $args );
 
 		return empty( $query->posts ) ? null : $query->posts[0];
 	}
 
-	protected function get_post_by_exact_title( $page_title, $post_type = 'page' ) {
+	protected function get_post_by_exact_title( $page_title, $post_type = 'page', $imported_only = false ) {
 		if ( ! is_string( $page_title ) || '' === $page_title || ! is_string( $post_type ) || '' === $post_type ) {
 			return null;
 		}
-		$query = new WP_Query(
-			array(
-				'post_type'              => $post_type,
-				'title'                  => $page_title,
-				'post_status'            => get_post_stati(),
-				'posts_per_page'         => 1,
-				'no_found_rows'          => true,
-				'ignore_sticky_posts'    => true,
-				'update_post_term_cache' => false,
-				'update_post_meta_cache' => false,
-			)
+		$args = array(
+			'post_type'              => $post_type,
+			'title'                  => $page_title,
+			'post_status'            => get_post_stati(),
+			'posts_per_page'         => 1,
+			'no_found_rows'          => true,
+			'ignore_sticky_posts'    => true,
+			'update_post_term_cache' => false,
+			'update_post_meta_cache' => false,
 		);
+		if ( $imported_only ) {
+			$args['meta_key'] = self::META_IMPORTED; // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+		}
+		$query = new WP_Query( $args );
 		if ( empty( $query->posts ) ) {
 			return null;
 		}
@@ -7098,9 +7532,7 @@ class Uich_Webpage_Import {
 				$this->draft_existing_post_for_reimport( $existing_block->ID, 'uichemy_template' );
 			}
 
-			$result = apply_filters(
-				'uichemy/theme_builder/create_template',
-				null,
+			$result = $this->create_import_template(
 				array(
 					'type'      => $type,
 					'title'     => $title,
@@ -7249,7 +7681,7 @@ class Uich_Webpage_Import {
 
 		// Create through UiChemy's public hook rather than its internals, so this
 		// keeps working if UiChemy changes its CPT/meta/store implementation.
-		$result = apply_filters( 'uichemy/theme_builder/create_template', null, $args );
+		$result = $this->create_import_template( $args );
 
 		if ( is_wp_error( $result ) ) {
 			return $result;
@@ -7320,9 +7752,7 @@ class Uich_Webpage_Import {
 				$this->draft_existing_post_for_reimport( $existing->ID, 'uichemy_template' );
 			}
 
-			apply_filters(
-				'uichemy/theme_builder/create_template',
-				null,
+			$this->create_import_template(
 				array(
 					'type'          => $type,
 					'title'         => $alt_title,
@@ -7454,7 +7884,7 @@ class Uich_Webpage_Import {
 			$this->draft_existing_post_for_reimport( $existing->ID, $cpt );
 		}
 
-		$post_id = wp_insert_post(
+		$post_id = $this->insert_import_post(
 			array(
 				'post_title'  => $title,
 				'post_name'   => sanitize_title( $title ),
@@ -7558,7 +7988,7 @@ class Uich_Webpage_Import {
 			$this->draft_existing_post_for_reimport( $existing->ID, $cpt );
 		}
 
-		$post_id = wp_insert_post(
+		$post_id = $this->insert_import_post(
 			array(
 				'post_title'  => $title,
 				'post_name'   => sanitize_title( $title ),
@@ -7643,7 +8073,7 @@ class Uich_Webpage_Import {
 			$this->draft_existing_post_for_reimport( $existing->ID, $cpt );
 		}
 
-		$post_id = wp_insert_post(
+		$post_id = $this->insert_import_post(
 			array(
 				'post_title'  => $title,
 				'post_name'   => sanitize_title( $title ),
@@ -7708,7 +8138,7 @@ class Uich_Webpage_Import {
 			$this->draft_existing_post_for_reimport( $existing->ID, $cpt );
 		}
 
-		$post_id = wp_insert_post(
+		$post_id = $this->insert_import_post(
 			array(
 				'post_title'  => $title,
 				'post_name'   => sanitize_title( $title ),
@@ -7815,7 +8245,8 @@ class Uich_Webpage_Import {
 	 * @return array Status of each requirement.
 	 */
 	public function ensure_all_import_requirements( $builder = 'elementor' ) {
-		$results = array(
+		$this->theme_switch_skipped = false;
+		$results                    = array(
 			'theme'   => array(
 				'name'    => self::IMPORT_THEME_SLUG,
 				'success' => $this->ensure_import_theme(),
@@ -7834,6 +8265,10 @@ class Uich_Webpage_Import {
 				// something an import should decide for the user.
 			),
 		);
+
+		if ( $this->theme_switch_skipped ) {
+			$results['theme']['skipped'] = true;
+		}
 
 		// UiChemy owns the Theme Builder for BOTH builders now, so it is required
 		// either way.
@@ -8015,6 +8450,15 @@ class Uich_Webpage_Import {
 				'uichemy_plugin_no_download_link',
 				/* translators: %s: plugin slug on wordpress.org. */
 				sprintf( __( 'wordpress.org returned no download link for "%s".', 'uichemy' ), $original_slug )
+			);
+			return false;
+		}
+
+		if ( ! $this->is_trusted_package_url( $download_url ) ) {
+			$this->last_plugin_install_error = new WP_Error(
+				'uichemy_plugin_untrusted_download',
+				/* translators: %s: plugin slug on wordpress.org. */
+				sprintf( __( 'The download link for "%s" is not on wordpress.org over HTTPS, so it was not installed. Install the plugin from Plugins > Add New instead.', 'uichemy' ), $original_slug )
 			);
 			return false;
 		}
@@ -9097,7 +9541,7 @@ class Uich_Webpage_Import {
 	 * written global CSS is picked up on the next editor load without stale cache interference.
 	 */
 	protected function create_temp_gutenberg_page_and_delete() {
-		$post_id = wp_insert_post(
+		$post_id = $this->insert_import_post(
 			array(
 				'post_title'   => 'Import Temp',
 				'post_status'  => 'publish',
@@ -12156,6 +12600,43 @@ class Uich_Webpage_Import {
 	}
 
 	/**
+	 * Site-wide head / footer code from an import, held to the same rule as an
+	 * interactive save of that code: raw markup needs `manage_options` and
+	 * `unfiltered_html`. For anyone else (a site administrator on multisite, or
+	 * when DISALLOW_UNFILTERED_HTML is set) the CSS in <style> blocks is kept,
+	 * with no way to close its element early, and the remaining markup is
+	 * reduced to post-safe HTML.
+	 *
+	 * @param mixed $data Imported site custom code.
+	 * @return mixed
+	 */
+	public static function gate_site_custom_code( $data ) {
+		if ( current_user_can( 'manage_options' ) && current_user_can( 'unfiltered_html' ) ) {
+			return $data;
+		}
+		if ( is_array( $data ) ) {
+			foreach ( $data as $key => $value ) {
+				$data[ $key ] = self::gate_site_custom_code( $value );
+			}
+			return $data;
+		}
+		if ( ! is_string( $data ) || '' === trim( $data ) ) {
+			return $data;
+		}
+		$styles = '';
+		if ( preg_match_all( '#<style\b([^>]*)>(.*?)</style\s*>#is', $data, $blocks, PREG_SET_ORDER ) ) {
+			foreach ( $blocks as $block ) {
+				// Only an id is carried over (the globals block is found by it).
+				$id      = preg_match( '/\bid\s*=\s*["\']?([A-Za-z0-9_-]+)/', $block[1], $im ) ? ' id="' . $im[1] . '"' : '';
+				$styles .= '<style' . $id . ">\n" . trim( str_ireplace( '</style', '< /style', $block[2] ) ) . "\n</style>\n";
+			}
+			$data = (string) preg_replace( '#<style\b[^>]*>.*?</style\s*>#is', '', $data );
+		}
+		$rest = trim( wp_kses_post( $data ) );
+		return trim( $styles . $rest );
+	}
+
+	/**
 	 * Get stored UiChemy globals list (uichemy-globals.json -> metadata.uichemy_composer_site_custom_code).
 	 *
 	 * @return array|null List of uichemy global variable entries, or null.
@@ -13658,17 +14139,13 @@ class Uich_Webpage_Import {
 	 * @return array Report of what was set / skipped.
 	 */
 	/**
-	 * Turn on Cash on delivery so the imported store can actually take an order.
+	 * Make sure a freshly imported store can take an order.
 	 *
-	 * A store with no payment method enabled cannot complete checkout at all —
-	 * WooCommerce shows "there are no payment methods available", which reads as
-	 * a broken checkout rather than an unconfigured one. COD is the one gateway
-	 * that needs no account, no keys and no setup, so it is what makes the
-	 * imported store demonstrable out of the box.
-	 *
-	 * Written through the gateway's own update_option() where possible, so
-	 * WooCommerce stores it exactly as its settings screen would and the rest of
-	 * the gateway's configuration is left untouched.
+	 * A store with no payment method enabled cannot complete checkout at all,
+	 * so when nothing is enabled yet Cash on delivery (which needs no account or
+	 * keys) is switched on. When any payment method is already enabled, or the
+	 * gateway list cannot be read, nothing is changed: gateways the store owner
+	 * configured are never edited.
 	 *
 	 * @return array { enabled: bool, status: string }
 	 */
@@ -13682,6 +14159,10 @@ class Uich_Webpage_Import {
 
 		if ( isset( $settings['enabled'] ) && 'yes' === $settings['enabled'] ) {
 			return array( 'enabled' => true, 'status' => 'already-enabled' );
+		}
+
+		if ( ! $this->woocommerce_has_no_enabled_gateway() ) {
+			return array( 'enabled' => false, 'status' => 'other-gateway-enabled' );
 		}
 
 		if ( class_exists( 'WC_Gateway_COD' ) ) {
@@ -13704,6 +14185,43 @@ class Uich_Webpage_Import {
 		return array( 'enabled' => $ok, 'status' => $ok ? 'enabled' : 'failed' );
 	}
 
+	/**
+	 * True only when WooCommerce's gateway list can be read and no gateway in it
+	 * is enabled. Any doubt answers false, so the caller leaves payments alone.
+	 *
+	 * @return bool
+	 */
+	protected function woocommerce_has_no_enabled_gateway() {
+		if ( ! function_exists( 'WC' ) ) {
+			return false;
+		}
+		try {
+			$wc = WC();
+			if ( ! is_object( $wc ) || ! method_exists( $wc, 'payment_gateways' ) ) {
+				return false;
+			}
+			$manager = $wc->payment_gateways();
+			if ( ! is_object( $manager ) || ! method_exists( $manager, 'payment_gateways' ) ) {
+				return false;
+			}
+			$gateways = $manager->payment_gateways();
+		} catch ( \Throwable $e ) {
+			return false;
+		}
+		if ( ! is_array( $gateways ) ) {
+			return false;
+		}
+		foreach ( $gateways as $gateway ) {
+			if ( ! is_object( $gateway ) ) {
+				continue;
+			}
+			if ( isset( $gateway->enabled ) && 'yes' === $gateway->enabled ) {
+				return false;
+			}
+		}
+		return true;
+	}
+
 	protected function apply_woocommerce_page_settings() {
 		$report = array( 'set' => array(), 'skipped' => array() );
 
@@ -13712,6 +14230,8 @@ class Uich_Webpage_Import {
 			return $report;
 		}
 
+		// Only pages an import wrote: a store page someone made by hand is never
+		// taken over because of its title.
 		$map   = $this->woocommerce_page_option_map();
 		$pages = get_posts(
 			array(
@@ -13721,6 +14241,7 @@ class Uich_Webpage_Import {
 				'no_found_rows'          => true,
 				'update_post_meta_cache' => false,
 				'update_post_term_cache' => false,
+				'meta_key'               => self::META_IMPORTED, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
 			)
 		);
 
@@ -13812,6 +14333,12 @@ class Uich_Webpage_Import {
 			 * that is already wired up also keeps every menu link, internal link
 			 * and shortcode that pointed at that ID working.
 			 */
+			// Only a page the import created is republished or replaced; any other
+			// page keeps its state and its store setting.
+			if ( $page && ! $this->is_created_by_import( $page_id ) ) {
+				continue;
+			}
+
 			if ( $page && 'page' === $page->post_type && in_array( $page->post_status, array( 'draft', 'pending', 'private' ), true ) ) {
 				$restored = wp_update_post(
 					array(
@@ -13890,7 +14417,7 @@ class Uich_Webpage_Import {
 			return array( 'status' => 'exists', 'code' => $code, 'post_id' => $existing );
 		}
 
-		$coupon_id = wp_insert_post(
+		$coupon_id = $this->insert_import_post(
 			array(
 				'post_title'   => strtolower( $code ),
 				'post_content' => '',
@@ -13918,12 +14445,14 @@ class Uich_Webpage_Import {
 		update_post_meta( $coupon_id, 'free_shipping', 'no' );
 		update_post_meta( $coupon_id, 'exclude_sale_items', 'no' );
 
-		// A coupon nobody can enter is not a coupon.
-		if ( 'yes' !== get_option( 'woocommerce_enable_coupons' ) ) {
-			update_option( 'woocommerce_enable_coupons', 'yes' );
-		}
-
-		return array( 'status' => 'created', 'code' => $code, 'post_id' => (int) $coupon_id );
+		// Whether coupons are enabled store-wide is the store owner's setting and
+		// is left as it is; the report says when they are off.
+		return array(
+			'status'          => 'created',
+			'code'            => $code,
+			'post_id'         => (int) $coupon_id,
+			'coupons_enabled' => 'yes' === get_option( 'woocommerce_enable_coupons' ),
+		);
 	}
 
 	public function rest_import_cleanup( WP_REST_Request $request ) {
@@ -14266,7 +14795,7 @@ class Uich_Webpage_Import {
 			$this->draft_existing_post_for_reimport( $existing[0]->ID, 'nxt_builder' );
 		}
 
-		$post_id = wp_insert_post(
+		$post_id = $this->insert_import_post(
 			array(
 				'post_title'  => $title,
 				'post_name'   => sanitize_title( $title ),
@@ -14413,7 +14942,7 @@ class Uich_Webpage_Import {
 			$this->draft_existing_post_for_reimport( $existing[0]->ID, 'nxt_builder' );
 		}
 
-		$post_id = wp_insert_post(
+		$post_id = $this->insert_import_post(
 			array(
 				'post_title'  => $title,
 				'post_name'   => sanitize_title( $title ),
@@ -14527,7 +15056,7 @@ class Uich_Webpage_Import {
 		// Use wp_insert_post directly — documents->create() requires Elementor Pro for
 		// theme template types (single, archive, search-results) and throws
 		// "Type X does not exist." on free Elementor. All required meta is set below.
-		$post_id = wp_insert_post(
+		$post_id = $this->insert_import_post(
 			array(
 				'post_title'  => $title,
 				'post_name'   => sanitize_title( $title ),
@@ -15154,20 +15683,58 @@ class Uich_Webpage_Import {
 	 * @return int Product ID, or 0.
 	 */
 	protected function find_existing_woo_product( array $product_data ) {
+		// The product an earlier import created for this catalogue entry.
+		$key = $this->woo_product_import_key( $product_data );
+		if ( '' !== $key ) {
+			$ids = get_posts(
+				array(
+					'post_type'              => 'product',
+					'post_status'            => 'any',
+					'posts_per_page'         => 1,
+					'fields'                 => 'ids',
+					'no_found_rows'          => true,
+					'update_post_term_cache' => false,
+					'meta_key'               => self::META_IMPORT_KEY, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_key
+					'meta_value'             => $key, // phpcs:ignore WordPress.DB.SlowDBQuery.slow_db_query_meta_value
+				)
+			);
+			if ( ! empty( $ids ) ) {
+				return (int) $ids[0];
+			}
+		}
+
+		// Otherwise a store product with the same SKU or slug is used only when an
+		// import created it (or the site imported before products were marked).
 		if ( ! empty( $product_data['sku'] ) && function_exists( 'wc_get_product_id_by_sku' ) ) {
 			$by_sku = (int) wc_get_product_id_by_sku( (string) $product_data['sku'] );
-			if ( $by_sku ) {
+			if ( $by_sku && 'product' === get_post_type( $by_sku ) && $this->may_replace_existing_object( $by_sku ) ) {
 				return $by_sku;
 			}
 		}
 		$slug = ! empty( $product_data['slug'] ) ? sanitize_title( (string) $product_data['slug'] ) : '';
 		if ( '' !== $slug ) {
 			$existing = get_page_by_path( $slug, OBJECT, 'product' );
-			if ( $existing ) {
+			if ( $existing && $this->may_replace_existing_object( (int) $existing->ID ) ) {
 				return (int) $existing->ID;
 			}
 		}
 		return 0;
+	}
+
+	/**
+	 * Stable identity of a catalogue product: its SKU, else its slug.
+	 *
+	 * @param array $product_data Product entry.
+	 * @return string '' when the entry has neither.
+	 */
+	protected function woo_product_import_key( array $product_data ) {
+		if ( ! empty( $product_data['sku'] ) ) {
+			return 'sku:' . wc_clean( (string) $product_data['sku'] );
+		}
+		if ( ! empty( $product_data['slug'] ) ) {
+			return 'slug:' . sanitize_title( (string) $product_data['slug'] );
+		}
+		return '';
 	}
 
 	/**
@@ -15199,13 +15766,20 @@ class Uich_Webpage_Import {
 
 		$existing_id = $this->find_existing_woo_product( $product_data );
 		$product     = new $class( $existing_id );
+		// A product the import did not create keeps its publication state and
+		// whatever the catalogue entry does not set.
+		$owned = ! $existing_id || $this->is_created_by_import( $existing_id );
 
 		$product->set_name( $name );
 		if ( ! empty( $product_data['slug'] ) ) {
 			$product->set_slug( sanitize_title( (string) $product_data['slug'] ) );
 		}
-		$product->set_status( ! empty( $product_data['status'] ) ? sanitize_key( (string) $product_data['status'] ) : 'publish' );
-		$product->set_featured( ! empty( $product_data['featured'] ) );
+		if ( $owned ) {
+			$product->set_status( ! empty( $product_data['status'] ) ? sanitize_key( (string) $product_data['status'] ) : 'publish' );
+		}
+		if ( $owned || isset( $product_data['featured'] ) ) {
+			$product->set_featured( ! empty( $product_data['featured'] ) );
+		}
 		if ( ! empty( $product_data['catalog_visibility'] ) ) {
 			$product->set_catalog_visibility( sanitize_key( (string) $product_data['catalog_visibility'] ) );
 		}
@@ -15229,7 +15803,7 @@ class Uich_Webpage_Import {
 		// no price of its own) and WooCommerce ignores them there.
 		if ( 'grouped' !== $type ) {
 			$this->apply_woo_product_pricing( $product, $product_data );
-			$this->apply_woo_product_stock( $product, $product_data );
+			$this->apply_woo_product_stock( $product, $product_data, $owned );
 			$this->apply_woo_product_shipping( $product, $product_data );
 		}
 
@@ -15242,7 +15816,9 @@ class Uich_Webpage_Import {
 			}
 		}
 
-		$product->set_reviews_allowed( ! isset( $product_data['reviews_allowed'] ) || ! empty( $product_data['reviews_allowed'] ) );
+		if ( $owned || isset( $product_data['reviews_allowed'] ) ) {
+			$product->set_reviews_allowed( ! isset( $product_data['reviews_allowed'] ) || ! empty( $product_data['reviews_allowed'] ) );
+		}
 
 		if ( 'variable' === $type && ! empty( $product_data['attributes'] ) && is_array( $product_data['attributes'] ) ) {
 			$product->set_attributes( $this->build_woo_product_attributes( $product_data['attributes'] ) );
@@ -15253,6 +15829,11 @@ class Uich_Webpage_Import {
 			return new WP_Error( 'IMPORT_WOO_PRODUCT_SAVE_FAILED', __( 'Could not save the product.', 'uichemy' ) );
 		}
 		$product_id = (int) $product_id;
+		$this->mark_imported_object( $product_id, ! $existing_id );
+		$import_key = $this->woo_product_import_key( $product_data );
+		if ( '' !== $import_key ) {
+			update_post_meta( $product_id, self::META_IMPORT_KEY, $import_key );
+		}
 
 		$this->assign_woo_product_terms( $product_id, $product_data );
 		$this->import_woo_product_images( $product_id, $product_data );
@@ -15300,7 +15881,12 @@ class Uich_Webpage_Import {
 	 * @param array      $product_data Source entry.
 	 * @return void
 	 */
-	protected function apply_woo_product_stock( $product, array $product_data ) {
+	protected function apply_woo_product_stock( $product, array $product_data, $owned = true ) {
+		// On an existing product the import did not create, stock tracking the
+		// entry does not mention is left as it is.
+		if ( ! $owned && ! isset( $product_data['manage_stock'] ) ) {
+			return;
+		}
 		$manage = ! empty( $product_data['manage_stock'] );
 		$product->set_manage_stock( $manage );
 		if ( $manage && isset( $product_data['stock_quantity'] ) ) {
@@ -15406,14 +15992,26 @@ class Uich_Webpage_Import {
 				continue;
 			}
 
+			// An existing variation is reused only when it belongs to this parent
+			// and an import created it (or the site imported before marking).
 			$existing_id = 0;
 			if ( ! empty( $variation_data['sku'] ) && function_exists( 'wc_get_product_id_by_sku' ) ) {
 				$existing_id = (int) wc_get_product_id_by_sku( (string) $variation_data['sku'] );
+				if ( $existing_id && (
+					'product_variation' !== get_post_type( $existing_id )
+					|| (int) wp_get_post_parent_id( $existing_id ) !== (int) $parent_id
+					|| ! $this->may_replace_existing_object( $existing_id )
+				) ) {
+					$existing_id = 0;
+				}
 			}
+			$owned_variation = ! $existing_id || $this->is_created_by_import( $existing_id );
 
 			$variation = new WC_Product_Variation( $existing_id );
 			$variation->set_parent_id( (int) $parent_id );
-			$variation->set_status( 'publish' );
+			if ( $owned_variation ) {
+				$variation->set_status( 'publish' );
+			}
 
 			if ( ! empty( $variation_data['attributes'] ) && is_array( $variation_data['attributes'] ) ) {
 				$attributes = array();
@@ -15432,10 +16030,11 @@ class Uich_Webpage_Import {
 			}
 
 			$this->apply_woo_product_pricing( $variation, $variation_data );
-			$this->apply_woo_product_stock( $variation, $variation_data );
+			$this->apply_woo_product_stock( $variation, $variation_data, $owned_variation );
 			$this->apply_woo_product_shipping( $variation, $variation_data );
 
 			$variation_id = $variation->save();
+			$this->mark_imported_object( (int) $variation_id, ! $existing_id );
 
 			if ( $variation_id && ! empty( $variation_data['image'] ) && $this->is_remote_image( $variation_data['image'] ) ) {
 				$asset = $this->import_asset( (string) $variation_data['image'] );
@@ -15772,7 +16371,7 @@ class Uich_Webpage_Import {
 			if ( ! empty( $coupon_data['date_expires'] ) ) {
 				$coupon->set_date_expires( sanitize_text_field( (string) $coupon_data['date_expires'] ) );
 			}
-			$coupon->save();
+			$this->mark_imported_object( (int) $coupon->save() );
 		}
 	}
 
@@ -15855,9 +16454,9 @@ class Uich_Webpage_Import {
 		$existing = get_page_by_path( $slug, OBJECT, 'post' );
 		if ( $existing ) {
 			$this->draft_existing_post_for_reimport( $existing->ID, 'post' );
-			$post_id = wp_insert_post( $post_args, true );
+			$post_id = $this->insert_import_post( $post_args, true );
 		} else {
-			$post_id = wp_insert_post( $post_args, true );
+			$post_id = $this->insert_import_post( $post_args, true );
 		}
 
 		if ( is_wp_error( $post_id ) ) {

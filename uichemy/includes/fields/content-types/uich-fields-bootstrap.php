@@ -94,6 +94,7 @@ require_once $content_types_dir . '/class-uich-fields-register.php';
 require_once $content_types_dir . '/class-uich-fields-admin-logic.php';
 require_once $content_types_dir . '/class-uich-fields-field-groups-location.php';
 require_once $content_types_dir . '/class-uich-fields-field-groups-render.php';
+require_once $content_types_dir . '/class-uich-fields-public-user.php';
 require_once $content_types_dir . '/uich-fields-field-api.php';
 
 // File-first model layer.

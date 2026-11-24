@@ -3227,10 +3227,17 @@ JS;
 		 * decide whether an author's Custom HTML block is stored raw. On multisite,
 		 * and when DISALLOW_UNFILTERED_HTML is set, this returns false for everyone.
 		 *
+		 * @param bool $is_editor Rendering in the Elementor editor.
 		 * @return bool
 		 */
-		protected function content_allows_raw_code() {
+		protected function content_allows_raw_code( $is_editor = false ) {
 			$post_id = get_the_ID();
+
+			// In the editor (including its AJAX re-render, where there may be no
+			// global post) the document being edited decides, never the reviewer.
+			if ( $is_editor && class_exists( 'Uich_Dynamic' ) ) {
+				return $post_id ? Uich_Dynamic::author_trusted( $post_id ) : Uich_Dynamic::author_trusted();
+			}
 
 			if ( ! $post_id ) {
 				// No post context (e.g. a template preview): fall back to the
@@ -3552,15 +3559,15 @@ JS;
 			// them; this is the render-time backstop for
 			// UiChemy_Composer_Manager::sanitize_composer_widget_code_on_save(), and it
 			// also covers direct-to-meta import paths that bypass the editor save.
-			$content_trusted = $this->content_allows_raw_code();
+			$content_trusted = $this->content_allows_raw_code( $is_editor );
 
 			// Inject standard-scope 3rd-party assets. These emit external
-			// <script src>/<link> tags, so on the front end they are gated on the
-			// same capability as raw_js. The editor always builds them so the
-			// preview matches what a privileged author will ship.
+			// <script src>/<link> tags, so they are gated on the same trust as
+			// raw_js — in the editor too: a reviewer opening another writer's
+			// draft must not load assets that writer could not publish.
 			$deps_before = '';
 			$deps_after  = '';
-			if ( $is_editor || $content_trusted ) {
+			if ( $content_trusted ) {
 				[ $deps_before, $deps_after ] = $this->build_standard_deps_output(
 					! empty( $settings['raw_deps_standard'] ) ? $settings['raw_deps_standard'] : '',
 					$is_editor
@@ -3712,7 +3719,11 @@ JS;
 			// JS remains a Pro feature; imported designs may ship behaviour here.
 			if ( uichemy_custom_code_allowed() && ! empty( $settings['raw_js'] ) ) {
 				if ( $is_editor ) {
-					echo $this->build_editor_js_runtime( $settings['raw_js'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Editor-preview only ($is_editor); the author JS is wp_json_encode()'d into a safe JS string literal, never raw front-end output.
+					// The editor preview runs the stored JS in the reviewer's own
+					// session, so only for a document whose writer may publish code.
+					if ( $content_trusted ) {
+						echo $this->build_editor_js_runtime( $settings['raw_js'] ); // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Editor-preview only ($is_editor); the author JS is wp_json_encode()'d into a safe JS string literal, never raw front-end output.
+					}
 				} elseif ( $content_trusted ) {
 					// Frontend: hand the author's inline JS to WordPress through the
 					// core enqueue pipeline via wp_add_inline_script() instead of

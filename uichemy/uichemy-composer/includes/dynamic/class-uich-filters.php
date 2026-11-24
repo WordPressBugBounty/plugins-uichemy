@@ -21,12 +21,57 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 		/** @var array<string,callable> */
 		private static $registry = null;
 
+		/**
+		 * Markup this request's own code marked raw (mark_raw()), by hash.
+		 *
+		 * The marker is a plain string prefix, so a stored field value could
+		 * begin with the same bytes. Only a string recorded here carries markup
+		 * authority; any other marked string is treated as data.
+		 *
+		 * @var array<string,bool>
+		 */
+		private static $issued = array();
+
 		public static function apply( $name, $value, $args = array() ) {
 			$reg = self::registry();
 			if ( ! isset( $reg[ $name ] ) ) {
 				return $value;
 			}
 			return call_user_func( $reg[ $name ], $value, $args );
+		}
+
+		/**
+		 * Mark trusted markup as raw output. Engine filters and providers use
+		 * this for HTML they produced themselves; a value read from a field is
+		 * never passed through it.
+		 *
+		 * @param mixed $html Markup.
+		 * @return string
+		 */
+		public static function mark_raw( $html ) {
+			$marked = self::RAW_PREFIX . self::strip_marks( $html );
+			self::$issued[ self::issued_key( $marked ) ] = true;
+			return $marked;
+		}
+
+		/**
+		 * Whether a marked string was produced by mark_raw() in this request.
+		 *
+		 * @param mixed $v Value.
+		 * @return bool
+		 */
+		public static function is_trusted_raw( $v ) {
+			return self::is_marked_raw( $v ) && isset( self::$issued[ self::issued_key( $v ) ] );
+		}
+
+		/**
+		 * Registry key for a marked string.
+		 *
+		 * @param string $v Marked string.
+		 * @return string
+		 */
+		private static function issued_key( $v ) {
+			return hash( 'sha256', (string) $v ) . ':' . strlen( (string) $v );
 		}
 
 		public static function is_marked_raw( $v ) {
@@ -49,6 +94,26 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 			return str_replace( self::RAW_PREFIX, '', (string) $v );
 		}
 
+		/**
+		 * A value as JavaScript string content (no surrounding quotes): quotes,
+		 * `<`, `>`, `&` and line breaks are \u-escaped, so it cannot end a JS
+		 * string or the script tag.
+		 *
+		 * @param mixed $v Value.
+		 * @return string
+		 */
+		private static function js_string_content( $v ) {
+			if ( $v instanceof Uich_Provider ) {
+				$v = $v->uich_read( '__toString', array() );
+			}
+			if ( null === $v || false === $v || is_array( $v ) || is_object( $v ) ) {
+				return '';
+			}
+			$v    = true === $v ? '1' : self::strip_marks( (string) $v );
+			$json = wp_json_encode( $v, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE );
+			return is_string( $json ) && strlen( $json ) >= 2 ? substr( $json, 1, -1 ) : '';
+		}
+
 		private static function registry() {
 			if ( null !== self::$registry ) {
 				return self::$registry;
@@ -58,28 +123,41 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 
 			/* raw / escaping --------------------------------------------------- */
 			$f['raw']      = function ( $v ) {
-				return self::RAW_PREFIX . self::strip_marks( $v );
+				return self::mark_raw( $v );
 			};
-			$f['e']        = function ( $v ) {
+			// Twig's escape filter: HTML by default; |e('js') escapes for a
+			// JavaScript string instead. Any other context keeps the HTML escaping
+			// it always had, so existing templates print as before.
+			$f['e']        = function ( $v, $a = array() ) {
+				if ( isset( $a[0] ) && is_string( $a[0] ) && 'js' === strtolower( trim( $a[0] ) ) ) {
+					return self::js_string_content( $v );
+				}
 				return esc_html( (string) $v );
 			};
+			$f['escape']   = $f['e'];
 			// A value printed inside a <script>: escaped as JavaScript string content
 			// (quotes, `<`, `&` and line breaks as \uXXXX), so it reads as text in a
 			// JS string and cannot end it or the tag. Uich_Twig adds it to plain
 			// {{ }} outputs inside script bodies (script_outputs_as_js()).
 			$f['uich_js_string'] = function ( $v ) {
-				if ( is_string( $v ) && self::is_marked_raw( $v ) ) {
+				if ( self::is_trusted_raw( $v ) ) {
 					return $v; // The author asked for raw output.
 				}
+				return self::mark_raw( self::js_string_content( $v ) );
+			};
+			// The same, for an output inside a <script> whose own filters escaped it
+			// for HTML (|e, |esc_html, |esc_attr, |esc_url). A script body is printed
+			// entity-decoded, so the value is decoded back to the text it showed
+			// before and then escaped for JavaScript: ordinary text and punctuation
+			// read as they did, while quotes can no longer end the JS string.
+			$f['uich_js_html_string'] = function ( $v ) {
 				if ( $v instanceof Uich_Provider ) {
 					$v = $v->uich_read( '__toString', array() );
 				}
-				if ( null === $v || false === $v || is_array( $v ) || is_object( $v ) ) {
-					return '';
+				if ( is_string( $v ) ) {
+					$v = html_entity_decode( self::strip_marks( $v ), ENT_QUOTES | ENT_HTML5, 'UTF-8' );
 				}
-				$v    = true === $v ? '1' : self::strip_marks( (string) $v );
-				$json = wp_json_encode( $v, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_UNESCAPED_UNICODE );
-				return self::RAW_PREFIX . ( is_string( $json ) && strlen( $json ) >= 2 ? substr( $json, 1, -1 ) : '' );
+				return self::mark_raw( self::js_string_content( $v ) );
 			};
 			$f['esc_attr'] = function ( $v ) {
 				return esc_attr( (string) $v );
@@ -105,7 +183,7 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 				return trim( (string) $v );
 			};
 			$f['nl2br']      = function ( $v ) {
-				return self::RAW_PREFIX . nl2br( esc_html( self::strip_marks( $v ) ) );
+				return self::mark_raw( nl2br( esc_html( self::strip_marks( $v ) ) ) );
 			};
 			$f['striptags']  = function ( $v ) {
 				return wp_strip_all_tags( (string) $v );
@@ -275,7 +353,7 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 
 			/* WordPress -------------------------------------------------------- */
 			$f['wpautop']    = function ( $v ) {
-				return self::RAW_PREFIX . wpautop( self::strip_marks( $v ) );
+				return self::mark_raw( wpautop( self::strip_marks( $v ) ) );
 			};
 			$f['shortcodes'] = function ( $v ) {
 				/**
@@ -288,18 +366,18 @@ if ( ! class_exists( 'Uich_Filters' ) ) {
 				 * @param bool $allow Default true.
 				 */
 				if ( ! apply_filters( 'uich_dynamic_allow_shortcodes', true ) ) {
-					return self::RAW_PREFIX . wp_kses_post( self::strip_marks( $v ) );
+					return self::mark_raw( wp_kses_post( self::strip_marks( $v ) ) );
 				}
-				return self::RAW_PREFIX . do_shortcode( self::strip_marks( $v ) );
+				return self::mark_raw( do_shortcode( self::strip_marks( $v ) ) );
 			};
 			$f['kses_post']  = function ( $v ) {
-				return self::RAW_PREFIX . wp_kses_post( self::strip_marks( $v ) );
+				return self::mark_raw( wp_kses_post( self::strip_marks( $v ) ) );
 			};
 
 			/* WooCommerce ------------------------------------------------------ */
 			$f['currency'] = function ( $v ) {
 				if ( function_exists( 'wc_price' ) ) {
-					return self::RAW_PREFIX . wc_price( (float) $v );
+					return self::mark_raw( wc_price( (float) $v ) );
 				}
 				return number_format( (float) $v, 2 );
 			};

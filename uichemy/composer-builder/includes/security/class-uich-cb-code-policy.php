@@ -155,13 +155,28 @@ if ( ! class_exists( 'Uich_CB_Code_Policy' ) ) {
 		const CONTENT_ATTRIBUTES = array( 'alt', 'href', 'rel', 'sizes', 'src', 'srcset', 'target', 'title' );
 
 		/**
+		 * Elements that load or run code. Every attribute of theirs (a script or
+		 * frame source, a stylesheet link) is part of the structure, and so is
+		 * the body of a script or style. An iframe is content like an image: its
+		 * web address and title may change, its other attributes may not.
+		 */
+		const CODE_TAGS = array( 'BASE', 'EMBED', 'FRAME', 'LINK', 'META', 'OBJECT', 'SCRIPT', 'STYLE' );
+
+		/**
+		 * Content attributes that hold a URL.
+		 */
+		const URL_ATTRIBUTES = array( 'href', 'src', 'srcset' );
+
+		/**
 		 * What a Content Only user may store: the page's text and images.
 		 *
 		 * CSS, JS and the head / body-end code stay as stored. The HTML is taken
 		 * only when its structure is the stored one — the same elements in the
-		 * same order with the same classes, styles and other attributes — so
-		 * text, image sources and alt text can change but a section, a class or
-		 * an inline style cannot. Anything else keeps the stored HTML.
+		 * same order with the same classes, styles and other attributes, the same
+		 * inline scripts and styles, and the same script, frame and stylesheet
+		 * sources — so text, image sources and alt text can change but a section,
+		 * a class, an inline style or code cannot. Anything else keeps the stored
+		 * HTML.
 		 *
 		 * @param array $out    Incoming content.
 		 * @param array $stored Stored content.
@@ -175,7 +190,7 @@ if ( ! class_exists( 'Uich_CB_Code_Policy' ) ) {
 			}
 
 			$html = isset( $stored['html'] ) ? (string) $stored['html'] : '';
-			if ( $out['html'] !== $html && self::structure( $out['html'] ) !== self::structure( $html ) ) {
+			if ( $out['html'] !== $html && self::structure( $out['html'], self::code_urls( $html ) ) !== self::structure( $html ) ) {
 				$out['html'] = $html;
 			}
 
@@ -188,21 +203,33 @@ if ( ! class_exists( 'Uich_CB_Code_Policy' ) ) {
 		 * a <br>) is left out, so a text edit may add or remove it; an inline
 		 * tag carrying a class, style or other design attribute counts.
 		 *
-		 * @param string $html HTML.
+		 * A link or source that runs code counts only in the incoming HTML, and only
+		 * when the stored HTML does not already hold that same value (a template's
+		 * `javascript:void(0)` placeholder, say); replacing one with a normal
+		 * address is a content edit.
+		 *
+		 * @param string        $html              HTML.
+		 * @param string[]|null $allowed_code_urls Incoming HTML: the code-running values the stored HTML already holds. Null for the stored HTML.
 		 * @return string[]
 		 */
-		private static function structure( $html ) {
+		private static function structure( $html, $allowed_code_urls = null ) {
 			$tags = new WP_HTML_Tag_Processor( (string) $html );
 			$out  = array();
 
 			while ( $tags->next_tag( array( 'tag_closers' => 'visit' ) ) ) {
 				$name   = $tags->get_tag();
 				$names  = $tags->is_tag_closer() ? array() : (array) $tags->get_attribute_names_with_prefix( '' );
+				$code   = in_array( $name, self::CODE_TAGS, true );
 				$design = array();
 				foreach ( $names as $attr ) {
-					if ( ! in_array( $attr, self::CONTENT_ATTRIBUTES, true ) ) {
-						$design[ $attr ] = $tags->get_attribute( $attr );
+					$value = $tags->get_attribute( $attr );
+					if ( $code || ! in_array( $attr, self::CONTENT_ATTRIBUTES, true )
+						|| ( null !== $allowed_code_urls && in_array( $attr, self::URL_ATTRIBUTES, true ) && self::runs_code( $value ) && ! in_array( $value, $allowed_code_urls, true ) ) ) {
+						$design[ $attr ] = $value;
 					}
+				}
+				if ( $code && ! $tags->is_tag_closer() && method_exists( $tags, 'get_modifiable_text' ) ) {
+					$design['#text'] = (string) $tags->get_modifiable_text();
 				}
 				if ( ! $design && in_array( $name, self::INLINE_TAGS, true ) ) {
 					continue;
@@ -211,7 +238,56 @@ if ( ! class_exists( 'Uich_CB_Code_Policy' ) ) {
 				$out[] = ( $tags->is_tag_closer() ? '/' : '' ) . $name . ( $design ? wp_json_encode( $design ) : '' );
 			}
 
+			// Script and style bodies once more, read straight from the markup, in
+			// case one sits where the tag scan above does not read it as code.
+			if ( preg_match_all( '#<(script|style)\b[^>]*>(.*?)(?:</\1|$)#is', (string) $html, $bodies ) ) {
+				foreach ( $bodies[2] as $body ) {
+					$out[] = '#code' . $body;
+				}
+			}
+
 			return $out;
+		}
+
+		/**
+		 * The code-running link and source values an HTML string holds.
+		 *
+		 * @param string $html HTML.
+		 * @return string[]
+		 */
+		private static function code_urls( $html ) {
+			$tags = new WP_HTML_Tag_Processor( (string) $html );
+			$out  = array();
+			while ( $tags->next_tag() ) {
+				foreach ( self::URL_ATTRIBUTES as $attr ) {
+					$value = $tags->get_attribute( $attr );
+					if ( is_string( $value ) && self::runs_code( $value ) ) {
+						$out[] = $value;
+					}
+				}
+			}
+			return $out;
+		}
+
+		/**
+		 * Does a URL attribute value run code (a `javascript:` link, a data URL
+		 * that is not an image)? Ordinary links and image sources do not.
+		 *
+		 * @param mixed $value Attribute value (true for a bare attribute).
+		 * @return bool
+		 */
+		private static function runs_code( $value ) {
+			if ( ! is_string( $value ) ) {
+				return false;
+			}
+			// Browsers ignore control characters and whitespace inside a scheme.
+			$url = strtolower( (string) preg_replace( '/[\x00-\x20]+/', '', html_entity_decode( $value, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) ) );
+			// An inline image (an SVG placeholder included) is an image, not code.
+			if ( 0 === strpos( $url, 'data:image/' ) ) {
+				return false;
+			}
+			// Only the scheme counts: a comma or "data:" later in a normal address does not.
+			return (bool) preg_match( '/^(javascript|vbscript|data):/', $url );
 		}
 
 		/**

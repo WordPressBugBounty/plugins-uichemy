@@ -42,6 +42,29 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		private static $documents = array();
 
 		/**
+		 * Parallel to $documents: whether each entry is NESTED content (a synced pattern,
+		 * another post's content) that adds its own restrictions to the document around it
+		 * instead of replacing it.
+		 *
+		 * @var bool[]
+		 */
+		private static $nested = array();
+
+		/**
+		 * Posts whose content expand_post_content() is rendering, innermost last.
+		 *
+		 * @var int[]
+		 */
+		private static $expanding = array();
+
+		/**
+		 * Trust state of posts about to be updated (see note_post_update()).
+		 *
+		 * @var array<int,array>
+		 */
+		private static $pending_updates = array();
+
+		/**
 		 * Is the template being rendered from an UNTRUSTED author?
 		 *
 		 * WordPress lets only users with `unfiltered_html` publish code; everyone else's
@@ -76,28 +99,32 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		 * is judged by ITS author (a Theme Builder header renders on every page, but belongs
 		 * to the template, not to the page it appears on). Pair with pop_document().
 		 *
-		 * @param int $id Post id.
+		 * A NESTED document (a synced pattern or another post's content shown inside this
+		 * one) is judged by its own writer AND by the document it is shown in: it keeps its
+		 * own restrictions inside a trusted page, and gains nothing from it.
+		 *
+		 * @param int  $id     Post id.
+		 * @param bool $nested Content nested in the current document.
 		 * @return void
 		 */
-		public static function push_document( $id ) {
+		public static function push_document( $id, $nested = false ) {
 			self::$documents[] = (int) $id;
+			self::$nested[]    = (bool) $nested;
 		}
 
 		/** Undo push_document(). */
 		public static function pop_document() {
 			array_pop( self::$documents );
+			array_pop( self::$nested );
 		}
 
 		/**
-		 * The post whose content is rendering: a pushed document, else Elementor's current
+		 * The page-level document when nothing has been pushed: Elementor's current
 		 * document, else the current post.
 		 *
 		 * @return int
 		 */
-		public static function current_document_id() {
-			if ( self::$documents ) {
-				return (int) end( self::$documents );
-			}
+		private static function host_document_id() {
 			if ( class_exists( '\Elementor\Plugin' ) && isset( \Elementor\Plugin::$instance->documents ) ) {
 				$doc = \Elementor\Plugin::$instance->documents->get_current();
 				if ( $doc && method_exists( $doc, 'get_main_id' ) ) {
@@ -111,17 +138,171 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		}
 
 		/**
+		 * Every document whose writer decides the current render: the innermost
+		 * document, plus each document it is nested in up to the first one that is
+		 * not nested (or the page itself).
+		 *
+		 * @return int[]
+		 */
+		private static function trust_chain() {
+			$chain = array();
+			for ( $i = count( self::$documents ) - 1; $i >= 0; $i-- ) {
+				$chain[] = (int) self::$documents[ $i ];
+				if ( empty( self::$nested[ $i ] ) ) {
+					return array_values( array_unique( $chain ) );
+				}
+			}
+			$chain[] = self::host_document_id();
+			return array_values( array_unique( $chain ) );
+		}
+
+		/**
+		 * Synced pattern (core/block) starts rendering: its blocks belong to the
+		 * pattern's writer, inside the page that shows it.
+		 *
+		 * @param array $parsed_block Block being rendered.
+		 * @return array
+		 */
+		public static function enter_synced_pattern( $parsed_block ) {
+			$ref = self::synced_pattern_ref( $parsed_block );
+			if ( $ref ) {
+				self::push_document( $ref, true );
+			}
+			return $parsed_block;
+		}
+
+		/**
+		 * Synced pattern finished rendering: undo enter_synced_pattern().
+		 *
+		 * @param string $content      Rendered block.
+		 * @param array  $parsed_block Block.
+		 * @return string
+		 */
+		public static function leave_synced_pattern( $content, $parsed_block ) {
+			$ref = self::synced_pattern_ref( $parsed_block );
+			if ( $ref && self::$documents && (int) end( self::$documents ) === $ref && end( self::$nested ) ) {
+				self::pop_document();
+			}
+			return $content;
+		}
+
+		/**
+		 * The pattern post a core/block block shows, or 0.
+		 *
+		 * @param mixed $parsed_block Block.
+		 * @return int
+		 */
+		private static function synced_pattern_ref( $parsed_block ) {
+			if ( ! is_array( $parsed_block ) || ! isset( $parsed_block['blockName'] ) || 'core/block' !== $parsed_block['blockName'] ) {
+				return 0;
+			}
+			return isset( $parsed_block['attrs']['ref'] ) ? absint( $parsed_block['attrs']['ref'] ) : 0;
+		}
+
+		/**
+		 * Render another post's content (a loop item, a selected post) inside the current
+		 * document. The viewer must be allowed to see that post, and its blocks are judged
+		 * by its own writer as well as by the document around it.
+		 *
+		 * @param WP_Post|int $post Post.
+		 * @return string
+		 */
+		public static function expand_post_content( $post ) {
+			$post = get_post( $post );
+			if ( ! $post instanceof WP_Post || ! self::can_expand_post( $post ) ) {
+				return '';
+			}
+			// The page's own content is judged by the page alone, as when the theme prints it.
+			self::push_document( $post->ID, (int) $post->ID !== (int) get_the_ID() );
+			self::$expanding[] = (int) $post->ID;
+			try {
+				return apply_filters( 'the_content', $post->post_content ); // phpcs:ignore WordPress.NamingConventions.PrefixAllGlobals.NonPrefixedHooknameFound -- Intentional WordPress core integration hook (the_content) so post content renders identically to the theme.
+			} finally {
+				array_pop( self::$expanding );
+				self::pop_document();
+			}
+		}
+
+		/**
+		 * Is the_content running for a post expand_post_content() pushed (rather than for
+		 * the page)? Lets a Theme Builder template leave that post as the owner.
+		 *
+		 * @return bool
+		 */
+		public static function expanding_post_content() {
+			return self::$expanding && self::$documents
+				&& (int) end( self::$documents ) === (int) end( self::$expanding );
+		}
+
+		/**
+		 * May this post's content be expanded for the current viewer? The page being
+		 * shown always; otherwise a post the template may list (Uich_Functions::post_visible())
+		 * that is either published or readable by the viewer.
+		 *
+		 * @param WP_Post $post Post.
+		 * @return bool
+		 */
+		public static function can_expand_post( WP_Post $post ) {
+			if ( (int) $post->ID === (int) get_the_ID() ) {
+				return true;
+			}
+			if ( class_exists( 'Uich_Functions' ) && method_exists( 'Uich_Functions', 'post_visible' ) && ! Uich_Functions::post_visible( $post ) ) {
+				return false;
+			}
+			$status = get_post_status_object( (string) get_post_status( $post ) );
+			if ( $status && ! empty( $status->public ) ) {
+				return true;
+			}
+			return current_user_can( 'read_post', $post->ID );
+		}
+
+		/**
+		 * The post whose content is rendering: a pushed document, else Elementor's current
+		 * document, else the current post.
+		 *
+		 * @return int
+		 */
+		public static function current_document_id() {
+			if ( self::$documents ) {
+				return (int) end( self::$documents );
+			}
+			return self::host_document_id();
+		}
+
+		/**
 		 * May this document's templates use the full engine? Its author holds
 		 * `unfiltered_html`, and so did whoever saved it last: an editor without it
 		 * can change an admin's post (core REST, the block editor), and that text
 		 * must not run with the admin's trust. With no document at all, the current
 		 * user decides.
 		 *
+		 * Without an id, the current document decides, and nested content (a synced
+		 * pattern, another post's content) is trusted only when it AND every document
+		 * it is shown in are (trust_chain()).
+		 *
 		 * @param int $post_id Post id (0 = current document).
 		 * @return bool
 		 */
 		public static function author_trusted( $post_id = 0 ) {
-			$post_id = $post_id ? (int) $post_id : self::current_document_id();
+			if ( $post_id ) {
+				return self::document_trusted( (int) $post_id );
+			}
+			foreach ( self::trust_chain() as $id ) {
+				if ( ! self::document_trusted( $id ) ) {
+					return false;
+				}
+			}
+			return true;
+		}
+
+		/**
+		 * author_trusted() for one document.
+		 *
+		 * @param int $post_id Post id (0 = no document: the current user decides).
+		 * @return bool
+		 */
+		private static function document_trusted( $post_id ) {
+			$post_id = (int) $post_id;
 			if ( ! $post_id ) {
 				$trusted = current_user_can( 'unfiltered_html' );
 			} else {
@@ -184,22 +365,89 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 
 		/** Register the editor-preview + field-introspection REST routes. */
 		public static function init() {
-			add_action( 'wp_insert_post', array( __CLASS__, 'record_editor_trust' ) );
-			add_action( 'uich_cb/cb_content_saved', array( __CLASS__, 'record_editor_trust' ) );
+			add_action( 'post_updated', array( __CLASS__, 'note_post_update' ), 10, 3 );
+			add_action( 'wp_insert_post', array( __CLASS__, 'record_editor_trust' ), 10, 3 );
+			add_action( 'uich_cb/cb_content_saved', array( __CLASS__, 'record_content_trust' ) );
+			// Content of a removed account keeps that account's restrictions under its new author.
+			add_action( 'delete_user', array( __CLASS__, 'keep_trust_on_reassign' ), 10, 2 );
+			add_action( 'remove_user_from_blog', array( __CLASS__, 'keep_trust_on_blog_reassign' ), 10, 3 );
+			// Synced patterns are judged by their own writer inside the page (push_document()).
+			add_filter( 'render_block_data', array( __CLASS__, 'enter_synced_pattern' ), 10, 1 );
+			add_filter( 'render_block', array( __CLASS__, 'leave_synced_pattern' ), 10, 2 );
 			add_action( 'rest_api_init', array( __CLASS__, 'register_preview_route' ) );
 			add_action( 'rest_api_init', array( __CLASS__, 'register_fields_route' ) );
 			add_action( 'rest_api_init', array( __CLASS__, 'register_entities_route' ) );
 		}
 
 		/**
+		 * Remember a post's author, status and content just before an update, so
+		 * record_editor_trust() can tell a publish or an author change from an edit.
+		 *
+		 * @param int     $post_id     Post id.
+		 * @param WP_Post $post_after  Post after the update.
+		 * @param WP_Post $post_before Post before the update.
+		 * @return void
+		 */
+		public static function note_post_update( $post_id, $post_after, $post_before ) {
+			if ( ! $post_after instanceof WP_Post || ! $post_before instanceof WP_Post ) {
+				return;
+			}
+			self::$pending_updates[ (int) $post_id ] = array(
+				'author_changed'  => (int) $post_before->post_author !== (int) $post_after->post_author,
+				'old_author'      => (int) $post_before->post_author,
+				'status_changed'  => $post_before->post_status !== $post_after->post_status,
+				'content_changed' => $post_before->post_content !== $post_after->post_content,
+			);
+		}
+
+		/**
 		 * Remember whether the user saving a post holds `unfiltered_html`, for
 		 * author_trusted(). A save with no user (cron, WP-CLI without --user)
-		 * leaves the mark as it was; a trusted user's save clears it.
+		 * leaves the mark as it was; a save by a user without it sets the mark.
+		 *
+		 * A trusted user's save clears it, except when the save only publishes the
+		 * post or changes its author: that does not review the content, so the
+		 * content keeps the restrictions of whoever wrote it. Moving a post away
+		 * from an author without `unfiltered_html` marks it for the same reason.
+		 *
+		 * @param int          $post_id Post id.
+		 * @param WP_Post|null $post    Post (unused).
+		 * @param bool         $update  Whether this was an update of an existing post.
+		 * @return void
+		 */
+		public static function record_editor_trust( $post_id, $post = null, $update = false ) {
+			unset( $post );
+			$post_id = (int) $post_id;
+			$change  = isset( self::$pending_updates[ $post_id ] ) ? self::$pending_updates[ $post_id ] : null;
+			unset( self::$pending_updates[ $post_id ] );
+			if ( ! $post_id || ! get_current_user_id() || wp_is_post_revision( $post_id ) ) {
+				return;
+			}
+			if ( ! current_user_can( 'unfiltered_html' ) ) {
+				update_post_meta( $post_id, self::UNTRUSTED_EDIT_META, 1 );
+				return;
+			}
+			// An update that never passed through wp_update_post() (wp_publish_post())
+			// changes only the status.
+			if ( $update && null === $change ) {
+				return;
+			}
+			if ( $change && ! $change['content_changed'] && ( $change['author_changed'] || $change['status_changed'] ) ) {
+				if ( $change['author_changed'] && $change['old_author'] > 0 && ! user_can( $change['old_author'], 'unfiltered_html' ) ) {
+					update_post_meta( $post_id, self::UNTRUSTED_EDIT_META, 1 );
+				}
+				return;
+			}
+			delete_post_meta( $post_id, self::UNTRUSTED_EDIT_META );
+		}
+
+		/**
+		 * A builder save of the document itself: the saving user's trust decides.
 		 *
 		 * @param int $post_id Post id.
 		 * @return void
 		 */
-		public static function record_editor_trust( $post_id ) {
+		public static function record_content_trust( $post_id ) {
 			$post_id = (int) $post_id;
 			if ( ! $post_id || ! get_current_user_id() || wp_is_post_revision( $post_id ) ) {
 				return;
@@ -208,6 +456,52 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 				delete_post_meta( $post_id, self::UNTRUSTED_EDIT_META );
 			} else {
 				update_post_meta( $post_id, self::UNTRUSTED_EDIT_META, 1 );
+			}
+		}
+
+		/**
+		 * A user without `unfiltered_html` is deleted and their posts go to someone
+		 * else: mark those posts, so they keep the restrictions they were written under.
+		 *
+		 * @param int      $user_id  User being deleted.
+		 * @param int|null $reassign User receiving their posts.
+		 * @return void
+		 */
+		public static function keep_trust_on_reassign( $user_id, $reassign = null ) {
+			$user_id = (int) $user_id;
+			if ( ! $user_id || ! $reassign || user_can( $user_id, 'unfiltered_html' ) ) {
+				return;
+			}
+			global $wpdb;
+			// phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching -- One-off lookup on user deletion, mirroring core's own reassignment query.
+			$ids = $wpdb->get_col( $wpdb->prepare( "SELECT ID FROM {$wpdb->posts} WHERE post_author = %d AND post_type <> 'revision'", $user_id ) );
+			foreach ( (array) $ids as $id ) {
+				update_post_meta( (int) $id, self::UNTRUSTED_EDIT_META, 1 );
+			}
+		}
+
+		/**
+		 * keep_trust_on_reassign() for a user removed from one site of a network.
+		 *
+		 * @param int $user_id  User being removed.
+		 * @param int $blog_id  Site.
+		 * @param int $reassign User receiving their posts.
+		 * @return void
+		 */
+		public static function keep_trust_on_blog_reassign( $user_id, $blog_id, $reassign = 0 ) {
+			if ( ! $reassign ) {
+				return;
+			}
+			$switch = is_multisite() && (int) $blog_id && (int) $blog_id !== get_current_blog_id();
+			if ( $switch ) {
+				switch_to_blog( (int) $blog_id );
+			}
+			try {
+				self::keep_trust_on_reassign( $user_id, $reassign );
+			} finally {
+				if ( $switch ) {
+					restore_current_blog();
+				}
 			}
 		}
 

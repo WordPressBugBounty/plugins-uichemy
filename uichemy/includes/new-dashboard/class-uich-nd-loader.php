@@ -60,6 +60,7 @@ if ( ! class_exists( 'Uich_ND_Loader' ) ) {
 			require_once UICH_ND_PATH . 'class-uich-nd-auth.php';
 			require_once UICH_ND_PATH . 'class-uich-nd-app-password.php';
 			require_once UICH_ND_PATH . 'class-uich-nd-recommended-settings.php';
+			require_once UICH_ND_PATH . 'class-uich-nd-package-verifier.php';
 			require_once UICH_ND_PATH . 'class-uich-nd-installer.php';
 			require_once UICH_ND_PATH . 'class-uich-nd-analytics.php';
 			require_once UICH_ND_PATH . 'class-uich-nd-api.php';

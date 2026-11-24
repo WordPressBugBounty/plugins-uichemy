@@ -11,6 +11,9 @@
  * client secret and the refresh token are stored encrypted (Uich_SMTP_Secret) and
  * never leave the server: the settings screen only learns whether one is saved.
  * UICHEMY_SMTP_PASSWORD in wp-config.php overrides the stored password.
+ * Either password is sent only to the server, port and login it was set up
+ * for (see binding()); UICHEMY_SMTP_HOST names the host the wp-config one
+ * may go to.
  *
  * Ported from Nexter Extension's SMTP Email, with the Gmail OAuth library swapped
  * for PHPMailer's own token-provider interface (no Composer dependency).
@@ -34,6 +37,15 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 		const OAUTH_ACTION = 'uichemy_smtp_oauth';
 		const NONCE        = 'uichemy_dashboard';
 		const OAUTH_STATE  = 'uichemy_smtp_oauth_state';
+
+		/** Option: changes whenever pending Google sign-ins must stop counting (Disconnect, import). */
+		const OAUTH_EPOCH = 'uichemy_smtp_oauth_epoch';
+
+		/** Seconds a Google sign-in may take from Connect to the callback. */
+		const OAUTH_TTL = 600;
+
+		/** Transient: the current Gmail access token and the account it belongs to. */
+		const GMAIL_ACCESS = 'uichemy_smtp_gmail_access';
 
 		/** Boot. Cheap on every request: the mailer hook reads the option only when mail is sent. */
 		public static function init() {
@@ -69,6 +81,10 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 					'username'          => '',
 					'password'          => '',
 					'allow_self_signed' => false,
+					// binding() of the server the stored password was entered for.
+					'password_bind'     => '',
+					// binding() of the server the wp-config password was first used with.
+					'constant_bind'     => '',
 				),
 				'gmail'      => array(
 					'client_id'     => '',
@@ -92,18 +108,116 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 			foreach ( array( 'custom', 'gmail' ) as $k ) {
 				$out[ $k ] = array_merge( $d[ $k ], isset( $stored[ $k ] ) && is_array( $stored[ $k ] ) ? array_intersect_key( $stored[ $k ], $d[ $k ] ) : array() );
 			}
+
+			// Settings saved before passwords were bound: the server they point at now
+			// is the one the password was saved for, so they keep sending as before.
+			$raw     = isset( $stored['custom'] ) && is_array( $stored['custom'] ) ? $stored['custom'] : array();
+			$migrate = false;
+			if ( ! array_key_exists( 'password_bind', $raw ) && '' !== (string) $out['custom']['host'] ) {
+				$out['custom']['password_bind'] = self::binding( $out['custom'] );
+				$migrate                        = true;
+			}
+			if ( '' !== self::constant_password() && '' === (string) $out['custom']['constant_bind'] && '' !== (string) $out['custom']['host'] ) {
+				$out['custom']['constant_bind'] = self::binding( $out['custom'] );
+				$migrate                        = true;
+			}
+			if ( $migrate && ! empty( $stored ) ) {
+				update_option( self::OPTION, $out, false );
+			}
 			return $out;
 		}
 
 		/**
-		 * The SMTP password in clear, wp-config override first.
+		 * The server, port and login a password is sent to.
+		 *
+		 * @param array $c Custom-mailer settings.
+		 * @return string
+		 */
+		public static function binding( $c ) {
+			return 'v2:' . md5( self::binding_subject( $c ) );
+		}
+
+		/**
+		 * Host, port and login as one string.
+		 *
+		 * @param array $c Custom-mailer settings.
+		 * @return string
+		 */
+		private static function binding_subject( $c ) {
+			$port = isset( $c['port'] ) ? (int) $c['port'] : 587;
+			return strtolower( trim( isset( $c['host'] ) ? (string) $c['host'] : '' ) ) . '|' . $port . '|' .
+				( isset( $c['username'] ) ? (string) $c['username'] : '' );
+		}
+
+		/**
+		 * Whether a recorded binding names these settings' server, port and login.
+		 * A binding recorded in the earlier format (which also carried a transport
+		 * flag) matches on the same server, port and login whatever that flag was.
+		 *
+		 * @param string $bound Recorded binding.
+		 * @param array  $c     Custom-mailer settings.
+		 * @return bool
+		 */
+		private static function binding_matches( $bound, $c ) {
+			$bound = (string) $bound;
+			if ( 0 === strpos( $bound, 'v2:' ) ) {
+				return hash_equals( $bound, self::binding( $c ) );
+			}
+			$subject = self::binding_subject( $c );
+			return hash_equals( $bound, md5( $subject . '|1' ) ) || hash_equals( $bound, md5( $subject . '|0' ) );
+		}
+
+		/**
+		 * The wp-config password, or ''.
+		 *
+		 * @return string
+		 */
+		private static function constant_password() {
+			return defined( 'UICHEMY_SMTP_PASSWORD' ) ? (string) UICHEMY_SMTP_PASSWORD : '';
+		}
+
+		/**
+		 * Whether the wp-config password may be sent to these settings' server:
+		 * the host UICHEMY_SMTP_HOST names, else the server it was first used with.
+		 *
+		 * @param array $c Custom-mailer settings.
+		 * @return bool
+		 */
+		private static function constant_allowed( $c ) {
+			if ( '' === self::constant_password() ) {
+				return false;
+			}
+			if ( defined( 'UICHEMY_SMTP_HOST' ) && '' !== (string) UICHEMY_SMTP_HOST ) {
+				return strtolower( trim( (string) UICHEMY_SMTP_HOST ) ) === strtolower( trim( (string) $c['host'] ) );
+			}
+			$bound = isset( $c['constant_bind'] ) ? (string) $c['constant_bind'] : '';
+			return '' === $bound || self::binding_matches( $bound, $c );
+		}
+
+		/**
+		 * Whether the stored password was saved for these settings' server.
+		 *
+		 * @param array $c Custom-mailer settings.
+		 * @return bool
+		 */
+		private static function stored_allowed( $c ) {
+			$bound = isset( $c['password_bind'] ) ? (string) $c['password_bind'] : '';
+			return '' === $bound || self::binding_matches( $bound, $c );
+		}
+
+		/**
+		 * The SMTP password in clear, wp-config override first. Empty when the
+		 * password was set up for another server: it is entered again for a new one.
 		 *
 		 * @param array $custom Custom-mailer settings.
 		 * @return string
 		 */
 		public static function password( $custom ) {
-			if ( defined( 'UICHEMY_SMTP_PASSWORD' ) && '' !== (string) UICHEMY_SMTP_PASSWORD ) {
-				return (string) UICHEMY_SMTP_PASSWORD;
+			if ( self::constant_allowed( $custom ) ) {
+				return self::constant_password();
+			}
+			if ( ! self::stored_allowed( $custom ) ) {
+				return '';
 			}
 			return Uich_SMTP_Secret::decrypt( isset( $custom['password'] ) ? $custom['password'] : '' );
 		}
@@ -127,7 +241,7 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 					'auto_tls'          => (bool) $s['custom']['auto_tls'],
 					'auth'              => (bool) $s['custom']['auth'],
 					'username'          => $s['custom']['username'],
-					'has_password'      => '' !== $s['custom']['password'] || ( defined( 'UICHEMY_SMTP_PASSWORD' ) && '' !== (string) UICHEMY_SMTP_PASSWORD ),
+					'has_password'      => ( '' !== $s['custom']['password'] && self::stored_allowed( $s['custom'] ) ) || self::constant_allowed( $s['custom'] ),
 					'password_constant' => defined( 'UICHEMY_SMTP_PASSWORD' ) && '' !== (string) UICHEMY_SMTP_PASSWORD,
 					'allow_self_signed' => (bool) $s['custom']['allow_self_signed'],
 				),
@@ -241,16 +355,27 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 				if ( array_key_exists( 'username', $c ) ) {
 					$cur['username'] = sanitize_text_field( (string) $c['username'] );
 				}
+				$was_bound = (string) $out['custom']['password_bind'];
 				if ( array_key_exists( 'password', $c ) && null !== $c['password'] ) {
 					// Passwords are not sanitized: any character is valid in one.
-					$cur['password'] = Uich_SMTP_Secret::encrypt( (string) $c['password'] );
-				} elseif ( $cur['host'] !== $out['custom']['host'] || $cur['username'] !== $out['custom']['username'] ) {
-					// A stored password belongs to the server and login it was saved for. Never
-					// send it to a different host (or for a different login), or anyone who can
-					// edit these settings could point them at their own server, press Test
-					// connection, and read the password off the wire without ever seeing it here.
-					$cur['password'] = '';
+					$cur['password']      = Uich_SMTP_Secret::encrypt( (string) $c['password'] );
+					$cur['password_bind'] = self::binding( $cur );
+				} elseif ( '' === $was_bound && '' === (string) $out['custom']['host'] ) {
+					// First setup: a password typed before the host belongs to the host now set.
+					$cur['password_bind'] = self::binding( $cur );
+				} elseif ( self::binding( $cur ) !== self::binding( $out['custom'] ) ) {
+					// A stored password belongs to the server, port and login it was saved
+					// for. A change to any of them needs the password entered again: it is
+					// never sent anywhere it was not entered for.
+					$cur['password']      = '';
+					$cur['password_bind'] = '';
+				} elseif ( '' !== $was_bound && self::binding_matches( $was_bound, $cur ) ) {
+					// Same server: a binding in the earlier format is recorded in the current one.
+					$cur['password_bind'] = self::binding( $cur );
 				}
+				// The wp-config password is bound on first use only (settings()); a later
+				// change of server here does not move it.
+				$cur['constant_bind'] = (string) $out['custom']['constant_bind'];
 				$out['custom'] = $cur;
 			}
 
@@ -271,7 +396,7 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 					}
 					$cur['refresh_token'] = '';
 					$cur['email']         = '';
-					delete_transient( 'uichemy_smtp_gmail_access' );
+					self::forget_gmail_access();
 				}
 				$out['gmail'] = $cur;
 			}
@@ -509,7 +634,9 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 					$s['gmail']['refresh_token']  = '';
 					$s['gmail']['email']          = '';
 					update_option( self::OPTION, $s, false );
-					delete_transient( 'uichemy_smtp_gmail_access' );
+					self::forget_gmail_access();
+					// A sign-in started before Disconnect must not connect the account again.
+					self::revoke_pending_oauth();
 					wp_send_json_success( self::view() );
 					break;
 				case 'import_nexter':
@@ -533,6 +660,9 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 			}
 			if ( '' === $s['custom']['host'] ) {
 				wp_send_json_error( array( 'message' => __( 'Enter the SMTP host first.', 'uichemy' ) ), 400 );
+			}
+			if ( ! empty( $s['custom']['auth'] ) && '' !== self::constant_password() && ! self::constant_allowed( $s['custom'] ) && '' === self::password( $s['custom'] ) ) {
+				wp_send_json_error( array( 'message' => __( 'The password in wp-config.php (UICHEMY_SMTP_PASSWORD) is used only with the server it was set up for. To use it with this server, also define UICHEMY_SMTP_HOST in wp-config.php.', 'uichemy' ) ), 400 );
 			}
 			if ( ! class_exists( '\PHPMailer\PHPMailer\PHPMailer' ) ) {
 				require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
@@ -639,9 +769,8 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 			}
 			update_option( self::OPTION, $s, false );
 
-			// One-use state bound to this user, checked in the callback.
-			$state = wp_generate_password( 32, false );
-			set_transient( self::OAUTH_STATE . '_' . get_current_user_id(), $state, 15 * MINUTE_IN_SECONDS );
+			// One-use state bound to this user and this client, checked in the callback.
+			$state = self::issue_oauth_state( $s['gmail']['client_id'] );
 
 			$url = 'https://accounts.google.com/o/oauth2/v2/auth?' . http_build_query(
 				array(
@@ -665,11 +794,9 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 			if ( ! current_user_can( 'manage_options' ) ) {
 				self::oauth_done( false, __( 'You are not allowed to change SMTP settings.', 'uichemy' ) );
 			}
-			$key      = self::OAUTH_STATE . '_' . get_current_user_id();
-			$expected = get_transient( $key );
-			delete_transient( $key );
-			$state = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state is the CSRF check.
-			if ( ! is_string( $expected ) || '' === $state || ! hash_equals( $expected, $state ) ) {
+			$state   = isset( $_GET['state'] ) ? sanitize_text_field( wp_unslash( $_GET['state'] ) ) : ''; // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- OAuth state is the CSRF check.
+			$pending = self::consume_oauth_state( $state );
+			if ( ! $pending ) {
 				self::oauth_done( false, __( 'This sign-in link has expired. Start again from the SMTP settings.', 'uichemy' ) );
 			}
 			if ( isset( $_GET['error'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.Recommended
@@ -710,14 +837,154 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 				self::oauth_done( false, __( 'Could not read the Google account’s email address.', 'uichemy' ) );
 			}
 
+			// Disconnected, or switched to another client, while Google answered: keep it that way.
+			if ( ! self::oauth_still_pending( $pending ) ) {
+				self::oauth_done( false, __( 'This sign-in link has expired. Start again from the SMTP settings.', 'uichemy' ) );
+			}
+
+			$s                           = self::settings();
 			$s['gmail']['refresh_token'] = Uich_SMTP_Secret::encrypt( (string) $body['refresh_token'] );
 			$s['gmail']['email']         = $email;
 			update_option( self::OPTION, $s, false );
 			$ttl = isset( $body['expires_in'] ) ? max( 60, (int) $body['expires_in'] - 120 ) : 3000;
-			set_transient( 'uichemy_smtp_gmail_access', Uich_SMTP_Secret::encrypt( (string) $body['access_token'] ), $ttl );
+			self::cache_gmail_access( (string) $body['access_token'], $ttl, $s['gmail'] );
 
 			/* translators: %s: Google account email */
 			self::oauth_done( true, sprintf( __( 'Connected as %s.', 'uichemy' ), $email ) );
+		}
+
+		/**
+		 * The current sign-in generation ('' until the first Disconnect).
+		 *
+		 * @return string
+		 */
+		private static function oauth_epoch() {
+			return (string) get_option( self::OAUTH_EPOCH, '' );
+		}
+
+		/**
+		 * Make every Google sign-in started so far, by any user, unusable.
+		 *
+		 * @return void
+		 */
+		public static function revoke_pending_oauth() {
+			update_option( self::OAUTH_EPOCH, wp_generate_password( 20, false ), false );
+		}
+
+		/**
+		 * A new one-use sign-in state for the current user.
+		 *
+		 * @param string $client_id OAuth client the sign-in is for.
+		 * @return string State to send to Google.
+		 */
+		public static function issue_oauth_state( $client_id ) {
+			$state = wp_generate_password( 32, false );
+			set_transient(
+				self::OAUTH_STATE . '_' . get_current_user_id(),
+				array(
+					'state'  => $state,
+					'epoch'  => self::oauth_epoch(),
+					'client' => (string) $client_id,
+					'at'     => time(),
+				),
+				self::OAUTH_TTL
+			);
+			return $state;
+		}
+
+		/**
+		 * Check the state Google sent back and use it up, whatever the result.
+		 *
+		 * @param string $state State from the callback URL.
+		 * @return array|false The pending sign-in, or false when it is unknown,
+		 *                     expired, revoked or for another client.
+		 */
+		public static function consume_oauth_state( $state ) {
+			$key      = self::OAUTH_STATE . '_' . get_current_user_id();
+			$expected = get_transient( $key );
+			delete_transient( $key );
+			if ( is_string( $expected ) ) {
+				// Started before this version: valid while nothing revoked it since.
+				$expected = array(
+					'state'  => $expected,
+					'epoch'  => '',
+					'client' => self::settings()['gmail']['client_id'],
+					'at'     => time(),
+				);
+			}
+			$state = (string) $state;
+			if ( ! is_array( $expected ) || '' === $state || empty( $expected['state'] ) || ! hash_equals( (string) $expected['state'], $state ) ) {
+				return false;
+			}
+			$expected = array_merge( array( 'epoch' => '', 'client' => '', 'at' => 0 ), $expected );
+			if ( (int) $expected['at'] + self::OAUTH_TTL < time() ) {
+				return false;
+			}
+			return self::oauth_still_pending( $expected ) ? $expected : false;
+		}
+
+		/**
+		 * Whether a pending sign-in still belongs to the current connection.
+		 *
+		 * @param array $pending From consume_oauth_state().
+		 * @return bool
+		 */
+		private static function oauth_still_pending( $pending ) {
+			return hash_equals( self::oauth_epoch(), (string) $pending['epoch'] )
+				&& '' !== (string) $pending['client']
+				&& hash_equals( (string) self::settings()['gmail']['client_id'], (string) $pending['client'] );
+		}
+
+		/**
+		 * Which Gmail account an access token belongs to.
+		 *
+		 * @param array $g Gmail settings.
+		 * @return string
+		 */
+		private static function gmail_identity( $g ) {
+			return md5( (string) $g['client_id'] . '|' . strtolower( trim( (string) $g['email'] ) ) );
+		}
+
+		/**
+		 * Cache an access token for the account in $g.
+		 *
+		 * @param string $token Access token.
+		 * @param int    $ttl   Seconds.
+		 * @param array  $g     Gmail settings it was issued for.
+		 * @return void
+		 */
+		public static function cache_gmail_access( $token, $ttl, $g ) {
+			set_transient(
+				self::GMAIL_ACCESS,
+				array(
+					'for'   => self::gmail_identity( $g ),
+					'token' => Uich_SMTP_Secret::encrypt( (string) $token ),
+				),
+				(int) $ttl
+			);
+		}
+
+		/**
+		 * The cached access token, only when it was issued for the account in $g.
+		 *
+		 * @param array $g Gmail settings.
+		 * @return string '' when there is none for this account (a fresh one is then fetched).
+		 */
+		public static function cached_gmail_access( $g ) {
+			$c = get_transient( self::GMAIL_ACCESS );
+			if ( ! is_array( $c ) || empty( $c['for'] ) || empty( $c['token'] ) || ! hash_equals( self::gmail_identity( $g ), (string) $c['for'] ) ) {
+				return '';
+			}
+			return Uich_SMTP_Secret::decrypt( (string) $c['token'] );
+		}
+
+		/**
+		 * Drop the cached access token.
+		 *
+		 * @return void
+		 */
+		public static function forget_gmail_access() {
+			delete_transient( self::GMAIL_ACCESS );
 		}
 
 		/**
@@ -816,13 +1083,27 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 			}
 			if ( 'gmail' === $t ) {
 				// The refresh token keeps working with a new redirect URI: only the code exchange checks it.
-				$refresh = $secret( $v, 'refresh_token' );
-				if ( '' !== $refresh && ! empty( $v['email'] ) && is_email( $v['email'] ) ) {
+				$refresh  = $secret( $v, 'refresh_token' );
+				$in_email = isset( $v['email'] ) ? sanitize_email( (string) $v['email'] ) : '';
+				$in_email = is_email( $in_email ) ? $in_email : '';
+				if ( '' !== $refresh && '' !== $in_email ) {
 					$next['gmail']['refresh_token'] = Uich_SMTP_Secret::encrypt( $refresh );
-					$next['gmail']['email']         = sanitize_email( $v['email'] );
+					$next['gmail']['email']         = $in_email;
 				} else {
 					$missing = true;
+					// Keep the saved connection only when Nexter names the same mailbox or
+					// has no Gmail connection of its own. Otherwise the saved credentials
+					// belong to another account: Gmail is connected again instead.
+					$nexter_connected = '' !== $in_email || ( isset( $v['refresh_token'] ) && '' !== (string) $v['refresh_token'] );
+					$same_mailbox     = '' !== $in_email && strtolower( $in_email ) === strtolower( (string) $next['gmail']['email'] );
+					if ( $nexter_connected && ! $same_mailbox ) {
+						$next['gmail']['refresh_token'] = '';
+						$next['gmail']['email']         = '';
+					}
 				}
+				// The cached access token and any sign-in still open belong to the previous setup.
+				self::forget_gmail_access();
+				self::revoke_pending_oauth();
 			}
 			update_option( self::OPTION, $next, false );
 			$view            = self::view();

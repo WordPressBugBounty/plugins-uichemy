@@ -359,26 +359,63 @@ class Uich_Webpage_Auth {
 	 * Access/refresh/id tokens are encrypted with libsodium's authenticated
 	 * secretbox (XSalsa20-Poly1305) under a key derived from the site salt, and
 	 * stored with a `uichenc2:` marker. A DB/backup read therefore no longer
-	 * yields live OAuth tokens. On a PHP build without libsodium, or on any
-	 * failure, it falls back to storing the value as-is (matching legacy
-	 * behaviour) so sign-in never breaks.
+	 * yields live OAuth tokens. When encryption is unavailable or fails, it
+	 * returns false and the caller stores nothing: a token is never written in
+	 * plain text.
 	 *
 	 * @param mixed $plaintext Raw token value from the OAuth response.
-	 * @return mixed Encrypted string, or the value unchanged on fallback.
+	 * @return string|false Encrypted string, or false when it could not be encrypted.
 	 */
 	protected function encrypt_token( $plaintext ) {
 		if ( ! is_string( $plaintext ) || '' === $plaintext ) {
-			return $plaintext;
+			return false;
 		}
 		if ( ! function_exists( 'sodium_crypto_secretbox' ) || ! defined( 'SODIUM_CRYPTO_SECRETBOX_NONCEBYTES' ) ) {
-			return $plaintext;
+			return false;
 		}
 		try {
 			$nonce  = random_bytes( SODIUM_CRYPTO_SECRETBOX_NONCEBYTES );
 			$cipher = sodium_crypto_secretbox( $plaintext, $nonce, $this->token_encryption_key() );
 			return 'uichenc2:' . base64_encode( $nonce . $cipher );
 		} catch ( \Throwable $e ) {
-			return $plaintext;
+			return false;
+		}
+	}
+
+	/**
+	 * Encrypt and store one token option.
+	 *
+	 * @param string $option    Option name.
+	 * @param string $plaintext Token.
+	 * @return bool False when the token could not be encrypted (nothing is written).
+	 */
+	protected function store_token( $option, $plaintext ) {
+		$encrypted = $this->encrypt_token( $plaintext );
+		if ( false === $encrypted ) {
+			return false;
+		}
+		update_option( $option, $encrypted, false );
+		return true;
+	}
+
+	/**
+	 * Re-store a token saved by an older version in plain text, encrypted.
+	 *
+	 * The plain value keeps working either way; it is only replaced once the
+	 * encrypted copy has been read back successfully.
+	 *
+	 * @param string $option Option name.
+	 * @param mixed  $stored Raw stored value.
+	 * @param mixed  $plain  The token read from it.
+	 * @return void
+	 */
+	protected function upgrade_legacy_token( $option, $stored, $plain ) {
+		if ( ! is_string( $stored ) || ! is_string( $plain ) || '' === $plain || 0 === strpos( $stored, 'uichenc2:' ) ) {
+			return;
+		}
+		$encrypted = $this->encrypt_token( $plain );
+		if ( false !== $encrypted && $this->decrypt_token( $encrypted ) === $plain ) {
+			update_option( $option, $encrypted, false );
 		}
 	}
 
@@ -535,9 +572,16 @@ class Uich_Webpage_Auth {
 		$body = json_decode( wp_remote_retrieve_body( $response ), true );
 
 		if ( isset( $body['access_token'] ) && $this->is_storable_oauth_token( $body['access_token'] ) ) {
+			// Tokens are stored encrypted only. Without working encryption the
+			// sign-in stops here and nothing is written.
+			if ( false === $this->encrypt_token( $body['access_token'] ) ) {
+				wp_die(
+					esc_html__( 'The connection could not be saved securely: this server cannot encrypt the sign-in token (the PHP sodium extension is missing or failing). Ask your host to enable sodium, then connect again.', 'uichemy' )
+				);
+			}
+
 			// Store access token (do not use sanitize_text_field — it can corrupt opaque tokens).
-			// encrypt_token() is now a passthrough, so this lands in wp_options as plaintext.
-			update_option( self::OPTION_ACCESS_TOKEN, $this->encrypt_token( $body['access_token'] ), false );
+			$this->store_token( self::OPTION_ACCESS_TOKEN, $body['access_token'] );
 
 			// A connect can follow a disconnect, and can be a DIFFERENT account.
 			// Anything cached against the previous credentials has to go now,
@@ -547,7 +591,7 @@ class Uich_Webpage_Auth {
 
 			// Store refresh token if provided.
 			if ( isset( $body['refresh_token'] ) && $this->is_storable_oauth_token( $body['refresh_token'] ) ) {
-				update_option( self::OPTION_REFRESH_TOKEN, $this->encrypt_token( $body['refresh_token'] ), false );
+				$this->store_token( self::OPTION_REFRESH_TOKEN, $body['refresh_token'] );
 			}
 
 			// Store and decode id_token. Uses is_storable_id_token() (not the opaque-token
@@ -557,7 +601,7 @@ class Uich_Webpage_Auth {
 				if ( ! $user_info || ! $this->validate_id_token_payload( $user_info ) ) {
 					wp_die( esc_html__( 'Invalid or expired identity token from the app. Please try signing in again.', 'uichemy' ) );
 				}
-				update_option( self::OPTION_ID_TOKEN, $this->encrypt_token( $body['id_token'] ), false );
+				$this->store_token( self::OPTION_ID_TOKEN, $body['id_token'] );
 				update_option( self::OPTION_USER_INFO, $user_info, false );
 				if ( isset( $user_info['sub'] ) && is_string( $user_info['sub'] ) ) {
 					update_option( self::OPTION_USER_ID, sanitize_text_field( $user_info['sub'] ), false );
@@ -1032,7 +1076,9 @@ class Uich_Webpage_Auth {
 		if ( ! is_string( $stored ) || '' === $stored ) {
 			return false;
 		}
-		return $this->decrypt_token( $stored );
+		$token = $this->decrypt_token( $stored );
+		$this->upgrade_legacy_token( self::OPTION_ACCESS_TOKEN, $stored, $token );
+		return $token;
 	}
 
 	/**
@@ -1052,6 +1098,7 @@ class Uich_Webpage_Auth {
 		if ( empty( $refresh_token ) ) {
 			return false;
 		}
+		$this->upgrade_legacy_token( self::OPTION_REFRESH_TOKEN, $stored_refresh_token, $refresh_token );
 
 		// Public client: the refresh grant is authenticated by possession of the
 		// refresh_token bound to this client_id — no client_secret involved.
@@ -1087,11 +1134,15 @@ class Uich_Webpage_Auth {
 			return false;
 		}
 
-		update_option( self::OPTION_ACCESS_TOKEN, $this->encrypt_token( $body['access_token'] ), false );
+		// Not stored in plain text: without working encryption the stored tokens
+		// are left as they are and the caller treats the refresh as failed.
+		if ( ! $this->store_token( self::OPTION_ACCESS_TOKEN, $body['access_token'] ) ) {
+			return false;
+		}
 
 		// Refresh tokens rotate on use — persist the new one if returned.
 		if ( isset( $body['refresh_token'] ) && $this->is_storable_oauth_token( $body['refresh_token'] ) ) {
-			update_option( self::OPTION_REFRESH_TOKEN, $this->encrypt_token( $body['refresh_token'] ), false );
+			$this->store_token( self::OPTION_REFRESH_TOKEN, $body['refresh_token'] );
 		}
 
 		// NOTE: deliberately no record_connection() here. A refresh is not a new
@@ -1106,7 +1157,7 @@ class Uich_Webpage_Auth {
 		// 86d3ewmcu) self-heals on its next silent token refresh, without requiring
 		// an explicit reconnect.
 		if ( isset( $body['id_token'] ) && $this->is_storable_id_token( $body['id_token'] ) ) {
-			update_option( self::OPTION_ID_TOKEN, $this->encrypt_token( $body['id_token'] ), false );
+			$this->store_token( self::OPTION_ID_TOKEN, $body['id_token'] );
 			$user_info = $this->decode_jwt_payload( $body['id_token'] );
 			if ( $user_info && $this->validate_id_token_payload( $user_info ) ) {
 				update_option( self::OPTION_USER_INFO, $user_info, false );

@@ -85,8 +85,11 @@ if ( ! class_exists( 'Uich_Twig' ) ) {
 		 * decoded before they are printed (UiChemy_Composer_Renderer::safe_script_block()),
 		 * which turned a value's `"` back into a real quote: `var q = "{{ x }}"` with
 		 * x = `"+alert(1)+"` ran as code. Escaping for JavaScript instead keeps the
-		 * value text. Outputs that already choose their own filter (|raw, |json_encode,
-		 * |e, |esc_*) and non-JS scripts (JSON-LD, text/template, ...) are left alone.
+		 * value text. Outputs that already choose a raw or JavaScript form (|raw,
+		 * |json_encode, |e('js')) and non-JS scripts (JSON-LD, text/template, ...)
+		 * are left alone. An output escaped for HTML (|e, |escape, |esc_*) is
+		 * re-encoded for JavaScript after its own filters: the HTML escaping alone
+		 * does not survive the body's decoding, so it would let quotes through.
 		 *
 		 * @param string $template Template source.
 		 * @return string
@@ -106,8 +109,15 @@ if ( ! class_exists( 'Uich_Twig' ) ) {
 						'#\{\{(.*?)\}\}#s',
 						static function ( $o ) {
 							$expr = trim( $o[1] );
-							if ( '' === $expr || preg_match( '#\|\s*(?:raw|json_encode|e|escape|esc_[a-z_]+|uich_js_string)\b#', $expr ) ) {
+							// The lexer decodes entities in expressions; match on what it will read.
+							$probe = false !== strpos( $expr, '&' ) ? html_entity_decode( $expr, ENT_QUOTES | ENT_HTML5, 'UTF-8' ) : $expr;
+							if ( '' === $expr
+								|| preg_match( '#\|\s*(?:raw|json_encode|uich_js_string|uich_js_html_string)\b#', $probe )
+								|| preg_match( '#\|\s*(?:e|escape)\s*\(\s*["\']js["\']#i', $probe ) ) {
 								return $o[0];
+							}
+							if ( preg_match( '#\|\s*(?:e|escape|esc_[a-z_]+)\b#', $probe ) ) {
+								return '{{ (' . $expr . ')|uich_js_html_string }}';
 							}
 							return '{{ (' . $expr . ')|uich_js_string }}';
 						},
@@ -754,6 +764,11 @@ if ( ! class_exists( 'Uich_Twig_Runtime' ) ) {
 			// Twig auto-escapes by default; callers that need raw use the |raw filter (handled in Filters).
 			if ( is_string( $v ) && class_exists( 'Uich_Filters' ) && Uich_Filters::is_marked_raw( $v ) ) {
 				$html = Uich_Filters::unmark_raw( $v );
+				// A template whose author may publish unfiltered HTML prints raw output
+				// as before, including raw markup passed on through further filters
+				// (|raw|replace, |raw|upper, ...). Stored field values reach the engine
+				// with the marker already removed, so they stay escaped either way.
+				//
 				// An untrusted template (author without unfiltered_html) may print raw HTML only
 				// as far as the author could have saved it: |raw, |format then |raw, shortcodes
 				// and the like are filtered like the author's own HTML. The template's static

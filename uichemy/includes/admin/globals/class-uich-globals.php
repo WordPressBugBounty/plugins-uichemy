@@ -71,6 +71,9 @@ if ( ! class_exists( 'Uich_Globals' ) ) {
 
 			$page_settings_manager = \Elementor\Core\Settings\Manager::get_settings_managers( 'page' );
 
+			// Settings this write actually changes, so autosaves receive only those.
+			$changed = self::changed_kit_settings( $kit->get_meta( $page_settings_manager::META_KEY ), $document_settings );
+
 			// Save to DB
 			$page_settings_manager->save_settings( $document_settings, $kit->get_id() );
 
@@ -83,8 +86,15 @@ if ( ! class_exists( 'Uich_Globals' ) ) {
 				if ( $autosave ) {
 					$autosaves[] = $autosave;
 
+					// An autosave keeps its own values for every other setting; only the
+					// entries this write changed are carried into it.
+					$autosave_settings = $autosave->get_meta( $page_settings_manager::META_KEY );
+					$autosave_settings = ( is_array( $autosave_settings ) && ! empty( $autosave_settings ) )
+						? array_merge( $autosave_settings, $changed )
+						: $document_settings;
+
 					// Save to DB
-					$page_settings_manager->save_settings( $document_settings, $autosave->get_id() );
+					$page_settings_manager->save_settings( $autosave_settings, $autosave->get_id() );
 
 					// Clear Cache & reset CSS
 					self::elementor_refresh_css_and_clear_cache( $autosave->get_id() );
@@ -93,6 +103,33 @@ if ( ! class_exists( 'Uich_Globals' ) ) {
 
 			// Clear Cache & reset CSS
 			self::elementor_refresh_css_and_clear_cache( $kit->get_id() );
+		}
+
+		/**
+		 * Top-level kit settings whose value differs between two settings arrays.
+		 *
+		 * @param mixed $before Stored kit settings.
+		 * @param array $after  Settings about to be saved.
+		 * @return array Changed entries, keyed as in $after.
+		 */
+		private static function changed_kit_settings( $before, $after ) {
+			$before  = is_array( $before ) ? $before : array();
+			$changed = array();
+			foreach ( (array) $after as $key => $value ) {
+				if ( ! array_key_exists( $key, $before ) || $before[ $key ] !== $value ) {
+					$changed[ $key ] = $value;
+				}
+			}
+			return $changed;
+		}
+
+		/**
+		 * Keys that identify a typography row and are set by the sync itself.
+		 *
+		 * @return string[]
+		 */
+		private static function reserved_typography_keys() {
+			return array( '_id', 'id', 'title', 'slug', 'type' );
 		}
 
 		// Helper function to ensure default values are set in Elementor kit
@@ -408,7 +445,13 @@ if ( ! class_exists( 'Uich_Globals' ) ) {
 			$valueObject = $db_item['value'];
 			unset( $db_item['value'] );
 
-			foreach ( $valueObject as $key => $value ) {
+			$reserved = self::reserved_typography_keys();
+
+			foreach ( (array) $valueObject as $key => $value ) {
+				// The row's identity and label come from the item itself, never from its value.
+				if ( ! is_string( $key ) || in_array( strtolower( $key ), $reserved, true ) ) {
+					continue;
+				}
 				if ( is_object( $value ) ) {
 					$db_item[ $key ] = (array) $value;
 				} else {

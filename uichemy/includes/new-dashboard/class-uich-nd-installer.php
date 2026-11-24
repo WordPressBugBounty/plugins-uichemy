@@ -234,6 +234,18 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 				return self::success( 'bricks', 'already_active', __( 'Bricks theme is already active.', 'uichemy' ) );
 			}
 
+			// Switching the site theme is its own capability. Without it the step is
+			// skipped with a notice instead of failing the rest of the flow.
+			if ( ! current_user_can( 'switch_themes' ) ) {
+				return array(
+					'ok'       => true,
+					'action'   => 'skipped',
+					'builder'  => 'bricks',
+					'message'  => __( 'Bricks is installed, but your account cannot switch themes. Ask an administrator to activate it.', 'uichemy' ),
+					'detected' => Uich_ND_Settings::detect_builders(),
+				);
+			}
+
 			switch_theme( 'bricks' );
 
 			return self::success( 'bricks', 'activated', __( 'Bricks theme activated.', 'uichemy' ) );
@@ -318,8 +330,8 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		 * hardcoded URL.
 		 *
 		 * `{UICH_WEBPAGE_APP_URL}/api/plugins/uichemy-pro/download` 302-redirects to
-		 * the newest release uploaded in the app's admin Downloads page; WP's
-		 * upgrader follows the redirect transparently (see download_package_to_temp).
+		 * the newest release uploaded in the app's admin Downloads page;
+		 * download_signed_pro() follows it and checks the release signature.
 		 * The version behind that redirect is the `uichemy_pro` entry of
 		 * `/api/plugins/versions` — so a new Pro release never needs a plugin update.
 		 * (Older builds use the UiChemy API's /plugins/uichemy-pro/download, which
@@ -335,15 +347,131 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		 * @return string Empty string when the filter clears it.
 		 */
 		private static function uichemy_pro_zip_url() {
-			$base = defined( 'UICH_WEBPAGE_APP_URL' ) ? UICH_WEBPAGE_APP_URL : 'https://app.uichemy.com';
-			$url  = rtrim( $base, '/' ) . '/api/plugins/uichemy-pro/download';
+			$url = self::app_base_url() . '/api/plugins/uichemy-pro/download';
 
 			/**
 			 * Filter the UiChemy Pro download URL.
 			 *
+			 * The result must still point at an official package origin (see
+			 * is_official_package_url()); anything else is refused at install time.
+			 *
 			 * @param string $url The app download endpoint, or '' to disable the flow.
 			 */
 			return trim( (string) apply_filters( 'uich_uichemy_pro_zip_url', $url ) );
+		}
+
+		/**
+		 * Origins a UiChemy Pro package may be downloaded from.
+		 *
+		 * The official app host over HTTPS, plus the app origin configured in
+		 * wp-config.php through UICH_WEBPAGE_APP_URL (a local or staging app used
+		 * during development), exactly as configured.
+		 *
+		 * @return array[] List of { scheme, host, port } origins.
+		 */
+		private static function official_package_origins() {
+			$origins = array(
+				array(
+					'scheme' => 'https',
+					'host'   => 'app.uichemy.com',
+					'port'   => 443,
+				),
+			);
+
+			if ( defined( 'UICH_WEBPAGE_APP_URL' ) ) {
+				$origin = self::url_origin( (string) UICH_WEBPAGE_APP_URL );
+				if ( $origin ) {
+					$origins[] = $origin;
+				}
+			}
+
+			return $origins;
+		}
+
+		/**
+		 * Scheme, host and port of a URL, or null when it is not an absolute http(s) URL.
+		 *
+		 * @param string $url URL.
+		 * @return array|null
+		 */
+		private static function url_origin( $url ) {
+			$parts = wp_parse_url( trim( (string) $url ) );
+			if ( ! is_array( $parts ) || empty( $parts['scheme'] ) || empty( $parts['host'] ) ) {
+				return null;
+			}
+			$scheme = strtolower( (string) $parts['scheme'] );
+			if ( 'https' !== $scheme && 'http' !== $scheme ) {
+				return null;
+			}
+			if ( isset( $parts['user'] ) || isset( $parts['pass'] ) ) {
+				return null;
+			}
+			return array(
+				'scheme' => $scheme,
+				'host'   => strtolower( (string) $parts['host'] ),
+				'port'   => isset( $parts['port'] ) ? (int) $parts['port'] : ( 'https' === $scheme ? 443 : 80 ),
+			);
+		}
+
+		/**
+		 * Whether a package URL points at an official UiChemy origin.
+		 *
+		 * @param string $url Package URL.
+		 * @return bool
+		 */
+		public static function is_official_package_url( $url ) {
+			$origin = self::url_origin( $url );
+			if ( ! $origin ) {
+				return false;
+			}
+			foreach ( self::official_package_origins() as $allowed ) {
+				if ( $allowed === $origin ) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/** UiChemy app base URL (UICH_WEBPAGE_APP_URL overrides production). */
+		private static function app_base_url() {
+			return rtrim( defined( 'UICH_WEBPAGE_APP_URL' ) ? (string) UICH_WEBPAGE_APP_URL : 'https://app.uichemy.com', '/' );
+		}
+
+		/**
+		 * Download the latest UiChemy Pro package, and return it only when it is
+		 * the signed release.
+		 *
+		 * The URL must first be an official UiChemy origin (is_official_package_url(),
+		 * checked before any request). The app's /api/plugins/versions publishes an
+		 * Ed25519 signature over `uichemy-pro|<version>|<sha256>`, made with a
+		 * release key the app never holds. Uich_ND_Package_Verifier checks it
+		 * against the public keys built into this plugin, then downloads the
+		 * version-pinned package (at most two redirects, every hop https and an
+		 * allowed host) and compares size and SHA-256. An unsigned, wrongly signed
+		 * or altered package never reaches the upgrader.
+		 *
+		 * @param string $zip_url uichemy_pro_zip_url().
+		 * @return string|WP_Error Temp file path (deleted by install_plugin_from_zip).
+		 */
+		private static function download_signed_pro( $zip_url ) {
+			// Plugin code is installed only from an official UiChemy origin.
+			if ( ! self::is_official_package_url( $zip_url ) ) {
+				return new WP_Error(
+					'uichemy_untrusted_package',
+					__( 'The UiChemy Pro download link does not point to an official UiChemy address, so it was not installed. Remove any custom download link and try again.', 'uichemy' ),
+					array( 'status' => 400 )
+				);
+			}
+
+			$latest = Uich_ND_Settings::get_uichemy_pro_latest();
+			$meta   = isset( $latest['package'] ) && is_array( $latest['package'] ) ? $latest['package'] : null;
+			$url    = $meta ? add_query_arg( 'version', rawurlencode( $meta['version'] ), $zip_url ) : $zip_url;
+
+			$package = Uich_ND_Package_Verifier::download( $url, $meta, self::app_base_url() );
+			if ( is_wp_error( $package ) ) {
+				$package->add_data( array( 'status' => 502 ) );
+			}
+			return $package;
 		}
 
 		/**
@@ -408,7 +536,7 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 				);
 			}
 
-			$installed = self::install_plugin_from_zip( $zip_url );
+			$installed = self::install_plugin_from_zip( self::download_signed_pro( $zip_url ) );
 			if ( is_wp_error( $installed ) ) {
 				return $installed;
 			}
@@ -461,7 +589,7 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 
 			$was_active = is_plugin_active( $file );
 
-			$installed = self::install_plugin_from_zip( $zip_url, array( 'overwrite_package' => true ) );
+			$installed = self::install_plugin_from_zip( self::download_signed_pro( $zip_url ), array( 'overwrite_package' => true ) );
 			if ( is_wp_error( $installed ) ) {
 				return $installed;
 			}
@@ -553,28 +681,29 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 		}
 
 		/**
-		 * Download + install a plugin from a remote .zip URL using WordPress'
-		 * own upgrader, with a silent (non-interactive) skin.
+		 * Install a downloaded, already verified plugin package using WordPress'
+		 * own upgrader, with a silent (non-interactive) skin. Deletes the package.
 		 *
-		 * @param string $zip_url Publicly reachable plugin .zip URL.
-		 * @param array  $args    Extra Plugin_Upgrader::install() args. Pass
-		 *                        `overwrite_package => true` to replace an existing
-		 *                        copy in place instead of failing on "already installed".
+		 * @param string|WP_Error $package Local zip from download_signed_pro(), or
+		 *                                 its error, which is returned as is.
+		 * @param array           $args    Extra Plugin_Upgrader::install() args. Pass
+		 *                                 `overwrite_package => true` to replace an existing
+		 *                                 copy in place instead of failing on "already installed".
 		 * @return true|WP_Error
 		 */
-		private static function install_plugin_from_zip( $zip_url, $args = array() ) {
+		private static function install_plugin_from_zip( $package, $args = array() ) {
+			if ( is_wp_error( $package ) ) {
+				return $package;
+			}
+
 			require_once ABSPATH . 'wp-admin/includes/file.php';
 			require_once ABSPATH . 'wp-admin/includes/misc.php';
 			require_once ABSPATH . 'wp-admin/includes/plugin.php';
 			require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
 
 			if ( ! class_exists( 'Plugin_Upgrader' ) || ! class_exists( 'Automatic_Upgrader_Skin' ) ) {
+				wp_delete_file( $package );
 				return new WP_Error( 'uichemy_upgrader_missing', __( 'WordPress plugin installer is unavailable.', 'uichemy' ), array( 'status' => 500 ) );
-			}
-
-			$package = self::download_package_to_temp( $zip_url );
-			if ( is_wp_error( $package ) ) {
-				return $package;
 			}
 
 			$skin     = new Automatic_Upgrader_Skin();
@@ -637,75 +766,7 @@ if ( ! class_exists( 'Uich_ND_Installer' ) ) {
 			return $error;
 		}
 
-		/**
-		 * Download a remote package to a temp file.
-		 *
-		 * The SSRF-safe transport (wp_safe_remote_get) is preferred: it re-validates
-		 * EVERY redirect hop, so a compromised or MITM'd 302 cannot point the
-		 * download — which is then installed as live plugin code — at an internal
-		 * host (loopback, LAN, cloud metadata). That transport rejects private hosts
-		 * and non-standard ports, which a local dev app (UICH_WEBPAGE_APP_URL set to
-		 * http://localhost:3000) legitimately uses, so a URL that
-		 * wp_http_validate_url() rejects keeps the plain transport (the base is a
-		 * trusted configured constant, not request input). In production the base
-		 * is https://app.uichemy.com, so the safe path is taken and the whole
-		 * redirect chain is validated.
-		 *
-		 * @param string $url
-		 * @return string|WP_Error  Temp file path, or WP_Error on failure.
-		 */
-		private static function download_package_to_temp( $url ) {
-			if ( '' === trim( (string) $url ) ) {
-				return new WP_Error( 'uichemy_no_zip', __( 'Plugin download URL is not configured.', 'uichemy' ), array( 'status' => 500 ) );
-			}
 
-			// Fetch into memory (not stream-to-file): the package is small and this
-			// avoids a WP_Http quirk where `stream => true` + a redirect can write
-			// the redirect's empty body instead of the final zip. redirection=5
-			// follows the API's 302 to the real zip.
-			$args = array(
-				'timeout'     => 300,
-				'redirection' => 5,
-			);
-
-			// Public URL (production) → SSRF-safe transport, validating the initial
-			// URL and each redirect target. A local/dev base that fails validation
-			// (private host / non-standard port) falls back to the plain transport.
-			$response = wp_http_validate_url( $url )
-				? wp_safe_remote_get( $url, $args )
-				: wp_remote_get( $url, $args );
-
-			if ( is_wp_error( $response ) ) {
-				return $response;
-			}
-
-			$code = (int) wp_remote_retrieve_response_code( $response );
-			if ( $code < 200 || $code >= 300 ) {
-				return new WP_Error(
-					'uichemy_download_failed',
-					/* translators: %d is the HTTP status code returned by the download request. */
-					sprintf( __( 'Plugin download failed (HTTP %d).', 'uichemy' ), $code ),
-					array( 'status' => 500 )
-				);
-			}
-
-			$body = wp_remote_retrieve_body( $response );
-			if ( '' === $body ) {
-				return new WP_Error( 'uichemy_download_empty', __( 'Plugin download returned an empty package.', 'uichemy' ), array( 'status' => 500 ) );
-			}
-
-			$tmp = wp_tempnam( 'uichemy-' );
-			if ( ! $tmp ) {
-				return new WP_Error( 'uichemy_tmp_failed', __( 'Could not create a temporary file for the download.', 'uichemy' ), array( 'status' => 500 ) );
-			}
-
-			if ( false === file_put_contents( $tmp, $body ) ) { // phpcs:ignore WordPress.WP.AlternativeFunctions.file_system_operations_file_put_contents
-				wp_delete_file( $tmp );
-				return new WP_Error( 'uichemy_write_failed', __( 'Could not write the downloaded package.', 'uichemy' ), array( 'status' => 500 ) );
-			}
-
-			return $tmp;
-		}
 
 		/**
 		 * Standard UiChemy success payload with a fresh detection snapshot.

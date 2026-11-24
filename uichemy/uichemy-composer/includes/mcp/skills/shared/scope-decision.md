@@ -52,6 +52,12 @@ Not reasons to reach for a file: "the code is long" (a long section-specific blo
 its section) and "I want it out of the way" (the user loses the ability to edit it). Global design
 tokens are never a code file — they belong in `uichemy-composer/design-system`.
 
+**Never the same rules in two sections.** Section `css` is printed once per section, so a rule that
+several sections need (a framework's base and resets, utility classes, shared keyframes) would be
+printed once per section. Put it ONCE — in `page_before_head`, in `site_before_head` when the header
+or footer need it too, or in a code file — and keep each section's `css` to its own rules. When a
+section upload returns `css_duplication`, that is this mistake: move the repeated rules out.
+
 **The two decisions compose.** A code file changes where the bytes live, not which scope the tag
 belongs to: you still run the rubric above on the resulting `<link>`/`<script src>` and put it in
 `site_before_head` or `page_before_head` accordingly.

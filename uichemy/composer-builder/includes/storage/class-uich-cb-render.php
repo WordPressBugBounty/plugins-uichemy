@@ -44,6 +44,15 @@ if ( ! class_exists( 'Uich_CB_Render' ) ) {
 		private static $resolve_dynamic = false;
 
 		/**
+		 * True while render_section() renders markup the current user sent rather
+		 * than stored markup (the editor's live preview): the user's own right to
+		 * author code then bounds the document's trust. See with_caller_trust().
+		 *
+		 * @var bool
+		 */
+		private static $caller_supplied = false;
+
+		/**
 		 * Page scripts deferred to the footer, after the libraries they use.
 		 *
 		 * Keyed by a hash of the code rather than the section id: every document
@@ -785,7 +794,20 @@ if ( ! class_exists( 'Uich_CB_Render' ) ) {
 					// Same trust rule as the block, Bricks and the Elementor widget:
 					// the full engine only when the document's author holds
 					// unfiltered_html, otherwise the untrusted render.
-					$settings['raw_html'] = Uich_Dynamic::render_authored( (string) $settings['raw_html'], array( 'widget_id' => $uid ), (int) $post_id );
+					// Markup sent by the current user is also bounded by that user:
+					// on a trusted document, a user without unfiltered_html gets the
+					// restricted engine for the dynamic values, while the section's
+					// own markup prints as the canvas and front end print it.
+					if ( self::$caller_supplied && ! current_user_can( 'unfiltered_html' ) && Uich_Dynamic::author_trusted( (int) $post_id ) ) {
+						$raw                  = (string) $settings['raw_html'];
+						$settings['raw_html'] = (string) Uich_Dynamic::untrusted(
+							function () use ( $raw, $uid ) {
+								return Uich_Dynamic::render_html( $raw, array( 'widget_id' => $uid ) );
+							}
+						);
+					} else {
+						$settings['raw_html'] = Uich_Dynamic::render_authored( (string) $settings['raw_html'], array( 'widget_id' => $uid ), (int) $post_id );
+					}
 				} finally {
 					Uich_Twig::$preview_missing_values = $previous_preview;
 				}
@@ -1066,6 +1088,24 @@ if ( ! class_exists( 'Uich_CB_Render' ) ) {
 				if ( $previous_post instanceof WP_Post ) {
 					setup_postdata( $previous_post );
 				}
+			}
+		}
+
+		/**
+		 * Run a render of markup the current user sent (not the stored document),
+		 * so its dynamic tokens get the full engine only when both the document's
+		 * author and the current user may author code.
+		 *
+		 * @param callable $callback Renders and returns the result.
+		 * @return mixed What the callback returns.
+		 */
+		public static function with_caller_trust( callable $callback ) {
+			$previous              = self::$caller_supplied;
+			self::$caller_supplied = true;
+			try {
+				return $callback();
+			} finally {
+				self::$caller_supplied = $previous;
 			}
 		}
 

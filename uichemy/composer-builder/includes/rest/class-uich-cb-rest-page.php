@@ -364,30 +364,35 @@ if ( ! class_exists( 'Uich_CB_Rest_Page' ) ) {
 
 			// With the edited post in scope, so dynamic tokens preview with their
 			// real values - as they do on the canvas once it reloads. Trust is
-			// judged by the edited post (a template), not the post it previews on.
+			// judged by the edited post (a template), not the post it previews on,
+			// and - since the sections come from the request - by the current user.
 			$html = Uich_CB_Render::with_post_context(
 				$post_id,
 				static function () use ( $sections, $post_id ) {
-					$out = array();
+					return Uich_CB_Render::with_caller_trust(
+						static function () use ( $sections, $post_id ) {
+							$out = array();
 
-					foreach ( $sections as $section ) {
-						if ( ! is_array( $section ) || empty( $section['settings'] ) || ! is_array( $section['settings'] ) ) {
-							continue;
+							foreach ( $sections as $section ) {
+								if ( ! is_array( $section ) || empty( $section['settings'] ) || ! is_array( $section['settings'] ) ) {
+									continue;
+								}
+
+								$uid = isset( $section['id'] ) ? sanitize_key( $section['id'] ) : '';
+
+								if ( '' === $uid ) {
+									continue;
+								}
+
+								// Editor mode, and the same wrapper the front end uses — a canvas
+								// that wraps sections differently from the visitor's page is a
+								// canvas that lies about spacing.
+								$out[ $uid ] = Uich_CB_Render::render_section( $uid, $section['settings'], true, true, $post_id );
+							}
+
+							return $out;
 						}
-
-						$uid = isset( $section['id'] ) ? sanitize_key( $section['id'] ) : '';
-
-						if ( '' === $uid ) {
-							continue;
-						}
-
-						// Editor mode, and the same wrapper the front end uses — a canvas
-						// that wraps sections differently from the visitor's page is a
-						// canvas that lies about spacing.
-						$out[ $uid ] = Uich_CB_Render::render_section( $uid, $section['settings'], true, true, $post_id );
-					}
-
-					return $out;
+					);
 				}
 			);
 

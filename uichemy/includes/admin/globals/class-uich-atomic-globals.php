@@ -227,7 +227,9 @@ if ( ! class_exists( 'Uich_Atomic_Globals' ) ) {
 
 				// Preserve label and type
 				$itemData['label']    = $itemData['label'] ?? $global_classes['items'][ $id ]['label'] ?? '';
-				$itemData['type']     = $itemData['type'] ?? $global_classes['items'][ $id ]['type'] ?? 'class';
+				// The class type is part of its identity: keep the stored one, never the incoming one.
+				$itemData['type']     = $global_classes['items'][ $id ]['type'] ?? 'class';
+				$itemData['id']       = $id;
 				$itemData['variants'] = $variants;
 
 				// Clean temporary keys

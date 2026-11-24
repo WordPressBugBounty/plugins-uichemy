@@ -59,7 +59,17 @@ if ( ! class_exists( 'Uich_CB_Revisions' ) ) {
 			// priority 10). This runs after, so the AST is already back when the
 			// derived output is rebuilt from it.
 			add_action( 'wp_restore_post_revision', array( __CLASS__, 'on_restore' ), 20, 2 );
+			// Before core puts the revision's meta back: the document it replaces is
+			// the code policy's baseline, exactly as for a save.
+			add_action( 'wp_restore_post_revision', array( __CLASS__, 'before_restore' ), 5, 1 );
 		}
+
+		/**
+		 * Live documents of posts being restored, keyed by post ID (before_restore()).
+		 *
+		 * @var array<int,array>
+		 */
+		private static $pre_restore = array();
 
 		/**
 		 * Add the builder's meta keys to the revisioned set.
@@ -475,7 +485,19 @@ if ( ! class_exists( 'Uich_CB_Revisions' ) ) {
 
 			$document = self::get_revision_cb_content( $autosave->ID );
 
-			return empty( $document ) ? null : $document;
+			if ( empty( $document ) ) {
+				return null;
+			}
+
+			// Autosaves are written through the code policy; one stored before it
+			// existed is held to it here, against the live document.
+			if ( ! Uich_CB_Code_Policy::can_author_code() ) {
+				$document            = Uich_CB_Content::normalize( $document );
+				$stored              = Uich_CB_Content::get_cb_content( $post_id );
+				$document['content'] = Uich_CB_Code_Policy::apply( $document['content'], $stored['content'] );
+			}
+
+			return $document;
 		}
 
 		/* ─────────────────────────────────────────────────────────────────
@@ -545,10 +567,14 @@ if ( ! class_exists( 'Uich_CB_Revisions' ) ) {
 		 */
 		public static function on_restore( $post_id, $revision_id ) {
 			$post_id = (int) $post_id;
+			$before  = isset( self::$pre_restore[ $post_id ] ) ? self::$pre_restore[ $post_id ] : null;
+			unset( self::$pre_restore[ $post_id ] );
 
 			if ( ! in_array( get_post_type( $post_id ), Uich_CB_Content::storable_post_types(), true ) ) {
 				return;
 			}
+
+			self::apply_policy_to_restored( $post_id, $before );
 
 			Uich_CB_WPContent::regenerate( $post_id );
 
@@ -562,6 +588,51 @@ if ( ! class_exists( 'Uich_CB_Revisions' ) ) {
 			 * @param int $revision_id Revision it was restored from.
 			 */
 			do_action( 'uich_cb/revision_restored', $post_id, (int) $revision_id );
+		}
+
+		/**
+		 * Before core restores a revision: remember the live document it replaces.
+		 *
+		 * @param int $post_id Post being restored onto.
+		 * @return void
+		 */
+		public static function before_restore( $post_id ) {
+			$post_id = (int) $post_id;
+
+			if ( ! in_array( get_post_type( $post_id ), Uich_CB_Content::storable_post_types(), true ) ) {
+				return;
+			}
+
+			self::$pre_restore[ $post_id ] = Uich_CB_Content::get_cb_content( $post_id );
+		}
+
+		/**
+		 * Hold restored content to the code policy of the user restoring it.
+		 *
+		 * A restore stores a document as surely as a save does, so it gets the same
+		 * rule (Uich_CB_Code_Policy::apply()) with the document it replaced as the
+		 * baseline: what is unchanged stays, what the revision brings back is kept
+		 * only as far as this user could have saved it. A user who may author code
+		 * restores exactly as before. Covers revisions stored before the policy.
+		 *
+		 * @param int        $post_id Post restored onto.
+		 * @param array|null $before  Document before the restore (before_restore()).
+		 * @return void
+		 */
+		private static function apply_policy_to_restored( $post_id, $before ) {
+			if ( ! is_array( $before ) || Uich_CB_Code_Policy::can_author_code() ) {
+				return;
+			}
+
+			$document = Uich_CB_Content::get_cb_content( $post_id );
+			$content  = Uich_CB_Code_Policy::apply( $document['content'], $before['content'] );
+
+			if ( $content === $document['content'] ) {
+				return;
+			}
+
+			$document['content'] = $content;
+			Uich_CB_Content::write_to( $post_id, $document );
 		}
 	}
 }

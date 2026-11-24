@@ -82,6 +82,10 @@ if ( ! class_exists( 'UiChemy_Template_Shortcode' ) ) {
 				return '';
 			}
 
+			if ( ! self::embed_allowed( $id ) ) {
+				return '';
+			}
+
 			if ( isset( self::$rendering[ $id ] ) ) {
 				return '';
 			}
@@ -98,6 +102,34 @@ if ( ! class_exists( 'UiChemy_Template_Shortcode' ) ) {
 			} finally {
 				unset( self::$rendering[ $id ] );
 			}
+		}
+
+		/**
+		 * May this template be embedded here?
+		 *
+		 * An active template is already on the site, so any shortcode may show it.
+		 * An inactive one is shown where someone who can build templates put it:
+		 * in content whose author can edit the template or may publish unfiltered
+		 * HTML, or in places outside post
+		 * content (widgets, theme and builder areas). Inside the content of an
+		 * author who cannot edit templates it shows only to people who can.
+		 *
+		 * @param int $id Template post ID.
+		 * @return bool
+		 */
+		private static function embed_allowed( $id ) {
+			if ( 'active' === get_post_meta( $id, UiChemy_Template_CPT::META_STATUS, true ) ) {
+				return true;
+			}
+			if ( current_user_can( 'edit_post', $id ) ) {
+				return true;
+			}
+			$host = doing_filter( 'the_content' ) ? get_post() : null;
+			if ( ! $host instanceof WP_Post ) {
+				return true;
+			}
+			$author = (int) $host->post_author;
+			return $author > 0 && ( user_can( $author, 'edit_post', $id ) || user_can( $author, 'unfiltered_html' ) );
 		}
 	}
 }
