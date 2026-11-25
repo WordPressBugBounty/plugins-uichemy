@@ -628,6 +628,7 @@ if ( ! class_exists( 'UiChemy_Composer_MCP_Server' ) ) {
 				'title'               => isset( $arguments['title'] ) ? sanitize_text_field( (string) $arguments['title'] ) : 'Single Post UiChemy',
 				'label'               => isset( $arguments['label'] ) ? sanitize_text_field( (string) $arguments['label'] ) : 'Single Post',
 				'source'              => isset( $arguments['source'] ) ? sanitize_text_field( (string) $arguments['source'] ) : 'mcp',
+				'system'              => isset( $arguments['system'] ) ? sanitize_key( (string) $arguments['system'] ) : 'auto',
 				'html'                => isset( $arguments['html'] ) ? (string) $arguments['html'] : '',
 				'css'                 => isset( $arguments['css'] ) ? (string) $arguments['css'] : '',
 				'js'                  => isset( $arguments['js'] ) ? (string) $arguments['js'] : '',

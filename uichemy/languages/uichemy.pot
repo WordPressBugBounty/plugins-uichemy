@@ -2,14 +2,14 @@
 # This file is distributed under the GPLv3.
 msgid ""
 msgstr ""
-"Project-Id-Version: UiChemy - Convert Figma, Prompts and AI Builds to Elementor, Gutenberg and Bricks 5.8.3\n"
+"Project-Id-Version: UiChemy - Convert Figma, Prompts and AI Builds to Elementor, Gutenberg and Bricks 5.8.4\n"
 "Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/uichemy\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"POT-Creation-Date: 2026-11-24T13:06:15+00:00\n"
+"POT-Creation-Date: 2026-11-25T12:28:11+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
 "X-Domain: uichemy\n"
@@ -339,7 +339,7 @@ msgid "Header with menu"
 msgstr ""
 
 #: composer-builder/includes/library/class-uich-cb-library.php:62
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:797
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:815
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:336
 #: composer-builder/build/915.91bc60c8.js:1
 #: composer-builder/build/editor.js:8
@@ -482,7 +482,7 @@ msgid "Footer with links"
 msgstr ""
 
 #: composer-builder/includes/library/class-uich-cb-library.php:3133
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:799
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:817
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:337
 #: composer-builder/build/250.81b7974b.js:1
 #: composer-builder/build/915.91bc60c8.js:1
@@ -766,7 +766,7 @@ msgid "You are not allowed to edit this document."
 msgstr ""
 
 #: composer-builder/includes/rest/class-uich-cb-rest-page.php:657
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:815
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:833
 #: composer-builder/build/editor.js:40
 msgid "Template"
 msgstr ""
@@ -985,7 +985,7 @@ msgstr ""
 #: includes/class-uich-brand.php:59
 #: includes/notices/class-uich-bf-banner.php:268
 #: uichemy-composer/includes/admin/class-uichemy-admin-menu.php:119
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:123
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:124
 #: uichemy-composer/includes/blocks/class-uichemy-gutenberg-composer.php:100
 #: uichemy-composer/includes/mcp/v2/class-uichemy-abilities.php:1584
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:146
@@ -2483,8 +2483,8 @@ msgstr ""
 #: includes/fields/content-types/class-uich-fields-register.php:790
 #: includes/fields/content-types/class-uich-fields-register.php:923
 #: uichemy-composer/includes/seo/class-uich-seo-schema.php:1604
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:856
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:905
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:870
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:927
 #: composer-builder/build/editor.js:83
 #: new-dashboard/build/857.262f596a.js:17
 #: new-dashboard/build/857.262f596a.js:22
@@ -3979,137 +3979,143 @@ msgstr ""
 msgid "No post or page content, visitor data, user names or email addresses are included. The one exception is that same feedback form: if an administrator ticks \"I agree to be contacted via email\" there, the site administration email address is sent with the feedback so POSIMYTH can reply. That box is off by default."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:295
+#: includes/smtp/class-uich-smtp.php:298
 #: new-dashboard/build/index.js:54
 msgid "another plugin"
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:320
+#: includes/smtp/class-uich-smtp.php:323
 msgid "The From email is not a valid email address."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:336
+#: includes/smtp/class-uich-smtp.php:339
 msgid "The SMTP host should be a server name like smtp.example.com."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:343
+#: includes/smtp/class-uich-smtp.php:346
 msgid "The SMTP port must be a number between 1 and 65535."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:606
-#: includes/smtp/class-uich-smtp.php:795
+#: includes/smtp/class-uich-smtp.php:609
+#: includes/smtp/class-uich-smtp.php:866
 msgid "You are not allowed to change SMTP settings."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:662
+#: includes/smtp/class-uich-smtp.php:665
 msgid "Enter the SMTP host first."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:665
+#: includes/smtp/class-uich-smtp.php:668
 msgid "The password in wp-config.php (UICHEMY_SMTP_PASSWORD) is used only with the server it was set up for. To use it with this server, also define UICHEMY_SMTP_HOST in wp-config.php."
 msgstr ""
 
 #. translators: %s: SMTP host name
-#: includes/smtp/class-uich-smtp.php:687
+#: includes/smtp/class-uich-smtp.php:675
+#, php-format
+msgid "%s is an address inside this server’s own network, so the connection test is not run for it. Saving and sending email still work. To test it anyway, allow it with the uichemy_smtp_test_allow_internal filter."
+msgstr ""
+
+#. translators: %s: SMTP host name
+#: includes/smtp/class-uich-smtp.php:702
 #, php-format
 msgid "Connected to %s and signed in."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:696
+#: includes/smtp/class-uich-smtp.php:767
 msgid "Enter a valid email address to send the test to."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:700
+#: includes/smtp/class-uich-smtp.php:771
 msgid "Turn on SMTP and save first."
 msgstr ""
 
 #. translators: %s: site name
-#: includes/smtp/class-uich-smtp.php:712
+#: includes/smtp/class-uich-smtp.php:783
 #, php-format
 msgid "SMTP test from %s"
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:715
+#: includes/smtp/class-uich-smtp.php:786
 msgid "This test email was sent through your SMTP settings in UiChemy."
 msgstr ""
 
 #. translators: %s: mailer name
-#: includes/smtp/class-uich-smtp.php:717
+#: includes/smtp/class-uich-smtp.php:788
 #, php-format
 msgid "Mailer: %s"
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:724
+#: includes/smtp/class-uich-smtp.php:795
 msgid "The mail server did not accept the message."
 msgstr ""
 
 #. translators: %s: email address
-#: includes/smtp/class-uich-smtp.php:727
+#: includes/smtp/class-uich-smtp.php:798
 #, php-format
 msgid "Test email sent to %s."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:740
+#: includes/smtp/class-uich-smtp.php:811
 msgid "The server refused the username or password."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:742
+#: includes/smtp/class-uich-smtp.php:813
 msgid "The server’s security certificate could not be verified."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:744
+#: includes/smtp/class-uich-smtp.php:815
 msgid "Could not reach the server. Check the host and port, and that your host allows outgoing SMTP."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:768
+#: includes/smtp/class-uich-smtp.php:839
 msgid "Enter the Client ID and Client secret first."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:800
-#: includes/smtp/class-uich-smtp.php:842
+#: includes/smtp/class-uich-smtp.php:871
+#: includes/smtp/class-uich-smtp.php:913
 msgid "This sign-in link has expired. Start again from the SMTP settings."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:803
+#: includes/smtp/class-uich-smtp.php:874
 msgid "Google sign-in was cancelled."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:807
+#: includes/smtp/class-uich-smtp.php:878
 msgid "Google did not return an authorization code."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:826
+#: includes/smtp/class-uich-smtp.php:897
 msgid "Google did not return a token."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:837
+#: includes/smtp/class-uich-smtp.php:908
 msgid "Could not read the Google account’s email address."
 msgstr ""
 
 #. translators: %s: Google account email
-#: includes/smtp/class-uich-smtp.php:853
+#: includes/smtp/class-uich-smtp.php:924
 #, php-format
 msgid "Connected as %s."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:1003
+#: includes/smtp/class-uich-smtp.php:1074
 #: new-dashboard/build/index.js:45
 msgid "Gmail"
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:1038
+#: includes/smtp/class-uich-smtp.php:1109
 msgid "No Nexter SMTP settings were found."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:1111
+#: includes/smtp/class-uich-smtp.php:1182
 msgid "Imported. Some secrets could not be read from Nexter: enter the password again (or reconnect Gmail)."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:1113
+#: includes/smtp/class-uich-smtp.php:1184
 msgid "Imported from Nexter Extension. Check the details, then turn on SMTP."
 msgstr ""
 
-#: includes/smtp/class-uich-smtp.php:1114
+#: includes/smtp/class-uich-smtp.php:1185
 msgid "Imported from Nexter Extension. Send a test email to check it."
 msgstr ""
 
@@ -5344,25 +5350,25 @@ msgstr ""
 msgid "Z-Index"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:3384
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:3385
 msgid "SVG files need the unfiltered_html capability."
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:6098
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:6099
 msgid "Nothing to show yet."
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10107
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10359
 msgid "This is a sample post created by UiChemy to preview the single post template."
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10629
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10887
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:997
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:1095
 msgid "Edit Header"
 msgstr ""
 
-#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10630
+#: uichemy-composer/includes/admin/class-uichemy-composer-manager.php:10888
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:997
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:1095
 msgid "Edit Footer"
@@ -6825,7 +6831,7 @@ msgid "A file can have at most %d rows. Split it into smaller files."
 msgstr ""
 
 #: uichemy-composer/includes/seo/class-uich-seo-resolver.php:70
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:848
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:862
 #: new-dashboard/build/index.js:38
 msgid "Search results"
 msgstr ""
@@ -7311,7 +7317,7 @@ msgstr ""
 
 #. translators: %s: author name.
 #: uichemy-composer/includes/seo/class-uich-seo-schema.php:1611
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:860
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:882
 #: composer-builder/build/editor.js:28
 #: new-dashboard/build/index.js:25
 #: new-dashboard/build/index.js:38
@@ -7635,7 +7641,7 @@ msgid "Single"
 msgstr ""
 
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:216
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:803
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:821
 #: composer-builder/build/915.91bc60c8.js:1
 #: composer-builder/build/editor.js:40
 #: new-dashboard/build/index.js:26
@@ -7657,7 +7663,7 @@ msgid "Order Received"
 msgstr ""
 
 #: uichemy-composer/includes/theme-builder/class-uichemy-locations.php:224
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:811
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:829
 #: composer-builder/build/915.91bc60c8.js:1
 #: composer-builder/build/editor.js:40
 #: new-dashboard/build/index.js:26
@@ -7713,11 +7719,11 @@ msgstr ""
 msgid "The template could not be saved as a Composer Builder document."
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:801
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:819
 msgid "Single Post or Page"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:805
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:823
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:398
 #: composer-builder/build/915.91bc60c8.js:1
 #: new-dashboard/build/index.js:26
@@ -7725,19 +7731,19 @@ msgstr ""
 msgid "Single Product"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:807
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:825
 #: composer-builder/build/915.91bc60c8.js:1
 #: new-dashboard/build/index.js:26
 #: new-dashboard/build/index.js:38
 msgid "Products Archive"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:809
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:827
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:400
 msgid "Order Received / Thank You"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:813
+#: uichemy-composer/includes/theme-builder/class-uichemy-template-store.php:831
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:402
 #: composer-builder/build/915.91bc60c8.js:1
 #: composer-builder/build/editor.js:28
@@ -7816,7 +7822,7 @@ msgstr ""
 msgid "This template type is not available on your plan."
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:844
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:858
 #: composer-builder/build/editor.js:28
 #: new-dashboard/build/index.js:26
 #: new-dashboard/build/index.js:38
@@ -7824,57 +7830,69 @@ msgid "Entire site"
 msgstr ""
 
 #. translators: %s: post type plural name.
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:852
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:866
 #, php-format
 msgid "Search results: %s"
 msgstr ""
 
-#. translators: %s: taxonomy singular name.
+#. translators: %s: comma-separated post type plural names.
 #: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:878
+#, php-format
+msgid "Post type archive: %s"
+msgstr ""
+
+#. translators: %s: taxonomy singular name.
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:900
 #, php-format
 msgid "Any %s"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:900
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:922
 #: composer-builder/build/editor.js:11
 #: new-dashboard/build/seo-editor.js:3
 msgid "Front page"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:907
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:929
 msgid "All posts & pages"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:913
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:935
 msgid "Blog home"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:915
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:937
 msgid "Author archives"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:917
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:939
 msgid "Date archives"
 msgstr ""
 
 #. translators: %s: taxonomy singular name.
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:922
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:944
 #, php-format
 msgid "%s archives"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:924
+#. translators: %s: post type plural name.
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:949
+#, php-format
+msgid "%s archive"
+msgstr ""
+
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:951
 #: new-dashboard/build/index.js:38
 msgid "All archives"
 msgstr ""
 
 #. translators: %s: post type plural name.
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:931
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:958
 #, php-format
 msgid "%s search results"
 msgstr ""
 
-#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:933
+#: uichemy-composer/includes/theme-builder/class-uichemy-theme-builder-admin.php:960
 msgid "All search results"
 msgstr ""
 
@@ -12721,6 +12739,12 @@ msgstr ""
 #: composer-builder/build/editor.js:28
 #: new-dashboard/build/index.js:25
 msgid "User Roles"
+msgstr ""
+
+#: composer-builder/build/editor.js:28
+#: new-dashboard/build/index.js:25
+#: new-dashboard/build/index.js:38
+msgid "Post type archive"
 msgstr ""
 
 #: composer-builder/build/editor.js:28
@@ -26526,6 +26550,18 @@ msgid "While both are on, emails use the settings here. Turn SMTP off in Nexter 
 msgstr ""
 
 #: new-dashboard/build/index.js:45
+msgid "Keep the encryption key out of the database"
+msgstr ""
+
+#: new-dashboard/build/index.js:45
+msgid "Your saved password is encrypted, but the key is stored in the same database, so a copy of the database is enough to read it. Add this line to wp-config.php, then enter the password again, or connect Gmail again: what was saved with the old key can no longer be read."
+msgstr ""
+
+#: new-dashboard/build/index.js:45
+msgid "Copy line"
+msgstr ""
+
+#: new-dashboard/build/index.js:45
 msgid "Sender"
 msgstr ""
 
@@ -29095,7 +29131,7 @@ msgid "%ds"
 msgstr ""
 
 #: new-dashboard/build/index.js:59
-msgid "Build log"
+msgid "Build steps"
 msgstr ""
 
 #: new-dashboard/build/index.js:59
@@ -30750,6 +30786,10 @@ msgstr ""
 
 #: new-dashboard/build/index.js:59
 msgid "SEO screens"
+msgstr ""
+
+#: new-dashboard/build/index.js:59
+msgid "Stop using Astro"
 msgstr ""
 
 #: new-dashboard/build/index.js:59

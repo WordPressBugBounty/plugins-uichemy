@@ -727,6 +727,24 @@ if ( ! class_exists( 'UiChemy_Template_Store' ) ) {
 						'type'  => $type,
 						'value' => $pt,
 					) : null;
+				case 'post_type_archive':
+					// One slug or a list of them. One stays a string, like the
+					// single-id `singular` rule, so its stored shape is stable.
+					$types = array();
+					foreach ( (array) ( isset( $rule['value'] ) ? $rule['value'] : array() ) as $one ) {
+						$one = sanitize_key( (string) $one );
+						if ( '' !== $one && ! in_array( $one, $types, true ) ) {
+							$types[] = $one;
+						}
+					}
+					if ( empty( $types ) ) {
+						return null;
+					}
+					return array(
+						'match' => $match,
+						'type'  => $type,
+						'value' => ( 1 === count( $types ) ) ? $types[0] : $types,
+					);
 				case 'taxonomy':
 					$tax = isset( $rule['taxonomy'] ) ? sanitize_key( $rule['taxonomy'] ) : '';
 					if ( '' === $tax ) {

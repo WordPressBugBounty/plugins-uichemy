@@ -360,7 +360,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 							'type'       => 'object',
 							'properties' => array(
 								'type'             => array( 'type' => 'string', 'enum' => array( 'header', 'footer', 'single' ), 'description' => 'Which template to create. "single" needs Elementor Pro or Nexter and its body MUST use <uichemy-post-content /> with no header, footer or nav.' ),
-								'system'           => array( 'type' => 'string', 'enum' => array( 'auto', 'elementor_pro', 'nexter' ), 'description' => 'Which theme builder receives it. "auto" (default) prefers Pro when both are installed - pass one explicitly when the user chose.' ),
+								'system'           => array( 'type' => 'string', 'enum' => array( 'auto', 'elementor_pro', 'nexter' ), 'description' => 'single only: which theme builder receives it. "auto" (default) prefers Elementor Pro when both are installed. Pass one explicitly when the user chose - the other builder is then left untouched. header and footer are always created in the UiChemy Theme Builder.' ),
 								'title'            => array( 'type' => 'string', 'description' => 'Template title.' ),
 								'label'            => $label,
 								'html'             => $html,
@@ -802,7 +802,7 @@ if ( ! class_exists( 'UiChemy_Abilities' ) ) {
 									'exclude'   => array( 'type' => 'array', 'items' => array( 'type' => 'integer' ), 'description' => 'Post ids the template skips.' ),
 									'post_type' => array( 'type' => 'string', 'description' => 'single: "post" (default), "page", any public post type, "all" or "front". search: the post type whose results it shows, or "all".' ),
 									'archive'   => array( 'type' => 'string', 'description' => 'archive: "blog" (default), "author", "date", "tax:{taxonomy}", "pt:{post_type}" or "all".' ),
-									'rules'     => array( 'type' => 'array', 'items' => array( 'type' => 'object' ), 'description' => 'Advanced: [{ match: "include"|"exclude", type: "entire"|"all_singulars"|"front_page"|"blog"|"post_type"|"taxonomy"|"singular"|"author", value?, taxonomy?, term? }].' ),
+									'rules'     => array( 'type' => 'array', 'items' => array( 'type' => 'object' ), 'description' => 'Advanced: [{ match: "include"|"exclude", type: "entire"|"all_singulars"|"all_archives"|"front_page"|"blog"|"post_type"|"post_type_archive"|"taxonomy"|"singular"|"author"|"search", value?, taxonomy?, term? }]. post_type_archive: value is a post type slug (or a list) whose archive page (/blog/) it matches - not its taxonomy archives or singles; use it to narrow or exclude from "all_archives".' ),
 								),
 							),
 							'site_before_head' => array( 'type' => 'string', 'description' => 'Optional code for <head> on EVERY page, appended to the site code (deduped) - e.g. the Google Fonts <link> of a build, on its first call only.' ),

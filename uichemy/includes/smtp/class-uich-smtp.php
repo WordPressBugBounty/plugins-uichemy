@@ -256,6 +256,9 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 				'site_name'  => wp_specialchars_decode( get_bloginfo( 'name' ), ENT_QUOTES ),
 				'nexter'     => self::nexter_state(),
 				'override'   => self::mail_override(),
+				// Saved secrets are encrypted with a key kept in this database unless
+				// wp-config.php defines UICHEMY_SECRET_KEY; the screen suggests it.
+				'key_in_config' => defined( 'UICHEMY_SECRET_KEY' ) && '' !== (string) UICHEMY_SECRET_KEY,
 			);
 		}
 
@@ -664,6 +667,18 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 			if ( ! empty( $s['custom']['auth'] ) && '' !== self::constant_password() && ! self::constant_allowed( $s['custom'] ) && '' === self::password( $s['custom'] ) ) {
 				wp_send_json_error( array( 'message' => __( 'The password in wp-config.php (UICHEMY_SMTP_PASSWORD) is used only with the server it was set up for. To use it with this server, also define UICHEMY_SMTP_HOST in wp-config.php.', 'uichemy' ) ), 400 );
 			}
+			if ( self::is_internal_host( $s['custom']['host'] ) && ! self::internal_test_allowed( $s['custom']['host'] ) ) {
+				wp_send_json_error(
+					array(
+						'message' => sprintf(
+							/* translators: %s: SMTP host name */
+							__( '%s is an address inside this server’s own network, so the connection test is not run for it. Saving and sending email still work. To test it anyway, allow it with the uichemy_smtp_test_allow_internal filter.', 'uichemy' ),
+							$s['custom']['host']
+						),
+					),
+					400
+				);
+			}
 			if ( ! class_exists( '\PHPMailer\PHPMailer\PHPMailer' ) ) {
 				require_once ABSPATH . WPINC . '/PHPMailer/PHPMailer.php';
 				require_once ABSPATH . WPINC . '/PHPMailer/SMTP.php';
@@ -687,6 +702,62 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 					'message' => sprintf( __( 'Connected to %s and signed in.', 'uichemy' ), $s['custom']['host'] ),
 				)
 			);
+		}
+
+		/**
+		 * Does $host name or resolve to a private, loopback or reserved address?
+		 *
+		 * "Test connection" opens a connection to whatever host and port it is given, so
+		 * without this it could be used to find which machines and ports answer inside
+		 * the server's own network. A host that does not resolve is left to the test
+		 * itself, which reports it.
+		 *
+		 * @param string $host Host name or IP.
+		 * @return bool
+		 */
+		public static function is_internal_host( $host ) {
+			$host = strtolower( trim( (string) $host, " \t\n\r\0\x0B[]" ) );
+			if ( '' === $host ) {
+				return false;
+			}
+			if ( 'localhost' === $host || '.localhost' === substr( $host, -10 ) ) {
+				return true;
+			}
+			if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+				$ips = array( $host );
+			} else {
+				$resolved = gethostbynamel( $host );
+				$ips      = is_array( $resolved ) ? $resolved : array();
+			}
+			foreach ( $ips as $ip ) {
+				if ( false === filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
+					return true;
+				}
+			}
+			return false;
+		}
+
+		/**
+		 * May "Test connection" reach an internal $host anyway?
+		 *
+		 * Yes on a local or development site (a mail catcher such as Mailpit on
+		 * localhost is normal there) and for the host wp-config.php names in
+		 * UICHEMY_SMTP_HOST. Anything else through the filter.
+		 *
+		 * @param string $host Host name or IP.
+		 * @return bool
+		 */
+		private static function internal_test_allowed( $host ) {
+			$allowed = in_array( wp_get_environment_type(), array( 'local', 'development' ), true )
+				|| ( defined( 'UICHEMY_SMTP_HOST' ) && 0 === strcasecmp( trim( (string) UICHEMY_SMTP_HOST ), trim( (string) $host ) ) );
+			/**
+			 * Whether the SMTP connection test may connect to an address inside the
+			 * server's own network (localhost, 10.x, 192.168.x…).
+			 *
+			 * @param bool   $allowed Default: local or development site, or UICHEMY_SMTP_HOST.
+			 * @param string $host    The host being tested.
+			 */
+			return (bool) apply_filters( 'uichemy_smtp_test_allow_internal', $allowed, (string) $host );
 		}
 
 		/** Send a test message through the SAVED settings, exactly as wp_mail() will. */

@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.8.3
+Stable tag: 5.8.4
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -271,6 +271,14 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.8.4 = 25 November 2026
+- Added: Post type archive display condition in the Theme Builder.
+- Improved: Publish to Astro with a Stop button and simpler deploy progress.
+- Improved: SMTP settings help keep your saved password safer.
+- Fixed: Theme Builder templates not loading their page code.
+- Fixed: MCP single templates ignoring the chosen theme builder.
+- Fixed: Various minor bugs and design improvements.
 
 = 5.8.3 = 24 November 2026
 - Added: Quick feedback form when deactivating UiChemy.

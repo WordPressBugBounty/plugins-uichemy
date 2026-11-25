@@ -233,10 +233,21 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 			$rules      = ( is_array( $conditions ) && isset( $conditions['rules'] ) && is_array( $conditions['rules'] ) ) ? $conditions['rules'] : array();
 			$types      = array();
 			$any        = false;
+			$archives   = array();
+			$others     = 0;
 			foreach ( $rules as $rule ) {
 				if ( ! is_array( $rule ) || ( isset( $rule['match'] ) && 'exclude' === $rule['match'] ) || ! isset( $rule['type'] ) ) {
 					continue;
 				}
+				if ( 'post_type_archive' === $rule['type'] ) {
+					foreach ( (array) ( isset( $rule['value'] ) ? $rule['value'] : array() ) as $one ) {
+						if ( '' !== (string) $one ) {
+							$archives[ (string) $one ] = true;
+						}
+					}
+					continue;
+				}
+				++$others;
 				if ( 'post_type' === $rule['type'] && ! empty( $rule['value'] ) ) {
 					$types[ (string) $rule['value'] ] = true;
 				} elseif ( 'singular' === $rule['type'] && ! empty( $rule['value'] ) ) {
@@ -249,6 +260,13 @@ if ( ! class_exists( 'UiChemy_Template_Resolver' ) ) {
 					// Every single view: the `any` target, tried for every type.
 					$any = true;
 				}
+			}
+			if ( $archives ) {
+				// "Post type archive: blog" alone targets that archive, the slot
+				// archive_priority() tries first on /blog/. With several types or
+				// other rules beside it, every archive is a candidate and the
+				// conditions decide.
+				return ( 1 === count( $archives ) && 0 === $others ) ? 'pt:' . key( $archives ) : 'any';
 			}
 			if ( $any || count( $types ) > 1 ) {
 				return 'any';

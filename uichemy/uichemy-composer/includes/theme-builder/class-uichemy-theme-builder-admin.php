@@ -662,6 +662,19 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 				);
 			}
 
+			// Post types that have an archive page of their own (/blog/), for the
+			// "Post type archive" rule. Plural names: the page lists them.
+			$archive_post_types = array();
+			foreach ( get_post_types( array( 'public' => true ), 'objects' ) as $pt ) {
+				if ( in_array( $pt->name, $exclude_pt, true ) || empty( $pt->has_archive ) ) {
+					continue;
+				}
+				$archive_post_types[] = array(
+					'slug'  => $pt->name,
+					'label' => $pt->labels->name,
+				);
+			}
+
 			$taxonomies = array();
 			foreach ( get_taxonomies( array( 'public' => true ), 'objects' ) as $tx ) {
 				if ( in_array( $tx->name, $exclude_tax, true ) ) {
@@ -715,6 +728,7 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 			wp_send_json_success(
 				array(
 					'postTypes'  => $post_types,
+					'archivePostTypes' => $archive_post_types,
 					'taxonomies' => $taxonomies,
 					'authors'    => $authors,
 					'roles'      => $roles,
@@ -854,6 +868,14 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 					$o = get_post_type_object( (string) $rule['value'] );
 					/* translators: %s: post type plural name. */
 					return $o ? sprintf( __( 'All %s', 'uichemy' ), $o->labels->name ) : (string) $rule['value'];
+				case 'post_type_archive':
+					$names = array();
+					foreach ( (array) $rule['value'] as $slug ) {
+						$o       = get_post_type_object( (string) $slug );
+						$names[] = $o ? $o->labels->name : (string) $slug;
+					}
+					/* translators: %s: comma-separated post type plural names. */
+					return sprintf( __( 'Post type archive: %s', 'uichemy' ), implode( ', ', $names ) );
 				case 'author':
 					$aid = isset( $rule['value'] ) ? (int) $rule['value'] : 0;
 					if ( ! $aid ) {
@@ -920,6 +942,11 @@ if ( ! class_exists( 'UiChemy_Theme_Builder_Admin' ) ) {
 					$obj = get_taxonomy( substr( $target, 4 ) );
 					/* translators: %s: taxonomy singular name. */
 					return $obj ? sprintf( __( '%s archives', 'uichemy' ), $obj->labels->singular_name ) : $target;
+				}
+				if ( 0 === strpos( $target, 'pt:' ) ) {
+					$obj = get_post_type_object( substr( $target, 3 ) );
+					/* translators: %s: post type plural name. */
+					return $obj ? sprintf( __( '%s archive', 'uichemy' ), $obj->labels->name ) : $target;
 				}
 				return __( 'All archives', 'uichemy' );
 			}

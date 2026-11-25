@@ -203,6 +203,12 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 					}
 					return UiChemy_Template_Resolver::searched_post_type() === $searched;
 
+				case 'post_type_archive':
+					// The archive page of one or more post types (/blog/,
+					// /blog/page/2/), not their taxonomy archives or singles.
+					$types = array_values( array_filter( array_map( 'strval', (array) ( isset( $rule['value'] ) ? $rule['value'] : array() ) ) ) );
+					return ! empty( $types ) && is_post_type_archive( $types );
+
 				case 'taxonomy':
 					return self::taxonomy_matches(
 						(string) $rule['taxonomy'],
@@ -383,6 +389,7 @@ if ( ! class_exists( 'UiChemy_Conditions' ) ) {
 				case 'author':
 					return ( (int) $rule['value'] > 0 ) ? self::SPEC_GROUP : self::SPEC_ARCHIVE;
 				case 'post_type':
+				case 'post_type_archive':
 					return self::SPEC_POSTTYPE;
 				case 'search':
 					// A search pinned to one post type is as narrow as a post-type

@@ -73,6 +73,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// head/footer on every builder's front end.
 			add_action( 'wp_head', array( $this, 'print_head_custom_code' ), 100 );
 			add_action( 'wp_footer', array( $this, 'print_body_end_custom_code' ), 21 );
+			add_filter( 'elementor/frontend/builder_content_data', array( $this, 'note_rendered_document' ), 10, 2 );
 		}
 
 		/**
@@ -8077,18 +8078,249 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			// authors WordPress itself would trust with raw markup.
 			$page_author_trusted = self::page_author_allows_raw_code();
 
-			foreach ( $page_codes as $page_code ) {
+			// Page code of the theme-builder templates on this request (header,
+			// the single/archive/search template, footer), printed around the
+			// page's own code in page order. Each template is gated on its own
+			// author, the same way the page is.
+			$chunks = array();
+			$seen   = array();
+			$docs   = $this->page_code_template_ids( $location );
+			foreach ( $docs['before'] as $doc_id ) {
+				$this->add_page_code_chunks( $chunks, $seen, $this->get_template_widget_custom_code( $doc_id, $location ), self::template_author_allows_raw_code( $doc_id ) );
+			}
+			$this->add_page_code_chunks( $chunks, $seen, $page_codes, $page_author_trusted );
+			foreach ( $docs['after'] as $doc_id ) {
+				// A template first seen while the page rendered missed <head>:
+				// its head code (font links, early scripts) prints here instead.
+				if ( 'body_end' === $location && empty( $this->page_code_head_printed[ $doc_id ] ) ) {
+					$this->add_page_code_chunks( $chunks, $seen, $this->get_template_widget_custom_code( $doc_id, 'head' ), self::template_author_allows_raw_code( $doc_id ) );
+				}
+				$this->add_page_code_chunks( $chunks, $seen, $this->get_template_widget_custom_code( $doc_id, $location ), self::template_author_allows_raw_code( $doc_id ) );
+			}
+			if ( 'head' === $location ) {
+				foreach ( array_merge( $docs['before'], $docs['after'] ) as $doc_id ) {
+					$this->page_code_head_printed[ $doc_id ] = true;
+				}
+			}
+
+			foreach ( $chunks as $chunk ) {
 				/** This filter is documented above. */
-				$page_code = (string) apply_filters( 'uichemy_custom_code_output', $page_code, 'page', $location );
+				$page_code = (string) apply_filters( 'uichemy_custom_code_output', $chunk[0], 'page', $location );
 				if ( '' === trim( $page_code ) ) {
 					continue;
 				}
-				if ( ! $page_author_trusted ) {
+				if ( ! $chunk[1] ) {
 					$page_code = wp_kses_post( $page_code );
 				}
 				// phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Sanitized on save per capability, and re-filtered above for untrusted page authors (see notes).
 				echo "\n<!-- Composer: Page Custom Code (" . esc_html( $location ) . ") -->\n" . $page_code . "\n";
 			}
+		}
+
+		/**
+		 * Theme-builder templates already handled by the head pass, by post ID.
+		 *
+		 * @var array<int, bool>
+		 */
+		private $page_code_head_printed = array();
+
+		/**
+		 * Theme-builder templates Elementor rendered on this request, by post ID.
+		 *
+		 * @var array<int, bool>
+		 */
+		private $page_code_rendered = array();
+
+		/**
+		 * Note each theme-builder template Elementor renders, so its page code
+		 * prints even when no condition API could name it before <head>
+		 * (Nexter hooks, Elementor template shortcodes, loop items).
+		 *
+		 * @param mixed $data    Elementor data.
+		 * @param int   $post_id Document being rendered.
+		 * @return mixed Unchanged.
+		 */
+		public function note_rendered_document( $data, $post_id ) {
+			$post_id = (int) $post_id;
+			if ( $post_id > 0 && ! is_admin() && self::is_theme_template_post( $post_id ) ) {
+				$this->page_code_rendered[ $post_id ] = true;
+			}
+			return $data;
+		}
+
+		/**
+		 * Is this a theme-builder template post (UiChemy, Elementor library, Nexter)?
+		 *
+		 * @param int $post_id Post ID.
+		 * @return bool
+		 */
+		private static function is_theme_template_post( $post_id ) {
+			$types = array( 'elementor_library', 'nxt_builder' );
+			if ( class_exists( 'UiChemy_Template_CPT' ) ) {
+				$types[] = UiChemy_Template_CPT::POST_TYPE;
+			}
+			return in_array( get_post_type( $post_id ), $types, true );
+		}
+
+		/**
+		 * Theme-builder templates whose page code belongs on this request.
+		 *
+		 * `before` prints ahead of the page's own code (header, full-page
+		 * template), `after` follows it (footer, and on the footer pass any
+		 * template that only showed up while the page rendered). The queried
+		 * post itself is never listed: get_page_level_widget_custom_code()
+		 * reads it.
+		 *
+		 * @param string $location head|body_end.
+		 * @return array{before: int[], after: int[]}
+		 */
+		private function page_code_template_ids( $location ) {
+			$before = array();
+			$after  = array();
+
+			// UiChemy's own Theme Builder.
+			if ( class_exists( 'UiChemy_Template_Resolver' ) ) {
+				$before[] = (int) UiChemy_Template_Resolver::resolve( 'header' );
+				if ( class_exists( 'UiChemy_Template_Render' ) ) {
+					$before[] = UiChemy_Template_Render::get_current_render_id();
+				}
+				$after[] = (int) UiChemy_Template_Resolver::resolve( 'footer' );
+			}
+
+			// Elementor Pro theme builder.
+			if ( class_exists( '\ElementorPro\Modules\ThemeBuilder\Module' ) ) {
+				$main = ( is_singular() || is_404() ) ? 'single' : ( ( is_archive() || is_home() || is_search() ) ? 'archive' : '' );
+				foreach ( array( 'header' => 'before', $main => 'before', 'footer' => 'after' ) as $ep_location => $slot ) {
+					if ( '' === $ep_location ) {
+						continue;
+					}
+					try {
+						$manager = \ElementorPro\Modules\ThemeBuilder\Module::instance()->get_conditions_manager();
+						$found   = $manager && method_exists( $manager, 'get_documents_for_location' ) ? $manager->get_documents_for_location( $ep_location ) : array();
+					} catch ( \Throwable $e ) {
+						$found = array();
+					}
+					foreach ( array_keys( (array) $found ) as $id ) {
+						if ( 'after' === $slot ) {
+							$after[] = (int) $id;
+						} else {
+							$before[] = (int) $id;
+						}
+					}
+				}
+			}
+
+			// Nexter Builder: the templates its conditions matched for this request.
+			if ( class_exists( 'Nexter_Builder_Pages_Conditional' ) && method_exists( 'Nexter_Builder_Pages_Conditional', 'get_request_template_registry' ) ) {
+				$registry = Nexter_Builder_Pages_Conditional::get_request_template_registry();
+				foreach ( array( 'pages', 'sections' ) as $group ) {
+					if ( empty( $registry[ $group ] ) || ! is_array( $registry[ $group ] ) ) {
+						continue;
+					}
+					foreach ( array_keys( $registry[ $group ] ) as $id ) {
+						$id = (int) $id;
+						// Nexter skips a 404-only section on every other request.
+						if ( ! is_404() && 'page-404' === get_post_meta( $id, 'nxt-hooks-layout-sections', true ) ) {
+							continue;
+						}
+						$before[] = $id;
+					}
+				}
+			}
+
+			if ( 'body_end' === $location ) {
+				$after = array_merge( $after, array_keys( $this->page_code_rendered ) );
+			}
+
+			$queried = is_singular() ? (int) get_queried_object_id() : 0;
+			$taken   = array();
+			$clean   = function ( $ids ) use ( $queried, &$taken ) {
+				$out = array();
+				foreach ( $ids as $id ) {
+					$id = (int) $id;
+					if ( $id <= 0 || $id === $queried || isset( $taken[ $id ] ) || ! self::is_theme_template_post( $id ) ) {
+						continue;
+					}
+					// A draft or private template (embedded by ID, say) keeps its code to
+					// itself unless this visitor may read it.
+					if ( 'publish' !== get_post_status( $id ) && ! current_user_can( 'read_post', $id ) ) {
+						continue;
+					}
+					$taken[ $id ] = true;
+					$out[]        = $id;
+				}
+				return $out;
+			};
+
+			$before = $clean( $before );
+			$after  = $clean( $after );
+			return array(
+				'before' => $before,
+				'after'  => $after,
+			);
+		}
+
+		/**
+		 * Page code saved in one theme-builder template's Composer sections.
+		 *
+		 * @param int    $post_id  Template post ID.
+		 * @param string $location head|body_end.
+		 * @return array<int, string>
+		 */
+		private function get_template_widget_custom_code( $post_id, $location ) {
+			// Built in the Composer Builder: Uich_CB_Render prints its page code
+			// itself (UiChemy_Template_Render::composer_code_sources()).
+			if ( class_exists( 'Uich_CB_Content' ) && Uich_CB_Content::is_enabled( $post_id ) ) {
+				return array();
+			}
+			if ( class_exists( 'UiChemy_Template_CPT' ) && UiChemy_Template_CPT::POST_TYPE === get_post_type( $post_id )
+				&& 'composer' === UiChemy_Template_CPT::editor_for( $post_id ) ) {
+				return array();
+			}
+
+			$elements = $this->get_elementor_data_from_post( $post_id );
+			if ( empty( $elements ) ) {
+				$elements = $this->get_composer_nodes_from_other_builders( $post_id );
+			}
+			if ( empty( $elements ) ) {
+				return array();
+			}
+
+			return $this->extract_widget_custom_code_from_elements( $elements, $location, 'page' );
+		}
+
+		/**
+		 * Queue page-code strings with their trust flag, once per distinct string.
+		 *
+		 * @param array $chunks  Queue, by reference: array( code, trusted ).
+		 * @param array $seen    Signatures already queued, by reference.
+		 * @param array $codes   Code strings.
+		 * @param bool  $trusted Whether the document's author may print raw code.
+		 * @return void
+		 */
+		private function add_page_code_chunks( array &$chunks, array &$seen, $codes, $trusted ) {
+			foreach ( (array) $codes as $code ) {
+				$sig = md5( (string) $code );
+				if ( isset( $seen[ $sig ] ) ) {
+					continue;
+				}
+				$seen[ $sig ] = true;
+				$chunks[]     = array( (string) $code, (bool) $trusted );
+			}
+		}
+
+		/**
+		 * Whether a template's author (and last editor) may print raw code.
+		 *
+		 * @param int $post_id Template post ID.
+		 * @return bool
+		 */
+		private static function template_author_allows_raw_code( $post_id ) {
+			if ( class_exists( 'Uich_Dynamic' ) ) {
+				return Uich_Dynamic::author_trusted( (int) $post_id );
+			}
+			$author_id = (int) get_post_field( 'post_author', $post_id );
+			return $author_id > 0 && user_can( $author_id, 'unfiltered_html' );
 		}
 
 		/**
@@ -10025,6 +10257,26 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			$has_elementor_pro = class_exists( '\ElementorPro\Plugin' ) || defined( 'ELEMENTOR_PRO_VERSION' );
 			$has_nexter        = post_type_exists( 'nxt_builder' );
 
+			// Which theme builder receives it. "auto" keeps the old order (Elementor
+			// Pro first); a named one is used alone, and the other is left exactly
+			// as it is: no template, no conditions, nothing deactivated there.
+			$system = isset( $payload['system'] ) ? sanitize_key( (string) $payload['system'] ) : 'auto';
+			if ( 'nexter' === $system ) {
+				if ( ! $has_nexter ) {
+					return new \WP_Error( 'uich_system_unavailable', 'system="nexter" was requested, but Nexter Extension\'s theme builder is not active on this site.' );
+				}
+				$has_elementor_pro = false;
+			} elseif ( 'elementor_pro' === $system ) {
+				if ( ! $has_elementor_pro ) {
+					return new \WP_Error( 'uich_system_unavailable', 'system="elementor_pro" was requested, but Elementor Pro is not active on this site.' );
+				}
+				$has_nexter = false;
+			} else {
+				// Both stay in scope for the existing-template check and the
+				// deactivation below, as before.
+				$system = '';
+			}
+
 			// No theme builder available — caller should use create_uichemy_composer_page.
 			if ( ! $has_elementor_pro && ! $has_nexter ) {
 				return array(
@@ -10036,7 +10288,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			// Check for existing active single-post templates BEFORE doing any work.
 			// If found and force_deactivate is false, return them so the caller can ask the user.
-			$existing_active = self::mcp_detect_active_single_post_templates( $post_type );
+			$existing_active = self::mcp_detect_active_single_post_templates( $post_type, $system );
 			if ( ! empty( $existing_active ) && ! $force_deactivate ) {
 				return array(
 					'status'                  => 'existing_templates_found',
@@ -10099,7 +10351,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			);
 
 			// Deactivate existing active single-post templates across both systems.
-			$deactivated = self::mcp_deactivate_existing_single_post_templates( $post_type );
+			$deactivated = self::mcp_deactivate_existing_single_post_templates( $post_type, $system );
 
 			// Create sample post if requested and approved.
 			$sample_post_result = null;
@@ -10260,6 +10512,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 
 			// nxt-hooks-layout-sections = 'singular' tells Nexter this is a singular page template.
 			update_post_meta( $nxt_post_id, 'nxt-hooks-layout-sections', 'singular' );
+			// The same layout as Nexter's own editor saves it (Pages → Singular).
+			update_post_meta( $nxt_post_id, 'nxt-hooks-layout', 'pages' );
+			update_post_meta( $nxt_post_id, 'nxt-hooks-layout-pages', 'singular' );
 
 			// Condition group: include all posts of the target post type.
 			update_post_meta( $nxt_post_id, 'nxt-singular-group', array(
@@ -10274,6 +10529,9 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			self::apply_dynamic_tag_bindings( $elements ); // opt-in: {{ tokens }} → bound dynamic tags
 			update_post_meta( $nxt_post_id, '_elementor_data', wp_slash( wp_json_encode( $elements ) ) );
 			update_post_meta( $nxt_post_id, '_elementor_edit_mode', 'builder' );
+			// Nexter's Elementor document for a singular template, so it opens
+			// and renders as one rather than as plain text.
+			update_post_meta( $nxt_post_id, '_elementor_template_type', 'nxt_builder' );
 
 			if ( 'publish' !== get_post_status( $nxt_post_id ) ) {
 				wp_update_post( array( 'ID' => $nxt_post_id, 'post_status' => 'publish' ) );
@@ -10314,11 +10572,11 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param string $post_type Target post type slug.
 		 * @return array Active template descriptors { system, post_id, title }.
 		 */
-		private static function mcp_detect_active_single_post_templates( $post_type ) {
+		private static function mcp_detect_active_single_post_templates( $post_type, $only_system = '' ) {
 			$active = array();
 
 			// Elementor Pro: elementor_library posts of type 'single' with non-empty conditions.
-			$ep_posts = get_posts( array(
+			$ep_posts = 'nexter' === $only_system ? array() : get_posts( array(
 				'post_type'      => 'elementor_library',
 				'post_status'    => 'publish',
 				'posts_per_page' => 10,
@@ -10341,7 +10599,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			// Nexter: nxt_builder posts for 'singular' with build status active.
-			if ( post_type_exists( 'nxt_builder' ) ) {
+			if ( post_type_exists( 'nxt_builder' ) && 'elementor_pro' !== $only_system ) {
 				$nxt_posts = get_posts( array(
 					'post_type'      => 'nxt_builder',
 					'post_status'    => 'publish',
@@ -10374,12 +10632,12 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 		 * @param string $post_type Target post type slug (used to scope Elementor Pro lookup).
 		 * @return array Descriptors of deactivated templates.
 		 */
-		private static function mcp_deactivate_existing_single_post_templates( $post_type ) {
+		private static function mcp_deactivate_existing_single_post_templates( $post_type, $only_system = '' ) {
 			$deactivated   = array();
 			$ep_had_active = false;
 
 			// ── Elementor Pro / elementor_library ─────────────────────────────
-			$ep_posts = get_posts( array(
+			$ep_posts = 'nexter' === $only_system ? array() : get_posts( array(
 				'post_type'      => 'elementor_library',
 				'post_status'    => 'publish',
 				'posts_per_page' => 10,
@@ -10422,7 +10680,7 @@ if ( ! class_exists( 'UiChemy_Composer_Manager' ) ) {
 			}
 
 			// ── Nexter Extension ──────────────────────────────────────────────
-			if ( post_type_exists( 'nxt_builder' ) ) {
+			if ( post_type_exists( 'nxt_builder' ) && 'elementor_pro' !== $only_system ) {
 				$nxt_posts = get_posts( array(
 					'post_type'      => 'nxt_builder',
 					'post_status'    => 'publish',
