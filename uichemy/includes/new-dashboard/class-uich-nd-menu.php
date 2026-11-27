@@ -39,6 +39,30 @@ if ( ! class_exists( 'Uich_ND_Menu' ) ) {
 			// Our icon is loaded as <img> so WP's admin-color rules don't
 			// recolor it — `filter: brightness(0) invert(1)` does the job.
 			add_action( 'admin_head', array( __CLASS__, 'menu_icon_active_css' ) );
+
+			// On the dashboard, the submenu follows the open tab and switches tabs
+			// without reloading the page.
+			add_action( 'admin_footer', array( __CLASS__, 'submenu_script' ) );
+			// ...and is hidden there: the dashboard's own sidebar already shows the same tabs.
+			add_action( 'admin_head', array( __CLASS__, 'submenu_hide_css' ) );
+		}
+
+		/**
+		 * While the dashboard is open, WordPress would show UiChemy's submenu as an open
+		 * list (or, folded, as a flyout on hover). The dashboard has its own sidebar with
+		 * the same tabs, so the submenu is hidden there. On every other screen it is the
+		 * usual hover flyout. Phone-width menus keep WordPress's own behaviour.
+		 *
+		 * @return void
+		 */
+		public static function submenu_hide_css() {
+			$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+			if ( ! $screen || 'toplevel_page_uichemy' !== $screen->id ) {
+				return;
+			}
+			echo '<style id="uichemy-submenu-hide">@media screen and (min-width:783px){'
+				. '#adminmenu li#toplevel_page_uichemy.wp-has-current-submenu .wp-submenu{display:none;}'
+				. '}</style>';
 		}
 
 		public static function menu_icon_active_css() {
@@ -120,6 +144,84 @@ if ( ! class_exists( 'Uich_ND_Menu' ) ) {
 				$icon,
 				self::FALLBACK_POSITION
 			);
+
+			// The dashboard's sidebar tabs, so hovering UiChemy in the WordPress
+			// menu shows them. The first one is the page itself (Home); the others
+			// open the dashboard on that tab (it routes by the #/ part of the URL).
+			foreach ( self::tabs() as $i => $tab ) {
+				add_submenu_page(
+					'uichemy',
+					$label,
+					$tab['label'],
+					'manage_options',
+					0 === $i ? 'uichemy' : 'admin.php?page=uichemy#' . $tab['path'],
+					0 === $i ? array( __CLASS__, 'render_page' ) : ''
+				);
+			}
+		}
+
+		/**
+		 * The dashboard's sidebar tabs, in the same order.
+		 *
+		 * Keep in step with new-dashboard/src/dashboard/tabs.js. As there, a tab
+		 * whose feature is switched off is left out, unless the dashboard still
+		 * shows it with a "switch it on" screen.
+		 *
+		 * @return array<int,array{path:string,label:string}>
+		 */
+		private static function tabs() {
+			$tabs = array(
+				array( '/', __( 'Home', 'uichemy' ) ),
+				array( '/theme-builder', __( 'Theme Builder', 'uichemy' ) ),
+				array( '/seo', __( 'SEO', 'uichemy' ), 'seo' ),
+				array( '/agent-ready', __( 'Agent Ready', 'uichemy' ) ),
+				array( '/performance', __( 'Performance', 'uichemy' ) ),
+				array( '/content-fields', __( 'Custom Fields', 'uichemy' ) ),
+				array( '/module-studio', __( 'Module Studio', 'uichemy' ) ),
+				array( '/forms', __( 'Form Submissions', 'uichemy' ) ),
+				array( '/role-manager', __( 'Role Manager', 'uichemy' ) ),
+				array( '/white-label', __( 'White Label', 'uichemy' ) ),
+				array( '/sync-astro', __( 'Publish to Astro', 'uichemy' ) ),
+				array( '/settings', __( 'Settings', 'uichemy' ) ),
+			);
+			$out = array();
+			foreach ( $tabs as $tab ) {
+				if ( isset( $tab[2] ) && function_exists( 'uich_feature_enabled' ) && ! uich_feature_enabled( $tab[2] ) ) {
+					continue;
+				}
+				$out[] = array(
+					'path'  => $tab[0],
+					'label' => $tab[1],
+				);
+			}
+			/**
+			 * Filter: the tabs listed under UiChemy in the WordPress admin menu.
+			 *
+			 * @param array $out Tabs: path (the dashboard route) and label.
+			 */
+			return (array) apply_filters( 'uichemy_admin_submenu_tabs', $out );
+		}
+
+		/**
+		 * On the dashboard: mark the submenu item of the open tab, and open a tab
+		 * from the submenu by changing the #/ route instead of reloading the page.
+		 *
+		 * @return void
+		 */
+		public static function submenu_script() {
+			$screen = function_exists( 'get_current_screen' ) ? get_current_screen() : null;
+			if ( ! $screen || 'toplevel_page_uichemy' !== $screen->id ) {
+				return;
+			}
+			$js = '(function(){var li=document.getElementById("toplevel_page_uichemy");if(!li)return;'
+				. 'var links=[].slice.call(li.querySelectorAll(".wp-submenu a"));'
+				. 'function route(a){var h=a.getAttribute("href")||"",i=h.indexOf("#");return i<0?"/":(h.slice(i+1)||"/");}'
+				. 'function mark(){var now=(location.hash.replace(/^#/,"")||"/").split("?")[0],best=null,len=-1;'
+				. 'links.forEach(function(a){var r=route(a);var hit=r==="/"?now==="/":(now===r||now.indexOf(r+"/")===0);if(hit&&r.length>len){best=a;len=r.length;}});'
+				. 'links.forEach(function(a){var on=a===best;a.classList.toggle("current",on);a.parentNode.classList.toggle("current",on);if(on){a.setAttribute("aria-current","page");}else{a.removeAttribute("aria-current");}});}'
+				. 'links.forEach(function(a){a.addEventListener("click",function(e){if(e.defaultPrevented||e.button!==0||e.metaKey||e.ctrlKey||e.shiftKey||e.altKey)return;e.preventDefault();location.hash=route(a);});});'
+				. 'window.addEventListener("hashchange",mark);mark();})();';
+			wp_print_inline_script_tag( $js, array( 'id' => 'uichemy-submenu' ) );
 		}
 
 		/**

@@ -149,6 +149,8 @@ Submissions are saved to the database and are viewable in the UiChemy Forms dash
 
 **Email goes out through `wp_mail()`.** On many hosts that mail is never delivered or lands in spam. If the user says form emails do not arrive, read the latest one with `get-submission`: an `email` entry in its `actions_log` marked `success` means WordPress handed the mail off, so the problem is delivery. Point them to UiChemy > Settings > SMTP (Custom SMTP or Gmail) and its Send test email, rather than changing the form.
 
+**Forms and AI agents (Agent Ready).** Nothing extra goes in the markup: a Composer form is found by its `data-atom-form` and appears in Agent Ready > Setup, step 5, off for AI until the site owner switches it on (AI fills it and the person presses Send, or AI may also send it). So that an agent understands it, give every field a `<label for>` (or `aria-label`), the right input `type` (`email`, `tel`, `date`, `number`), `required` where it is, and `<option value>`s on selects. Changing a form's fields later switches AI sending off for that form until the owner turns it on again.
+
 ---
 
 ## Do / Don't

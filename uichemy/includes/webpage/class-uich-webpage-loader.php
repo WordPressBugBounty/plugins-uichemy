@@ -135,11 +135,14 @@ if ( ! class_exists( 'Uich_Webpage_Loader' ) ) {
 			require_once UICH_WEBPAGE_PATH . 'class-uich-webpage-block-processor.php';
 			require_once UICH_WEBPAGE_PATH . 'class-uich-webpage-import.php';
 			require_once UICH_WEBPAGE_PATH . 'class-uich-webpage-nexter-settings.php';
+			// Figma AI pages a site blocked: pulled with the same UiChemy sign-in.
+			require_once UICH_PATH . 'includes/figma-import/class-uich-figma-import.php';
 
 			( new Uich_Webpage_Auth() )->init();
 			( new Uich_Webpage_Api() )->init();
 			( new Uich_Webpage_Import() )->init();
 			( new Uich_Webpage_Nexter_Settings() )->init();
+			( new Uich_Figma_Import() )->init();
 
 			/*
 			 * Priority 20 so this runs after Uich_ND_Enqueue::enqueue() (priority

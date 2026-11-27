@@ -21,7 +21,7 @@ What UiChemy SEO gives you:
 | Structured data | One JSON-LD `@graph` per page: Organization/Person, WebSite, WebPage, BreadcrumbList, Article, Product automatically, plus templates and page/section JSON-LD | see §5 |
 | Sitemap & robots.txt | Keeps WordPress's `/wp-sitemap.xml` in step; robots.txt through WordPress | `update-site-settings` · `get-crawl-status` |
 | Redirects & 404s | 301/302/307/410/451 redirects; automatic redirects on slug change and trash; a log of missing pages | `add-redirect` · `list-404s` |
-| AEO | `/llms.txt` and a Markdown copy of each page for AI tools | `update-site-settings` (`llms_*`, `md_*`) |
+| AEO | `/llms.txt`, a Markdown copy of each page, discovery files and browser AI tools (Agent Ready) | `AgentReady::audit` / `listSettings` / `updateSettings`, page and llms.txt edits; see section 9 |
 | Audits | ~45 checks per page plus a site-wide inbox | `audit-site-seo` · `audit-page-seo` |
 
 **Precedence — highest wins, per value:**
@@ -171,9 +171,34 @@ Search engines and AI answers favour content that clearly comes from people who 
 
 ---
 
-## 9. AEO — answer engines
+## 9. AEO - Agent Ready
 
-`update-site-settings {values: {llms_enabled: true, md_enabled: true}}` publishes `/llms.txt` and a clean Markdown copy of each page for AI tools. Clear titles, descriptions and schema help AI answers more than these files do — do sections 2–8 first. Keep a page out with `<meta name="uichemy:ai" content="exclude">` in its head code.
+AEO is how well AI assistants (ChatGPT, Claude, Gemini, Perplexity) understand, quote and link the site. Clear titles, descriptions, schema and real facts help AI answers more than any file does, so do sections 2–8 first. Then make the site easy for AI to read and use. Keep a page out of everything AI reads with `<meta name="uichemy:ai" content="exclude">` in its head code.
+
+**Agent Ready** (Pro; UiChemy > Agent Ready, also Settings > Features) is the AEO part of UiChemy, moved out of SEO into its own tab. It handles `/llms.txt`, the Markdown copy of every public page (`page.md`, or `Accept: text/markdown`), the discovery files and links, and WebMCP (tools and forms AI in the visitor's browser can use). It is **off by default**: switching it on is the site owner's choice. If it is off, explain what it adds and ask them to turn it on in UiChemy > Agent Ready; do not switch it on yourself.
+
+**What an AI agent can manage here** (all through the `AgentReady::` methods; check exact parameters with `search`):
+
+| Task | Methods |
+|---|---|
+| Score the site | `audit` |
+| Every Agent Ready setting | `listSettings` (current values and defaults), `updateSettings(values: …)` |
+| `/llms.txt` | `getLlms`, `patchLlms(edits: [{find, replace}])`, `updateLlms(text: …)`, `updateLlms(mode: "generated")` |
+| A page's Markdown copy (`page.md`) | `getPageMd(post_id \| url)`, `patchPageMd(post_id, edits)`, `updatePageMd(post_id, markdown)` (empty `markdown` = automatic again) |
+
+A patch is a list of literal find/replace pairs. If one `find` is not in the text, nothing is saved and the result says which edit missed, so read the text first and copy the exact words.
+
+With Agent Ready on, in this order:
+
+1. **Score it.** `AgentReady::audit(refresh: true)` checks the live site as a logged-out AI agent and scores it 0–100; each check says what was seen and how to fix it. Fix the `fail`s, then the `warn`s, and run it again.
+2. **Business facts.** AI quotes the business info (name, summary, hours, locations, contacts, order and policy links) in `get_site_info`, llms.txt and the end of every Markdown page. It shares name, summary, email, phone and social profiles with SEO > Site Settings (section 2). The site owner fills the rest in Agent Ready > Setup, step 4 (Site information > Edit business info), or with Fill from my site; ask them for real hours and locations rather than inventing any.
+3. **llms.txt.** `AgentReady::listSettings()`, then `AgentReady::updateSettings(values: {llms: {...}})`: a one-line `summary`, a short `intro` and the `key_pages` (post IDs, the pages a visitor most needs: services, pricing, contact, booking). Send only the keys you change; lists replace the stored list. This keeps llms.txt automatic, so prefer it. Only when the owner wants the file written by hand: `AgentReady::getLlms()`, then `AgentReady::patchLlms(edits: [{find, replace}])` or `AgentReady::updateLlms(text: …)`; the file then no longer updates with the site, and `AgentReady::updateLlms(mode: "generated")` goes back.
+4. **Markdown pages.** `agent_pages.post_types` (empty = every public type), `agent_pages.exclude_patterns` for paths AI should not read (`/cart/*`, `/my-account/*`), and `agent_pages.include_noindex` (off by default: a noindex page is left out). Members-only, private, draft and password-protected content is never shared, whatever you set. To fix how one page reads, `AgentReady::getPageMd(post_id: …)` shows its copy; `AgentReady::patchPageMd(post_id: …, edits: [{find, replace}])` changes part of it and `AgentReady::updatePageMd(post_id: …, markdown: …)` replaces it with your own text, which then no longer follows changes to the page (an empty `markdown` goes back to the automatic copy). Prefer fixing the page itself; write a copy only when the automatic one reads badly.
+5. **Discovery and crawlers.** `discovery.*`: the link headers and `<link>` tags, the AI catalog, per-bot allow/block rules, and the content signals (`search`, `ai_input`, `ai_train`). Ask the owner before allowing `ai_train` (training on their content) or blocking a bot.
+6. **Forms for AI.** Composer forms (`data-atom-form`, see the `dynamic-loops-and-forms` skill) are listed in Agent Ready > Setup, step 5, each **off for AI** until the owner switches it on. Build them so an agent understands them: a `<label for>` (or `aria-label`) on every field, the right input `type` (`email`, `tel`, `date`, `number`), `required` where it is, `<option value>`s on selects. Changing a form's fields later switches AI sending off for it until the owner turns it on again.
+7. **Contact requests.** "Send a contact request" (`send_contact_request`) lets AI send the owner a booking, enquiry, quote or call-back request. Whether AI may send or change anything (`mcp.writes`) is the owner's switch on the Agent Ready screen; `updateSettings` never changes it, so do not try.
+8. **WebMCP tools.** AI running in a visitor's browser sees the site's tools (`search_site`, `get_page`, `get_site_info`, the forms switched on for AI, and any custom tools from Agent Ready > Tools). Every tool is public: it runs as a logged-out visitor, so it must only read or do what any visitor may. To add a tool the built-in ones do not cover (check stock, find a branch near a postcode, price a quote), build it with **UiChemy Module Studio** (the `extend-wordpress` skill): a Multi File Module that adds it on the `uichemy_agent_ready_tools` filter, as `$tools['name'] = array( 'title' => …, 'description' => …, 'input_schema' => array( 'type' => 'object', … ), 'run' => function ( array $args ) { … } )`. Keep inputs strict in the schema, return plain data, and never expose private data or change anything in `run`. Switching the module off removes the tool.
+9. **Check it as AI does.** Open `/llms.txt` and a few `page.md` addresses, and confirm each key page reads well as plain text: real headings, the facts in words (not only in images), no menus or cookie text.
 
 ---
 

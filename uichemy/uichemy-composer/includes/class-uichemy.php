@@ -195,6 +195,10 @@ class UiChemy {
 		require_once UICHEMY_PATH . 'includes/seo/class-uich-seo.php';
 		Uich_SEO::init();
 
+		// Agent Ready (Pro) — agent pages, llms.txt, discovery and the public site MCP.
+		require_once UICHEMY_PATH . 'includes/agent-ready/class-uich-agent-ready.php';
+		Uich_Agent_Ready::init();
+
 		// Shared HTML renderer + the Gutenberg Composer block (uichemy/composer).
 		// The block class self-instantiates on include and registers on `init`.
 		require_once UICHEMY_PATH . 'includes/admin/widgets/class-uichemy-woo-tags.php';

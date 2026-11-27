@@ -87,7 +87,6 @@ if ( ! class_exists( 'Uich_SEO' ) ) {
 			require_once $dir . 'class-uich-seo-mcp.php';
 			require_once $dir . 'class-uich-seo-redirects.php';
 			require_once $dir . 'class-uich-seo-crawl.php';
-			require_once $dir . 'class-uich-seo-ai.php';
 			require_once $dir . 'class-uich-seo-schema.php';
 			require_once $dir . 'class-uich-seo-import.php';
 			if ( defined( 'WP_CLI' ) && WP_CLI ) {
@@ -102,7 +101,7 @@ if ( ! class_exists( 'Uich_SEO' ) ) {
 			Uich_SEO_MCP::init();
 			Uich_SEO_Redirects::init();
 			Uich_SEO_Crawl::init();
-			Uich_SEO_AI::init();
+			// llms.txt and the Markdown copies belong to Agent Ready (the AEO part of UiChemy), not SEO.
 			Uich_SEO_Schema::init();
 			Uich_SEO_Rest::init();
 			// Bricks' builder is a front-end screen, so its mount cannot wait for is_admin().

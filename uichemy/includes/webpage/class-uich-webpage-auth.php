@@ -200,7 +200,7 @@ class Uich_Webpage_Auth {
 	 * to the screen the account was needed for. `#/import` is the retired route
 	 * kept for in-flight flows started before the update — it resolves to Home.
 	 */
-	const RETURN_ROUTES = array( '', '#/ai-website', '#/import' );
+	const RETURN_ROUTES = array( '', '#/ai-website', '#/import', '#/figma' );
 
 	/**
 	 * Remember where to send the browser after a successful exchange.
@@ -1041,6 +1041,17 @@ class Uich_Webpage_Auth {
 		set_transient( self::TRANSIENT_API_JWT, $body['token'], $ttl );
 
 		return $body['token'];
+	}
+
+	/** The app's access JWT for other UiChemy services (the Figma import), or false. */
+	public function get_app_bearer() {
+		return $this->get_api_bearer();
+	}
+
+	/** After a 401: drops the cached JWT and refreshes the OAuth token. */
+	public function renew_app_bearer() {
+		$this->clear_api_jwt();
+		return $this->refresh_access_token();
 	}
 
 	/** Drop the cached access JWT so the next call mints a fresh one. */

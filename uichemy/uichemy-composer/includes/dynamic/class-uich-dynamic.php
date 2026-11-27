@@ -405,9 +405,10 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 		 * author_trusted(). A save with no user (cron, WP-CLI without --user)
 		 * leaves the mark as it was; a save by a user without it sets the mark.
 		 *
-		 * A trusted user's save clears it, except when the save only publishes the
-		 * post or changes its author: that does not review the content, so the
-		 * content keeps the restrictions of whoever wrote it. Moving a post away
+		 * A trusted user's save clears it only when it changes the content. Any
+		 * other save (publishing, a new author, a Quick Edit of the title or slug, a
+		 * meta-box save) does not review the content, so the content keeps the
+		 * restrictions of whoever wrote it. Moving a post away
 		 * from an author without `unfiltered_html` marks it for the same reason.
 		 *
 		 * @param int          $post_id Post id.
@@ -432,7 +433,10 @@ if ( ! class_exists( 'Uich_Dynamic' ) ) {
 			if ( $update && null === $change ) {
 				return;
 			}
-			if ( $change && ! $change['content_changed'] && ( $change['author_changed'] || $change['status_changed'] ) ) {
+			// Only a save that changes the content itself is a review of it. Publishing,
+			// changing the author, a Quick Edit of the title or slug, or a meta-box save
+			// leaves the content as whoever wrote it, so the mark stays.
+			if ( $change && ! $change['content_changed'] ) {
 				if ( $change['author_changed'] && $change['old_author'] > 0 && ! user_can( $change['old_author'], 'unfiltered_html' ) ) {
 					update_post_meta( $post_id, self::UNTRUSTED_EDIT_META, 1 );
 				}

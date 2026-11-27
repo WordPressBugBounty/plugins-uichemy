@@ -104,12 +104,6 @@ if ( ! class_exists( 'Uich_SEO_Settings' ) ) {
 				'taxonomies'           => array(),
 
 				// §10 AI formats.
-				'llms_enabled'         => false,
-				'llms_limit'           => 100,
-				'llms_intro'           => '',
-				'llms_extra'           => '',
-				'md_enabled'           => false,
-				'md_template'          => '',
 
 				// 08 §5.3 feature toggle.
 				'schema_enabled'       => true,
@@ -443,13 +437,6 @@ if ( ! class_exists( 'Uich_SEO_Settings' ) ) {
 						}
 						$value = array_values( array_unique( $list ) );
 						break;
-					case 'llms_limit':
-						if ( ! is_numeric( $value ) ) {
-							$errors->add( $key, __( 'Enter a number from 1 to 500.', 'uichemy' ) );
-							continue 2;
-						}
-						$value = max( 1, min( 500, (int) $value ) );
-						break;
 					case 'entity_logo':
 					case 'default_share_image':
 						// A media-library id, or a full image link.
@@ -470,9 +457,6 @@ if ( ! class_exists( 'Uich_SEO_Settings' ) ) {
 						break;
 					case 'entity_description':
 					case 'home_description':
-					case 'llms_intro':
-					case 'llms_extra':
-					case 'md_template':
 						$value = sanitize_textarea_field( (string) $value );
 						break;
 					case 'robots_content':
@@ -523,8 +507,8 @@ if ( ! class_exists( 'Uich_SEO_Settings' ) ) {
 				// Size caps: a settings save must not store megabytes in an autoloaded option.
 				$caps = array(
 					'site_title' => 200, 'site_tagline' => 300, 'title_template' => 300, 'home_description' => 600,
-					'entity_description' => 600, 'entity_email' => 254, 'entity_phone' => 40, 'llms_intro' => 2000,
-					'llms_extra' => 10000, 'md_template' => 10000, 'robots_content' => 65536,
+					'entity_description' => 600, 'entity_email' => 254, 'entity_phone' => 40,
+					'robots_content' => 65536,
 					'entity_logo' => 2048, 'default_share_image' => 2048,
 				);
 				if ( is_string( $value ) ) {

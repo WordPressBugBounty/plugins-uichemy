@@ -351,6 +351,7 @@ if ( ! function_exists( 'uichemy_pro_feature_map' ) ) {
 			'role_manager'  => ! $is_pro,
 			'white_label'   => ! $is_pro,
 			'module_studio' => ! $is_pro,
+			'agent_ready'   => ! $is_pro,
 		);
 	}
 }

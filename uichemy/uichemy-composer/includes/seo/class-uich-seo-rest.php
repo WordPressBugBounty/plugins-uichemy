@@ -454,24 +454,9 @@ if ( ! class_exists( 'Uich_SEO_Rest' ) ) {
 					'sitemap_reachable' => self::sitemap_reachable(),
 					'excluded'      => count( Uich_SEO_Crawl::excluded_ids() ),
 					'blog_public'   => (bool) get_option( 'blog_public' ),
-					'llms_url'      => home_url( '/llms.txt' ),
-					'md_example'    => self::md_example(),
 					'owner'         => Uich_SEO_Ownership::resolve()['owner'],
 				)
 			);
-		}
-
-		/**
-		 * An example .md URL (PRD §10.2 status line).
-		 *
-		 * @return string
-		 */
-		private static function md_example() {
-			$ids = get_posts( array( 'post_type' => 'post', 'post_status' => 'publish', 'numberposts' => 1, 'fields' => 'ids' ) );
-			if ( ! $ids ) {
-				$ids = get_posts( array( 'post_type' => 'page', 'post_status' => 'publish', 'numberposts' => 1, 'fields' => 'ids' ) );
-			}
-			return $ids ? Uich_SEO_AI::md_url( $ids[0] ) : home_url( '/about.md' );
 		}
 
 		// ---- Redirects ----
@@ -1330,11 +1315,44 @@ if ( ! class_exists( 'Uich_SEO_Rest' ) ) {
 						'attention' => $attention,
 						'redirects' => class_exists( 'Uich_SEO_Redirects' ) ? Uich_SEO_Redirects::active_count() : null,
 					),
-					'findings' => $rows,
-					'unbuilt'  => $unbuilt,
-					'capped'   => count( $ids ) >= self::OVERVIEW_MAX,
+					'findings'   => $rows,
+					'unbuilt'    => $unbuilt,
+					'capped'     => count( $ids ) >= self::OVERVIEW_MAX,
+					'ai_answers' => self::ai_answers(),
 				)
 			);
+		}
+
+		/**
+		 * The "AI answers" (AEO) summary. Agent Ready fills it with its readiness
+		 * score; otherwise it says why there is none.
+		 *
+		 * @return array { state: locked|off|not_run|ready, score?, ran_at?, failing?, text }
+		 */
+		private static function ai_answers() {
+			$pro = function_exists( 'uichemy_is_pro' ) && uichemy_is_pro();
+			if ( ! $pro ) {
+				$out = array(
+					'state' => 'locked',
+					'text'  => __( 'Agent Ready (Pro) makes the site readable and usable by AI assistants, and scores how ready it is.', 'uichemy' ),
+				);
+			} elseif ( function_exists( 'uich_feature_enabled' ) && ! uich_feature_enabled( 'agent_ready' ) ) {
+				$out = array(
+					'state' => 'off',
+					'text'  => __( 'Agent Ready is off. Switch it on in Settings > Features to publish llms.txt, Markdown pages and a site MCP for AI assistants.', 'uichemy' ),
+				);
+			} else {
+				$out = array(
+					'state' => 'not_run',
+					'text'  => __( 'Run the Agent Ready check to see how AI assistants read this site.', 'uichemy' ),
+				);
+			}
+			/**
+			 * The AI answers summary shown with the SEO audit.
+			 *
+			 * @param array $out Summary.
+			 */
+			return apply_filters( 'uichemy_seo_ai_answers', $out );
 		}
 
 		/**

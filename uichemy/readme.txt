@@ -4,7 +4,7 @@ Tags: figma to wordpress, figma to elementor, figma to gutenberg, figma to brick
 Requires at least: 6.9
 Tested up to: 7.1
 Requires PHP: 7.4
-Stable tag: 5.8.4
+Stable tag: 5.9.0
 License: GPLv3
 License URI: https://opensource.org/licenses/GPL-3.0
 
@@ -271,6 +271,13 @@ Community support on [WordPress.org](https://wordpress.org/support/plugin/uichem
 == Changelog ==
 
 ### View full changelog and upcoming features: [roadmap.uichemy.com](https://roadmap.uichemy.com/)
+
+= 5.9.0 = 27 November 2026
+- Added: New Agent Ready feature to help AI read and use your site efficiently.
+- Added: Import Figma designs your site blocked from the Figma tab.
+- Improved: SMTP connection test now checks IPv6 addresses too.
+- Fixed: Publish to Astro progress getting stuck on "Deployed".
+- Fixed: Various minor bugs and design improvements.
 
 = 5.8.4 = 25 November 2026
 - Added: Post type archive display condition in the Theme Builder.

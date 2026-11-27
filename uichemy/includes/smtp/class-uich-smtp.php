@@ -667,7 +667,22 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 			if ( ! empty( $s['custom']['auth'] ) && '' !== self::constant_password() && ! self::constant_allowed( $s['custom'] ) && '' === self::password( $s['custom'] ) ) {
 				wp_send_json_error( array( 'message' => __( 'The password in wp-config.php (UICHEMY_SMTP_PASSWORD) is used only with the server it was set up for. To use it with this server, also define UICHEMY_SMTP_HOST in wp-config.php.', 'uichemy' ) ), 400 );
 			}
-			if ( self::is_internal_host( $s['custom']['host'] ) && ! self::internal_test_allowed( $s['custom']['host'] ) ) {
+			// Resolved once (IPv4 and IPv6), checked, and the test then connects to that
+			// very address, so the name cannot answer differently between check and connect.
+			$host     = (string) $s['custom']['host'];
+			$ips      = self::resolve_host( $host );
+			$internal = self::is_internal_host( $host, $ips );
+			$allowed  = $internal && self::internal_test_allowed( $host );
+			if ( empty( $ips ) && ! $allowed ) {
+				wp_send_json_error(
+					array(
+						/* translators: %s: SMTP host name */
+						'message' => sprintf( __( '%s could not be found. Check the host name.', 'uichemy' ), $host ),
+					),
+					400
+				);
+			}
+			if ( $internal && ! $allowed ) {
 				wp_send_json_error(
 					array(
 						'message' => sprintf(
@@ -688,6 +703,9 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 			try {
 				self::configure_custom( $mail, $s['custom'] );
 				$mail->Timeout = 10;
+				if ( ! empty( $ips ) ) {
+					self::pin_host( $mail, $host, (string) reset( $ips ) );
+				}
 				// TCP, TLS, EHLO and, with auth on, the login. ErrorInfo says which step failed.
 				if ( ! $mail->smtpConnect() ) {
 					wp_send_json_error( array( 'message' => self::friendly_error( $mail->ErrorInfo ) ), 400 );
@@ -709,13 +727,13 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 		 *
 		 * "Test connection" opens a connection to whatever host and port it is given, so
 		 * without this it could be used to find which machines and ports answer inside
-		 * the server's own network. A host that does not resolve is left to the test
-		 * itself, which reports it.
+		 * the server's own network. Every address the name has counts, IPv4 and IPv6.
 		 *
-		 * @param string $host Host name or IP.
+		 * @param string     $host Host name or IP.
+		 * @param array|null $ips  Its addresses, when already resolved (resolve_host()).
 		 * @return bool
 		 */
-		public static function is_internal_host( $host ) {
+		public static function is_internal_host( $host, $ips = null ) {
 			$host = strtolower( trim( (string) $host, " \t\n\r\0\x0B[]" ) );
 			if ( '' === $host ) {
 				return false;
@@ -723,18 +741,72 @@ if ( ! class_exists( 'Uich_SMTP' ) ) {
 			if ( 'localhost' === $host || '.localhost' === substr( $host, -10 ) ) {
 				return true;
 			}
-			if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
-				$ips = array( $host );
-			} else {
-				$resolved = gethostbynamel( $host );
-				$ips      = is_array( $resolved ) ? $resolved : array();
+			if ( null === $ips ) {
+				$ips = self::resolve_host( $host );
 			}
-			foreach ( $ips as $ip ) {
+			foreach ( (array) $ips as $ip ) {
 				if ( false === filter_var( $ip, FILTER_VALIDATE_IP, FILTER_FLAG_NO_PRIV_RANGE | FILTER_FLAG_NO_RES_RANGE ) ) {
 					return true;
 				}
 			}
 			return false;
+		}
+
+		/**
+		 * Every address $host resolves to: its IPv4 (A) and IPv6 (AAAA) records, or the
+		 * host itself when it is an IP. Empty when it does not resolve.
+		 *
+		 * gethostbynamel() alone returns IPv4 only, so a name with nothing but a private
+		 * IPv6 record looked like it pointed nowhere and passed the check.
+		 *
+		 * @param string $host Host name or IP.
+		 * @return string[]
+		 */
+		public static function resolve_host( $host ) {
+			$host = strtolower( trim( (string) $host, " \t\n\r\0\x0B[]" ) );
+			if ( '' === $host ) {
+				return array();
+			}
+			if ( filter_var( $host, FILTER_VALIDATE_IP ) ) {
+				return array( $host );
+			}
+			$ips = array();
+			$v4  = gethostbynamel( $host );
+			if ( is_array( $v4 ) ) {
+				$ips = $v4;
+			}
+			if ( function_exists( 'dns_get_record' ) ) {
+				$records = @dns_get_record( $host, DNS_A | DNS_AAAA ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged -- a name with no records warns; that is an empty answer here.
+				foreach ( is_array( $records ) ? $records : array() as $record ) {
+					foreach ( array( 'ip', 'ipv6' ) as $key ) {
+						if ( ! empty( $record[ $key ] ) && filter_var( $record[ $key ], FILTER_VALIDATE_IP ) ) {
+							$ips[] = (string) $record[ $key ];
+						}
+					}
+				}
+			}
+			return array_values( array_unique( $ips ) );
+		}
+
+		/**
+		 * Connect to $ip, the address that was checked, while the TLS certificate is still
+		 * matched against the host name. Without this PHPMailer resolves the name again
+		 * when it connects, and the answer could differ from the one that was checked.
+		 *
+		 * @param \PHPMailer\PHPMailer\PHPMailer $mailer Mailer.
+		 * @param string                         $host   Host name as entered.
+		 * @param string                         $ip     Checked address.
+		 * @return void
+		 */
+		private static function pin_host( $mailer, $host, $ip ) {
+			$host = trim( (string) $host, " \t\n\r\0\x0B[]" );
+			if ( '' === $ip || 0 === strcasecmp( $host, $ip ) ) {
+				return;
+			}
+			$mailer->Host = false !== strpos( $ip, ':' ) ? '[' . $ip . ']' : $ip;
+			$options      = is_array( $mailer->SMTPOptions ) ? $mailer->SMTPOptions : array();
+			$options['ssl'] = array_merge( isset( $options['ssl'] ) ? (array) $options['ssl'] : array(), array( 'peer_name' => $host ) );
+			$mailer->SMTPOptions = $options;
 		}
 
 		/**

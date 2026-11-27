@@ -78,6 +78,17 @@ if ( ! function_exists( 'uich_features' ) ) {
 				// switch it is on only for a site already using it (see uich_feature_stored()).
 				'off_until_used' => true,
 			),
+			'agent_ready'   => array(
+				'label'       => 'Agent Ready',
+				'description' => 'Makes the site usable by AI agents: agent pages, llms.txt, discovery files and a site MCP that visitors\' agents can connect to. Turn off if you do not want AI agents to read or use the site this way.',
+				// Agent Ready's own option holds the switch; its first boot stores it
+				// off on every site (opt-in).
+				'default'     => false, // Opt-in: off until the owner turns it on.
+				'store'       => array(
+					'option' => 'uichemy_agent_ready',
+					'path'   => array( 'enabled' ),
+				),
+			),
 		);
 	}
 }
@@ -136,7 +147,11 @@ if ( ! function_exists( 'uich_feature_stored' ) ) {
 		$store = uich_feature_store( $slug );
 		if ( $store ) {
 			$value = uich_feature_store_read( $store );
-			return null === $value || ! empty( $value );
+			if ( null === $value ) {
+				$features = uich_features();
+				return ! isset( $features[ $slug ]['default'] ) || (bool) $features[ $slug ]['default'];
+			}
+			return ! empty( $value );
 		}
 
 		$settings = get_option( 'uichemy_settings', array() );
